@@ -44,7 +44,7 @@ The following device models are supplied with VASE.
 
 |Builtin device                   |Name   |
 |---------------------------------|-------|
-|Independent voltage source       |isource|
+|Independent voltage source       |vsource|
 |Independent current source       |isource|
 |Voltage-controlled voltage source|vcvs   |
 |Voltage-controlled current source|vccs   |
