@@ -1,0 +1,155 @@
+// Limiting of pn junction voltage (custom pnjlim)
+
+ground 0 
+
+load "resistor.osdi"
+load "simdioc.va"
+
+model resistor resistor
+model vsource vsource
+model isource isource
+model d simdio is=1e-12 n=1
+
+v1 (1 0) vsource dc=1.0
+d1 (1 0) d
+
+control
+  options op_debug=110
+  options rawfile="binary" strictsave=1
+  analysis op1 op 
+endc
+
+embed "simdioc.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module simdio(A,C);
+    // Simplified SPICE diode, used for validation purposes
+    
+    // Terminals and internal nodes
+    inout A, C;
+    electrical A,C;
+    
+    // Branches
+    branch (A,C) br_a_c;
+    
+    // Model parameters
+    (*desc = "Saturation current", units = "A"*) 
+      parameter real Is = 1e-14 from [0:inf];
+    (*desc = "Emission coefficient", units = ""*) 
+      parameter real N = 1 from [0:inf];
+    (*desc = "Flicker noise coefficient", units = ""*) 
+      parameter real KF = 0 from [0:inf];
+    (*desc = "Flicker noise exponent", units = ""*) 
+      parameter real AF = 1 from [0:inf];
+    (*desc = "Flicker noise frequency exponent", units = ""*) 
+      parameter real EF = 1 from [0:inf];
+    (*desc = "Debug messages", units = ""*) 
+      parameter integer debug = 1 from [0:inf];
+
+    // Opvars
+    (*desc= "Diode ohmic current", units ="A" *) real Id;
+    (*desc= "Differential conductance", units ="A/V" *) real gd;
+    
+    // Variables
+    real Vfu, Vf, VT;
+    real Tdev;
+
+    analog function real limspicepnj;
+        input vnew, vold, vt, vcrit;
+        real vnew, vold, vt, vcrit, limited, arg;
+        integer init;
+        
+        begin
+            limited = vnew;
+            // Is first iteration (i.e. first building of a linear system) numbered 0 or 1? 
+            // TODO: verify on some existing simulator.
+            // Iteration 1 of op analysis - initialize limiting
+            //   analysis("dc")      ... OP when not run as part of other analysis
+            //   analysis("static")  ... all OP analyses, even the ones that are part of other analysis (ac, tran ...)
+            //   analysis("nodeset") ... part when nodesets are applied (first op_nsiter iterations)
+            //   "dc" implies "static", but opposite is not true
+            init = $simparam("iteration", 10)==1 && 
+                    (analysis("dc") || analysis("static")) && 
+                    analysis("nodeset");
+            if (init) begin
+                $strobe("Limiting initialization");
+                limited = vcrit;
+                $discontinuity(-1);
+            end else if ((vnew > vcrit) && (abs(vnew - vold) > (vt + vt))) begin
+                // Positive vnew above vcrit, change greater than 2*vt
+                if(vold > 0) begin
+                    arg = (vnew - vold) / vt;
+                    if(arg > 0) begin
+                        limited = vold + vt * ln(1+arg);
+                    end else begin
+                        limited = vold - vt * ln(1-arg);
+                    end
+                end else begin
+                    limited = vt *ln(vnew/vt);
+                end
+                $discontinuity(-1); 
+            end else if (vnew<0) begin
+                // Negative vnew, use ngspice limiting
+                if (vold > 0) begin
+                    arg = -1*vold-1; 
+                end else begin
+                    arg = 2*vold-1;
+                end
+                if (vnew<arg) begin
+                    limited = arg;
+                    $discontinuity(-1);
+                end
+            end 
+            $strobe("Limiting new=%e old=%e vt=%e, vcrit=%e, limited=%e", vnew, vold, vt, vcrit, limited);
+            limspicepnj = limited;
+        end
+    endfunction
+    
+    analog begin
+        // Device temperature and parameter measurement temperature (in K)
+        Tdev = $temperature;
+        
+        // Thermal voltage
+        VT = `P_K*Tdev/`P_Q;
+        
+        // Branch voltages
+        Vfu = V(br_a_c);
+        
+        if (debug) begin 
+            $debug("Tdev %.5e, VT %.12e, Vfu %.5e", Tdev, VT, Vfu);
+            $debug("P_K %.12e, P_Q %.12e, Vfu %.5e", `P_K, `P_Q, Vfu);
+        
+            $display("Vf         %.5e", Vfu);
+        end
+
+        Vf = $limit(V(br_a_c), limspicepnj, $vt, 0.7);
+        // Vf = Vfu;
+        
+        if (debug) begin
+            $display("Vf limited %.5e", Vf);
+        end
+        
+        // Ohmic current of diode branch
+        Id = Is * (exp(Vf/(N*VT))-1);
+        
+        gd = ddx(Id, V(A));
+        
+        if (debug) begin
+            $display("Id limited %.5e", Id);
+            $display("gd limited %.5e", gd);
+        end
+        
+        // Diode branch current
+        I(br_a_c) <+ Id;
+
+        // Shot noise
+        I(br_a_c) <+ white_noise(2*`P_Q*abs(Id), "shot");
+
+        // Flicker noise
+        I(br_a_c) <+ flicker_noise(KF*pow(abs(Id), AF), EF, "flicker");
+
+    end
+endmodule
+
+>>>FILE

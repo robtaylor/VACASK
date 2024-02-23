@@ -1,0 +1,78 @@
+DC transfer function analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "simdio.va"
+
+model resistor resistor
+model vsource vsource
+model d simdio is=1e-12 n=2 debug=0
+
+v1 (1 0) vsource dc=0.8 mag=1
+r1 (1 2) resistor r=1k
+d1 (2 3) d
+v2 (3 0) vsource dc=0
+
+control
+  abort always
+  
+  save default yin(v1)
+
+  options temp=27
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0
+  analysis dctf1 dctf dumpop=1 out="2"
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+op1 = rawread('dctf1.op.raw').get()
+dctf1 = rawread('dctf1.raw').get()
+
+exactv2 = diocalc.dioSolve(1e-12, 2, 27, 1000, 0.8)
+exacti, exactgd = diocalc.dioMod(exactv2, 1e-12, 2, 27)
+i = -op1['v1:flow(br)']
+statusi = (relDiff(i, exacti, 1e-12)<1e-6).all()
+tests.append(statusi)
+print("op i(v1)", i, statusi)
+
+exactv1tf = 1/exactgd / (1/exactgd+1000)
+v1tf = dctf1['tf(v1)']
+statusv1tf = (relDiff(v1tf, exactv1tf, 1e-12)<1e-6).all()
+tests.append(statusv1tf)
+print("tf(v1)", v1tf, statusv1tf)
+
+exactv2tf = 1000 / (1/exactgd+1000)
+v2tf = dctf1['tf(v2)']
+statusv2tf = relDiff(v2tf, exactv2tf, 1e-12)<1e-6
+tests.append(statusv2tf)
+print("tf(v2)", v2tf, statusv2tf)
+
+exactzin = 1/exactgd + 1000
+zin1 = dctf1['zin(v1)']
+statuszin1 = (relDiff(zin1, exactzin, 1e-12)<1e-6).all()
+tests.append(statuszin1)
+print("zin(v1)", zin1, statuszin1)
+
+zin2 = dctf1['zin(v2)']
+statuszin2 = (relDiff(zin2, exactzin, 1e-12)<1e-6).all()
+tests.append(statuszin2)
+print("zin(v2)", zin2, statuszin2)
+
+yin1 = dctf1['yin(v1)']
+exactyin = 1/exactzin
+statusyin1 = (relDiff(yin1, exactyin, 1e-15)<1e-6).all()
+tests.append(statusyin1)
+print("yin(v1)", yin1, statusyin1)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE

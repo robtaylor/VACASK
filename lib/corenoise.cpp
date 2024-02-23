@@ -1,0 +1,668 @@
+#include <iomanip>
+#include <cmath>
+#include <filesystem>
+#include "corenoise.h"
+#include "simulator.h"
+#include "answeep.h"
+#include "context.h"
+#include "common.h"
+#include <numbers>
+
+namespace NAMESPACE {
+
+// Default parameters
+NoiseParameters::NoiseParameters() {
+    opParams.writeOutput = 0;
+}
+
+template<> int Introspection<NoiseParameters>::setup() {
+    registerMember(out);
+    registerMember(in);
+    registerMember(from);
+    registerMember(to);
+    registerMember(step);
+    registerMember(mode);
+    registerMember(points);
+    registerMember(values);
+    registerMember(dumpop);
+    registerNamedMember(opParams.nodeset, "nodeset");
+    registerNamedMember(opParams.store, "store");
+
+    return 0;
+}
+instantiateIntrospection(NoiseParameters);
+
+
+NoiseCore::NoiseCore(
+    Analysis& analysis, NoiseParameters& params, OperatingPointCore& opCore, 
+    std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
+    Circuit& circuit, 
+    KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
+    KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
+    Vector<double>& results, double& powerGain, double& outputNoise
+) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+    dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
+    acMatrix(acMatrix), acSolution(acSolution), 
+    contributionOffset(contributionOffset), 
+    results(results), powerGain(powerGain), outputNoise(outputNoise) {
+    
+    // Set analysis type for the initial operating point analysis
+    auto& elsSystem = opCore_.solver().evalSetupSystem();
+    auto& elsResidual = opCore_.solver().evalSetupResidual();
+
+    elsSystem.staticAnalysis = true;
+    elsSystem.dcAnalysis = false;
+    elsSystem.noiseAnalysis = true;
+
+    elsResidual.staticAnalysis = true;
+    elsResidual.dcAnalysis = false;
+    elsResidual.noiseAnalysis = true;
+}
+
+NoiseCore::~NoiseCore() {
+    delete outfile;
+}
+
+// Implement this in every derived class so that calls to 
+// resolveOutputDescriptor() will be inlined. 
+bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
+    // Clear contribution offsets
+    contributionOffset.clear();
+    size_t atOffset = 2;
+    // Clear results
+    results.clear();
+    // Resolve output descriptors
+    bool ok = true; 
+    for (auto it = outputDescriptors.cbegin(); it != outputDescriptors.cend(); ++it) {
+        Id name;
+        Id contrib;
+        ParameterIndex contribIndex;
+        bool found;
+        size_t ndx;
+        Instance *inst;
+        switch (it->type) {
+            case OutdNoiseContribInst:
+                name = it->id;
+                // Find instance
+                inst = circuit.findInstance(name);
+                if (strict) {
+                    if (!inst) {
+                        s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' not found.");
+                        ok = false;
+                        break;
+                    }
+                }
+                if (inst) {
+                    // Add to contribution offsets
+                    auto [insIt, inserted] = contributionOffset.insert({{name, Id()}, contributionOffset.size()});
+                    outputSources.emplace_back(&results, insIt->second);
+                } else {
+                    // Instance not found, constant source
+                    outputSources.emplace_back();
+                }
+                break;
+            case OutdNoiseContribInstPartial:
+                name = it->idId.id1;
+                contrib = it->idId.id2;
+                // Find instance
+                inst = circuit.findInstance(name);
+                if (strict && !inst) {
+                    s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' not found.");
+                    ok = false;
+                    break;
+                }
+                // Find contrib
+                if (inst) {
+                    std::tie(contribIndex, found) = inst->noiseSourceIndex(contrib);
+                    if (strict && !found) {
+                        s.set(Status::NotFound, std::string("Noise contribution '")+std::string(contrib)+"' of instance '"+std::string(name)+"' not found.");
+                        ok = false;
+                        break;
+                    }
+                    if (found) {
+                        // Add to contribution offsets
+                        auto [insIt, inserted] = contributionOffset.insert({{name, contrib}, contributionOffset.size()});
+                        outputSources.emplace_back(&results, insIt->second);
+                    } else {
+                        // Contribution not found, constant source
+                        outputSources.emplace_back();
+                    }
+                } else {
+                    // Instance not found, constant source
+                    outputSources.emplace_back();
+                }
+                break;
+            case OutdFrequency:
+                outputSources.emplace_back(&(circuit.simulatorInternals().frequency));
+                break;
+            case OutdOutputNoise:
+                outputSources.emplace_back(&outputNoise);
+                break;
+            case OutdPowerGain:
+                outputSources.emplace_back(&powerGain);
+                break;
+            default:
+                // Delegate to parent
+                ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+        }
+        if (!ok) {
+            break;
+        }
+    }
+    return ok;
+}
+
+bool NoiseCore::addCoreOutputDescriptors(Status& s) {
+    // If output is suppressed, skip all this work
+    if (!params.writeOutput) {
+        return true;
+    }
+    bool ok;
+    ok = addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"));
+    ok = ok && addOutputDescriptor(OutputDescriptor(OutdOutputNoise, "onoise"));
+    ok = ok && addOutputDescriptor(OutputDescriptor(OutdPowerGain, "gain"));
+    return ok;
+}
+
+bool NoiseCore::addDefaultOutputDescriptors(Status& s) {
+    // If output is suppressed, skip all this work
+    if (!params.writeOutput) {
+        return true;
+    }
+    if (savesCount==0) {
+        // Add total noise contributions of all instances (details=false)
+        return addAllNoiseContribInst(PTSave(Loc::bad, "default", Id(), Id()), false, false, s);
+    }
+    return true;
+}
+
+bool NoiseCore::initializeOutputs(Id name, Status& s) {
+    // Create output file if not created yet
+    if (!outfile) {
+        outfile = new OutputRawfile(
+            name, outputDescriptors, outputSources,
+            (circuit.simulatorOptions().core().rawfile==SimulatorOptions::rawfileBinary ? OutputRawfile::Flags::Binary : OutputRawfile::Flags::None) |
+                OutputRawfile::Flags::Padded);
+        outfile->setTitle(circuit.title());
+        outfile->setPlotname("Small-Signal Noise Analysis");
+    }
+    outfile->prologue();
+
+    return true;
+}
+
+bool NoiseCore::finalizeOutputs(Status &s) {
+    outfile->epilogue();
+    delete outfile;
+    outfile = nullptr;
+    return true;
+}
+
+bool NoiseCore::deleteOutputs(Id name, Status &s) {
+    if (!params.writeOutput) {
+        return true;
+    }
+
+    // Cannot assume outfile is available
+    auto fname = std::string(name)+".raw";
+    if (std::filesystem::exists(fname)) {
+        std::filesystem::remove(fname);
+    }
+    return true;
+}
+    
+bool NoiseCore::rebuild(Status& s) {
+    // AC analysis matrix
+    if (!acMatrix.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+        return false;
+    }
+    
+    // Resistive Jacobian entries remain bound to OP Jacobian, 
+    // reactive parts will be bound to imaginary entries of acMatrix
+    if (!circuit.bind(nullptr, nullptr, Component::RealPart, nullptr, &acMatrix, Component::ImagPart, s)) {
+        return false;
+    }
+    
+    return true;
+}
+
+// System of equations is 
+//   (G(x) + i C(x)) dx = dJ
+bool NoiseCore::run(bool continuePrevious, Status& s) {
+    auto n = circuit.unknownCount(); 
+    // Make sure structures are large enough
+    acSolution.resize(n+1);
+    results.resize(contributionOffset.size());
+    zero(results);
+    
+    // Get output unknowns
+    auto [outOk, up, un] = getOutput(params.out, s);
+    if (!outOk) {
+        return false;
+    }
+
+    // Get input source
+    auto [inOk, inputSource] = getInput(params.in, s);
+    if (!inOk) {
+        return false;
+    }
+    
+    // Compute operating point
+    auto opOk = opCore_.run(continuePrevious, s);
+    if (!opOk) {
+        return false;
+    }
+
+    auto& options = circuit.simulatorOptions().core();
+    Int debug = options.smsig_debug;
+
+    if (debug>0) {
+        Simulator::dbg() << "Starting small-signal noise analysis.\n";
+    }
+    
+    // Evaluate resistive and reactive Jacobian, evaluate noise
+    EvalAndLoadSetup elsEval { 
+        // Inputs, can be set here (we do not rotate)
+        .solution = &dcSolution, 
+        .states = &dcStates, 
+        
+        // Evaluation 
+        .enableLimiting = false, 
+        .evaluateResistiveJacobian = true, 
+        .evaluateReactiveJacobian = true, 
+        .evaluateNoise = true, 
+        
+        // Evaluation type reported to the model
+        .noiseAnalysis = true, 
+        
+        // Outputs - none
+    };
+
+    EvalAndLoadSetup elsLoad { 
+        // Needs no inputs because we are not evaluating
+
+        // Skip evaluation
+        .skipEvaluation = true, 
+
+        // Evaluation type reported to the model
+        .noiseAnalysis = true, 
+        
+        // Outputs
+        .loadResistiveJacobian = false, 
+        .loadReactiveJacobian = true, 
+    };
+
+    // Copy OP Jacobian to real part of acMatrix, zero out imaginary part. 
+    // Because the real part is taken from OP Jacobian it includes
+    // the shunt resistors. 
+    auto nnz = dcJacobian.nnz();
+    auto Jr = dcJacobian.data();
+    auto M = acMatrix.data();
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        M[i] = Jr[i];
+    }
+    
+    // Evaluate Jacobians 
+    // Actually we only need to evaluate the reactive Jacobian 
+    // because the resistive part was evaluated by OP analysis
+    // We do both here in case OpenVAF has bugs with this corner case :)
+    if (!circuit.evalAndLoad(elsEval, nullptr, s)) {
+        // Load error
+        s.extend("Exiting small-signal noise analysis.");
+        if (debug>0) {
+            Simulator::dbg() << "Error in AC Jacobian / noise evaluation.\n";
+        }
+        return false;
+    }
+
+    // Handle Abort, Finish, Stop
+    circuit.updateEvalFlags(elsEval);
+    if (circuit.checkFlags(Circuit::Flags::Abort)) {
+        if (debug>0) {
+            Simulator::dbg() << "Abort requested during AC Jacobian / noise  evaluation. Exiting.\n";
+        }
+        return false;
+    }
+    if (circuit.checkFlags(Circuit::Flags::Finish)) {
+        if (debug>0) {
+            Simulator::dbg() << "Finish requested during AC Jacobian / noise evaluation. Exiting.\n";
+        }
+        return true;
+    }
+    if (circuit.checkFlags(Circuit::Flags::Stop)) {
+        if (debug>0) {
+            Simulator::dbg() << "Stop requested during AC Jacobian / noise evaluation. Exiting.\n";
+        }
+        return true;
+    }
+
+    // Create sweeper, put it in unique ptr to free it when method returns
+    auto sweeper = ScalarSweep::create(params, s);
+    if (!sweeper) {
+        return false;
+    }
+    std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
+
+    // Frequency sweep
+    sweeper->reset();
+    bool finished = false;
+    double freq = -1.0;
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    bool error = false;
+    do {
+        // Compute should always succeed
+        Value v;
+        sweeper->compute(v, s);
+
+        // The value, however, must be convertible to real
+        if (!v.convertInPlace(Value::Type::Real, s)) {
+            s.extend("Frequency value is not real.");
+            if (debug>0) {
+                Simulator::dbg() << "Frequency value is not real.\n";
+            }
+            error = true;
+            break;
+        }
+        freq = v.val<Real>();
+        double omega = 2*std::numbers::pi*freq;
+        circuit.simulatorInternals().frequency = freq;
+
+        if (debug>0) {
+            ss.str(""); ss << freq;
+            Simulator::dbg() << "frequency=" << ss.str() << "\n";
+        }
+
+        // Load AC matrix, we must update the imaginary part only
+        acMatrix.zero(Component::ImagPart);
+        elsLoad.reactiveJacobianFactor = omega;
+        if (!circuit.evalAndLoad(elsLoad, nullptr, s)) {
+            // Load error
+            s.extend("Exiting small-signal noise analysis.");
+            if (debug>0) {
+                Simulator::dbg() << "Error in AC Jacobian load.\n";
+            }
+            error = true;
+            break;
+        }
+        if (circuit.checkFlags(Circuit::Flags::Abort)) {
+            if (debug>0) {
+                Simulator::dbg() << "Abort requested during noise frequency sweep.\n";
+            }
+            return false;
+        }
+        
+        // Check if matrix entries are finite, no need to check RHS 
+        // since we loaded it without any computation (i.e. we only used mag and phase)
+        if (!acMatrix.isFinite(options.infcheck, options.nancheck, s)) {
+            if (debug>2) {
+                Simulator::dbg() << "A matrix entry is not finite.\n";
+            }
+            error = true;
+            break;
+        }
+
+        // Factor
+        bool forceFullFactorization = false;        
+        if (acMatrix.isFactored()) {
+            // Refactor (if possible)
+            if (!acMatrix.refactor()) {
+                // Failed, try again by fully factoring
+                forceFullFactorization = true;
+            } 
+        }
+        if (forceFullFactorization || !acMatrix.isFactored()) {
+            // Full factorization
+            if (!acMatrix.factor(s)) {
+                // Failed, give up
+                if (debug>0) {
+                    Simulator::dbg() << "LU factorization failed.\n";
+                }
+                error = true;
+                break;
+            }
+        }
+        // Check if matrix is singular
+        double rcond;
+        if (!acMatrix.rcond(rcond, s)) {
+            if (debug>0) {
+                Simulator::dbg() << "Condition number estimation failed.\n";
+            }
+            error = true;
+            break;
+        }
+        if (rcond<1e-15) {
+            if (debug>0) {
+                Simulator::dbg() << "Matrix is close to singular.\n";
+            }
+            s.set(Status::MatrixLU, "Matrix is close to singular.");
+            error = true;
+            break;
+        }
+
+        
+        // Compute power gain
+        zero(acSolution); 
+        auto [e1, e2] = inputSource->sourceExcitation(circuit);
+        acSolution[e1] += -inputSource->scaledUnityExcitation();
+        acSolution[e2] -= -inputSource->scaledUnityExcitation();
+
+        if (debug>=100) {
+            Simulator::dbg() << "Linear system for power gain\n";
+            acMatrix.dump(Simulator::dbg(), dataWithoutBucket(acSolution)); 
+            Simulator::dbg() << "\n";
+        }
+
+        // Solve, set bucket to 0.0
+        if (!acMatrix.solve(dataWithoutBucket(acSolution), s)) {
+            if (debug>2) {
+                Simulator::dbg() << "Failed to solve factored system.\n";
+            }
+            error = true;
+            break;
+        }
+        acSolution[0] = 0.0;
+        
+        // Power gain
+        // Note that for $mfactor!=1 this gain is from the magnitude of the source 
+        // to the given output, not from total source value to the output. 
+        // $mfactor does not change anything for a gain computed from a voltage source, 
+        // but it affects the gain computed from a current source. 
+        auto tf = (acSolution[up] - acSolution[un]);
+        powerGain = std::abs(tf);
+        powerGain *= powerGain;
+
+        Vector<double> noiseDensity;
+        Vector<double> logNoiseDensity;
+
+        // Set total output noise to 0
+        outputNoise = 0.0;
+
+        // Go through all instances
+        auto ndev = circuit.deviceCount();
+        for(decltype(ndev) idev=0; idev<ndev; idev++) {
+            auto dev = circuit.device(idev);
+            auto nmod = dev->modelCount();
+            for(decltype(nmod) imod=0; imod<nmod; imod++) {
+                auto mod = dev->model(imod);
+                auto ninst = mod->instanceCount();
+                for(decltype(ninst) iinst=0; iinst<ninst; iinst++) {
+                    auto inst = mod->instance(iinst);
+
+                    // Skip instances without noise sources
+                    auto nSources = inst->noiseSourceCount(); 
+                    if (nSources<=0) {
+                        continue;
+                    }
+
+                    // Instance name
+                    auto name = inst->name();
+
+                    if (debug>1) {
+                        Simulator::dbg() << "  instance '" << std::string(name) << "'\n";
+                    }
+
+                    // Collect noise excitations
+                    noiseDensity.resize(nSources);
+                    logNoiseDensity.resize(nSources);
+                    if (!inst->loadNoise(circuit, freq, noiseDensity.data(), logNoiseDensity.data(), s)) {
+                        if (debug>0) {
+                            Simulator::dbg() << "Failed to compute noise.\n";
+                        }
+                        error = true;
+                        break;
+                    }
+
+                    // Go through all noise sources
+                    double sourceContribution = 0.0;
+                    double totalInstanceContribution = 0.0;
+                    for(decltype(nSources) ndx=0; ndx<nSources; ndx++) {
+                        auto contrib = inst->noiseSourceName(ndx);
+
+                        if (debug>1) {
+                            Simulator::dbg() << "    contribution '" << std::string(contrib) << "'\n";
+                        }
+
+                        // Compute gain from noise source to output
+                        zero(acSolution); 
+                        auto [e1, e2] = inst->noiseExcitation(circuit, ndx);
+
+                        // Set RHS, load negated unity excitation to get the true value of response after solve()
+                        // Here this is not neccessary because we are working with teh absolute value of teh response. 
+                        acSolution[e1] += -1.0;
+                        acSolution[e2] -= -1.0;
+
+                        if (debug>=100) {
+                            Simulator::dbg() << "Linear system for contribution '"+std::string(contrib)+"' of '"+std::string(name)+"'\n";
+                            acMatrix.dump(Simulator::dbg(), dataWithoutBucket(acSolution)); 
+                            Simulator::dbg() << "\n";
+                        }
+
+                        // Solve, set bucket to 0.0
+                        if (!acMatrix.solve(dataWithoutBucket(acSolution), s)) {
+                            if (debug>2) {
+                                Simulator::dbg() << "Failed to solve factored system.\n";
+                            }
+                            error = true;
+                            break;
+                        }
+                        acSolution[0] = 0.0;
+                        
+                        // Power gain from noise source to output
+                        auto tf = acSolution[up] - acSolution[un];
+                        auto gain = std::abs(tf);
+                        gain *= gain;
+                        
+                        // Contribution
+                        sourceContribution = gain * noiseDensity[ndx];
+                        totalInstanceContribution += sourceContribution;
+                        // Simulator::dbg() << "       src=" << sourceContribution << "  inst=" << totalInstanceContribution << "\n";
+
+                        // std::cout << "gain = " << gain << "\n";
+                        // std::cout << "src  = " << noiseDensity[ndx] << "\n";
+                        // std::cout << "out  = " << instanceContribution << "\n";
+
+                        // Store instance contribution
+                        auto it = contributionOffset.find({name, contrib});
+                        if (it!=contributionOffset.end()) {
+                            // std::cout << "store: " << it->second << "\n";
+                            results[it->second] = sourceContribution;
+                        }
+                    }
+                    // End of noise sources loop
+
+                    // Store total instance contribution
+                    auto it = contributionOffset.find({name, Id()});
+                    if (it!=contributionOffset.end()) {
+                        // std::cout << "store: " << it->second << "\n";
+                        results[it->second] = totalInstanceContribution;
+                    }
+
+                    // Add to output noise
+                    outputNoise += totalInstanceContribution;
+                    // std::cout << "total = " << outputNoise << "\n";
+
+                    if (error) {
+                        break;
+                    }
+                }
+                // End of instances loop
+
+                if (error) {
+                    break;
+                }
+            }
+            // End of models loop
+
+            if (error) {
+                break;
+            }
+        }
+        // End of devices loop
+        
+        if (error) {
+            break;
+        }
+
+        // std::cout << "total = " << outputNoise << "\n";
+
+        // Dump solution
+        if (params.writeOutput && outfile) {
+            outfile->addPoint();
+        }
+
+        // Handle Finish and Stop
+        if (circuit.checkFlags(Circuit::Flags::Finish)) {
+            if (debug>0) {
+                Simulator::dbg() << "Finish requested during noise frequency sweep.\n";
+            }
+            break;
+        }
+        if (circuit.checkFlags(Circuit::Flags::Stop)) {
+            if (debug>0) {
+                Simulator::dbg() << "Stop requested during noise frequency sweep.\n";
+            }
+            break;
+        }
+        
+        finished = sweeper->advance();
+    } while (!finished && !error);
+
+    if (debug>0) {
+        Simulator::dbg() << "Noise frequency sweep " << (finished ? "completed" : "exited prematurely") << ".\n";
+    }
+
+    if (!finished) {
+        if (freq>=0) {
+            ss.str(""); ss << freq;
+            s.set(Status::NotConverged, std::string("Leaving noise frequency sweep at frequency=")+ss.str()+".");
+        } else {
+            s.set(Status::NotConverged, "Leaving noise frequency sweep.");
+        }
+    }
+
+    // No need to bind resistive Jacobian enatries. 
+    // OP analysis will still work fine, even in sweep. 
+    // We only changed the bindings of the reactive Jacobian entries. 
+    
+    return finished;
+}
+
+
+void NoiseCore::dump(std::ostream& os) const {
+    AnalysisCore::dump(os);
+    os << "  Results\n";
+    os << "    Output noise: " << outputNoise << "\n";
+    os << "    Power gain: " << powerGain << "\n";
+    for(auto& it : contributionOffset) {
+        auto [inst, contrib] = it.first;
+        auto ndx = it.second;
+        if (contrib) {
+            os << "    n("+std::string(inst)+","+std::string(contrib)+") " << results[ndx] << "\n";
+        } else {
+            os << "    n("+std::string(inst)+") " << results[ndx] << "\n";
+        }
+    }
+}
+
+}

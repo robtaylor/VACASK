@@ -1,0 +1,65 @@
+Sweeping analysis parameters and simulator options
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model resistor resistor
+model capacitor capacitor
+model vsource vsource
+model isource isource
+
+v1 (1 0) vsource type="pulse" val0=1 val1=2 rise=1u delay=1m
+r1 (1 2) resistor r=1k
+c1 (2 0) capacitor c=1u
+
+control
+  abort always
+
+  options sweep_debug=0 op_debug=0 tran_debug=0
+  options rawfile="binary" strictsave=1
+  
+  // Test analysis parameter sweep via variable
+  var tend=100
+  sweep tend variable="tend" values=[1m, 2m, 3m, 4m]
+    analysis tran1 tran step=0.01m stop=tend
+
+  sweep rmax option="tran_rmax" values=[2, 5, 10]
+    analysis tran2 tran step=0.01m stop=10m
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import absDiff, relDiff
+import numpy as np
+import sys, os
+import diocalc
+
+tests = []
+
+tran1 = rawread('tran1.raw').get(sweeps=1)
+
+for ii in range(tran1.sweepGroups):
+    exact = tran1.sweepData(ii)['tend']
+    tend = tran1[ii, 'time'].max()
+    status = (exact == tend)
+    print("AN tend=", tend, "exact=", exact, status)
+    tests.append(status)
+
+tran2 = rawread('tran2.raw').get(sweeps=1)
+
+for ii in range(tran2.sweepGroups):
+    rmax = tran2.sweepData(ii)['rmax']
+    t = tran2[ii, 'time']
+    dtmax = (t[1:]-t[:-1]).max()
+    exact = 0.01e-3*rmax
+    status = relDiff(dtmax, exact, 1e-15)<1e-3
+    print("OPT rmax=", rmax, "dtmax=", dtmax, "exact=", exact, status)
+    tests.append(status)
+
+if ("SIM_TEST" in os.environ and os.environ["SIM_TEST"]=="yes"):
+    sys.exit(not all(tests))
+>>>FILE

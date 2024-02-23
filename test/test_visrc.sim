@@ -1,0 +1,196 @@
+Independent sources
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+model isource isource
+
+v1 (1 0) vsource dc=2 $mfactor=3 mag=2 phase=90
+r1 (1 0) resistor r=2k
+
+i1 (0 2) isource dc=2m $mfactor=3 mag=2 phase=90
+r2 (2 0) resistor r=2k
+
+control
+  abort always
+
+  options rawfile="binary" op_debug=0
+  
+  save (
+    default 
+    p(v1,i) p(v1,v)
+    p(i1,v) p(i1,i)
+  )
+  analysis op1 op
+
+  clear saves
+  analysis dcinc1 dcinc
+  analysis dctf1 dctf out="v1:flow(br)"
+  analysis dctf2 dctf out="2"
+  analysis ac1 ac values=[1k]
+  analysis actf1 actf values=[1k] out="v1:flow(br)"
+  analysis actf2 actf values=[1k] out="2"
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+v = op1["1"]
+exact = 2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(1)=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["v1.v"]
+exact = 2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("v1.v=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["v1.i"]
+exact = -2/2e3 / 3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("v1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+i = op1["v1:flow(br)"]
+exact = -2/2e3 / 3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("i(v1)=", v, "exact=", exact, status)
+tests.append(status)
+
+
+v = op1["2"]
+exact = 2e-3*3*2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["i1.v"]
+exact = -2e-3*3*2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("i1.v=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["i1.i"]
+exact = 2e-3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("i1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+
+dcinc1 = rawread('dcinc1.raw').get()
+
+i = -dcinc1["v1:flow(br)"]
+exact = 2/2e3/3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("DCINC I(v1)=", i, "exact=", exact, status)
+tests.append(status)
+
+v = dcinc1["2"]
+exact = 2*3*2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("DCINC V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+
+dctf1 = rawread('dctf1.raw').get()
+
+# TF from source magnitude to one parallel instance's current
+tf = dctf1["tf(v1)"]
+exact = -1/2e3/3 
+status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
+print("DCTF tf(v1)=", tf, "exact=", exact, status)
+tests.append(status)
+
+# Input impedance at terminals of the source
+zin = dctf1["zin(v1)"]
+exact = 2e3 
+status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
+print("DCTF zin(v1)=", zin, "exact=", exact, status)
+tests.append(status)
+
+
+dctf2 = rawread('dctf2.raw').get()
+
+# TF from source magnitude to nodal voltage at node 2
+tf = dctf2["tf(i1)"]
+exact = 1*2e3*3 
+status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
+print("DCTF tf(i1)=", tf, "exact=", exact, status)
+tests.append(status)
+
+# Input impedance at terminals of the source
+zin = dctf2["zin(i1)"]
+exact = 1*2e3 
+status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
+print("DCTF zin(i1)=", zin, "exact=", exact, status)
+tests.append(status)
+
+
+ac1 = rawread('ac1.raw').get()
+
+i = -ac1["v1:flow(br)"]
+exact = 2j/2e3/3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("AC I(v1)=", i, "exact=", exact, status)
+tests.append(status)
+
+v = ac1["2"]
+exact = 2j*3*2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("AC V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+
+actf1 = rawread('actf1.raw').get()
+
+# TF from source magnitude to one parallel instance's current
+tf = actf1["tf(v1)"]
+exact = -1/2e3/3 
+status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
+print("ACTF tf(v1)=", tf, "exact=", exact, status)
+tests.append(status)
+
+# Input impedance at terminals of the source
+zin = actf1["zin(v1)"]
+exact = 2e3 
+status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
+print("ACTF zin(v1)=", zin, "exact=", exact, status)
+tests.append(status)
+
+
+actf2 = rawread('actf2.raw').get()
+
+# TF from source magnitude to nodal voltage at node 2
+tf = actf2["tf(i1)"]
+exact = 1*2e3*3 
+status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
+print("ACTF tf(i1)=", tf, "exact=", exact, status)
+tests.append(status)
+
+# Input impedance at terminals of the source
+zin = actf2["zin(i1)"]
+exact = 1*2e3 
+status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
+print("ACTF zin(i1)=", zin, "exact=", exact, status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE
+
+

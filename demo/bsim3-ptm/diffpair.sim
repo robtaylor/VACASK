@@ -1,0 +1,56 @@
+DC response of a differential pair with active load (mirror)
+
+ground 0 
+
+load "resistor.osdi"
+load "bsim3v3.osdi"
+
+include "../cmos180n.lib" section=tm
+include "../mosmm.inc"
+
+model vsource vsource
+model isource isource
+model resistor resistor 
+model vcvs vcvs
+
+subckt ndiffpair() 
+  vdd (vdd 0) vsource dc=0.9
+  vss (vss 0) vsource dc=-0.9
+  mp1 (dp dp vdd vdd) submodp w=70u l=2u
+  mp2 (dn dp vdd vdd) submodp w=70u l=2u
+  mnp (dp p s vss) submodn w=30u l=2u 
+  mnn (dn n s vss) submodn w=30u l=2u
+  ibias (s vss) isource dc=100u
+  rbias (s vss) resistor r=10k
+  vin (p 0) vsource dc=0
+  ein (n 0 p 0) vcvs gain=-1
+ends
+
+control
+  abort always 
+
+  elaborate circuit("ndiffpair")  
+  print unknowns
+  sweep bias instance="vin" parameter="dc" from=-0.9 to=0.9 mode="lin" points=100 
+    analysis dc1 op
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import sys
+import matplotlib.pyplot as plt 
+
+plot = rawread('dc1.raw').get()
+
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS differential pair')
+fig1.axes[0].set_xlabel('Vin [V]')
+fig1.axes[0].set_xlabel('Vout [V]')
+fig1.axes[0].plot(plot["p"]-plot["n"], plot["dn"])
+
+plt.show()
+
+>>>FILE

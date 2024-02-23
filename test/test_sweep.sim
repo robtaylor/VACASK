@@ -1,0 +1,123 @@
+Various sweep types
+
+ground 0 
+
+load "resistor.osdi"
+load "diode.osdi"
+
+model resistor resistor
+model vsource vsource
+model d diode is=1e-12 n=2
+
+v1 (1 0) vsource dc=2
+r1 (1 2) resistor r=1
+d1 (2 0) d
+
+
+control
+  abort always
+
+  options temp=27 
+  // infcheck and nancheck declare NR iteration as failed when inf/nan occurs.
+  // They are on by default, anyway. 
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 infcheck=1 nancheck=1
+
+  save default p(d1, gd)
+
+  // Test lin sweep
+  sweep is model="d" parameter="is" from=1e-12 to=10e-12 mode="lin" points=50
+    analysis op1 op
+  
+  // Test dec sweep
+  sweep is model="d" parameter="is" from=1e-12 to=1e-6 mode="dec" points=10
+    analysis op2 op
+  
+  // Test oct sweep
+  sweep is model="d" parameter="is" from=1e-12 to=16e-12 mode="oct" points=10
+    analysis op3 op
+  
+  // Test value sweep
+  sweep is model="d" parameter="is" values=[1e-12, 1e-10, 1e-8]
+    analysis op4 op
+  
+  // Test step sweep
+  sweep is model="d" parameter="is" from=1e-12 to=5e-12 step=1e-12
+    analysis op5 op
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+op1 = rawread('op1.raw').get()
+scale = op1[0, "is"]
+
+statuslinlen = (scale.shape[0]==51)
+tests.append(statuslinlen)
+print("LIN sweep length=", scale.shape[0], statuslinlen)
+
+statuslinmin = (relDiff(scale.min(), 1e-12, 1e-16)<1e-9)
+tests.append(statuslinmin)
+print("LIN sweep min=", scale.min(), statuslinmin)
+
+statuslinmax = (relDiff(scale.max(), 10e-12, 1e-16)<1e-9)
+tests.append(statuslinmax)
+print("LIN sweep max=", scale.max(), statuslinmax)
+
+
+op2 = rawread('op2.raw').get()
+scale = op2['is']
+
+statusdeclen = (scale.shape[0]==61)
+tests.append(statusdeclen)
+print("DEC sweep length=", scale.shape[0], statusdeclen)
+
+statusdecmin = (relDiff(scale.min(), 1e-12, 1e-16)<1e-9)
+tests.append(statusdecmin)
+print("DEC sweep min=", scale.min(), statusdecmin)
+
+statusdecmax = (relDiff(scale.max(), 1e-6, 1e-16)<1e-9)
+tests.append(statusdecmax)
+print("DEC sweep max=", scale.max(), statusdecmax)
+
+
+op3 = rawread('op3.raw').get()
+scale = op3['is']
+
+statusoctlen = (scale.shape[0]==41)
+tests.append(statusoctlen)
+print("OCT sweep length=", scale.shape[0], statusoctlen)
+
+statusoctmin = (relDiff(scale.min(), 1e-12, 1e-16)<1e-9)
+tests.append(statusoctmin)
+print("OCT sweep min=", scale.min(), statusoctmin)
+
+statusoctmax = (relDiff(scale.max(), 16e-12, 1e-16)<1e-9)
+tests.append(statusoctmax)
+print("OCT sweep max=", scale.max(), statusoctmax)
+
+
+op4 = rawread('op4.raw').get()
+scale = op4['is']
+
+statusvalues = (scale==np.array([1e-12, 1e-10, 1e-8])).all()
+tests.append(statusvalues)
+print("Values sweep:", scale, statusvalues)
+
+
+op5 = rawread('op5.raw').get()
+scale = op5['is']
+statusstep = (relDiff(scale, np.array([1e-12, 2e-12, 3e-12, 4e-12, 5e-12]), 1e-15)<1e-9).all()
+tests.append(statusstep)
+print("Step sweep:", scale, statusstep)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE

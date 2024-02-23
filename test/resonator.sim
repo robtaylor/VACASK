@@ -1,0 +1,50 @@
+Transient response of LC resonator
+
+ground 0 
+
+load "resistor.osdi"
+load "inductor.osdi"
+load "capacitor.osdi"
+
+model resistor resistor
+model inductor inductor
+model capacitor capacitor
+model vsource vsource
+model isource isource
+
+options sweep_debug=0 op_debug=0 smsig_debug=0
+options rawfile="binary" strictsave=0
+
+i1 (0 1) isource mag=1 type="pulse" val0=0 val1=1u delay=1u rise=1n fall=1n width=1n
+l1 (1 0) inductor l=1m
+c1 (1 0) capacitor c=10u
+
+control
+  analysis tran1 tran step=2u stop=20m : (
+    tran_debug=2 reltol=1e-3 tran_method="trap" tran_lteratio=3.5
+  )
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import absDiff, relDiff
+import numpy as np
+import sys
+
+tran1 = rawread('tran1.raw').get()
+
+t = tran1["time"]
+
+if len(sys.argv)<2 or sys.argv[1]!="test":
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('Resonator')
+    fig1.axes[0].set_ylabel('V [V]')
+    fig1.axes[0].set_xlabel('time [ms]')
+    fig1.axes[0].plot(t*1000, tran1["1"], marker=".", color="red", label="v(1)")
+    fig1.axes[0].legend(loc='upper right')
+    plt.show()
+    
+>>>FILE

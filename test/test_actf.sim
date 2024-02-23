@@ -1,0 +1,75 @@
+AC transfer function analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+load "simdio.va"
+
+model resistor resistor has_noise=1
+model capacitor capacitor
+model vsource vsource
+model d simdio is=1e-12 n=2 kf=1e-15 af=1.2 ef=1.5 debug=0
+
+v2 (2 0) vsource dc=0.8
+v3 (10 0) vsource dc=0
+r2 (2 3) resistor r=1k
+d2 (3 10) d
+c2 (3 10) capacitor c=1u
+
+control
+  abort always
+
+  options temp=27
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 smsig_debug=0
+  analysis actf1 actf out="3" from=1 to=10k mode="dec" points=10
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+actf1 = rawread('actf1.raw').get()
+# print(actf1.names)
+
+exactv3 = diocalc.dioSolve(1e-12, 2, 27, 1000, 0.8)
+exacti, exactgd = diocalc.dioMod(exactv3, 1e-12, 2, 27)
+
+f = actf1['frequency']
+omega = 2*np.pi*f
+zdio = 1.0/(exactgd+1j*omega*1e-6)
+
+exacttf2 = zdio/(zdio+1e3)
+tf2 = actf1['tf(v2)']
+status = (relDiff(tf2, exacttf2, 1e-16) < 1e-3).all()
+tests.append(status)
+print("tf(v2)", status)
+
+exactzinv2 = zdio+1e3
+zinv2 = actf1['zin(v2)']
+status = (relDiff(zinv2, exactzinv2, 1e-16) < 1e-3).all()
+tests.append(status)
+print("zin(v2)", status)
+
+exacttf3 = 1e3/(zdio+1e3)
+tf3 = actf1['tf(v3)']
+status = (relDiff(tf3, exacttf3, 1e-16) < 1e-3).all()
+tests.append(status)
+print("tf(v3)", status)
+
+exactzinv3 = zdio+1e3
+zinv3 = actf1['zin(v3)']
+status = (relDiff(zinv3, exactzinv3, 1e-16) < 1e-3).all()
+tests.append(status)
+print("zin(v3)", status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE

@@ -1,0 +1,134 @@
+Noise analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+load "simdio.va"
+
+model resistor resistor has_noise=1
+model capacitor capacitor
+model vsource vsource
+model d simdio is=1e-12 n=2 kf=1e-15 af=1.2 ef=1.5 debug=0
+
+v2 (2 0) vsource dc=0.8
+r2 (2 3) resistor r=1k $mfactor=3
+d2 (3 0) d $mfactor=5
+c2 (3 0) capacitor c=1u
+
+control
+  abort always
+
+  options temp=27
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 smsig_debug=0
+
+  save default
+  analysis op1 op
+
+  clear saves
+  save full
+  analysis noise1 noise out="3" in="v2" from=1 to=10k mode="dec" points=10
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+op1 = rawread('op1.raw').get()
+
+i = -op1["v2:flow(br)"]
+exactv3 = diocalc.dioSolve(5*1e-12, 2, 27, 1000.0/3, 0.8)
+exacti, exactgd = diocalc.dioMod(exactv3, 5*1e-12, 2, 27)
+# print("-i(v2)=", i)
+
+
+noise1 = rawread('noise1.raw').get()
+# print(noise1.names)
+
+f = noise1['frequency']
+omega = 2*np.pi*f
+zdio = 1.0/(exactgd+1j*omega*1e-6)
+
+exactgain = np.abs(zdio/(zdio+1e3/3))**2
+gain = noise1['gain']
+status = (relDiff(gain, exactgain, 1e-12) < 1e-3).all()
+tests.append(status)
+print("gain", status)
+
+nr2th = 3 * 4 * diocalc.P_K * (27+diocalc.P_CtoK) / 1e3
+gainr2th = np.abs(1.0 / (1.0/(1e3/3) + 1.0/zdio))**2
+out_nr2th = noise1['n(r2,thermal)']
+exact_out_nr2th = gainr2th*nr2th
+status = (relDiff(out_nr2th, exact_out_nr2th, 1e-60) < 1e-3).all()
+print("n(r2,thermal)", status)
+tests.append(status)
+
+# i is allready scaled by 5 (total diode current)
+nd2shot = 5 * 2 * diocalc.P_Q * i/5
+gaind2shot = gainr2th
+exact_out_nd2shot = gaind2shot * nd2shot
+out_nd2shot = noise1['n(d2,shot)']
+status = (relDiff(out_nd2shot, exact_out_nd2shot, 1e-60) < 1e-3).all()
+print("n(d2,shot)", status)
+tests.append(status)
+
+# i is allready scaled by 5 (total diode current)
+nd2flicker = 5 * 1e-15 * (i/5)**1.2 / f**1.5
+gaind2flicker = gainr2th
+exact_out_nd2flicker = gaind2flicker * nd2flicker
+out_nd2flicker = noise1['n(d2,flicker)']
+status = (relDiff(out_nd2flicker, exact_out_nd2flicker, 1e-60) < 1e-3).all()
+print("n(d2,flicker)", status)
+tests.append(status)
+
+exact_out_nr2 = exact_out_nr2th
+exact_out_nd2 = exact_out_nd2shot+exact_out_nd2flicker
+exact_outn = exact_out_nr2+exact_out_nd2
+
+out_nr2 = noise1['n(r2)']
+out_nd2 = noise1['n(d2)']
+outn = noise1['onoise']
+
+status = (relDiff(exact_out_nr2, out_nr2, 1e-60) < 1e-3).all()
+print("n(r2)", status)
+tests.append(status)
+
+status = (relDiff(exact_out_nd2, out_nd2, 1e-60) < 1e-3).all()
+print("n(d2)", status)
+tests.append(status)
+
+status = (relDiff(exact_outn, outn, 1e-60) < 1e-3).all()
+print("outn", status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(2, 1)
+    fig1.suptitle('Noise analysis')
+    fig1.set_figwidth(6)
+    fig1.set_figheight(7)
+    fig1.set_dpi(100)
+    fig1.axes[0].set_ylabel('Power spectral density [V^2/Hz]')
+    fig1.axes[0].loglog(f, out_nr2, "r--", label="R2")
+    fig1.axes[0].loglog(f, out_nd2, "g--", label="D2")
+    fig1.axes[0].loglog(f, out_nd2shot, ':g', label="D2 shot")
+    fig1.axes[0].loglog(f, out_nd2flicker, ':b', label="D2 flicker")
+    fig1.axes[0].loglog(f, outn, "b", label="output noise")
+    fig1.axes[0].legend(loc='lower left')
+
+    fig1.axes[1].set_ylabel('Power gain [dB]')
+    fig1.axes[1].set_xlabel('f [Hz]')
+    fig1.axes[1].semilogx(f, 10*np.log10(gain), label="Power gain")
+    
+    plt.show()
+>>>FILE

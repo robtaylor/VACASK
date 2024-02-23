@@ -1,0 +1,79 @@
+AC analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+load "simdio.va"
+
+model resistor resistor has_noise=1
+model capacitor capacitor
+model vsource vsource
+model d simdio is=1e-12 n=2 kf=1e-15 af=1.2 ef=1.5 debug=0
+
+v2 (2 0) vsource dc=0.8 mag=2.0
+r2 (2 3) resistor r=1k
+d2 (3 0) d
+c2 (3 0) capacitor c=1u
+
+control
+  abort always
+
+  options temp=40
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 smsig_debug=0
+  analysis ac1 ac from=1 to=10k mode="dec" points=10
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+ac1 = rawread('ac1.raw').get()
+# print(ac1.names)
+
+exactv3 = diocalc.dioSolve(1e-12, 2, 40, 1000, 0.8)
+exacti, exactgd = diocalc.dioMod(exactv3, 1e-12, 2, 40)
+
+f = ac1['frequency']
+omega = 2*np.pi*f
+zdio = 1.0/(exactgd+1j*omega*1e-6)
+
+exactv2 = f/f*2.0
+v2 = ac1['2']
+status = (relDiff(v2, exactv2, 1e-6) < 1e-3).all()
+tests.append(status)
+print("V(2)", status)
+
+exactv3 = zdio/(zdio+1e3) * 2
+v3 = ac1['3']
+status = (relDiff(v3, exactv3, 1e-6) < 1e-3).all()
+tests.append(status)
+print("V(3)", status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(2, 1)
+    fig1.suptitle('AC analysis')
+    fig1.set_dpi(100)
+    fig1.axes[0].set_ylabel('Magnitude [dB]')
+    h = v3/v2
+    hmag = 20*np.log10(np.abs(h))
+    fig1.axes[0].semilogx(f, hmag, label="mag(H)")
+    
+    fig1.axes[1].set_ylabel('Phase [deg]')
+    fig1.axes[1].set_xlabel('f [Hz]')
+    hph = np.unwrap(np.angle(h))*180/np.pi
+    fig1.axes[1].semilogx(f, hph, label="ph(H)")
+    
+    plt.show()
+>>>FILE

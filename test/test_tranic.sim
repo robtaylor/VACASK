@@ -1,0 +1,115 @@
+Transient response of RC circuit with initial conditions
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model resistor resistor
+model capacitor capacitor
+model vsource vsource
+model isource isource
+
+control
+  abort always
+
+  options sweep_debug=0 op_debug=0 tran_debug=0
+  options rawfile="binary" strictsave=1
+  options reltol=1e-3 vntol=1e-9 abstol=1e-12 tran_lteratio=3.5
+  options tran_method="trap"
+
+  analysis tranop tran stop=10m step=1u icMode="op" ic=["1"; 2.0; "2"; "3"; 1.0]
+  analysis tranuic tran stop=10m step=1u icMode="uic" ic=["1"; 2.0; "2"; "3"; 1.0]
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+r1 (1 0) resistor r=1k
+c1 (1 0) capacitor c=1u
+
+v2 (2 0) vsource dc=4
+c2 (2 3) capacitor c=1u 
+r2 (3 0) resistor r=1k
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+plot1 = rawread('tranop.raw').get()
+
+exact1 = 2*np.exp(-(plot1['time'])/1e-3)
+vc1 = plot1['1']
+diff = absDiff(vc1, exact1).max()
+status = diff<1e-2
+tests.append(status)
+print("grounded op max err=", diff, status)
+
+exact2 = 3*np.exp(-(plot1['time'])/1e-3)
+v2 = plot1['3']
+diff = absDiff(v2, exact2).max()
+status = diff<1e-2
+tests.append(status)
+print("floating op max err=", diff, status)
+
+
+plot2 = rawread('tranuic.raw').get()
+
+exact3 = 2*np.exp(-(plot2['time'])/1e-3)
+vc3 = plot2['1']
+# Ignore first point which is incorrect
+diff = absDiff(vc3[1:], exact3[1:]).max()
+status = diff<1e-2
+tests.append(status)
+print("grounded uic max err=", diff, status)
+
+exact4 = 3*np.exp(-(plot2['time'])/1e-3)
+v4 = plot2['3']
+# Ignore first point which is incorrect
+diff = absDiff(v4[1:], exact4[1:]).max()
+status = diff<1e-2
+tests.append(status)
+print("floating uic max err=", diff, status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('RC response, grounded capacitor, ic=2.0, op mode')
+    fig1.axes[0].set_ylabel('Vc [V]')
+    fig1.axes[0].set_xlabel('time [ms]')
+    fig1.axes[0].plot(plot1['time']*1000, exact1, label="exact")
+    fig1.axes[0].plot(plot1['time']*1000, vc1, marker='.', linestyle='', label="Vc")
+    fig1.axes[0].legend(loc='lower right')
+
+    fig2, ax2 = plt.subplots(1, 1)
+    fig2.axes[0].set_title('RC response, floating capacitor, ic=1.0, op mode')
+    fig2.axes[0].set_ylabel('V(3) [V]')
+    fig2.axes[0].set_xlabel('time [ms]')
+    fig2.axes[0].plot(plot1['time']*1000, exact2, label="exact")
+    fig2.axes[0].plot(plot1['time']*1000, v2, marker='.', linestyle='', label="V(3)")
+    fig2.axes[0].legend(loc='lower right')
+
+    fig3, ax3 = plt.subplots(1, 1)
+    fig3.axes[0].set_title('RC response, grounded capacitor, ic=2.0, uic mode')
+    fig3.axes[0].set_ylabel('Vc [V]')
+    fig3.axes[0].set_xlabel('time [ms]')
+    fig3.axes[0].plot(plot2['time']*1000, exact3, label="exact")
+    fig3.axes[0].plot(plot2['time']*1000, vc3, marker='.', linestyle='', label="Vc")
+    fig3.axes[0].legend(loc='lower right')
+
+    fig4, ax4 = plt.subplots(1, 1)
+    fig4.axes[0].set_title('RC response, floating capacitor, ic=1.0, uic mode')
+    fig4.axes[0].set_ylabel('V(3) [V]')
+    fig4.axes[0].set_xlabel('time [ms]')
+    fig4.axes[0].plot(plot2['time']*1000, exact4, label="exact")
+    fig4.axes[0].plot(plot2['time']*1000, v4, marker='.', linestyle='', label="V(3)")
+    fig4.axes[0].legend(loc='lower right')
+
+    plt.show()
+>>>FILE

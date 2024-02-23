@@ -1,0 +1,77 @@
+Transient response of RC circuit
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model resistor resistor
+model capacitor capacitor
+model vsource vsource
+model isource isource
+
+v1 (1 0) vsource type="pulse" val0=1 val1=2 rise=1u delay=1m
+r1 (1 2) resistor r=1k
+c1 (2 0) capacitor c=0.5u $mfactor=3
+
+control
+  abort always
+
+  options sweep_debug=0 op_debug=0 tran_debug=0
+  options rawfile="binary" strictsave=1
+  options reltol=1e-3 vntol=1e-6 abstol=1e-12 tran_lteratio=3.5
+  options tran_method="trap" tran_rmax=0
+  analysis op1 op
+  analysis tran1 tran stop=20m step=1u icMode="op"
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+v = op1["2"]
+exact = 1.0
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["v1:flow(br)"]
+exact = 0.0
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("I(V1)=", i, "exact=", exact, status)
+tests.append(status)
+
+
+plot = rawread('tran1.raw').get()
+
+exact = 1+((1-np.exp(-(plot['time']-1e-3)/(1e3*3*0.5e-6))))*(plot['time']>1e-3)
+diff = relDiff(plot['2'], exact, 1e-6).max()
+status = diff<0.0035
+print("max rel err=", diff, status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('RC response')
+    fig1.axes[0].set_ylabel('V(2) [V]')
+    fig1.axes[0].set_xlabel('time [ms]')
+
+    fig1.axes[0].plot(plot['time']*1000, plot['2'], marker='.', label="I(L1)")
+    fig1.axes[0].plot(plot['time']*1000, exact, label="exact")
+    
+    fig1.axes[0].legend(loc='lower right')
+
+    plt.show()
+>>>FILE

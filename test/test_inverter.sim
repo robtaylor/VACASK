@@ -1,0 +1,65 @@
+DC response of an inverter
+
+ground 0 
+
+load "bsimbulk106.osdi"
+
+include "bsimbulk106.inc"
+model vsource vsource
+model isource isource
+
+m1 (out in 0 0) bsimbulk_n w=1u l=0.1u
+m2 (out in vdd vdd) bsimbulk_p w=1u l=0.1u
+
+vdd (vdd 0) vsource dc=1.2
+vin (in 0) vsource dc=0
+
+control
+  abort always 
+
+  sweep vin instance="vin" parameter="dc" from=0 to=1.2 mode="lin" points=100
+    analysis op1 op
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+plot = rawread('op1.raw').get()
+x = plot["in"]
+y = plot["out"]
+
+status = (x[1:]-x[:-1]>0).all()
+tests.append(status)
+print("First and last x difference", status)
+
+status = (y[1:]-y[:-1]<0).all()
+tests.append(status)
+print("First and last y difference", status)
+
+status = x[0]<0.01 and x[-1]>1.19
+tests.append(status)
+print("First and last value", status)
+
+status = y[0]>1.19 and y[-1]<0.02
+tests.append(status)
+print("First and last y value", status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('DC response of inverter')
+    fig1.axes[0].set_ylabel('Vout [V]')
+    fig1.axes[0].set_xlabel('Vin [V]')
+    fig1.axes[0].plot(x, y)
+    fig1.axes[0].grid(which='both')
+    plt.show()
+>>>FILE

@@ -1,0 +1,78 @@
+Nonlinear OP analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "simdio.va"
+
+model resistor resistor
+model vsource vsource
+model d simdio is=1e-12 n=2 debug=0
+
+v1 (1 0) vsource dc=0.8
+d1 (1 0) d
+
+v2 (2 0) vsource dc=0.8
+r2 (2 3) resistor r=1k
+d2 (3 0) d
+
+control
+  abort always
+
+  print devices
+  print models
+  print variables
+  print options
+  print hierarchy
+  print nodes
+  print unknowns 
+  print sparsity
+  print ("Some values: ", 2*2, "abc", [1,2,3])
+  print instance("r2", "v1", "__topinst__")
+  print model("resistor", "vsource", "__topdef__")
+  print device("__hierarchical__", "resistor", "vsource")
+  
+  options temp=40
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0
+  save default p(d1, gd) p(d2, gd)
+  analysis op1 op
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+op1 = rawread('op1.raw').get()
+
+i1 = -op1["v1:flow(br)"]
+gd1 = op1["d1.gd"]
+exacti1, exactgd1 = diocalc.dioMod(0.8, 1e-12, 2, 40)
+statusi = (relDiff(i1, exacti1, 1e-12) < 1e-3).all()
+statusgd = (relDiff(gd1, exactgd1, 1e-60) < 1e-3).all()
+tests.append(statusi)
+tests.append(statusgd)
+print("-i(v1)=", i1, "exact=", exacti1, statusi)
+print("d1.gd=", gd1, "exact=", exactgd1, statusgd)
+
+i2 = -op1["v2:flow(br)"]
+gd2 = op1["d2.gd"]
+exactv3 = diocalc.dioSolve(1e-12, 2, 40, 1000, 0.8)
+exacti2, exactgd2 = diocalc.dioMod(exactv3, 1e-12, 2, 40)
+statusi = (relDiff(i2, exacti2, 1e-12) < 1e-3).all()
+statusgd = (relDiff(gd2, exactgd2, 1e-60) < 1e-3).all()
+tests.append(statusi)
+tests.append(statusgd)
+print("-i(v2)=", i2, "exact=", exacti2, statusi)
+print("d2.gd=", gd2, "exact=", exactgd2, statusgd)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE
+

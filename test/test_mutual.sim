@@ -1,0 +1,100 @@
+Transient response of transformer circuit
+
+ground 0 
+
+load "resistor.osdi"
+load "inductor.osdi"
+
+model resistor resistor
+model inductor inductor
+model mutual mutual
+model vsource vsource
+model isource isource
+
+i1 (0 1) isource mag=1 type="sine" sinedc=0.0 ampl=0.5 freq=50.0
+l1 (1 0) inductor l=1m
+l2 (2 0) inductor l=4m 
+i2 (0 2) isource dc=0 mag=0.5 type="sine" sinedc=0.0 ampl=0.5 freq=75.0
+m12 () mutual k=0.99 ind1="l1" ind2="l2"
+
+control
+  abort always
+
+  options sweep_debug=0 op_debug=0 smsig_debug=0
+  options rawfile="binary" strictsave=1
+  analysis ac1 ac from=1 to=100k mode="dec" points=10
+  options tran_debug=0 reltol=1e-4 tran_method="trap" tran_lteratio=3.5
+  analysis tran1 tran step=0.02m stop=60m
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+ac1 = rawread('ac1.raw').get()
+f = ac1["frequency"]
+omega = 2*np.pi*f
+m12 = 0.99*np.sqrt(1e-3*4e-3)
+
+exactv1 = 1j*omega*1e-3*1.0 + 1j*omega*m12*0.5
+exactv2 = 1j*omega*m12*1.0 + 1j*omega*4e-3*0.5
+
+v1 = ac1["1"]
+status = relDiff(v1, exactv1, 1e-6).max()<1e-3
+print("V(1)", status)
+tests.append(status)
+
+v2 = ac1["2"]
+status = relDiff(v2, exactv2, 1e-6).max()<1e-3
+print("V(2)", status)
+tests.append(status)
+
+
+tran1 = rawread('tran1.raw').get()
+
+t = tran1["time"]
+exact1 = ( 
+    2*np.pi*50*1e-3*0.5*np.cos(2*np.pi*50*t)
+    +2*np.pi*75*m12*0.5*np.cos(2*np.pi*75*t)
+)
+exact2 = ( 
+    2*np.pi*50*m12*0.5*np.cos(2*np.pi*50*t)
+    +2*np.pi*75*4e-3*0.5*np.cos(2*np.pi*75*t)
+)
+
+v = tran1["1"]
+delta1 = absDiff(v, exact1)[1:].max()
+status = delta1<1e-3
+print("V(1)", delta1, status)
+tests.append(status)
+
+v = tran1["2"]
+delta2 = absDiff(v, exact2)[1:].max()
+status = delta2<1e-3
+print("V(1)", delta2, status)
+tests.append(status)
+
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('Mutual inductance')
+    fig1.axes[0].set_ylabel('V [V]')
+    fig1.axes[0].set_xlabel('time [ms]')
+    fig1.axes[0].plot(t*1000, exact1, color="red", label="v(1) exact")
+    fig1.axes[0].plot(t*1000, exact2, color="blue", label="v(2) exact")
+    fig1.axes[0].plot(t*1000, tran1["1"], marker=".", color="red", linestyle="none", label="v(1)")
+    fig1.axes[0].plot(t*1000, tran1["2"], marker=".", color="blue", linestyle="none", label="v(2)")
+    fig1.axes[0].legend(loc='upper right')
+    plt.show()
+
+>>>FILE

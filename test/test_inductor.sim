@@ -1,0 +1,87 @@
+Transient response of RL circuit
+
+ground 0 
+
+load "resistor.osdi"
+load "inductor.osdi"
+
+model resistor resistor
+model inductor inductor
+model vsource vsource
+model isource isource
+
+i1 (0 1) isource type="pulse" val0=1 val1=3 rise=1u delay=1m
+r1 (1 0) resistor r=1
+l1 (1 0) inductor l=2m $mfactor=3
+
+control
+  abort always
+
+  options sweep_debug=0 op_debug=0 tran_debug=0
+  options rawfile="binary" strictsave=1
+  options reltol=1e-3 vntol=1e-6 abstol=1e-12 tran_lteratio=3.5
+  options smsig_debug=0
+
+  print unknowns
+  
+  analysis ac1 ac values=[1/(2*M_PI)]
+  
+  clear saves
+  save default p(l1,flux) p(i1,i)
+  analysis op1 op
+
+  options tran_method="trap" tran_rmax=0
+  analysis tran1 tran stop=10m step=1u icMode="op"
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+i = op1["i1.i"]
+exact = 1.0 # current source's current at t=0
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("i1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+flux = op1["l1.flux"]
+exact = 2e-3 * 1 / 3 # 1/$mfactor of current source's current times L
+status = (relDiff(flux, exact, 1e-15) < 1e-3).all()
+print("i1.flux=", flux, "exact=", exact, status)
+tests.append(status)
+
+
+plot = rawread('tran1.raw').get()
+
+# Current source's current from 1 -> 3, inverse time constant R/(L/$mfactor)
+exact = (1+(3-1)*(1-np.exp(-(plot['time']-1e-3)*1/(2e-3/3)))*(plot['time']>1e-3))/3
+diff = relDiff(plot['l1:flow(br)'], exact, 1e-6).max()
+status = diff<0.0035
+print("max rel err=", diff, status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('RL response')
+    fig1.axes[0].set_ylabel('I(L1) [A]')
+    fig1.axes[0].set_xlabel('time [ms]')
+
+    fig1.axes[0].plot(plot['time']*1000, plot['l1:flow(br)'], marker='.', label="I(L1)")
+    fig1.axes[0].plot(plot['time']*1000, exact, label="exact")
+    
+    fig1.axes[0].legend(loc='lower right')
+
+    plt.show()
+>>>FILE

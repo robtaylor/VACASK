@@ -1,0 +1,101 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module simdio(A,C);
+    // Simplified SPICE diode, used for validation purposes
+    
+    // Terminals and internal nodes
+    inout A, C;
+    electrical A,C;
+    
+    // Branches
+    branch (A,C) br_a_c;
+    
+    // Model parameters
+    (*desc = "Saturation current", units = "A"*) 
+      parameter real Is = 1e-14 from [0:inf];
+    (*desc = "Emission coefficient", units = ""*) 
+      parameter real N = 1 from [0:inf];
+    (*desc = "Flicker noise coefficient", units = ""*) 
+      parameter real KF = 0 from [0:inf];
+    (*desc = "Flicker noise exponent", units = ""*) 
+      parameter real AF = 1 from [0:inf];
+    (*desc = "Flicker noise frequency exponent", units = ""*) 
+      parameter real EF = 1 from [0:inf];
+    (*desc = "Debug messages", units = ""*) 
+      parameter integer debug = 1 from [0:inf];
+
+    // Opvars
+    (*desc= "Diode ohmic current", units ="A" *) real Id;
+    (*desc= "Differential conductance", units ="A/V" *) real gd;
+    
+    // Variables
+    real Vfu, Vf, VT;
+    real Tdev;
+    
+    analog function real spicepnjlim;
+        input vnew, vold, vt, vcrit;
+        real vnew, vold, vt, vcrit, vlimit, arg;
+        begin
+            vlimit=vnew;
+            if ((vnew > vcrit) && (abs(vnew-vold) > (vt+vt))) begin
+                if (vold > 0) begin
+                    arg = 1 + (vnew-vold) / vt;
+                    if (arg >= 0)
+                        vlimit = vold + vt * ln(arg);
+                    else
+                        vlimit = vcrit;
+                end else
+                    vlimit = vt * ln(vnew/vt);
+                $discontinuity(-1);
+            end
+            spicepnjlim = vlimit;
+        end
+    endfunction 
+    
+    analog begin
+        // Device temperature and parameter measurement temperature (in K)
+        Tdev = $temperature;
+        
+        // Thermal voltage
+        VT = `P_K*Tdev/`P_Q;
+        
+        // Branch voltages
+        Vfu = V(br_a_c);
+        
+        if (debug) begin 
+            $debug("Tdev %.5e, VT %.12e, Vfu %.5e", Tdev, VT, Vfu);
+            $debug("P_K %.12e, P_Q %.12e, Vfu %.5e", `P_K, `P_Q, Vfu);
+        
+            $display("Vf         %.5e", Vfu);
+        end
+
+        // Vf = $limit(V(br_a_c), "pnjlim", $vt, 0.7);
+        Vf = $limit(V(br_a_c), spicepnjlim, $vt, 0.7);
+        // Vf = Vfu;
+        
+        if (debug) begin
+            $display("Vf limited %.5e", Vf);
+        end
+        
+        // Ohmic current of diode branch
+        Id = Is * (exp(Vf/(N*VT))-1);
+        
+        gd = ddx(Id, V(A));
+        
+        if (debug) begin
+            $display("Id limited %.5e", Id);
+            $display("gd limited %.5e", gd);
+        end
+        
+        // Diode branch current
+        I(br_a_c) <+ Id;
+
+        // Shot noise
+        I(br_a_c) <+ white_noise(2*`P_Q*abs(Id), "shot");
+
+        // Flicker noise
+        I(br_a_c) <+ flicker_noise(KF*pow(abs(Id), AF), EF, "flicker");
+
+    end
+endmodule

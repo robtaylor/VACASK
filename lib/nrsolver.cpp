@@ -1,0 +1,630 @@
+#include "nrsolver.h"
+#include "simulator.h"
+#include "common.h"
+#include <iomanip>
+
+namespace NAMESPACE {
+
+// We are solving a nonlinear system of equations of the form
+// 
+//   f(x) = 0
+// 
+// where f(x) is a vector-valued function (R^n->R^n) of vector x. 
+// f(x) is also referred to as the residual. 
+// The matrix of derivatives of residual wrt. components of x 
+// is teh Jacobian of f, also denoted by J. 
+// 
+// Suppose we have an approximate solution x_i. 
+// x_{i+1} is found by solving
+//
+//   J(x_i) (x_{i+1} - x_i) = -f(x_i)
+//
+// We reorganize this into 
+// 
+//   J(x_i) (dnx_i) = f(x_i)
+//
+// where dnx_i = x_i - x_{i+1}. Now we can so,ve for dnx_i and 
+// compute x_{i+1} as
+//
+//   x_{i+1} = x_i - dnx_i
+//
+// In this way we can directly use the Jacobian and residual loader 
+// functions without changing the sign of the RHS. 
+
+// NRSolver force slots that contain forced deltas (branch forces) 
+// need to be populated before bebuild is called. 
+// Slots containing branch forces affect the circuit topology. 
+// This needs to be taken into account in Analysis::setSweepState() and 
+// Analysis::setAnalysisOptions() before rebuild() is called. 
+// Slots can be activated/deactivated,. 
+NRSolver::NRSolver(
+    Circuit& circuit, KluRealMatrix& jac, 
+    VectorRepository<double>& states, VectorRepository<double>& solution, 
+    NRSettings& settings
+) : circuit(circuit), jac(jac), states(states), solution(solution), settings(settings), 
+    iteration(0) {
+}
+
+bool NRSolver::rebuild(Status& s) {
+    // Allocate space in vectors
+    auto n = circuit.unknownCount();
+    diagPtrs.resize(n+1);
+    isFlow.resize(n+1);
+    delta.resize(n+1);
+    rowNorm.resize(n+1);
+    
+    // Bind diagonal matrix elements
+    // Needed for forcing unknown values and setting gshunts
+    for(decltype(n) i=1; i<=n; i++) {
+        auto* node = circuit.reprNode(i);
+        diagPtrs[i] = jac.elementPtr(i, i, Component::RealPart);
+        isFlow[i] = node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode;
+    }
+
+    // Bind extradiagonal matrix entries for forced deltas
+    extraDiags.resize(forcesList.size());
+    auto nForces = forcesList.size();
+    for(decltype(nForces) iForce=0; iForce<nForces; iForce++) {
+        auto& deltaIndices = forcesList[iForce].deltaIndices(); 
+        auto nDelta = deltaIndices.size();
+        auto& ptrs = extraDiags[iForce];
+        ptrs.clear();
+        for(decltype(nDelta) i=0; i<nDelta; i++) {
+            auto [u1, u2] = deltaIndices[i];
+            ptrs.push_back(
+                std::make_tuple(
+                    jac.elementPtr(u1, u2, Component::RealPart),
+                    jac.elementPtr(u2, u1, Component::RealPart)
+                )
+            );
+        }
+    }
+
+    return true;
+}
+
+bool NRSolver::initialize(bool continuePrevious, Status& s) {
+    // This method is called once on entering run()
+    // This is the right place to set up vectors and factors
+    return true;
+}
+
+bool NRSolver::loadForces(bool loadJacobian, Status& s) {
+    // Get row norms
+    if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm), s)) {
+        if (settings.debug) {
+            Simulator::dbg() << "Failed to compute row norms.\n";
+        }
+        return false;
+    }
+
+    // Load forces
+    auto n = circuit.unknownCount();
+    double* xprev = solution.data();
+    auto nf = forcesList.size();
+    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
+        // Skip disabled force lists
+        if (!forcesEnabled[iForce]) {
+            continue;
+        }
+
+        // First, handle forced unknowns
+        auto& enabled = forcesList[iForce].unknownForced();
+        auto& force = forcesList[iForce].unknownValue();
+        auto nForceNodes = force.size();
+        // Load only if the number of forced unknowns matches 
+        // the number of unknowns in the circuit including ground
+        if (nForceNodes==n+1) {
+            for(decltype(nForceNodes) i=1; i<=n; i++) {
+                if (enabled[i]) {
+                    double factor = rowNorm[i]*settings.forceFactor;
+                    if (factor==0.0) {
+                        factor = 1.0;
+                    }
+                    // Jacobian entry: -factor
+                    // Residual: - factor * x_i + factor * nodeset_i
+                    auto ptr = diagPtrs[i];
+                    if (ptr) {
+                        // Jacobian
+                        if (loadJacobian) {
+                            *ptr += factor;
+                        }
+                        // Residual
+                        delta[i] += factor * xprev[i] - factor * force[i];
+                    }
+                }
+            }
+        }
+
+        // Second, handle forced deltas
+        auto& extraDiagPtrs = extraDiags[iForce]; 
+        auto& deltas = forcesList[iForce].deltaValue();
+        auto nDeltas = deltas.size();
+        auto& uPairs = forcesList[iForce].deltaIndices();
+        // Load only if number of extradiagonal pointer pairs matches
+        // the number of forced deltas
+        if (extraDiagPtrs.size()==nDeltas) {
+            for(decltype(nDeltas) i=0; i<nDeltas; i++) {
+                auto [u1, u2] = uPairs[i];
+                auto [extraDiagPtr1, extraDiagPtr2] = extraDiagPtrs[i];
+
+                double factor1 = rowNorm[u1]*settings.forceFactor;
+                double factor2 = rowNorm[u2]*settings.forceFactor;
+
+                double contrib1 = factor1 * (xprev[u1] - xprev[u2]) - factor1 * deltas[i]; 
+                double contrib2 = factor2 * (xprev[u2] - xprev[u1]) + factor2 * deltas[i]; 
+
+                // Jacobian entry: 
+                //         u1        u2
+                //   u1    factor1  -factor1
+                //   u2   -factor2   factor2
+                // 
+                // Residual at KCL u1: factor1 * (u1-u2) - factor1 * nodeset
+                // Residual at KCL u2: factor2 * (u2-u1) + factor2 * nodeset
+                *(diagPtrs[u1]) += factor1;
+                *extraDiagPtr1 += -factor1;
+
+                *(diagPtrs[u2]) += factor2;
+                *extraDiagPtr2 += -factor2;
+                
+                delta[u1] += contrib1;
+                delta[u2] += contrib2;
+            }
+        }
+    }
+
+    return true;
+}
+
+void stateDump(Vector<double>& states) {
+    auto n=states.size();
+    for(decltype(n) i=0; i<n; i++) {
+        std::cout << states[i] << " ";
+    }
+}
+
+void NRSolver::resizeForces(Int n) {
+    forcesList.resize(n);
+    forcesEnabled.resize(n, false);
+}
+
+Forces& NRSolver::forces(Int ndx) {
+    return forcesList.at(ndx);
+} 
+
+bool NRSolver::enableForces(Int ndx, bool enable, Status& s) {
+    if (ndx<0 || ndx>=forcesList.size()) {
+        s.set(Status::Range, "Force index out of range.");
+        return false;
+    }
+    forcesEnabled[ndx] = enable; 
+    return true;
+}
+
+bool NRSolver::run(bool continuePrevious, Status& s) {
+    // Number of unknowns (vector length includes a bucket at index 0)
+    auto n = solution.length()-1;
+    
+    // Iteration limit and damping
+    int itlim;
+    if (continuePrevious) {
+        itlim = settings.itlimCont;
+    } else {
+        itlim = settings.itlim;
+    }
+
+    // If not in continue mode set current solution and state to 0
+    if (!continuePrevious) {
+        // Zero current solution and states
+        solution.zero();
+        states.zero();
+    }
+
+    if (settings.debug) {
+        Simulator::dbg() << "Starting NR algorithm " << (continuePrevious ? "with given initial solution" : "with zero initial solution") << ".\n";
+    }
+
+    // Main loop
+    bool deltaOk;
+    bool residualOk;
+    double maxResidual;
+    double maxNormResidual;
+    double l2normResidual2;
+    Node* maxResidualNode; 
+    double maxDelta;
+    double maxNormDelta; 
+    Node* maxDeltaNode;
+    iteration = 0;
+    Int convIter = 0;
+    bool converged = false;
+
+    // Initialize structures
+    if (!initialize(continuePrevious, s)) {
+        return false;
+    }
+
+    // Minimal damping factor, needed for adjusting the iteration limit
+    double minimalDampingFactor = 1.0;
+
+    bool exitNrLoop = false;
+    do {
+        // Simulator::dbg() << "NR it=" << iteration << " : at=" << solution.position() << "/" << solution.size()
+        //     << " state at=" << states.position() << "/" << states.size()
+        //     << " current data ptr=" << size_t(solution.data()) << "\n";
+
+        // Assume no convergence
+        bool iterationConverged = false;
+
+        // Iteration counter (first iteration is 1)
+        iteration++;
+
+        // Pass iteration number to Verilog-A models
+        circuit.simulatorInternals().iteration = iteration;
+        
+        // Zero matrix, new solution, new states, and residual/delta
+        jac.zero();
+        solution.zeroFuture();
+        states.zeroFuture();
+        zero(delta);
+        
+        double* xprev = solution.data();
+        double* xnew = solution.futureData();
+        double* xdelta = delta.data();
+
+        if (settings.debug>=4) {
+            std::cout << "Old solution at iteration " << iteration << "\n";
+            circuit.dumpSolution(std::cout, solution.data(), "  ");
+            std::cout << "\n";
+        }
+        // std::cout << "New solution at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+        
+        auto [buildOk, preventConvergence] = buildSystem(continuePrevious, s);
+        if (!buildOk) {
+            // Load error or abort
+            break;
+        }
+        xdelta[0] = 0.0; // Set RHS bucket to 0
+
+        // Add forced values to the system
+        if (!loadForces(true, s)) {
+            if (settings.debug) {
+                Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
+            }
+            break;
+        }
+
+        // Check if system is finite
+        if (!jac.isFinite(settings.infCheck, settings.nanCheck, s)) {
+            if (settings.debug) {
+                Simulator::dbg() << "A matrix entry is not finite. Solver failed.\n";
+            }
+            break;
+        }
+
+        if (!jac.isFinite(dataWithoutBucket(delta), settings.infCheck, settings.nanCheck, s)) {
+            if (settings.debug) {
+                Simulator::dbg() << "An RHS entry is not finite. Solver failed.\n";
+            }
+            break;
+        }
+
+        // std::cout << "Old solution before residual check at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+        // std::cout << "New solution before residual check at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+
+        // Residual norms are needed if we have dynamic damping or debug is set
+        bool computeResidualNorms = settings.dampingSteps>0 || settings.debug;
+        // Assume residual is OK
+        bool residualOk = true;
+        // Call residualCheck() if 
+        // - check is required and convergence was not prevented or
+        // - residual norms are needed
+        if (settings.residualCheck || computeResidualNorms) {
+            bool residualCheckOk;
+            std::tie(residualCheckOk, maxResidual, maxNormResidual, l2normResidual2, maxResidualNode) = 
+                checkResidual(settings.residualCheck ? &residualOk : nullptr, computeResidualNorms, s);
+            if (!residualCheckOk) { 
+                if (settings.debug) {
+                    Simulator::dbg() << "Residual check error.\n";
+                }
+                break;
+            }
+        }
+
+        // std::cout << "Old solution after residual check at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+        // std::cout << "New solution after residual check at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+        
+        // std::cout << "States 0: ";
+        // stateDump(states.vector(0));
+        // std::cout << "\n";
+        // 
+        // std::cout << "States 1: ";
+        // stateDump(states.vector(1));
+        // std::cout << "\n";
+        // 
+        // std::cout << "Future states: ";
+        // stateDump(states.futureVector());
+        // std::cout << "\n" << size_t(states.futureData()) << "\n";
+
+        if (settings.debug>=2) {
+            Simulator::dbg() << "Linear system at iteration " << iteration << "\n";
+            jac.dump(Simulator::dbg(), dataWithoutBucket(delta));
+            Simulator::dbg() << "\n";
+        }
+        
+        // jac.dumpSparsityTables(std::cout);
+        // std::cout << std::endl;
+        // jac.dumpEntries(std::cout);
+        // std::cout << std::endl;
+        
+        // Weird... KLU does not detect singular matrix for two dangling serially connected resistors
+        //          Probably due to numerical errors (1e-16 is taken as a valid pivot)
+        //          if there is a nonzero excitation present the iteration won't converge 
+        //          because it fails the residual check
+
+        // Factorization
+        bool forceFullFactorization = false;        
+        if (jac.isFactored()) {
+            // Refactor (if possible)
+            if (!jac.refactor()) {
+                // Failed, try again by fully factoring
+                forceFullFactorization = true;
+            } 
+        }
+        if (forceFullFactorization || !jac.isFactored()) {
+            // Full factorization
+            if (!jac.factor(s)) {
+                // Failed, give up
+                if (settings.debug) {
+                    Simulator::dbg() << "LU factorization failed.\n";
+                }
+                break;
+            }
+        }
+
+        // Solve, use vector without ground component (+1)
+        if (!jac.solve(dataWithoutBucket(delta), s)) {
+            if (settings.debug) {
+                Simulator::dbg() << "Failed to solve factored system.\n";
+            }
+            break;
+        }
+
+        // std::cout << "Old solution after solve at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+        // std::cout << "New solution after solve at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+        
+        // Set solution delta and new solution buckets to 0. 
+        xdelta[0] = 0.0;
+        xnew[0] = 0.0; 
+
+        // std::cout << "Negative solution delta at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, delta.data(), "  ");
+        // std::cout << "\n";
+
+        // Delta norms are computed in debug mode
+        bool computeDeltaNorms = settings.debug;
+        // Check convergence (see if delta is small enough)
+        // Assume delta did not converge
+        bool deltaOk = false;
+        // Check is not performed in first iteration
+        if (iteration>1) {
+            bool deltaCheckOk;
+            std::tie(deltaCheckOk, maxDelta, maxNormDelta, maxDeltaNode) =
+                checkDelta(&deltaOk, computeDeltaNorms, s);
+            if (!deltaCheckOk) {
+                if (settings.debug) {
+                    Simulator::dbg() << "Solution delta check error.\n";
+                }
+                break;
+            }
+        }
+
+        // Check if this iteration converged
+        iterationConverged = !preventConvergence && deltaOk && residualOk;
+        
+        // Print debug messages
+        if (settings.debug) {
+            bool iterationConverged = deltaOk && residualOk;
+            std::stringstream ss;
+            ss << std::scientific << std::setprecision(2);
+            Simulator::dbg() << "Iteration " << std::to_string(iteration) << (preventConvergence ? ", convergence not allowed" : "");
+            if (!preventConvergence) {
+                Simulator::dbg() << (iterationConverged ? ", converged" : "");
+                if (computeResidualNorms) {
+                    ss.str(""); ss << maxResidual;
+                    Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << maxResidualNode->name();
+                }
+                if (iteration>1) {
+                    ss.str(""); ss << maxDelta;
+                    Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << maxDeltaNode->name();
+                }
+            }
+            Simulator::dbg() << "\n";
+        }
+
+        // Count consecutive convergent iterations
+        if (iterationConverged) {
+            convIter++;
+        } else {
+            convIter = 0;
+        }
+
+        // Set converged flag
+        converged = convIter >= settings.convIter;
+        
+        // std::cout << "Iteration " << iteration << " residualOK=" << residualOk << " deltaOk=" << deltaOk << "\n";
+
+        // Exit if converged
+        if (converged) {
+            // Rotate states because the new state belongs to the current solution
+            states.rotate();
+
+            // std::cout << "On NR exit:\n";
+            // std::cout << "States 0: ";
+            // stateDump(states.vector(0));
+            // std::cout << "\n";
+            // 
+            // std::cout << "States 1: ";
+            // stateDump(states.vector(1));
+            // std::cout << "\n";
+
+            break;
+        }
+
+        // std::cout << "Old solution before update at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+        // std::cout << "New solution before update at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+        
+        // Not converged yet, compute new solution 
+        if (settings.dampingSteps<=0) {
+            // Static damping
+            for(decltype(n) i=1; i<=n; i++) {
+                xnew[i] = xprev[i] - xdelta[i]*settings.dampingFactor;
+            }
+        } else {
+            // Dynamic damping, note that maxResidualContribVec and l2normResidual2 are available
+            // Start at op_nrdamping
+            double dampedMaxNormResidual;
+            double dampedL2normResidual2;
+            Int cnt=0;
+            bool dampingResidualOk = false;
+            Int dampingSteps = 0;
+            double dampingFactor = settings.dampingFactor;
+            do {
+                // Compute new solution
+                for(decltype(n) i=1; i<=n; i++) {
+                    xnew[i] = xprev[i] - xdelta[i]*dampingFactor;
+                }
+
+                // Zero residual/delta
+                zero(delta);
+
+                // Compute residual
+                auto [residualComputationOk, dummy_] = computeResidual(continuePrevious, s);
+                if (!residualComputationOk) {
+                    // Residual computation error or abort
+                    exitNrLoop = true;
+                    break;
+                }
+
+                // Add forced values
+                if (!loadForces(false, s)) {
+                    if (settings.debug) {
+                        Simulator::dbg() << "Failed to load forced values in iteration " << iteration << ", damping step " << (dampingSteps+1) << "\n";
+                    }
+                    break;
+                }
+
+                dampingSteps++;
+                
+                auto [residualCheckOk, dampedMaxResidual, dampedMaxNormResidual, dampedL2normResidual2, dummyNode] = 
+                    checkResidual(nullptr, true, s);
+                if (!residualCheckOk) {
+                    if (settings.debug) {
+                        Simulator::dbg() << "Residual norm computation failed.\n";
+                    }
+                    exitNrLoop = true;
+                    break;
+                }
+                
+                // Damping is successful if 
+                // - max norm residual is below 1 (all components below tol) or
+                // - squared L2 norm residual is not greater than squared L2 norm residual at old solution
+                if (settings.debug) {
+                    std::stringstream ss;
+                    ss << std::scientific << std::setprecision(2);
+                    ss.str(""); ss << dampingFactor;
+                    Simulator::dbg() << "NR damping step " << dampingSteps << ", damping=" << ss.str();
+                    if (dampedMaxNormResidual<1) { 
+                        Simulator::dbg() << ", residual within tolerance.\n"; 
+                    } else {
+                        ss.str(""); ss << std::sqrt(dampedL2normResidual2);
+                        Simulator::dbg() << ", L2 normalized residual " << ss.str();
+                        ss.str(""); ss << std::sqrt(l2normResidual2);
+                        if (dampedL2normResidual2<=l2normResidual2) {
+                            Simulator::dbg() << " <= " << ss.str() << " (ok).\n"; 
+                        } else {
+                            Simulator::dbg() << " > " << ss.str() << " (too big).\n"; 
+                        }
+                    }
+                }
+                // Damped point residual is below tolerance or L2 norm is smaller than at old point
+                dampingResidualOk = dampedMaxNormResidual<1 || dampedL2normResidual2<=l2normResidual2;
+                if (dampingResidualOk) {
+                    // Damping successfull, exit loop
+                    break;
+                }
+                dampingFactor *= settings.dampingStep;
+            } while (dampingSteps<settings.dampingSteps); // Damping loop
+
+            // Update minimal damping factor
+            if (dampingFactor<minimalDampingFactor) {
+                minimalDampingFactor = dampingFactor;
+                if (settings.debug) {
+                   Simulator::dbg() << "Minimal damping decreased, adjusting NR iteration limit to " << size_t(itlim/minimalDampingFactor) << ".\n";  
+                }
+            }
+
+            // What to do if damping fails to reduce residual?
+            // This happens when 
+            // - damping loop is exited due to abort or residual evaluation error
+            // - avalable damping iterations are exhausted without finding a sufficiently small residual
+            // At the moment just keep the shortened step. 
+            if (!dampingResidualOk) {
+                if (settings.debug) {
+                    Simulator::dbg() << "Damping failed, keeping shortened step.\n";
+                }
+            }
+        } 
+
+        // std::cout << "Old solution after update at iteration " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+
+        if (settings.debug>=3) {
+            Simulator::dbg() << "New solution in iteration " << iteration << "\n";
+            circuit.dumpSolution(Simulator::dbg(), solution.futureData(), "  ");
+            Simulator::dbg() << "\n";
+        }
+
+        // Rotate RHS vectors and state (swap current and future)
+        solution.rotate();
+        states.rotate();
+
+        // std::cout << "Old solution after rotation " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+        // std::cout << "New solution after rotation " << iteration << "\n";
+        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // std::cout << "\n";
+
+    } while (iteration<(itlim/minimalDampingFactor) && !exitNrLoop); // NR loop
+
+    if (settings.debug) {
+        Simulator::dbg() << "NR algorithm " << (converged ? "converged in " : "failed to converge in ") << iteration << " iteration(s).\n";
+    }
+
+    if (!converged) {
+        s.set(Status::NotConverged, std::string("Leaving core NR loop in iteration ")+std::to_string(iteration)+".");
+    }
+
+    return converged;
+}
+
+}

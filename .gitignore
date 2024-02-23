@@ -1,0 +1,4 @@
+# settings.json should be copied from 
+#   settings-windows.json or
+#   settings-linux.json
+settings.json

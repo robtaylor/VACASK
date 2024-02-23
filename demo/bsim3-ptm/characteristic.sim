@@ -1,0 +1,86 @@
+DC response of an inverter
+
+ground 0 
+
+load "bsim3v3.osdi"
+
+include "../cmos180n.lib" section=tm
+model vsource vsource
+model isource isource
+
+m1 (vds vgs 0 0) nmosmod w=10u l=1u ad=0 as=0 pd=21u ps=21u nrd=1 nrs=1
+vdd (vds 0) vsource dc=1.8
+vgg (vgs 0) vsource dc=0
+
+m2 (vdsp vgsp 0 0) pmosmod w=10u l=1u ad=0 as=0 pd=21u ps=21u nrd=1 nrs=1
+vddp (0 vdsp) vsource dc=1.8
+vggp (0 vgsp) vsource dc=0
+
+control
+  abort always 
+  
+  var a=2 b=2
+  options op_debug=110 sweep_debug=10 op_itl=(a+b*a)*b
+  print options
+  print options_state
+  print saves
+  clear options
+  sweep vgs instance="vgg" parameter="dc" values=[1.2] 
+  sweep vds instance="vdd" parameter="dc" values=[0.1461, 0.1461] 
+    analysis dc0 op
+  
+  sweep vgs instance="vgg" parameter="dc" values=[0, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
+  sweep vds instance="vdd" parameter="dc" from=-0.8 to=1.8 mode="lin" points=100
+    analysis dc1 op
+  
+  sweep vgs instance="vggp" parameter="dc" values=[0, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
+  sweep vds instance="vddp" parameter="dc" from=-0.8 to=1.8 mode="lin" points=100
+    analysis dc2 op
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import sys
+import matplotlib.pyplot as plt 
+
+plot = rawread('dc0.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS, two points')
+fig1.axes[0].set_xlabel('Vds [V]')
+fig1.axes[0].set_ylabel('Id [uA]')
+fig1.axes[0].plot(plot["vds"], plot["vdd:flow(br)"]*1e6, marker=".")
+
+plot = rawread('dc1.raw').get(sweeps=1)
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS')
+fig1.axes[0].set_ylabel('Id [uA]')
+fig1.axes[0].set_xlabel('Vds [V]')
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    traceName = 'Vgs=%.2f' % sdata['vgs']
+    x = plot[ii, "vds"]
+    y = -plot[ii, "vdd:flow(br)"]*1e6
+    fig1.axes[0].plot(x, y, label=traceName)
+    fig1.axes[0].grid(which='both')
+fig1.axes[0].legend(loc='upper left')
+
+plot = rawread('dc2.raw').get(sweeps=1)
+fig2, ax1 = plt.subplots(1, 1)
+fig2.axes[0].set_title('DC response of BSIM3 PMOS')
+fig2.axes[0].set_ylabel('-Id [uA]')
+fig2.axes[0].set_xlabel('-Vds [V]')
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    traceName = '-Vgs=%.2f' % sdata['vgs']
+    x = -plot[ii, "vdsp"]
+    y = -plot[ii, "vddp:flow(br)"]*1e6
+    fig2.axes[0].plot(x, y, label=traceName)
+    fig2.axes[0].grid(which='both')
+fig2.axes[0].legend(loc='upper left')
+
+plt.show()
+
+>>>FILE

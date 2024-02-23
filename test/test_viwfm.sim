@@ -1,0 +1,140 @@
+Independent sources - time-domain waveforms
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+model isource isource
+
+// Sine
+i1 (0 1) isource type="sine" sinedc=0.5 ampl=2.0 freq=50.0 phase=-90
+r1 (1 0) resistor r=1
+
+// Step
+i2 (0 2) isource type="pulse" val0=1 val1=2 rise=1u delay=1m
+r2 (2 0) resistor r=1
+
+// Single pulse
+i3 (0 3) isource type="pulse" val0=1 val1=2 rise=1u fall=2u width=2m delay=1.1m
+r3 (3 0) resistor r=1
+
+// Pulse train
+i4 (0 4) isource type="pulse" val0=1 val1=2 rise=1u fall=2u width=2m period=4m delay=1.2m
+r4 (4 0) resistor r=1
+
+control
+  abort always
+
+  options rawfile="binary" op_debug=0
+  options tran_fbr=0.2501
+  analysis tran1 tran step=0.1m stop=30m maxStep=0.1m
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+def pulse(t, v0, v1, delay, rise, fall=None, width=None, period=None, tol=1e-9):
+    baseoffs = t-delay
+    if period is not None:
+        baseoffs = baseoffs % period
+    if width is None:
+        # step
+        v = np.where(t<delay, v0, v1)
+        v = np.where((t>=delay)&(t<delay+rise), v0+(t-delay)*(v1-v0)/rise, v)
+        breaks = [ delay, delay+rise ]
+    else:
+        # pulse, train
+        v = np.where(t<delay, v0, v1)
+        v = np.where((t>=delay)&(baseoffs<rise), v0+baseoffs*(v1-v0)/rise, v)
+        v = np.where((t>=delay)&(baseoffs>rise+width)&(baseoffs<rise+width+fall), v1+(baseoffs-rise-width)*(v0-v1)/fall, v)
+        v = np.where((t>=delay)&(baseoffs>rise+width+fall), v0, v)   
+        breaks = [ delay ]
+        if period is not None and delay<0:
+            # Last base<=0
+            base = delay - np.ceil(delay/period)*period
+        else:
+            base = delay
+        while base < t[-1]:
+            breaks.extend([ base, base+rise, base+rise+width, base+rise+width+fall ])
+            if period is not None:
+                base += period
+            else:
+                break
+        
+    # Check breaks
+    breakOk = True
+    for b in breaks:
+        if b<=0 or b>t[-1]:
+            continue
+        delta = np.abs(t-b).min()
+        if delta>b*tol:
+            breakOk=False
+            break
+    return v, breakOk 
+
+tests=[]
+
+tran1 = rawread('tran1.raw').get()
+
+time = tran1['time']
+
+vsin = tran1["1"]
+exact = 0.5+2.0*np.sin(2*np.pi*50.0*time-np.pi/2)
+status = (relDiff(vsin, exact, 1e-6) < 1e-3).all()
+print("Sinusoidal", status)
+tests.append(status)
+
+vstep = tran1["2"]
+exact, breakOk = pulse(time, 1.0, 2.0, 1e-3, 1e-6)
+status = (relDiff(vstep, exact, 1e-9) < 1e-3).all()
+print("Step", status, "breaks", breakOk)
+tests.append(status and breakOk)
+
+vpulse = tran1["3"]
+exact, breakOk = pulse(time, 1.0, 2.0, 1.1e-3, 1e-6, 2e-6, 2e-3)
+status = (relDiff(vpulse, exact, 1e-9) < 1e-3).all()
+print("Pulse", status, "breaks", breakOk)
+tests.append(status and breakOk)
+
+vtrain = tran1["4"]
+exact, breakOk = pulse(time, 1.0, 2.0, 1.2e-3, 1e-6, 2e-6, 2e-3, 4e-3)
+status = (relDiff(vtrain, exact, 1e-9) < 1e-3).all()
+print("Train", status, "breaks", breakOk)
+tests.append(status and breakOk)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(4, 1, figsize=(6,9), dpi=100, constrained_layout=True)
+    fig1.suptitle("Transient excitations")
+
+    fig1.axes[0].set_title('Sine')
+    fig1.axes[0].set_ylabel('V [V]')
+    fig1.axes[0].plot(time*1000, vsin, marker=".")
+
+    fig1.axes[1].set_title('Step')
+    fig1.axes[1].set_ylabel('V [V]')
+    fig1.axes[1].plot(time*1000, vstep, marker=".")
+
+    fig1.axes[2].set_title('Pulse')
+    fig1.axes[2].set_ylabel('V [V]')
+    fig1.axes[2].plot(time*1000, vpulse, marker=".")
+    
+    fig1.axes[3].set_title('Pulse train')
+    fig1.axes[3].set_ylabel('V [V]')
+    fig1.axes[3].set_xlabel('time [ms]')
+    fig1.axes[3].plot(time*1000, vtrain, marker=".")
+
+    plt.show()
+>>>FILE
+
+

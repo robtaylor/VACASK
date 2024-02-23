@@ -1,0 +1,101 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run test in console (Debug)",
+            
+            // Linux/mingw64
+            "type": "cppdbg",
+            "MIMode": "gdb",
+            // "miDebuggerPath": "E:/mingw64/bin/gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ], 
+
+            // MSVC
+            // "type": "cppvsdbg", 
+            
+            "request": "launch",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vase",
+            
+            // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_opnodeset.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_opstore.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_opsweep.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_sweep.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_sweeppar.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_dcinc.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_dctf.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_ac.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_actf.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_tran.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_tranic.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_noise.sim" ],
+            // "args": [ "-df", "-dt", "${workspaceFolder}/test/test_build.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_visrc.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_viwfm.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_ctlsrc.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_resistor.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_capacitor.sim" ],
+             "args": [ "-df", "${workspaceFolder}/test/test_inductor.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_mutual.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_inverter.sim" ],
+            // "args": [ "-df", "-dt", "${workspaceFolder}/test/test_diode.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/timestep.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/resonator.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/characteristic.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/mirror.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/amp.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/diffpair.sim" ], 
+            // "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/limiting/builtin.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/limiting/custom.sim" ], 
+            // "args": [ "-dp" ], 
+            
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/test/manual_run",
+            "environment": [ 
+                // { "name": "SIM_MODULE_PATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/devices" }, 
+                // { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
+                // For Windows replace lib/vase/python with lib/python
+                // { "name": "PYTHONPATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/lib/vase/python" } 
+                // { "name": "LC_ALL", "value": "C" }
+                // { "name": "SIM_TEST", "value": "yes" }
+            ], 
+            "externalConsole": false,
+        }, 
+
+        {
+            "name": "Run test in console (Release)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vase",
+            "args": [ "-d", "${workspaceFolder}/test/test_opnodeset.sim" ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/",
+            "environment": [
+                { "name": "SIM_MODULE_PATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/devices" }, 
+                { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
+                { "name": "PYTHONPATH", "value": "${workspaceFolder}/python" }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+
+    ]
+}

@@ -1,0 +1,161 @@
+Controlled sources
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+model isource isource
+model vccs vccs
+model vcvs vcvs
+model cccs cccs
+model ccvs ccvs
+
+v1 (1 0) vsource dc=2
+r0 (1 0) resistor r=2k
+
+vccs1 (0 2 1 0) vccs gain=2m $mfactor=3
+r1 (2 0) resistor r=1k
+
+vcvs1 (3 0 1 0) vcvs gain=2 $mfactor=3
+r2 (3 0) resistor r=1k 
+
+cccs1 (0 4) cccs ctlinst="v1" gain=-2 $mfactor=3
+r3 (4 0) resistor r=1k 
+
+ccvs1 (5 0) ccvs ctlinst="v1" gain=-2k $mfactor=3
+r4 (5 0) resistor r=1k 
+
+control
+  abort always 
+
+  options rawfile="binary" op_debug=0
+  save (
+    default 
+    p(vccs1,ctl) p(vccs1,i) p(vccs1,v)
+    p(vcvs1,ctl) p(vcvs1,v) p(vcvs1,i)
+    p(cccs1,ctl) p(cccs1,i) p(cccs1,v)
+    p(ccvs1,ctl) p(ccvs1,v) p(ccvs1,i)
+  )
+  analysis op1 op
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+v = op1["2"]
+exact = 2*2e-3*1e3 * 3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["vccs1.ctl"]
+exact = 2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("vccs1.ctl=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["vccs1.i"]
+exact = 2*2e-3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("vccs1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+v = op1["vccs1.v"]
+exact = -2*2e-3*1e3 * 3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("vccs1.v=", v, "exact=", exact, status)
+tests.append(status)
+
+
+v = op1["3"]
+exact = 2*2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(3)=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["vcvs1.ctl"]
+exact = 2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("vcvs1.ctl=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["vcvs1.v"]
+exact = 2*2
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("vcvs1.v=", i, "exact=", exact, status)
+tests.append(status)
+
+i = op1["vcvs1.i"]
+exact = -2*2/1e3/3
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("vcvs1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+
+ictl = op1["v1:flow(br)"]
+
+v = op1["4"]
+exact = ictl * -2 * 1e3 * 3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(4)=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["cccs1.ctl"]
+exact = ictl
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("cccs1.ctl=", i, "exact=", exact, status)
+tests.append(status)
+
+i = op1["cccs1.i"]
+exact = ictl * -2
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("cccs1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+v = op1["cccs1.v"]
+exact = - (ictl * -2 * 3 * 1e3)
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("cccs1.v=", v, "exact=", exact, status)
+tests.append(status)
+
+
+v = op1["5"]
+exact = ictl * -2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(5)=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["ccvs1.ctl"]
+exact = ictl
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("ccvs1.ctl=", i, "exact=", exact, status)
+tests.append(status)
+
+v = op1["ccvs1.v"]
+exact = -2/2e3 * -2e3
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("ccvs1.v=", v, "exact=", exact, status)
+tests.append(status)
+
+i = op1["ccvs1.i"]
+exact = - (-2/2e3 * -2e3 / 1e3 / 3)
+status = (relDiff(i, exact, 1e-12) < 1e-3).all()
+print("ccvs1.i=", i, "exact=", exact, status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE
+
+

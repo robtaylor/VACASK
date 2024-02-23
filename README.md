@@ -1,0 +1,209 @@
+# About VASE
+VASE (Verilog-A Simulation Engine) is an analog circuit simulator. VASE uses the [OpenVAF Verilog-A compiler](https://github.com/pascalkuthe/OpenVAF) for building the device models as shared libraries. The compiled device models are loaded by the simulator on demand at runtime. The simulator communicates with the models via the [OSDI API](https://openvaf.semimod.de/docs/details/osdi/). Of course, you can also create device models using VASE's APIs in C++ and link them statically with the simulator. 
+
+VASE is not SPICE (although one could write a SPICE-compatible netlist parser for it with little effort). SPICE3 is more than 30 years old, written in C, and the code is hard to maintain. In some respect SPICE looks more like a proof of concept one writes before building the real thing. The way circuit equations are handled in SPICE makes it hard to extend the simulator with new algorithms. VASE's goal is to be better than SPICE, not only in terms of what it offers, but also in terms of extensibility and ease of maintenance. 
+
+VASE offers several features: 
+- user defined global and ground nodes
+- fully parameterized hierarchical circuit description
+- RPN interpreter for parameterized expression evaluation
+- integer, real, and string data types
+- vectors (homogeneous containers) and lists (heterogeneous containers)
+- a library of built-in functions and constants for use in parameterized expressions
+- operating point, DC small-signal, DC transfer function, AC small-signal, AC transfer function, transient, and noise analysis
+- selection of what should be saved during simulation (save directives)
+- collection of auxiliary values (opvars) computed by device models
+- parametric sweep of any analysis with arbitrary depth
+- almost anything can be swept (instance, model, and subcircuit parameters, options, and circuit variables)
+- anything that can be swept can also be modified without reloading the circuit (no need to build a new netlist and restart the simulator)
+- automatic partial circuit elaboration when circuit topology changes due to a change in parameters, options, or variables
+- a different topology can be elaborated without restarting the simulator (circuits with multiple testbenches can be simulated without restarting the simulator)
+- residual-based convergence test (improved accuracy of the nonlinear solver)
+- several homotopy algorithms (SPICE3/adaptive gmin stepping and source stepping) for finding the operating point of problematic circuits
+- nodesets for improving convergence speed and selecting the operating point
+- analysis results can be used as nodesets for subsequent analyses (combined with circuit variable sweeps this feature can be used for implementing custom arc length homotopy algorithms at the netlist level)
+- setting initial conditions (Spectre style and legacy SPICE3 style)
+- backward Euler, trapezoidal, and Gear integration algorithms
+- predictor-corrector local truncation error control in transient analysis
+- numerical solvers based on the KLU sparse matrix library
+- SPICE ASCII/binary raw file output
+- embedded postprocessing scripts and Verilog-A models in the netlist
+- postprocessing of results with external tools (some basic Python/Numpy scripts are provided)
+- a growing library of Verilog-A models (diode, BSIM3, BSIM4, BSIMBULK, ...)
+- simulator library that can be linked to 3rd party software
+- circuit can be built programmatically or read by a custom parser
+- netlist parser with Spectre-like syntax
+ 
+Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF or even Verilog-A. 
+
+VASE is being developed by Árpád Bűrmen at the EDA Laboratory, University of Ljubljana, Slovenia. It is written in C++20 and is free software released under the [GNU General Public License 3.0](LICENSE). 
+
+# What about device models? 
+
+The following device models are supplied with VASE. 
+
+|Builtin device                   |Name   |
+|---------------------------------|-------|
+|Independent voltage source       |isource|
+|Independent current source       |isource|
+|Voltage-controlled voltage source|vcvs   |
+|Voltage-controlled current source|vccs   |
+|Current-controlled voltage source|ccvs   |
+|Current-controlled current source|cccs   |
+|Inductive coupling               |mutual |
+
+|Verilog-A device                 |Name     |
+|---------------------------------|---------|
+|Linear resistor                  |resistor |
+|Linear capacitor                 |capacitor|
+|Linear inductor                  |inductor |
+|SPICE diode                      |diode    |
+|BSIM3v3 MOSFET                   |bsim3    |
+|BSIM4v8 MOSFET                   |bsim4    |
+|BSIMBUKLK MOSFET 106.2.0         |bsimbulk |
+
+Up to now VASE development was not focused on assembling a library of device models. You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
+
+# Installation from pre-built packages
+[Pre-built packages](https://fides.fe.uni-lj.si/vase/download/) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
+
+# Getting started
+VASE can compile Verilog-A files on the fly. For that purpose VASE looks for the OpenVAF compiler in the directory where the VASE binary is installed. VASE also detects the Python 3 interpreter and sets the `PYTHON` circuit variable to the interpreter's full path. This variable can then be used in the netlist for launching Python as a postprocessor for the simulation results without hard-coding its full path. For VASE to find the Python interpreter the interpreter's binary directory must be in the system path. VASE supplements the `PYTHONPATH` variable with the directory holding the supplied Python scripts (`<vase library directory>/python`). These scripts can be used for loading binary .raw files. They depend on the [NumPy library](https://numpy.org/). 
+
+When a file is included with the `include` netlist directive VASE looks for the file in the directory where the netlist that invoked the `include` directive resides. If the file is not found the directories listed in the include files path are searched. This path is by default set to`<vase library directory>/inc`. You can override it by setting the `SIM_INCLUDE_PATH` environmental variable. The directories in the list must be separated by colons (in Windows they must be separated by semicolons). 
+
+VASE first searches for the compiled Verilog-A device models in the directory where the netlist invoking the `load` directive is located, followed by the current working directory, and the modules search path. By default this path is set to `<vase library directory>/mod`. You can override it with the `SIM_MODULE_PATH` environmental variable (same syntax as for `SIM_INCLUDE_PATH`). 
+
+If the `load` netlist directive is given a raw Verilog-A file (ending in .va) VASE will try to compile it with OpenVAF. For that purpose the `openvaf` binary must be available to VASE (either in the directory where the VASE binary is installed or via the system path). If VASE fails to find something, first check all the paths by typing
+```
+vase -dp
+```
+
+VASE prints the paths to files it is loading when it is invoked with the `-df` option. 
+
+There are some examples available in the [`demo`](demo) directory. For instance, you could try the simulation of a Miller OTA by running
+```
+vase demo/bsim3-ptm-amp/toplevel.sim
+```
+
+If you have Python 3, NumPy, and [Matplotlib](https://matplotlib.org/) installed the results will be plotted by the postprocessor script. 
+
+You can learn about the netlist syntax by studying the demos in the [`demo`](demo) directory and the system tests in the [`test`](test) directory. Documentation is planned for the future. :)
+
+# Building the simulator
+VASE has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library, and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). 
+
+You will also have to install the OpenVAF compiler. If you decide to build the compiler yourself, do not use the original OpenVAF repository. Git-clone the [improved version with several bug fixes](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found at the beginning of the `README.md` file in the OpenVAF repository. Of course, you can also take the OpenVAF binary from the binary packages (.deb and .tar.gz for Linux, .zip for Windows). 
+
+## Linux
+Install gcc, Boost, and KLU. You will also need CMake and GNU make or Ninja for building. 
+
+First, create a `build` directory and create the build system
+```
+cmake -G Ninja  -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DOPENVAF_DIR=<path to OpenVAF compiler>
+```
+
+To build with GNU make, replace `-G Ninja` with `-G "Unix Makefiles"`. The build process is started by typing
+```
+cmake --build <build directory>
+```
+
+After the build process is finished the binary can be found in `<build directory>/simulator`. 
+
+The .tar.gz and .deb packages can be built by changing the current directory to `<build directory>` and typing 
+```
+cpack
+```
+The packages are created in the `<build directory>`. 
+
+## Windows
+Building for Windows is performed with the Mingw64 compiler. Unfortunately you will have to build all of the prerequisites manually. 
+
+### Building the prerequisites
+First, install the compiler and the tools. We will assume everything will be unpacked and built in `e:\`. Adjust the paths accordingly if you are going to use a different drive. Download Msys2 from [https://www.msys2.org/](https://www.msys2.org/) and install it to `e:\msys64`. Start the MSYS prompt and install bison, flex, and binutils. 
+```
+pacman -S bison
+pacman -S flex
+pacman -S binutils
+```
+
+Download MinGW64 from [https://winlibs.com/](https://winlibs.com/). Get the posix-seh-ucrt version without LLVM/Clang/LLD/LLDB (we don't need them). Unpack it to `e:\mingw64`. This version of MinGW64 comes with CMake and Ninja (required for building). 
+
+Add MSYS2 and MinGW64 to the system path (Control Panel/System/Advanced System Settings/...). Make sure you add MinGW (`e:\mingw64\bin`) before MSYS2 (`e:\msys64\usr\bin`). 
+
+Start the command prompt (`cmd.exe`). Create a directory for all the stuff we are going to build.
+```
+e:
+cd \
+mkdir build
+```
+
+Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
+```
+cd tools\build
+bootstrap mingw
+cd ..\..
+tools\build\b2 --with-filesystem link=static toolset=gcc
+```
+After a short time the required part of Boost is built and placed in the `stage` subdirectory.
+
+Prepare the toolchain file (`e:\build\mingw.cmake`) by putting the following definitions in the file. 
+```
+set(CMAKE_SYSTEM_NAME Windows)
+
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_Fortran_COMPILER gfortran)
+set(CMAKE_RC_COMPILER windres)
+
+set(CMAKE_FIND_ROOT_PATH e:/mingw64/bin)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+```
+If needed, replace `e:/mingw64/bin` with your path. 
+
+Now, download OpenBLAS from [https://www.openblas.net/](https://www.openblas.net/). There is a link to [GitHub where the released sources can be found](https://github.com/OpenMathLib/OpenBLAS/releases). Take the latest source (at the time of writing 0.3.26). Unpack it in `e:\build`. Enter the directory with the OpenBLAS sources and type
+```
+mkdir build
+cd build
+cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIBS=ON -DUSE_THREADS=0 -DUSE_LOCKING=1 -DDYNAMIC_LIST="CORE2;NEHALEM;BARCELONA;SANDYBRIDGE;BULLDOZER;PILEDRIVER;STEAMROLLER;EXCAVATOR;HASWELL;ZEN;SKYLAKEX;COOPERLAKE;SAPPHIRERAPIDS" -DTARGET=NEHALEM
+cmake --build . -j 4
+cmake --install . --prefix e:/build/installation
+```
+
+The `-j 4` option enables parallel building with 4 processors. Since OpenBLAS is big, this will save you some time. In the end OpenBLAS will be installed in `e:\build\installation`. 
+
+Finally, download [SuiteSparse](https://people.engr.tamu.edu/davis/suitesparse.html) from [GitHub](https://github.com/DrTimothyAldenDavis/SuiteSparse/releases). Get the latest release source code (at the time of writing that is 7.6.0). Unpack it in `e:\build`. In the sources directory type
+```
+mkdir build
+cd build
+cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DSUITESPARSE_ENABLE_PROJECTS="klu" -DCMAKE_BUILD_TYPE=Release -DBLAS_LIBRARIES=e:\build\installation\lib\libopenblas.a -DLAPACK_INCLUDE_DIRS=e:\buid\installation\include\openblas -DBLAS_INCLUDE_DIRS=e:\build\installation\include\openblas
+cmake --build . -j 8
+cmake --install . --prefix e:/build/installation
+```
+
+Replace the `e:\...` paths with your own, if needed. In the end OpenBAS will be installed in `e:\build\installation`. 
+
+### Building the simulator
+Unpack the sources, create a build directory, and type. 
+```
+cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to OpenVAF compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
+cmake --build <build directory>
+```
+Replace the `e:\...` paths with your own, if needed. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 
+```
+cpack
+```
+The created packages are located in the `<build directory>`. 
+
+# Visual Studio Code project for developers
+A [Visual Studio Code](https://code.visualstudio.com/) setup is available in the [`.vscode`](.vscode) subdirectory of the sources. Files [`settings-linux.json`](.vscode/settings-linux.json) and [`settings-windows.json`](.vscode/settings-windows.json) are the settings templates for Linux and Windows. Depending on your platform copy one of these two to `settings.json` and edit it to reflect your configuration. File `settings.json` is not tracked by git so editing it won't result in any changes that need committing. 
+
+Install the following Visual Studio Code extensions: C/C++, CMake, CMake Tools, VSCode-YACC, and VSCode-YYLEX. Assuming the Visual Studio Code binary is in the system path you can start the IDE by entering the simulator source directory and typing
+```
+code .
+```
+
+In Windows select the MinGW64 toolchain. In Linux select GCC. Configure the project with Ctrl+Shift+P 'CMake: Delete Cache and Reconfigure', followed by building with Ctrl+Shift+P 'CMake: Build'. A full debugging setup is available in [`launch.json`](.vscode/launch.json). System tests are located in [`test`](test) and can be run via CMake/CTest. The path to the built debug version (relative to the sources) is `../build.VASE/Debug`. The release version is built under `../build.VASE/Release`. 

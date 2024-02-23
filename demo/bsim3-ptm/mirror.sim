@@ -1,0 +1,133 @@
+DC response of a NMOS/PMOS current mirror
+
+ground 0 
+
+load "resistor.osdi"
+load "bsim3v3.osdi"
+
+include "../cmos180n.lib" section=tm
+include "../mosmm.inc"
+
+model vsource vsource
+model isource isource
+model resistor resistor 
+
+subckt ninput() 
+  ibias (0 d) isource dc=100u
+  m1 (d d 0 0) nmosmod w=70u l=2u pd=200u ps=200u // ad=0 as=0 pd=200u ps=200u nrd=1 nrs=1
+ends
+
+subckt nmirror() 
+  vdd (vdd 0) vsource dc=1.8
+  ibias (vdd d) isource dc=100u
+  m1 (d d 0 0) submodn w=70u l=2u 
+  m2 (d1 d 0 0) submodn w=70u l=2u $mfactor=2 
+  r1 (vdd d2) resistor r=1k
+  va (d2 d1) vsource dc=0
+ends
+
+subckt pmirror() 
+  vdd (vdd 0) vsource dc=1.8
+  ibias (d 0) isource dc=100u
+  m1 (d d vdd vdd) submodp w=70u l=2u 
+  m2 (d1 d vdd vdd) submodp w=70u l=2u $mfactor=2 
+  r1 (d2 0) resistor r=1k
+  va (d1 d2) vsource dc=0
+ends
+
+control
+  abort always 
+
+  elaborate circuit("ninput")
+  
+  // print instance("ibias")
+  // print device("bsim3")
+
+  // print gaga
+  // print unknowns
+  
+  // options gmin=0 
+  // options op_skipinitial=1 
+  // options op_skipgmin=1 
+  // options op_skipsrc=1 
+  // options op_skiphomotopy=1 
+  // options nr_force=1e5
+  // options op_debug=110 op_itl=100
+  // options sweep_debug=2
+  analysis op1 op
+  sweep bias instance="ibias" parameter="dc" from=0 to=100u mode="lin" points=100 
+    analysis dc1 op
+
+
+  elaborate circuit("nmirror")
+  sweep bias instance="ibias" parameter="dc" from=0 to=100u mode="lin" points=100 
+    analysis dc2 op
+  sweep rload instance="r1" parameter="r" from=1 to=100k mode="dec" points=10 
+    analysis dc3 op
+
+
+  elaborate circuit("pmirror")
+  sweep bias instance="ibias" parameter="dc" from=0 to=100u mode="lin" points=100 
+    analysis dc4 op
+  sweep rload instance="r1" parameter="r" from=1 to=100k mode="dec" points=10 
+    analysis dc5 op
+  
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import sys
+import matplotlib.pyplot as plt 
+
+plot = rawread('op1.raw').get()
+print("NMOS current mirror input operating point at Ibias=100uA")
+for name in plot.names:
+    print(name, plot[name])
+
+plot = rawread('dc1.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS current mirror input')
+fig1.axes[0].set_ylabel('Id [uA]')
+fig1.axes[0].set_xlabel('Vds [V]')
+fig1.axes[0].plot(plot["bias"]*1e6, plot["d"])
+
+plot = rawread('dc2.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS current mirror, m=2')
+fig1.axes[0].set_xlabel('Iin [uA]')
+fig1.axes[0].set_ylabel('Iout [uA]')
+fig1.axes[0].plot(plot["bias"]*1e6, plot["va:flow(br)"]*1e6)
+
+plot = rawread('dc3.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC load response of BSIM3 NMOS current mirror, m=2')
+fig1.axes[0].set_xlabel('Rload [Ohm]')
+fig1.axes[0].set_ylabel('Iout [uA]')
+fig1.axes[0].semilogx(plot["rload"], plot["va:flow(br)"]*1e6)
+
+plot = rawread('dc4.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 PMOS current mirror input')
+fig1.axes[0].set_ylabel('Id [uA]')
+fig1.axes[0].set_xlabel('Vds [V]')
+fig1.axes[0].plot(plot["bias"]*1e6, plot["vdd"] - plot["d"])
+
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 PMOS current mirror, m=2')
+fig1.axes[0].set_xlabel('Iin [uA]')
+fig1.axes[0].set_ylabel('Iout [uA]')
+fig1.axes[0].plot(plot["bias"]*1e6, plot["va:flow(br)"]*1e6)
+
+plot = rawread('dc5.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC load response of BSIM3 PMOS current mirror, m=2')
+fig1.axes[0].set_xlabel('Rload [Ohm]')
+fig1.axes[0].set_ylabel('Iout [uA]')
+fig1.axes[0].semilogx(plot["rload"], plot["va:flow(br)"]*1e6)
+
+plt.show()
+
+>>>FILE

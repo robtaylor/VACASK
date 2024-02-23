@@ -1,0 +1,93 @@
+Nested sweep of OP analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "simdio.va"
+
+model resistor resistor
+model vsource vsource
+model d simdio is=1e-12 n=2 debug=0
+
+v1 (1 0) vsource dc=2
+r1 (1 2) resistor r=1
+d1 (2 0) d
+
+
+control
+  abort always
+  
+  // Test nested sweep
+  options temp=27 
+  // infcheck and nancheck declare NR iteration as failed when inf/nan occurs.
+  // They are on by default, anyway. 
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 infcheck=1 nancheck=1
+  save default p(d1, gd)
+  sweep is model="d" parameter="is" values=[1e-12, 1e-10, 1e-8, 1e-6] continuation=1
+  sweep v1 instance="v1" parameter="dc" from=-2 to=4 mode="lin" points=50 continuation=1
+    analysis op0 op
+    
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+# Split at outer sweep points
+op0 = rawread('op0.raw').get(sweeps=1)
+
+statusvd = True
+statusid = True
+statusgd = True
+for ii in range(op0.sweepGroups):
+    sdata = op0.sweepData(ii)
+    Is=sdata['is']
+    v=op0[ii, '1']
+    vd=op0[ii, '2']
+    id=-op0[ii, 'v1:flow(br)']
+    gd=op0[ii, 'd1.gd']
+    for ii in range(len(vd)):
+        exvd = diocalc.dioSolve(Is, 2.0, 27.0, 1.0, v[ii])
+        exid, exgd = diocalc.dioMod(exvd, Is, 2, 27)
+        statusvd = statusvd and (relDiff(vd[ii], exvd, 1e-6)<1e-3).all()
+        statusid = statusid and (relDiff(id[ii], exid, 1e-9)<1e-3).all()
+        statusgd = statusgd and (relDiff(gd[ii], exgd, 1e-60)<1e-3).all()
+
+tests.extend([statusvd, statusid, statusgd])
+print("vd", statusvd)
+print("id", statusid)
+print("gd", statusgd)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt
+
+    fig1, ax1 = plt.subplots(2, 1)
+    fig1.suptitle('Diode characteristic')
+    fig1.axes[0].set_title('DC response')
+    fig1.axes[0].set_ylabel('Id [A]')
+    fig1.axes[1].set_ylabel('gd [A/V]')
+    fig1.axes[1].set_xlabel('Ud [V]')
+
+    for ii in range(op0.sweepGroups):
+        sdata = op0.sweepData(ii)
+        traceName = 'is=%.2e' % sdata['is']
+        fig1.axes[0].plot(op0[ii, '2'], -op0[ii, 'v1:flow(br)'], label=traceName)
+        fig1.axes[1].semilogy(op0[ii, '2'], op0[ii, 'd1.gd'], label=traceName)
+        
+    fig1.axes[0].legend(loc='upper left')
+    fig1.axes[0].set_xlim(-1,2)
+    fig1.axes[0].set_ylim(-0.1,2)
+    fig1.axes[1].set_xlim(-1,2)
+    fig1.axes[1].set_ylim(1e-12,1e3)
+    fig1.axes[1].legend(loc='lower right')
+    
+    plt.show()
+>>>FILE

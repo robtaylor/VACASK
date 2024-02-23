@@ -1,0 +1,51 @@
+Linear OP analysis
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+
+v1 (1 0) vsource dc=10
+r1 (1 2) resistor r=1k
+r2 (2 0) resistor r=9k
+
+control
+  abort always
+  print variables
+
+  var dbglevel=0
+  options rawfile="binary" op_debug=dbglevel // op_skiphomotopy=1 op_itl=5
+  analysis op1 op 
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import absDiff, relDiff, isTest
+import numpy as np
+import sys, os
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+v = op1["1"]
+exact = 10
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(1)=", v, "exact=", exact, status)
+tests.append(status)
+
+v = op1["2"]
+exact = 10*0.9
+status = (relDiff(v, exact, 1e-6) < 1e-3).all()
+print("V(2)=", v, "exact=", exact, status)
+tests.append(status)
+
+if ("SIM_TEST" in os.environ and os.environ["SIM_TEST"]=="yes"):
+    sys.exit(not all(tests))
+>>>FILE
+
+

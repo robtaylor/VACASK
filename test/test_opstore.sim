@@ -1,0 +1,67 @@
+Nodesets on two-inverter latch, storing solutions
+
+ground 0 
+
+load "bsimbulk106.osdi"
+
+include "bsimbulk106.inc"
+model vsource vsource
+model isource isource
+
+subckt inverter (in out vdd vss)
+parameters w=1u l=0.1u pfact=2
+  mp (out in vdd vdd) bsimbulk_p w=w*pfact l=l
+  mn (out in vss vss) bsimbulk_n w=w l=l
+ends
+
+// Latch
+inv1 (in1 in2x vdd 0) inverter
+vdelta (in2x in2) vsource dc=0 mag=1
+inv2 (in2 in1 vdd 0) inverter
+
+vdd (vdd 0) vsource dc=1.2
+
+control
+  abort always
+  
+  options op_debug=1
+
+  analysis op1 op nodeset=[ "in1"; "in2"; 0.8 ] store="ns1"
+  analysis op2 op 
+  analysis op3 op nodeset="ns1" 
+  analysis op4 op nodeset="ns12" 
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+op = rawread('op1.raw').get()
+status = (op["in1"] > 1.15 and op["in2"] < 0.05).all()
+tests.append(status)
+print("op1 - nodeset in1-in2=0.8:    in1=", op["in1"], "in2=", op["in2"], status)
+
+op = rawread('op2.raw').get()
+status = (0.5 < op["in1"] < 0.7 and 0.5 < op["in2"] < 0.7).all()
+tests.append(status)
+print("op2 - no nodesets:            in1=", op["in1"], "in2=", op["in2"], status)
+
+op = rawread('op3.raw').get()
+status = (op["in1"] > 1.15 and op["in2"] < 0.05).all()
+tests.append(status)
+print("op3 - copy nodesets from op1: in1=", op["in1"], "in2=", op["in2"], status)
+
+op = rawread('op4.raw').get()
+status = (0.5 < op["in1"] < 0.7 and 0.5 < op["in2"] < 0.7).all()
+tests.append(status)
+print("op4 - bad nodesets copy:      in1=", op["in1"], "in2=", op["in2"], status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE

@@ -1,0 +1,53 @@
+DC incremental analysis
+
+ground 0 
+
+load "resistor.osdi"
+load "simdio.va"
+
+model resistor resistor
+model vsource vsource
+model d simdio is=1e-12 n=2 debug=0
+
+v1 (1 0) vsource dc=0.8 mag=1
+r1 (1 2) resistor r=1k
+d1 (2 0) d
+
+control
+  abort always
+
+  options temp=27
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0
+  analysis dcinc1 dcinc dumpop=1
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+import diocalc
+
+tests = []
+
+op1 = rawread('dcinc1.op.raw').get()
+dcinc1 = rawread('dcinc1.raw').get()
+
+exactv2 = diocalc.dioSolve(1e-12, 2, 27, 1000, 0.8)
+exacti, exactgd = diocalc.dioMod(exactv2, 1e-12, 2, 27)
+i = -op1['v1:flow(br)']
+statusi = (relDiff(i, exacti, 1e-12)<1e-6).all()
+tests.append(statusi)
+print("op i(v1)", i, statusi)
+
+exactv2inc = 1/exactgd / (1/exactgd+1000)
+v2inc = dcinc1['2']
+statusv2inc = (relDiff(v2inc, exactv2inc, 1e-12)<1e-6).all()
+tests.append(statusv2inc)
+print("v(2) delta", v2inc, statusv2inc)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE

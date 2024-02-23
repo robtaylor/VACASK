@@ -1,0 +1,61 @@
+Transient response of RC circuit
+
+ground 0 
+
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model resistor resistor
+model capacitor capacitor
+model vsource vsource
+model isource isource
+
+v1 (1 0) vsource type="pulse" val0=1 val1=2 rise=1u delay=1m
+r1 (1 2) resistor r=1k
+c1 (2 0) capacitor c=1u
+
+control
+  abort always
+  
+  options sweep_debug=0 op_debug=0 tran_debug=10
+  options rawfile="binary" strictsave=1
+  options reltol=1e-3 vntol=1e-6 abstol=1e-12 tran_lteratio=3.5
+  options tran_method="trap" tran_rmax=0
+  analysis tran1 tran stop=10m step=1u icMode="op"
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+plot = rawread('tran1.raw').get()
+exact = 1+(1-np.exp(-(plot['time']-1e-3)/1e-3))*(plot['time']>1e-3)
+diff = relDiff(plot['2'], exact, 1e-6).max()
+status = diff<0.0035
+print("max rel err=", diff, status)
+tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt 
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('RC response')
+    fig1.axes[0].set_ylabel('V(1) V(2) [V]')
+    fig1.axes[0].set_xlabel('time [ms]')
+
+    fig1.axes[0].plot(plot['time']*1000, plot['1'], marker='.', label="V(1)")
+    fig1.axes[0].plot(plot['time']*1000, exact, label="exact")
+    fig1.axes[0].plot(plot['time']*1000, plot['2'], marker='.', linestyle='', label="V(2)")
+
+    fig1.axes[0].legend(loc='lower right')
+
+    plt.show()
+>>>FILE

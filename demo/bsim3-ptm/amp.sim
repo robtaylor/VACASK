@@ -1,0 +1,71 @@
+DC response of a NMOS/PMOS amplifier
+
+ground 0 
+
+load "resistor.osdi"
+load "bsim3v3.osdi"
+
+include "../cmos180n.lib" section=tm
+include "../mosmm.inc"
+
+model vsource vsource
+model isource isource
+model resistor resistor 
+
+subckt namp() 
+  vdd (vdd 0) vsource dc=1.8
+  ibias (d 0) isource dc=100u
+  m1 (d d vdd vdd) submodp w=70u l=2u 
+  m2 (d1 d vdd vdd) submodp w=70u l=2u $mfactor=2 
+  m3 (d1 g 0 0) submodn w=35u l=2u $mfactor=2
+  rload (d1 0) resistor r=1M
+  vin (g 0) vsource dc=0.1
+ends
+
+subckt pamp() 
+  vdd (vdd 0) vsource dc=1.8
+  ibias (vdd d) isource dc=100u
+  m1 (d d 0 0) submodn w=35u l=2u 
+  m2 (d1 d 0 0) submodn w=35u l=2u $mfactor=2 
+  m3 (d1 g vdd vdd) submodp w=70u l=2u $mfactor=2
+  rload (d1 0) resistor r=1M
+  vin (g 0) vsource dc=1.5
+ends
+
+ control
+  abort always 
+
+  elaborate circuit("namp")  
+  sweep bias instance="vin" parameter="dc" from=0 to=1.8 mode="lin" points=100 
+    analysis dc1 op
+
+  elaborate circuit("pamp")  
+  sweep bias instance="vin" parameter="dc" from=0 to=1.8 mode="lin" points=100 
+    analysis dc2 op
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import sys
+import matplotlib.pyplot as plt 
+
+plot = rawread('dc1.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 NMOS amplifier')
+fig1.axes[0].set_xlabel('Vin [V]')
+fig1.axes[0].set_xlabel('Vout [V]')
+fig1.axes[0].plot(plot["g"], plot["d1"])
+
+plot = rawread('dc2.raw').get()
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('DC response of BSIM3 PMOS amplifier')
+fig1.axes[0].set_xlabel('Vin [V]')
+fig1.axes[0].set_xlabel('Vout [V]')
+fig1.axes[0].plot(plot["g"], plot["d1"])
+
+plt.show()
+
+>>>FILE
