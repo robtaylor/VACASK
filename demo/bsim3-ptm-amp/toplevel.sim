@@ -6,7 +6,7 @@ ground 0
 load "resistor.osdi"
 load "capacitor.osdi"
 load "bsim3v3.osdi"
-// vsource, isource, and vcvs are bultins
+// vsource, isource, and vcvs are builtins
 
 // ... and their models (create masters)
 model resistor resistor
@@ -85,7 +85,7 @@ control
   
   save (
     default
-    // Diff pair
+    // Diff pair, use single quotes because x1:xmn1:m0 is an identifier
     p('x1:xmn1:m0',vgs) p('x1:xmn1:m0',vds) p('x1:xmn1:m0',vth) p('x1:xmn1:m0',vdsat) p('x1:xmn1:m0',ids)
     p('x1:xmn2:m0',vgs) p('x1:xmn2:m0',vds) p('x1:xmn2:m0',vth) p('x1:xmn2:m0',vdsat) p('x1:xmn2:m0',ids)
     // Mirrors
