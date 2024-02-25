@@ -30,42 +30,42 @@ endsection
 
 * Worst power
 section wp
-  include 'cmos180n.lib' section=dfl
+  include "cmos180n.lib" section=dfl
   parameters vth0n=vth0nt*(1-vth0nd)
   parameters u0n=u0nt*(1+u0nd)
   parameters vth0p=vth0pt*(1-vth0pd)
   parameters u0p=u0pt*(1+u0pd)
-  include 'cmos180n.lib' section=model
+  include "cmos180n.lib" section=model
 endsection
 
 * Worst speed
 section ws
-  include 'cmos180n.lib' section=dfl
+  include "cmos180n.lib" section=dfl
   parameters vth0n=vth0nt*(1+vth0nd)
   parameters u0n=u0nt*(1-u0nd)
   parameters vth0p=vth0pt*(1+vth0pd)
   parameters u0p=u0pt*(1-u0pd)
-  include 'cmos180n.lib' section=model
+  include "cmos180n.lib" section=model
 endsection
 
 * Worst one
 section wo
-  include 'cmos180n.lib' section=dfl
+  include "cmos180n.lib" section=dfl
   parameters vth0n=vth0nt*(1-vth0nd)
   parameters u0n=u0nt*(1+u0nd)
   parameters vth0p=vth0pt*(1+vth0pd)
   parameters u0p=u0pt*(1-u0pd)
-  include 'cmos180n.lib' section=model
+  include "cmos180n.lib" section=model
 endsection
 
 * Worst zero
 section wz
-  include 'cmos180n.lib' section=dfl
+  include "cmos180n.lib" section=dfl
   parameters vth0n=vth0nt*(1+vth0nd)
   parameters u0n=u0nt*(1-u0nd)
   parameters vth0p=vth0pt*(1-vth0pd)
   parameters u0p=u0pt*(1+u0pd)
-  include 'cmos180n.lib' section=model
+  include "cmos180n.lib" section=model
 endsection
 
 
