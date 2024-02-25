@@ -70,8 +70,8 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& loadDirective
             }
             auto args = Platform::openVafArgs();
             args.push_back("-o");
-            args.push_back(outputPath);
-            args.push_back(vaFile);
+            args.push_back(std::move(outputPath.string()));
+            args.push_back(std::move(vaFile.string()));
             auto [ok, out, err] = runProcess(Platform::openVafName(), args, nullptr, true, s);
             if (!ok) {
                 // Failure, error
