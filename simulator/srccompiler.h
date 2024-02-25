@@ -9,7 +9,7 @@ namespace NAMESPACE {
 
 class OpenvafCompiler : public SourceCompiler {
 public: 
-    virtual std::tuple<bool, bool> compile(const std::string& timeRefCanonicalPath, const std::string& fileName, const std::string& canonicalPath, std::string& outputCanonicalPath, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool> compile(const std::string& loadDirectiveCanonicalPath, const std::string& fileName, const std::string& canonicalPath, std::string& outputCanonicalPath, Status& s=Status::ignore);
 };
 
 }

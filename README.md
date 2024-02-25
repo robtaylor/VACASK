@@ -68,20 +68,7 @@ Up to now VASE development was not focused on assembling a library of device mod
 [Pre-built packages](https://codeberg.org/arpadbuermen/VASE/releases) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
 
 # Getting started
-VASE can compile Verilog-A files on the fly. For that purpose VASE looks for the OpenVAF compiler in the directory where the VASE binary is installed. VASE also detects the Python 3 interpreter and sets the `PYTHON` circuit variable to the interpreter's full path. This variable can then be used in the netlist for launching Python as a postprocessor for the simulation results without hard-coding its full path. For VASE to find the Python interpreter the interpreter's binary directory must be in the system path. VASE supplements the `PYTHONPATH` variable with the directory holding the supplied Python scripts (`<vase library directory>/python`). These scripts can be used for loading binary .raw files. They depend on the [NumPy library](https://numpy.org/). 
-
-When a file is included with the `include` netlist directive VASE looks for the file in the directory where the netlist that invoked the `include` directive resides. If the file is not found the directories listed in the include files path are searched. This path is by default set to`<vase library directory>/inc`. You can override it by setting the `SIM_INCLUDE_PATH` environmental variable. The directories in the list must be separated by colons (in Windows they must be separated by semicolons). 
-
-VASE first searches for the compiled Verilog-A device models in the directory where the netlist invoking the `load` directive is located, followed by the current working directory, and the modules search path. By default this path is set to `<vase library directory>/mod`. You can override it with the `SIM_MODULE_PATH` environmental variable (same syntax as for `SIM_INCLUDE_PATH`). 
-
-If the `load` netlist directive is given a raw Verilog-A file (ending in .va) VASE will try to compile it with OpenVAF. For that purpose the `openvaf` binary must be available to VASE (either in the directory where the VASE binary is installed or via the system path). If VASE fails to find something, first check all the paths by typing
-```
-vase -dp
-```
-
-VASE prints the paths to files it is loading when it is invoked with the `-df` option. 
-
-There are some examples available in the [`demo`](demo) directory. For instance, you could try the simulation of a Miller OTA by running
+There are some examples available in the [`demo`](demo) directory. You can try the simulation of a Miller OTA by running
 ```
 vase demo/bsim3-ptm-amp/toplevel.sim
 ```
@@ -89,6 +76,21 @@ vase demo/bsim3-ptm-amp/toplevel.sim
 If you have Python 3, NumPy, and [Matplotlib](https://matplotlib.org/) installed the results will be plotted by the postprocessor script. 
 
 You can learn about the netlist syntax by studying the demos in the [`demo`](demo) directory and the system tests in the [`test`](test) directory. Documentation is planned for the future. :)
+
+If VASE fails to find something, first check all the paths by typing
+```
+vase -dp
+```
+
+If you specify the `-df` option VASE will print the paths to the files it is loading, dumping, or compiling. 
+
+VASE detects the Python 3 interpreter and sets the `PYTHON` circuit variable to the interpreter's full path. This variable can then be used in the netlist for launching Python to postprocess the simulation results without having to specify its full path. For VASE to find the Python interpreter the interpreter's binary directory must be in the system path. VASE supplements the `PYTHONPATH` variable with the directory holding the supplied Python scripts (`<vase library directory>/python`). These scripts can be used for loading binary .raw files. They depend on the [NumPy library](https://numpy.org/). 
+
+When a file is included with the `include` netlist directive and the given path is absolute VASE loads it based on the given absolute path. If the path is relative VASE first looks for the file in the directory where the netlist that invoked the `include` directive resides, then in the current working directory, and finally in the include files path. The include files path is by default set to`<vase library directory>/inc`. You can override it by setting the `SIM_INCLUDE_PATH` environmental variable. The directories in the list must be separated by colons (in Windows they must be separated by semicolons). 
+
+Models are loaded with the `load` netlist directive. If the given path is absolute VASE looks for the model only at the given path. If, however, it is relative VASE first searches for the model in the directory where the netlist invoking the `load` directive is located, followed by the current working directory, and the modules search path. The modules search path is by default set to `<vase library directory>/mod`. You can override it with the `SIM_MODULE_PATH` environmental variable (same syntax as for `SIM_INCLUDE_PATH`). 
+
+VASE can compile Verilog-A files on the fly. For that purpose VASE looks for the OpenVAF compiler in the directory where the VASE binary is installed and in the system path. If a `load` directive specifies a raw Verilog-A file (ending in .va), VASE will try to compile it. The compiled model is placed in the current working directory and then loaded. 
 
 # Building the simulator
 VASE has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library, and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). 

@@ -46,6 +46,14 @@ FileStack* FileStack::lookup(FileStackIndex id) {
     }
 }
 
+// Look for a file given by fileName
+// If the file is specified with absolute path
+//   look only at the specified absolute path
+// else
+//   if the source of the include directive is a file, not a string (obtained from parentId)
+//     look in the directory where the parent file is located
+//   look in the current working directory
+//   look in the include search path
 FileStackFileIndex FileStack::addFile(
     const std::string& fileName,  
     const PathList& searchPath, 
@@ -78,7 +86,9 @@ FileStackFileIndex FileStack::addFile(
         }
     } else {
         // Relative path
+        
         std::string canonical;
+        
         // First try in parent path
         if (searchParentPath && parentId!=badFileId) {
             // Have parent, get its directory
@@ -94,19 +104,19 @@ FileStackFileIndex FileStack::addFile(
                 );
                 return stack.size()-1;
             }
-        } else {
-            // No parent, try current directory (do not specify path)
-            if (findFile(fileName, canonical, "")) {
-                stack.emplace_back(
-                    fileName, 
-                    "", 
-                    canonical, 
-                    nullptr, 
-                    parentId, 
-                    inclusionLine
-                );
-                return stack.size()-1;
-            }
+        }
+        
+        // Try current directory (do not specify path)
+        if (findFile(fileName, canonical, "")) {
+            stack.emplace_back(
+                fileName, 
+                "", 
+                canonical, 
+                nullptr, 
+                parentId, 
+                inclusionLine
+            );
+            return stack.size()-1;
         }
 
         // Finally, try search path

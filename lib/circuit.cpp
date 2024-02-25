@@ -222,12 +222,30 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s)
     }
     
     // Load OSDI devices
+    // If device file is specified with absolute path
+    //   look only at the specified absolute path
+    // else
+    //   if the source of the load directive is a file, not a string
+    //     look in the directory where the file with the load directive is located
+    //   look in the current working directory
+    //   look in the module search path
+    // if file is found and is not a compiled file
+    //   set compiled file path to compiler output
+    //   if file needs compiling
+    //     compile it
+    // else
+    //   set compiled file path to found file
+    // load compiled file
     for(auto it=tables_.loads().cbegin(); it!=tables_.loads().cend(); ++it) {
         auto fileName = it->file();
         auto module = it->module();
         auto asModule = it->asModule();
         auto extension = std::filesystem::path(fileName).extension();
 
+        // Get the canonical path of the file where the load directive is located
+        auto [fs, pos, line, offset] = it->location().data();
+        auto loadDirectiveCanonicalPath = fs->canonicalName(pos);
+            
         // Canonical path to osdi file
         std::string canonicalPath;
         bool found;
@@ -239,11 +257,9 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s)
             // Relative path given
             
             // Try the directory of the file where the load directive was found
-            auto [fs, pos, line, offset] = it->location().data();
-            auto timeRefCanonicalPath = fs->canonicalName(pos);
-            if (timeRefCanonicalPath.size()>0) {
+            if (loadDirectiveCanonicalPath.size()>0) {
                 // Have canonical name of the file (input came from a file)
-                auto directory = std::filesystem::path(fs->canonicalName(pos)).parent_path().string();
+                auto directory = std::filesystem::path(loadDirectiveCanonicalPath).parent_path().string();
                 found = findFile(fileName, canonicalPath, directory);
             }
 
@@ -252,20 +268,6 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s)
                 found = findFile(fileName, canonicalPath, "");
             }
 
-            // Found file
-            if (found) {
-                // Handle compilation of supported files
-                std::string outputPath;
-                auto [ok, compiled] = compiler.compile(timeRefCanonicalPath, fileName, canonicalPath, outputPath, s);
-                if (!ok) {
-                    s.extend(it->location());
-                    return;
-                }
-                if (compiled) {
-                    canonicalPath = outputPath;
-                }
-            }
-            
             // Try osdi path if no success
             if (!found) {
                 found = findFile(fileName, canonicalPath, Simulator::modulePath());
@@ -277,6 +279,18 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s)
             s.set(Status::NotFound, std::string("File '")+fileName+"' not found.");
             s.extend(it->location());
             return;
+        }
+
+        // Found file, handle compilation of supported files
+        // Compiler decides where to put the compiled file and returns its path
+        std::string outputPath;
+        auto [ok, compiled] = compiler.compile(loadDirectiveCanonicalPath, fileName, canonicalPath, outputPath, s);
+        if (!ok) {
+            s.extend(it->location());
+            return;
+        }
+        if (compiled) {
+            canonicalPath = outputPath;
         }
 
         // Open possibly compiled file

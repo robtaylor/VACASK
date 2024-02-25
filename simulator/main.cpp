@@ -191,8 +191,10 @@ int main(int argc, char**argv) {
                 // Check if the file to be dumped exists
                 bool dump = false;
                 if (!std::filesystem::exists(e.filename())) {
+                    // Does not exist, needs dumping
                     dump = true;
                 } else {
+                    // File with embed directive is newer than the dumped file, needs dumping
                     auto refModificationTime = std::filesystem::last_write_time(timeRefCanonicalPath);
                     auto fileModificationTime = std::filesystem::last_write_time(e.filename());
                     if (refModificationTime>fileModificationTime) {
@@ -201,7 +203,7 @@ int main(int argc, char**argv) {
                 }
                 
                 if (dump) {
-                    if (progress) {
+                    if (Simulator::fileDebug()) {
                         Simulator::dbg() << "Dumping embedded file '" << e.filename() << "'.\n";
                     }
                     std::ofstream fs;

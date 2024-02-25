@@ -7,6 +7,11 @@
 
 namespace NAMESPACE {
 
+// loadDirectiveCanonicalPath is the canonical path to the file with the load directive
+// fileName is the name of file from the load directive
+// canonicalPath is the canonical path of the found file
+// outputCanonicalPath is the canonical path of the output file
+// 
 // if extension is .va
 //   look for .osdi in the current directory
 //   if found 
@@ -14,8 +19,7 @@ namespace NAMESPACE {
 //       compile, store in the same directory
 //   else
 //     compile, store in the same directory
-//   load osdi file
-std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& timeRefCanonicalPath, const std::string& fileName, const std::string& canonicalPath, std::string& outputCanonicalPath, Status& s) {
+std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& loadDirectiveCanonicalPath, const std::string& fileName, const std::string& canonicalPath, std::string& outputCanonicalPath, Status& s) {
     auto extension = std::filesystem::path(fileName).extension();
     if (extension==".va" || extension==".VA") {
         // Found a .va file, see if we need to compile it
@@ -25,7 +29,8 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& timeRefCanoni
         // Directory of .va file
         auto pVaDir = pVa.parent_path();
         
-        std::string pVaName = pVa.filename().string();
+        // va file and osdi file name
+        auto vaFile = pVa.filename();
         auto osdiFile = pVa.filename();
         osdiFile.replace_extension(".osdi");
         
@@ -42,20 +47,17 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& timeRefCanoni
         // Full path to .osdi file
         outputPath /= osdiFile;
         
-        // Full path to .osdi file as strict
-        std::string pOsdiName = outputPath.string();
-
         // Switch to .va file directory 
         // (in case it includes stuff from the same directory)
         std::filesystem::current_path(pVaDir);
 
         // Do we need to compile 
         bool compile = false;
-        if (!std::filesystem::exists(pOsdiName)) {
+        if (!std::filesystem::exists(outputPath)) {
             compile = true;
         } else { 
-            auto vaModificationTime = std::filesystem::last_write_time(timeRefCanonicalPath);
-            auto osdiModificationTime = std::filesystem::last_write_time(pOsdiName);
+            auto vaModificationTime = std::filesystem::last_write_time(vaFile);
+            auto osdiModificationTime = std::filesystem::last_write_time(outputPath);
             if (vaModificationTime>osdiModificationTime) {
                 compile = true;
             }
@@ -64,16 +66,16 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& timeRefCanoni
         // Compile
         if (compile) {
             if (Simulator::fileDebug()) {
-                Simulator::dbg() << "Compiling '" << pVa.string() << "'.\n";
+                Simulator::dbg() << "Compiling file '" << pVa.string() << "'.\n";
             }
             auto args = Platform::openVafArgs();
             args.push_back("-o");
-            args.push_back(pOsdiName);
-            args.push_back(pVaName);
+            args.push_back(outputPath);
+            args.push_back(vaFile);
             auto [ok, out, err] = runProcess(Platform::openVafName(), args, nullptr, true, s);
             if (!ok) {
                 // Failure, error
-                s.extend("Failed to compile file '"+pVaName+"'.");
+                s.extend("Failed to compile file '"+vaFile.string()+"'.");
                 s.extend(err);
                 // Restore current directory
                 std::filesystem::current_path(cwd);
@@ -82,7 +84,7 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& timeRefCanoni
         }
 
         // Set canonical path of .osdi file
-        outputCanonicalPath = std::filesystem::canonical(pOsdiName).string();
+        outputCanonicalPath = std::filesystem::canonical(outputPath).string();
 
         std::filesystem::current_path(cwd);
 

@@ -29,7 +29,6 @@ bool findFile(const std::string& fileName, std::string& canonicalPath) {
     }
 }
 
-
 bool findFile(const std::string& fileName, std::string& canonicalPath, const std::string& directory) {
     try {
         if (std::filesystem::path(fileName).is_absolute()) {
