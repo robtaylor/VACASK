@@ -767,6 +767,33 @@ void OsdiInstance::dump(int indent, const Circuit& circuit, std::ostream& os) co
         }
         os << "\n";
     }
+    auto desc = model()->device()->descriptor();
+    if (desc->num_collapsible>0) {
+        auto pattern = collapsedNodesPattern();
+        auto n = collapsedNodesPatternSize();
+        bool have = false;
+        for(decltype(n) i=0; i<n; i++) {
+            if (pattern[i]) {
+                have = true;
+                break;
+            }
+        }
+        if (have) {
+            os << pfx << "  Collapsed node pairs:\n";
+            for(ParameterIndex i=0; i<desc->num_collapsible; i++) {
+                if  (!pattern[i]) {
+                    continue;
+                }
+                auto n1 = desc->collapsible[i].node_1;
+                auto n2 = desc->collapsible[i].node_2;
+                os << pfx << "    " << desc->nodes[n1].name;
+                if (n2!=UINT32_MAX) {
+                    os << ", " << desc->nodes[n2].name;
+                }
+                os << "\n";
+            }
+        }
+    }
     if (parameterCount()>0) {
         os << pfx << "  Parameters:\n";
         auto np = parameterCount();

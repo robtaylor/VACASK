@@ -512,12 +512,25 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
             os << ", residual units \"" << descriptor_->nodes[i].residual_units << "\"\n";
         }
     }
+    if (descriptor()->num_collapsible>0) {
+        os << pfx << "  Collapsible node pairs:\n";
+        for(ParameterIndex i=0; i<descriptor()->num_collapsible; i++) {
+            auto n1 = descriptor()->collapsible[i].node_1;
+            auto n2 = descriptor()->collapsible[i].node_2;
+            os << pfx << "    " << descriptor()->nodes[n1].name;
+            if (n2!=UINT32_MAX) {
+                os << ", " << descriptor()->nodes[n2].name;
+            }
+            os << "\n";
+        }
+    }
     os << pfx << "  Number of internal states: " << descriptor_->num_states << "\n";
     if (modelParameterCount()>0) {
         os << pfx << "  Model parameters:\n";
         for(ParameterIndex i=0; i<modelParameterCount(); i++) {
-            os << pfx << "    " << std::string(modelParameterName(i)) << " id=" << modelOsdiParameterId(i);
+            os << pfx << "    " << " id=" << modelOsdiParameterId(i) << ": " << std::string(modelParameterName(i));
             auto& p = descriptor_->param_opvar[modelOsdiParameterId(i)];
+            os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
                 os << "\n" << pfx << "      Aliases: ";
                 for(OsdiFile::OsdiAliasIndex j=0; j<p.num_alias; j++) {
@@ -530,8 +543,9 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (instanceParameterCount()>0) {
         os << pfx << "  Instance parameters:\n";
         for(ParameterIndex i=0; i<instanceParameterCount(); i++) {
-            os << pfx << "    " << std::string(instanceParameterName(i)) << " id=" << instanceOsdiParameterId(i);
+            os << pfx << "    " << " id=" << instanceOsdiParameterId(i) << ": " << std::string(instanceParameterName(i));
             auto& p = descriptor_->param_opvar[instanceOsdiParameterId(i)];
+            os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
                 os << "\n" << pfx << "      Aliases: ";
                 for(OsdiFile::OsdiAliasIndex j=0; j<p.num_alias; j++) {
@@ -544,8 +558,9 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (opvarCount()>0) {
         os << pfx << "  Opvars:\n";
         for(ParameterIndex i=0; i<opvarCount(); i++) {
-            os << pfx << "    " << std::string(opvarName(i)) << " id=" << opvarOsdiParameterId(i);
+            os << pfx << "    " << " id=" << opvarOsdiParameterId(i) << ": " << std::string(opvarName(i));
             auto& p = descriptor_->param_opvar[opvarOsdiParameterId(i)];
+            os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
                 os << "\n" << pfx << "      Aliases: ";
                 for(OsdiFile::OsdiAliasIndex j=0; j<p.num_alias; j++) {
