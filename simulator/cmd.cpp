@@ -5,7 +5,8 @@
 #include "platform.h"
 #include "common.h"
 #include <type_traits>
- 
+#include <chrono>
+
 
 namespace NAMESPACE {
 
@@ -123,6 +124,7 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
             if (!minimalElaboration(s)) {
                 return false;
             }
+            auto start = std::chrono::high_resolution_clock::now();
             auto& ptAn = std::get<PTAnalysis>(entry);
             if (printProgress_) {
                 Simulator::dbg() << "Running analysis '"+std::string(ptAn.name())+"'.\n";
@@ -139,7 +141,12 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                 }
             }
             tmps.clear();
-            if (!an->run(tmps)) {
+            auto retval = an->run(tmps);
+            std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
+            if (printProgress_) {
+                Simulator::dbg() << "  Elapsed time: "<< duration << "\n";
+            }
+            if (!retval) {
                 delete an;
                 if (!mustAbort(idAnalysis)) {
                     Simulator::err() << tmps.message() << "\n";
