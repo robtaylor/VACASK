@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 enable_testing()
 
 message(STATUS "CMake version ${CMAKE_VERSION}")
-set(PROGRAM_NAME "vase")
+set(PROGRAM_NAME "vacask")
 set(PROGRAM_COPYRIGHT "2023-2024")
 set(PROGRAM_VENDOR "EDA Lab FE Uni-Lj")
 

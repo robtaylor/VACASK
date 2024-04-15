@@ -3,7 +3,7 @@
 #
 
 # This is the version of the product (<major>.<minor>)
-set(CPACK_PACKAGE_NAME "VASE")
+set(CPACK_PACKAGE_NAME "VACASK")
 set(CPACK_PACKAGE_VERSION "${PROGRAM_VERSION}")
 set(CPACK_PACKAGE_VENDOR "${PROGRAM_VENDOR}")
 set(CPACK_PACKAGE_CONTACT "arpad.buermen@fe.uni-lj.si")
@@ -120,7 +120,7 @@ else()
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Arpad Buermen")
     set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
     set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Verilog-A Simulation Engine")
-    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://fides.fe.uni-lj.si/vase")
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://fides.fe.uni-lj.si/vacask")
 
     # For Linux we build a tgz archive and a deb package
     set(CPACK_GENERATOR "TGZ" "DEB")

@@ -23,7 +23,7 @@
             // "type": "cppvsdbg", 
             
             "request": "launch",
-            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vase",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             
             // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
@@ -65,8 +65,8 @@
             "environment": [ 
                 // { "name": "SIM_MODULE_PATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/devices" }, 
                 // { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
-                // For Windows replace lib/vase/python with lib/python
-                // { "name": "PYTHONPATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/lib/vase/python" } 
+                // For Windows replace lib/vacask/python with lib/python
+                // { "name": "PYTHONPATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/lib/vacask/python" } 
                 // { "name": "LC_ALL", "value": "C" }
                 // { "name": "SIM_TEST", "value": "yes" }
             ], 
@@ -77,7 +77,7 @@
             "name": "Run test in console (Release)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vase",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vacask",
             "args": [ "-d", "${workspaceFolder}/test/test_opnodeset.sim" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/",
