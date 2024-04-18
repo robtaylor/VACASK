@@ -2,7 +2,7 @@
 
 model vsource vsource
 model isource isource
-model vcvc vcvc
+model vcvs vcvs
 model vccs vccs
 model ccvs ccvs
 model cccs cccs 
