@@ -12,17 +12,19 @@ model capacitor capacitor
 model vsource vsource
 model isource isource
 
-options sweep_debug=0 op_debug=0 smsig_debug=0
-options rawfile="binary" strictsave=0
-
-i1 (0 1) isource mag=1 type="pulse" val0=0 val1=1u delay=1u rise=1n fall=1n width=1n
+i1 (0 1) isource mag=1 type="pulse" val0=0 val1=1m delay=1u rise=1n fall=1n width=1m
 l1 (1 0) inductor l=1m
 c1 (1 0) capacitor c=10u
 
 control
-  analysis tran1 tran step=2u stop=20m : (
-    tran_debug=2 reltol=1e-3 tran_method="trap" tran_lteratio=3.5
-  )
+  abort always
+
+  options sweep_debug=0 op_debug=0 smsig_debug=0
+  options rawfile="binary"
+  options tran_debug=2 reltol=1e-3 tran_method="trap" tran_lteratio=3.5
+
+  analysis tran1 tran step=2u stop=20m
+  
   postprocess(PYTHON, "runme.py")
 endc
 

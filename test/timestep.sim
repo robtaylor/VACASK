@@ -11,9 +11,6 @@ model mutual mutual
 model vsource vsource
 model isource isource
 
-options sweep_debug=0 op_debug=0 smsig_debug=0
-options rawfile="binary" strictsave=0
-
 i1 (0 1) isource mag=1 type="sine" sinedc=0.0 ampl=0.5 freq=50.0
 l1 (1 0) inductor l=1m
 l2 (2 0) inductor l=4m 
@@ -21,9 +18,13 @@ i2 (0 2) isource dc=0 mag=0.5 type="sine" sinedc=0.0 ampl=0.5 freq=75.0
 m12 () mutual k=0.99 ind1="l1" ind2="l2"
 
 control
-  analysis tran1 tran step=1m stop=200m : (
-    tran_debug=2 reltol=1e-3 tran_method="trap" tran_lteratio=3.5 relref="alllocal"
-  )
+  abort always 
+  
+  options sweep_debug=0 op_debug=0 smsig_debug=0
+  options rawfile="binary" strictsave=0
+  options tran_debug=2 reltol=1e-3 tran_method="trap" tran_lteratio=3.5 relref="alllocal"
+  analysis tran1 tran step=1m stop=200m
+
   postprocess(PYTHON, "runme.py")
 endc
 
