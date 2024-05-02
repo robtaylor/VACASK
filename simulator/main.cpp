@@ -201,6 +201,11 @@ int main(int argc, char**argv) {
                         dump = true;
                     }
                 }
+
+                // TODO: multiple .sim files can create an embedded file with the same name
+                // Therefore we must also check the embedded file's origin. 
+                // Until this is implemented, always dump file. 
+                dump = true;
                 
                 if (dump) {
                     if (Simulator::fileDebug()) {
