@@ -54,7 +54,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/devices" DESTINATION "${source_di
 
 # Library: compiled devices
 foreach(item IN ITEMS ${OSDI_FILES})
-    install(FILES "${item}" DESTINATION "${PROGRAM_LIB_DIR}/mod"
+    get_filename_component(tmpdirectory "${item}" DIRECTORY)
+    install(FILES "${OSDI_DIR}/${item}" DESTINATION "${PROGRAM_LIB_DIR}/mod/${tmpdirectory}"
         PERMISSIONS ${install_permissions_file}
     )
 endforeach()

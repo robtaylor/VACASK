@@ -107,9 +107,58 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
 	set(FL_LIBRARY "${tmp}/../lib/libfl.a" CACHE STRING "Flex library" FORCE)
 endif()
 
+#
+# Custom build types
+# 
+
+# Profiling debug version
+set(CMAKE_CXX_FLAGS_DEBUGPROFILE "${CMAKE_CXX_FLAGS_DEBUG} -pg" CACHE STRING
+    "Flags used by the C++ compiler during debug profile builds." FORCE)
+set(CMAKE_C_FLAGS_DEBUGPROFILE "${CMAKE_C_FLAGS_DEBUG} -pg" CACHE STRING
+    "Flags used by the C compiler during debug profile builds." FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_DEBUGPROFILE "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -pg" CACHE STRING
+    "Flags used for linking binaries during debug profile builds." FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_DEBUGPROFILE "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -pg" CACHE STRING
+    "Flags used by the shared libraries linker during debug profile builds." FORCE)
+
+# Profiling release version
+set(CMAKE_CXX_FLAGS_RELEASEPROFILE "${CMAKE_CXX_FLAGS_RELEASE} -pg" CACHE STRING
+"Flags used by the C++ compiler during release profile builds." FORCE)
+set(CMAKE_C_FLAGS_RELEASEPROFILE "${CMAKE_C_FLAGS_RELEASE} -pg" CACHE STRING
+"Flags used by the C compiler during release profile builds." FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_RELEASEPROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -pg" CACHE STRING
+"Flags used for linking binaries during release profile builds." FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASEPROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -pg" CACHE STRING
+"Flags used by the shared libraries linker during release profile builds." FORCE)
+
+MARK_AS_ADVANCED(
+    CMAKE_CXX_FLAGS_DEBUGPROFILE
+    CMAKE_C_FLAGS_DEBUGPROFILE
+    CMAKE_EXE_LINKER_FLAGS_DEBUGPROFILE
+    CMAKE_SHARED_LINKER_FLAGS_DEBUGPROFILE
+
+    CMAKE_CXX_FLAGS_RELEASEPROFILE
+    CMAKE_C_FLAGS_RELEASEPROFILE
+    CMAKE_EXE_LINKER_FLAGS_RELEASEPROFILE
+    CMAKE_SHARED_LINKER_FLAGS_RELEASEPROFILE
+)
+
+IF(NOT CMAKE_BUILD_TYPE)
+   SET(CMAKE_BUILD_TYPE Debug
+       CACHE STRING "Choose the type of build : None Debug Release DebugProfile ReleaseProfile."
+       FORCE
+    )
+ENDIF(NOT CMAKE_BUILD_TYPE)
+message("* Current build type is : ${CMAKE_BUILD_TYPE}")
+
+#
+# End of custom build types
+# 
+
+
 # Define SIMDEBUG preprocessor macro when build type is Debug
 add_compile_definitions("$<$<CONFIG:Debug>:SIMDEBUG>")
-# add_compile_definitions("$<$<CONFIG:Release>:SIMDEBUG>")
+add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMDEBUG>")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
