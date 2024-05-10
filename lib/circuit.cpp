@@ -1204,8 +1204,12 @@ bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)
     els.clearFlags();
     els.clearBounds();
     for(auto& dev : devices) {
-        if (!deviceSelector || deviceSelector(dev.get())) {
-            if (!dev.get()->evalAndLoad(*this, els, s)) {
+        auto* devPtr = dev.get();
+        if (devPtr->instanceCount()==0)  {
+            continue;
+        }
+        if ((!deviceSelector || deviceSelector(dev.get()))) {
+            if (!devPtr->evalAndLoad(*this, els, s)) {
                 return false;
             }
         }

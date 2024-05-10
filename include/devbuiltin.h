@@ -328,6 +328,9 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::evalAndLoad(
 ) {
     using InstanceType = BuiltinInstance<ModelParams, InstanceParams, InstanceData>;
     for(auto model : models()) {
+        if (model->instanceCount()==0) {
+            continue;
+        }
         for(auto instance : model->instances()) {
             if (!static_cast<InstanceType*>(instance)->evalAndLoadCore(circuit, els, s)) {
                 return false;

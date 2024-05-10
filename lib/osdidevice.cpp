@@ -365,6 +365,9 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els, Status& s)
     }
 
     for(auto model : models()) {
+        if (model->instanceCount()==0) {
+            continue;
+        }
         for(auto instance : model->instances()) {
             if (!static_cast<OsdiInstance*>(instance)->evalAndLoadCore(circuit, simInfo, els, s)) {
                 depopulate(simInfo.paras);

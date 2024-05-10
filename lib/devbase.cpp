@@ -149,6 +149,8 @@ bool Model::addInstance(Instance* instance) {
         return false;
     }
     instances_.push_back(instance); 
+    device_->instanceCount_++;
+
     return true;
 };
 

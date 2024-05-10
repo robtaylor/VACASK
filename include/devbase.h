@@ -158,6 +158,8 @@ DEFINE_FLAG_OPERATORS(DeviceFlags);
 
 class Device : public FlagBase<DeviceFlags> {
 public:
+    friend class Model;
+
     Device(Id name, const Loc& location=Loc::bad); 
     virtual ~Device();
 
@@ -180,7 +182,7 @@ public:
     virtual bool isHierarchical() const { return false; }; 
 
     // Clears the list of all models of this device. 
-    void clearModelList() { models_.clear(); };
+    void clearModelList() { models_.clear(); instanceCount_ = 0; };
 
     // Adds a model to model list, makes sure only models of this device are added
     bool addModel(Model* model); 
@@ -194,6 +196,8 @@ public:
     // Returns a model
     Model* model(size_t ndx) { return models_[ndx]; };
 
+    // Number of instances
+    size_t instanceCount() const { return instanceCount_; };
 
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
@@ -243,6 +247,7 @@ protected:
     Id name_;
     const Loc& loc;
     std::vector<Model*> models_;
+    size_t instanceCount_;
 };
 
 
