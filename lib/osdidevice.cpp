@@ -528,7 +528,7 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (modelParameterCount()>0) {
         os << pfx << "  Model parameters:\n";
         for(ParameterIndex i=0; i<modelParameterCount(); i++) {
-            os << pfx << "    " << " id=" << modelOsdiParameterId(i) << ": " << std::string(modelParameterName(i));
+            os << pfx << "    " << "id=" << modelOsdiParameterId(i) << ": " << std::string(modelParameterName(i));
             auto& p = descriptor_->param_opvar[modelOsdiParameterId(i)];
             os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
