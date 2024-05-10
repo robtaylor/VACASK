@@ -83,13 +83,20 @@ bool NRSolver::rebuild(Status& s) {
     return true;
 }
 
-bool NRSolver::initialize(bool continuePrevious, Status& s) {
-    // This method is called once on entering run()
-    // This is the right place to set up vectors and factors
-    return true;
-}
-
 bool NRSolver::loadForces(bool loadJacobian, Status& s) {
+    // Are any forces enabled? 
+    auto nf = forcesList.size();
+    bool skip = true;
+    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
+        if (forcesEnabled[iForce]) {
+            skip = false;
+            break;
+        }
+    }
+    if (skip) {
+        return true;
+    }
+
     // Get row norms
     if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm), s)) {
         if (settings.debug) {
@@ -101,7 +108,6 @@ bool NRSolver::loadForces(bool loadJacobian, Status& s) {
     // Load forces
     auto n = circuit.unknownCount();
     double* xprev = solution.data();
-    auto nf = forcesList.size();
     for(decltype(nf) iForce=0; iForce<nf; iForce++) {
         // Skip disabled force lists
         if (!forcesEnabled[iForce]) {

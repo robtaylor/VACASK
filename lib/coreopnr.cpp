@@ -120,11 +120,6 @@ bool OpNRSolver::initialize(bool continuePrevious, Status& s) {
     // This method is called once on entering run()
     // This is the right place to set up vectors
     
-    // Call parent's initialize()
-    if (!NRSolver::initialize(continuePrevious, s)) {
-        return false;
-    }
-
     // Set vectors for building linear system
     bool computeMaxResidualContribution = settings.residualCheck || settings.dampingSteps>0;
     elsSystem.resistiveResidual = delta.data();

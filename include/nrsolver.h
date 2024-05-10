@@ -58,7 +58,7 @@ public:
 
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
-    virtual bool initialize(bool continuePrevious, Status& s=Status::ignore);
+    virtual bool initialize(bool continuePrevious, Status& s=Status::ignore) = 0;
 
     // Resize forces repository
     void resizeForces(Int n);
