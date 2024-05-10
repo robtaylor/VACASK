@@ -267,15 +267,18 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     // Check status and numerical rank if it was computed
     if (!numeric || (nr>=0 && nr!=AN)) {
         auto sc = singularColumn();
-        // Unknown name or 1-based index
-        std::string cname = resolver ? 
-           std::string("node '")+std::string((*resolver)(sc))+"'" : 
-           std::string("column ")+std::to_string(sc+1);
-        s.set(Status::MatrixLU, 
-            "Factorization failed, size="+std::to_string(AN)+
-            ", rank="+std::to_string(nr)+
-            ", zero pivot @ "+cname+"."
-        );
+        // Avoid string operations if status is ignored
+        if (!s.ignored()) {
+            // Unknown name or 1-based index
+            std::string cname = resolver ? 
+            std::string("node '")+std::string((*resolver)(sc))+"'" : 
+            std::string("column ")+std::to_string(sc+1);
+            s.set(Status::MatrixLU, 
+                "Factorization failed, size="+std::to_string(AN)+
+                ", rank="+std::to_string(nr)+
+                ", zero pivot @ "+cname+"."
+            );
+        }
         return false;
     }
     return true;
@@ -302,7 +305,10 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     auto nr = numericalRank();
     // Check status and numerical rank if it was computed
     if (!st || (nr>=0 && nr!=AN)) {
-        s.set(Status::MatrixLU, "LU refactorization failed. Matrix rank is "+std::to_string(nr)+"<n="+std::to_string(AN)+".");
+        // Avoid string operations if status is ignored
+        if (!s.ignored()) {
+            s.set(Status::MatrixLU, "LU refactorization failed. Matrix rank is "+std::to_string(nr)+"<n="+std::to_string(AN)+".");
+        }
         return false;
     }
     return true;

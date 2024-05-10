@@ -157,10 +157,10 @@ public:
     bool residual(ValueType* x, ValueType* b, ValueType* res, Status& s=Status::ignore);
     
     // Structural rank
-    EquationIndex structuralRank() const { return common.structural_rank; };
+    IndexType structuralRank() const { return common.structural_rank; };
 
     // Numerical rank
-    EquationIndex numericalRank() const { return common.numerical_rank; };
+    IndexType numericalRank() const { return common.numerical_rank; };
 
     // Singular column
     UnknownIndex singularColumn() const { return common.singular_col; };

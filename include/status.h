@@ -83,6 +83,8 @@ public:
     void extend(const Loc& point);
     void prefix(const std::string& msg);
 
+    bool ignored() { return ignoreFlag; };
+
     // Checks if error is set
     // operator bool() {
     //    return !error;
