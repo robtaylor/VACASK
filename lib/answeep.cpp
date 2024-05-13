@@ -6,6 +6,10 @@
 
 namespace NAMESPACE {
 
+// TODO: propagate swept variable to subsequent sweeps
+// TODO: speed up parameter change propagation (do it only for changed instances/models)
+// TODO: speed up topology rebuild
+
 Id ScalarSweep::modeLin = Id::createStatic("lin"); 
 Id ScalarSweep::modeDec = Id::createStatic("dec"); 
 Id ScalarSweep::modeOct = Id::createStatic("oct"); 

@@ -1229,47 +1229,6 @@ void Circuit::updateEvalFlags(EvalAndLoadSetup& els, Flags mask) {
     }
 }
 
-double Circuit::solutionTolerance(Node* node, double oldSolution) {
-    auto& options = simOptions.core();
-    auto i = node->unknownIndex();
-    // Solution tolerance
-    double tol = std::fabs(oldSolution)*options.reltol;
-    // Absolute solution tolerance differs for potential and flow nodes
-    if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
-        // Potential
-        if (tol<options.vntol) {
-            tol = options.vntol;
-        }
-    } else {
-        // Flow
-        if (tol<options.abstol) {
-            tol = options.abstol;
-        }
-    }
-    return tol;
-}
-
-double Circuit::residualTolerance(Node* node, double maxRes) {
-    auto& options = simOptions.core();
-    auto i = node->unknownIndex();
-    // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-    double tol = std::fabs(maxRes)*options.reltol;
-    // Absolute residual tolerance differs for potential and flow nodes
-    if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
-        // Potential node residual is current
-        if (tol<options.restol) {
-            tol = options.restol;
-        }
-    } else {
-        // Flow node residual is voltage
-        tol = options.vnrestol;
-        if (tol<options.vnrestol) {
-            tol = options.vnrestol;
-        }
-    }
-    return tol;
-}
-
 bool Circuit::storeDcSolution(Id name, Vector<double>& solution, Status& s) {
     auto [it, inserted] = dcSolutionRepository.insert({name, AnnotatedSolution()});
     auto& repo = it->second;

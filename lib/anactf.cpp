@@ -8,8 +8,6 @@ AcTf::AcTf(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       acTfCore(*this, params.core(), opCore, sourceIndex, circuit, jac, solution, states, acMatrix, acSolution, sources, tf, yin, zin) {
-    jac.setResolver(&resolver); 
-    acMatrix.setResolver(&resolver);
 }
 
 AcTf::~AcTf() {
@@ -118,7 +116,8 @@ bool AcTf::deleteOutputs(Status& s) {
 
 bool AcTf::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

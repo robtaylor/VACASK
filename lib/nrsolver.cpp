@@ -86,19 +86,10 @@ bool NRSolver::rebuild(Status& s) {
 bool NRSolver::loadForces(bool loadJacobian, Status& s) {
     // Are any forces enabled? 
     auto nf = forcesList.size();
-    bool skip = true;
-    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
-        if (forcesEnabled[iForce]) {
-            skip = false;
-            break;
-        }
-    }
-    if (skip) {
-        return true;
-    }
-
+    
     // Get row norms
-    if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm), s)) {
+    if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm))) {
+        jac.formatError(s);
         if (settings.debug) {
             Simulator::dbg() << "Failed to compute row norms.\n";
         }
@@ -198,14 +189,117 @@ Forces& NRSolver::forces(Int ndx) {
     return forcesList.at(ndx);
 } 
 
-bool NRSolver::enableForces(Int ndx, bool enable, Status& s) {
-    if (ndx<0 || ndx>=forcesList.size()) {
-        s.set(Status::Range, "Force index out of range.");
-        return false;
+std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool computeNorms, Status& s) {
+    // In delta we have the solution change
+    // Check it for convergence
+    
+    // Number of unknowns (vector length includes a bucket at index 0)
+    auto n = circuit.unknownCount();
+
+    // Raw arrays
+    double* xprev = solution.data();
+    
+    double maxDelta = 0.0;
+    double maxNormDelta = 0.0;
+    Node* maxDeltaNode = nullptr;
+    
+    // Check convergence (see if delta is small enough), 
+    // but only if this is iteration 2 or later
+    // In iteration 1 assume we did not converge
+    
+    // Assume we converged
+    if (deltaOk) {
+        *deltaOk = true;
     }
-    forcesEnabled[ndx] = enable; 
-    return true;
+
+    // Use 1-based index (with bucket) because same indexing is used for variables
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        double tol = circuit.solutionTolerance(rn, xprev[i]);
+        // Absolute solution change 
+        double deltaAbs = fabs(delta[i]);
+        
+        if (computeNorms) {
+            double normDelta = deltaAbs/tol;
+            if (i==1 || normDelta>maxNormDelta) {
+                maxDelta = deltaAbs;
+                maxNormDelta = normDelta;
+                maxDeltaNode = rn;
+            }
+        }
+
+        // Check tolerance
+        if (deltaAbs>tol) {
+            // Did not converge
+            if (deltaOk) {
+                *deltaOk = false;
+            }
+            // Can exit if not computing norms
+            if (!computeNorms) {
+                break;
+            }
+        }
+    }
+    
+    return std::make_tuple(true, maxDelta, maxNormDelta, maxDeltaNode);
 }
+
+std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* residualOk, bool computeNorms, Status& s) {
+    // In residual we have the residual at previous solution
+    // We are going to check that residual
+    
+    // Number of unknowns (vector length includes a bucket at index 0)
+    auto n = circuit.unknownCount();
+
+    // Results
+    double maxResidual = 0.0;
+    double maxNormResidual = 0.0;
+    double l2normResidual2 = 0.0;
+    Node* maxResidualNode = nullptr;
+    
+    // Assume residual is OK
+    if (residualOk) {
+        *residualOk = true;
+    }
+    
+    // Go through all variables (except ground)
+    for(decltype(n) i=1; i<=n; i++) {
+        // Get representative node for i-th variable
+        auto rn = circuit.reprNode(i);
+        // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
+        auto tol = circuit.residualTolerance(rn, maxResidualContribution[i]);
+        // Residual component
+        double rescomp = fabs(delta[i]);
+    
+        // Normalized residual component
+        double normResidual = rescomp/tol;
+
+        if (computeNorms) {
+            l2normResidual2 += normResidual*normResidual;
+            // Update largest normalized component
+            if (i==1 || normResidual>maxNormResidual) {
+                maxResidual = rescomp;
+                maxNormResidual = normResidual;
+                maxResidualNode = rn;
+            }
+        }
+
+        // See if residual component exceeds tolerance
+        if (rescomp>tol) {
+            if (residualOk) {
+                *residualOk = false;
+                // Can exit if not computing norms
+                if (!computeNorms) {
+                    break;
+                }
+            }
+        }
+    }
+    
+    return std::make_tuple(true, maxResidual, maxNormResidual, l2normResidual2, maxResidualNode); 
+}
+
+
 
 bool NRSolver::run(bool continuePrevious, Status& s) {
     // Number of unknowns (vector length includes a bucket at index 0)
@@ -286,6 +380,9 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
+        // Clear maximal residual contribution
+        zero(maxResidualContribution);
+        
         auto [buildOk, preventConvergence] = buildSystem(continuePrevious, s);
         if (!buildOk) {
             // Load error or abort
@@ -294,7 +391,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         xdelta[0] = 0.0; // Set RHS bucket to 0
 
         // Add forced values to the system
-        if (!loadForces(true, s)) {
+        if (haveForces() && !loadForces(true, s)) {
             if (settings.debug) {
                 Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
             }
@@ -302,14 +399,19 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         }
 
         // Check if system is finite
-        if (!jac.isFinite(settings.infCheck, settings.nanCheck, s)) {
+        if (!jac.isFinite(settings.infCheck, settings.nanCheck)) {
+            // TODO: format error on request
+            auto nr = UnknownNameResolver(circuit);
+            jac.formatError(s, &nr);
             if (settings.debug) {
                 Simulator::dbg() << "A matrix entry is not finite. Solver failed.\n";
             }
             break;
         }
 
-        if (!jac.isFinite(dataWithoutBucket(delta), settings.infCheck, settings.nanCheck, s)) {
+        if (!jac.isFinite(dataWithoutBucket(delta), settings.infCheck, settings.nanCheck)) {
+            auto nr = UnknownNameResolver(circuit);
+            jac.formatError(s, &nr);
             if (settings.debug) {
                 Simulator::dbg() << "An RHS entry is not finite. Solver failed.\n";
             }
@@ -388,8 +490,10 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         }
         if (forceFullFactorization || !jac.isFactored()) {
             // Full factorization
-            if (!jac.factor(s)) {
+            if (!jac.factor()) {
                 // Failed, give up
+                auto nr = UnknownNameResolver(circuit);
+                jac.formatError(s, &nr);
                 if (settings.debug) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -398,7 +502,8 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         }
 
         // Solve, use vector without ground component (+1)
-        if (!jac.solve(dataWithoutBucket(delta), s)) {
+        if (!jac.solve(dataWithoutBucket(delta))) {
+            jac.formatError(s);
             if (settings.debug) {
                 Simulator::dbg() << "Failed to solve factored system.\n";
             }
@@ -530,7 +635,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
                 }
 
                 // Add forced values
-                if (!loadForces(false, s)) {
+                if (haveForces() && !loadForces(false, s)) {
                     if (settings.debug) {
                         Simulator::dbg() << "Failed to load forced values in iteration " << iteration << ", damping step " << (dampingSteps+1) << "\n";
                     }

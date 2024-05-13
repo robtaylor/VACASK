@@ -30,8 +30,8 @@ public:
     virtual bool initialize(bool continuePrevious, Status& s=Status::ignore);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious, Status& s=Status::ignore);
-    virtual std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore);
-    virtual std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore);
+    // virtual std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore);
+    // virtual std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore);
     virtual std::tuple<bool, bool> computeResidual(bool continuePrevious, Status& s=Status::ignore);
 
     EvalAndLoadSetup& evalSetupSystem() { return elsSystem; };
@@ -47,7 +47,6 @@ protected:
     EvalAndLoadSetup elsResidual; 
 
     // Internal structures
-    Vector<double> maxResidualContribution;
     Vector<double> dummyStates;
 };
 

@@ -8,7 +8,6 @@ Tran::Tran(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       tranCore(*this, params.core(), opCore, circuit, jac, solution, states) { 
-    jac.setResolver(&resolver); 
 }
 
 Tran::~Tran() {
@@ -101,7 +100,8 @@ bool Tran::deleteOutputs(Status& s) {
 
 bool Tran::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

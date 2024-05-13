@@ -43,12 +43,12 @@ public:
     //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector
     //                corresponding node
     // Relative magnitude is computed wrt. tolerance. 
-    virtual std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore) = 0;
+    std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore);
     
     // Return values: ok, magnitude of delta component with maximal relative magnitude, 
     //                maximal relative magnitude of component, corresponding node
     // Relative magnitude is computed wrt. tolerance. 
-    virtual std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore) = 0;
+    std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore);
 
     // Return values: ok, prevent convergence
     virtual std::tuple<bool, bool> computeResidual(bool continuePrevious, Status& s=Status::ignore) = 0;
@@ -67,7 +67,25 @@ public:
     Forces& forces(Int ndx);
 
     // Enable/disable forces slot
-    bool enableForces(Int ndx, bool enable, Status& s=Status::ignore);
+    bool enableForces(Int ndx, bool enable, Status& s=Status::ignore) {
+        if (ndx<0 || ndx>=forcesList.size()) {
+            s.set(Status::Range, "Force index out of range.");
+            return false;
+        }
+        forcesEnabled[ndx] = enable; 
+        return true;
+    };
+
+    // Do we have any forces
+    bool haveForces() {
+        auto nf = forcesList.size();
+        for(decltype(nf) iForce=0; iForce<nf; iForce++) {
+            if (forcesEnabled[iForce]) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     // Return values: ok, number of iterations
     bool run(bool continuePrevious, Status& s=Status::ignore);
@@ -86,6 +104,9 @@ protected:
     VectorRepository<double>& solution;
     NRSettings& settings;
 
+    // Internal structure for max residual contribution
+    Vector<double> maxResidualContribution;
+    
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
     Vector<bool> isFlow;

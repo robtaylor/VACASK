@@ -20,44 +20,6 @@ bool EvalAndLoadSetup::setBreakPoint(double t, SimulatorInternals& internals, St
     return true;
 }
 
-bool EvalAndLoadSetup::initialize(Status& s) {
-    if (states && states->size()<2) {
-        s.set(Status::Internal, "States history must have at least two slots.");
-        return false;
-    }
-    if (solution && solution->size()<2) {
-        s.set(Status::Internal, "Solution history must have at least two slots.");
-        return false;
-    }
-    if (solution) {
-        oldSolution = solution->data(oldSolutionSlot);
-    }
-    if (states) {
-        oldStates = states->data();
-    }
-    if (dummyStates) {
-        // Dummy states are given when we want to avoid tainting future states
-        newStates = dummyStates->data();   
-    } else if (states) {
-        newStates = states->futureData();
-    }
-    if (integCoeffs) {
-        if (states->size()<integCoeffs->a().size()+1) {
-            s.set(Status::Internal, "Integration method requires a state history with at least "+std::to_string(integCoeffs->a().size()+1)+" slots.");
-            return false;
-        }
-        if (states->size()<integCoeffs->b().size()+1) {
-            s.set(Status::Internal, "Integration method requires a state history with at least "+std::to_string(integCoeffs->b().size()+1)+" slots.");
-            return false;
-        }
-    }
-
-    nextBreakPoint = -1.0;
-    boundStep = -1.0;
-    maxFreq = 0.0;
-    return true;
-}
-
 Device::Device(Id name, const Loc& location) 
     : name_(name), loc(location) {
 }

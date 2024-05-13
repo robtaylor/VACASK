@@ -8,8 +8,6 @@ Ac::Ac(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       acCore(*this, params.core(), opCore, circuit, jac, solution, states, acMatrix, acSolution) {
-    jac.setResolver(&resolver); 
-    acMatrix.setResolver(&resolver);
 }
 
 Ac::~Ac() {
@@ -118,7 +116,8 @@ bool Ac::deleteOutputs(Status& s) {
 
 bool Ac::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

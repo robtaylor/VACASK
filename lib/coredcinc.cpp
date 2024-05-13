@@ -183,7 +183,8 @@ bool DcIncrementalCore::run(bool continuePrevious, Status& s) {
     // We don't need max residual contribution because we do not check residual
 
     // Solve 
-    if (!jacobian.solve(dataWithoutBucket(incrementalSolution), s)) {
+    if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
+        jacobian.formatError(s);
         return false;
     }
 

@@ -12,7 +12,6 @@ namespace NAMESPACE {
 OperatingPoint::OperatingPoint(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
       core(*this, params.core(), circuit, jac, solution, states) {
-    jac.setResolver(&resolver); 
 };
 
 OperatingPoint::~OperatingPoint() {
@@ -86,7 +85,8 @@ bool OperatingPoint::deleteOutputs(Status& s) {
 
 bool OperatingPoint::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

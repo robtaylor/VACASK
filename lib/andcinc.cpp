@@ -8,7 +8,6 @@ DcIncremental::DcIncremental(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       dcIncCore(*this, params.core(), opCore, circuit, jac, incrementalSolution) {
-    jac.setResolver(&resolver); 
 }
 
 DcIncremental::~DcIncremental() {
@@ -117,7 +116,8 @@ bool DcIncremental::deleteOutputs(Status& s) {
 
 bool DcIncremental::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

@@ -202,7 +202,8 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
 
     // Remove forces originating from nodesets after nsiter iterations
     auto nsiter = circuit.simulatorOptions().core().op_nsiter;
-    if (iteration>nsiter) {
+    // Do this only at nsiter+1 (first iteration has index 1)
+    if (iteration==nsiter+1) {
         // Continuation nodesets
         enableForces(0, false);
         // User-specified nodesets
@@ -211,9 +212,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
 
     // Set nodeset and IC flags
     setNodesetAndIcFlags(continuePrevious); 
-    
-    // Clear linearized residual, and maximal residual contribution
-    zero(maxResidualContribution);
     
     // Raw arrays
     double* xprev = solution.data();
@@ -249,117 +247,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
 
     // Prevent convergence if limiting was applied
     return std::make_tuple(true, elsSystem.limitingApplied); 
-}
-
-std::tuple<bool, double, double, double, Node*> OpNRSolver::checkResidual(bool* residualOk, bool computeNorms, Status& s) {
-    // In residual we have the residual at previous solution
-    // We are going to check that residual
-    
-    // Number of unknowns (vector length includes a bucket at index 0)
-    auto n = circuit.unknownCount();
-
-    // Results
-    double maxResidual = 0.0;
-    double maxNormResidual = 0.0;
-    double l2normResidual2 = 0.0;
-    Node* maxResidualNode = nullptr;
-    
-    // Assume residual is OK
-    if (residualOk) {
-        *residualOk = true;
-    }
-    
-    // Go through all variables (except ground)
-    for(decltype(n) i=1; i<=n; i++) {
-        // Get representative node for i-th variable
-        auto rn = circuit.reprNode(i);
-        // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-        auto tol = circuit.residualTolerance(rn, maxResidualContribution[i]);
-        // Residual component
-        double rescomp = fabs(delta[i]);
-    
-        // Normalized residual component
-        double normResidual = rescomp/tol;
-
-        if (computeNorms) {
-            l2normResidual2 += normResidual*normResidual;
-            // Update largest normalized component
-            if (i==1 || normResidual>maxNormResidual) {
-                maxResidual = rescomp;
-                maxNormResidual = normResidual;
-                maxResidualNode = rn;
-            }
-        }
-
-        // See if residual component exceeds tolerance
-        if (rescomp>tol) {
-            if (residualOk) {
-                *residualOk = false;
-                // Can exit if not computing norms
-                if (!computeNorms) {
-                    break;
-                }
-            }
-        }
-    }
-    
-    return std::make_tuple(true, maxResidual, maxNormResidual, l2normResidual2, maxResidualNode); 
-}
-
-std::tuple<bool, double, double, Node*> OpNRSolver::checkDelta(bool* deltaOk, bool computeNorms, Status& s) {
-    // In delta we have the solution change
-    // Check it for convergence
-    
-    // Number of unknowns (vector length includes a bucket at index 0)
-    auto n = circuit.unknownCount();
-
-    // Raw arrays
-    double* xprev = solution.data();
-    
-    double maxDelta = 0.0;
-    double maxNormDelta = 0.0;
-    Node* maxDeltaNode = nullptr;
-    
-    // Check convergence (see if delta is small enough), 
-    // but only if this is iteration 2 or later
-    // In iteration 1 assume we did not converge
-    
-    // Assume we converged
-    if (deltaOk) {
-        *deltaOk = true;
-    }
-
-    // Use 1-based index (with bucket) because same indexing is used for variables
-    for(decltype(n) i=1; i<=n; i++) {
-        auto rn = circuit.reprNode(i);
-        double tol = circuit.solutionTolerance(rn, xprev[i]);
-        // Absolute solution change 
-        double deltaAbs = fabs(delta[i]);
-        
-        if (computeNorms) {
-            double normDelta = deltaAbs/tol;
-            if (i==1 || normDelta>maxNormDelta) {
-                maxDelta = deltaAbs;
-                maxNormDelta = normDelta;
-                maxDeltaNode = rn;
-            }
-        }
-
-        // Check tolerance
-        if (deltaAbs>tol) {
-            // Did not converge
-            if (deltaOk) {
-                *deltaOk = false;
-            }
-            // Can exit if not computing norms
-            if (!computeNorms) {
-                break;
-            }
-        }
-    
-    }
-    
-    return std::make_tuple(true, maxDelta, maxNormDelta, maxDeltaNode);
 }
 
 std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious, Status& s) {

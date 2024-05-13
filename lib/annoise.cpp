@@ -8,8 +8,6 @@ Noise::Noise(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       noiseCore(*this, params.core(), opCore, contributionOffset, circuit, jac, solution, states, acMatrix, acSolution, results, powerGain, outputNoise) {
-    jac.setResolver(&resolver); 
-    acMatrix.setResolver(&resolver);
 }
 
 Noise::~Noise() {
@@ -122,7 +120,8 @@ bool Noise::deleteOutputs(Status& s) {
 
 bool Noise::rebuildCores(Status& s) {
     // Create Jacobian - it is common to both cores, so we need to rebuild it here
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        jac.formatError(s);
         return false;
     }
 

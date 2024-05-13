@@ -233,7 +233,8 @@ bool DcTfCore::run(bool continuePrevious, Status& s) {
         }
 
         // Solve
-        if (!jacobian.solve(dataWithoutBucket(incrementalSolution), s)) {
+        if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
+            jacobian.formatError(s);
             error = true;
             break;
         }

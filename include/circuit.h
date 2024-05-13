@@ -340,8 +340,45 @@ public:
     void dumpSolution(std::ostream& os, const Complex* solution, const char* prefix="") const;
 
     // Tolerance computation 
-    double solutionTolerance(Node* node, double oldSolution);
-    double residualTolerance(Node* node, double maxRes);
+    double solutionTolerance(Node* node, double oldSolution)  {
+        auto& options = simOptions.core();
+        auto i = node->unknownIndex();
+        // Solution tolerance
+        double tol = std::fabs(oldSolution)*options.reltol;
+        // Absolute solution tolerance differs for potential and flow nodes
+        if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
+            // Potential
+            if (tol<options.vntol) {
+                tol = options.vntol;
+            }
+        } else {
+            // Flow
+            if (tol<options.abstol) {
+                tol = options.abstol;
+            }
+        }
+        return tol;
+    };
+    
+    double residualTolerance(Node* node, double maxRes)  {
+        auto& options = simOptions.core();
+        auto i = node->unknownIndex();
+        // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
+        double tol = std::fabs(maxRes)*options.reltol;
+        // Absolute residual tolerance differs for potential and flow nodes
+        if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
+            // Potential node residual is current
+            if (tol<options.restol) {
+                tol = options.restol;
+            }
+        } else {
+            // Flow node residual is voltage
+            if (tol<options.vnrestol) {
+                tol = options.vnrestol;
+            }
+        }
+        return tol;
+    };
 
     // Storing/restoring a solution
     bool storeDcSolution(Id name, Vector<double>& solution, Status& s=Status::ignore);

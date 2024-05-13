@@ -185,7 +185,8 @@ bool AcTfCore::deleteOutputs(Id name, Status &s) {
     
 bool AcTfCore::rebuild(Status& s) {
     // AC analysis matrix
-    if (!acMatrix.rebuild(circuit.sparsityMap(), circuit.unknownCount(), s)) {
+    if (!acMatrix.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
+        acMatrix.formatError(s);
         return false;
     }
     
@@ -360,7 +361,9 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
-        if (!acMatrix.isFinite(options.infcheck, options.nancheck, s)) {
+        if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
+            auto nr = UnknownNameResolver(circuit);
+            acMatrix.formatError(s, &nr);
             if (debug>2) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
             }
@@ -379,8 +382,10 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         }
         if (forceFullFactorization || !acMatrix.isFactored()) {
             // Full factorization
-            if (!acMatrix.factor(s)) {
+            if (!acMatrix.factor()) {
                 // Failed, give up
+                auto nr = UnknownNameResolver(circuit);
+                acMatrix.formatError(s, &nr);
                 if (debug>0) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -390,7 +395,8 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         }
         // Check if matrix is singular
         double rcond;
-        if (!acMatrix.rcond(rcond, s)) {
+        if (!acMatrix.rcond(rcond)) {
+            acMatrix.formatError(s);
             if (debug>0) {
                 Simulator::dbg() << "Condition number estimation failed.\n";
             }
@@ -441,7 +447,8 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
             }
 
             // Solve, set bucket to 0.0
-            if (!acMatrix.solve(dataWithoutBucket(acSolution), s)) {
+            if (!acMatrix.solve(dataWithoutBucket(acSolution))) {
+                acMatrix.formatError(s);
                 if (debug>2) {
                     Simulator::dbg() << "Failed to solve factored system.\n";
                 }

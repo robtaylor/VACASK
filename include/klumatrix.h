@@ -82,10 +82,23 @@ public:
     using Common = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_common, klu_l_common>::type;
     using Symbolic = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_symbolic, klu_l_symbolic>::type;
     using Numeric = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_numeric, klu_l_numeric>::type;
+
+    enum class Error {
+        OK, 
+        Memory, 
+        Defaults, 
+        Analysis, 
+        Factorization, 
+        Refactorization, 
+        ReciprocalPivotGrowth, 
+        ReciprocalCondEstimate, 
+        MatrixInfNan, 
+        VectorInfNan, 
+        Solve
+    };
     
     KluMatrixCore();
-    KluMatrixCore(SparsityMap& m, EquationIndex n, Status& s=Status::ignore);
-
+    
     KluMatrixCore           (const KluMatrixCore&)  = delete;
     KluMatrixCore           (      KluMatrixCore&&) = delete;
     KluMatrixCore& operator=(const KluMatrixCore&)  = delete;
@@ -93,11 +106,33 @@ public:
 
     ~KluMatrixCore();
 
-    // Set resolver
-    void setResolver(NameResolver* r) { resolver = r; };
+    // Get error
+    Error error() const { return lastError; };
+
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
+    // Format error, return false on error - this fnnction is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
+
+    // Error element
+    std::tuple<IndexType, IndexType> errorElement() const {
+        for(IndexType col=0; col<AN; col++) {
+            if (AP[col]<=errorIndex && errorIndex<AP[col+1]) {
+                return std::make_tuple(AI[errorIndex], col); 
+            }
+        }
+        return std::make_tuple(-1, -1);
+    }
+
+    // Error row
+    IndexType errorRow() const { return errorIndex; }; 
+
+    // Error row
+    IndexType errorRank() const { return errorRank_; };
 
     // Rebuild it based on the given sparsity map
-    bool rebuild(SparsityMap& m, EquationIndex n, Status& s=Status::ignore);
+    bool rebuild(SparsityMap& m, EquationIndex n);
 
     // Checks if matrix is valid (rebuild completed successfully)
     bool valid() const { return symbolic; };
@@ -128,33 +163,33 @@ public:
     void zero(Component what=Component::RealPart|Component::ImagPart);
 
     // Factorization
-    bool factor(Status& s=Status::ignore);
-    bool refactor(Status& s=Status::ignore);
+    bool factor();
+    bool refactor();
     bool isFactored() const { return numeric; };
 
     // Reciprocal pivot growth
-    bool rgrowth(double& rgrowth, Status& s=Status::ignore);
+    bool rgrowth(double& rgrowth);
 
     // Cheap reciprocal condition number estimation
-    bool rcond(double& rcond, Status& s=Status::ignore);
+    bool rcond(double& rcond);
 
     // Check matrix for inf/nan
-    bool isFinite(bool infCheck=false, bool nanCheck=true, Status& s=Status::ignore);
+    bool isFinite(bool infCheck=false, bool nanCheck=true);
 
     // Check vector for inf/nan
-    bool isFinite(ValueType* vec, bool infCheck=false, bool nanCheck=true, Status& s=Status::ignore);
+    bool isFinite(ValueType* vec, bool infCheck=false, bool nanCheck=true);
 
     // Maximal element in row
-    bool rowMaxNorm(double* maxNorm, Status& s=Status::ignore);
+    bool rowMaxNorm(double* maxNorm);
     
     // Solve after factorization, result is stored in rhs
-    bool solve(ValueType* b, Status& s=Status::ignore);
+    bool solve(ValueType* b);
     
     // Matrix-vector product, result is stored in res
-    bool product(ValueType* vec, ValueType* res, Status& s=Status::ignore);
+    bool product(ValueType* vec, ValueType* res);
     
     // Residual (Ax-b), stored in res
-    bool residual(ValueType* x, ValueType* b, ValueType* res, Status& s=Status::ignore);
+    bool residual(ValueType* x, ValueType* b, ValueType* res);
     
     // Structural rank
     IndexType structuralRank() const { return common.structural_rank; };
@@ -163,7 +198,7 @@ public:
     IndexType numericalRank() const { return common.numerical_rank; };
 
     // Singular column
-    UnknownIndex singularColumn() const { return common.singular_col; };
+    IndexType singularColumn() const { return common.singular_col; };
 
     // Computes offset of a nonzero element
     std::tuple<IndexType, bool> nonzeroOffset(EquationIndex row, UnknownIndex col);
@@ -195,7 +230,11 @@ private:
     SparsityMap* smap;
     
     double bucket_;
-    NameResolver* resolver;
+    
+    Error lastError;
+    IndexType errorIndex;
+    IndexType errorRank_;
+    bool errorNan;
 };
 
 // Default KLU matrix flavor
