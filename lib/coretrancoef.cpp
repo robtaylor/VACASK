@@ -483,26 +483,7 @@ bool IntegratorCoeffs::scalePredictor(double hk, Status& s) {
 
     return true;
 }
-
-double IntegratorCoeffs::differentiate(VectorRepository<double>& states, double futureValue, StateIndex state) {
-        if (!implicit_) {
-            // Explicit algorithms cannot be used for this
-            throw std::length_error("Explicit algorithms cannot be used for computing future derivative.");
-        }
-        // Contribution of future value
-        double deriv = leading_ * futureValue;
-        // Contribution of past values
-        for(Int i=0; i<aScaled_.size(); i++) {
-            deriv -= aScaled_[i] * states.data(historyOffset_+i)[state];
-        }
-        // Contribution of past derivatives
-        for(Int i=0; i<bScaled_.size(); i++) {
-            deriv -= bScaled_[i] * states.data(historyOffset_+i)[state+1];
-        }
-        
-        return deriv;
-    }
-
+ 
 void IntegratorCoeffs::dump(std::ostream& os, bool scaled) {
     switch (method_) {
         case Method::AdamsMoulton:

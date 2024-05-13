@@ -61,7 +61,24 @@ public:
     // - value history including future value and
     // - derivative history
     // To be used with implicit integration algorithms
-    double differentiate(VectorRepository<double>& states, double futureValue, StateIndex state);
+    double differentiate(VectorRepository<double>& states, double futureValue, StateIndex state) {
+        if (!implicit_) {
+            // Explicit algorithms cannot be used for this
+            throw std::length_error("Explicit algorithms cannot be used for computing future derivative.");
+        }
+        // Contribution of future value
+        double deriv = leading_ * futureValue;
+        // Contribution of past values
+        for(Int i=0; i<aScaled_.size(); i++) {
+            deriv -= aScaled_[i] * states.data(historyOffset_+i)[state];
+        }
+        // Contribution of past derivatives
+        for(Int i=0; i<bScaled_.size(); i++) {
+            deriv -= bScaled_[i] * states.data(historyOffset_+i)[state+1];
+        }
+        
+        return deriv;
+    };
 
     // Predict value based on value history 
     // To be used with explicit algorithms (predictors)
