@@ -133,24 +133,21 @@ bool OpNRSolver::initialize(bool continuePrevious, Status& s) {
     return true;
 }
 
-void OpNRSolver::loadShunts(bool loadJacobian) {
+void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
     // Now load gshunt if it is greater than 0.0
     // Gshunt current (and its residual contribution) is
     //   gshunt * x
-    auto gshunt = circuit.simulatorInternals().gshunt;
-    if (gshunt>0.0) {
-        double* xprev = solution.data();
-        auto nUnknowns = circuit.unknownCount();
-        for(decltype(nUnknowns) i=1; i<=nUnknowns; i++) {
-            auto ptr = diagPtrs[i];
-            if (!isFlow[i]) {
-                // Jacobian
-                if (loadJacobian) {
-                    *ptr += gshunt;
-                }
-                // Residual
-                delta[i] += gshunt*xprev[i];
+    double* xprev = solution.data();
+    auto nUnknowns = circuit.unknownCount();
+    for(decltype(nUnknowns) i=1; i<=nUnknowns; i++) {
+        auto ptr = diagPtrs[i];
+        if (!isFlow[i]) {
+            // Jacobian
+            if (loadJacobian) {
+                *ptr += gshunt;
             }
+            // Residual
+            delta[i] += gshunt*xprev[i];
         }
     }
 }
@@ -243,7 +240,10 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
     // Simulator::dbg() << "\n";
     
     // Now load gshunt if it is greater than 0.0
-    loadShunts();
+    auto gshunt = circuit.simulatorInternals().gshunt;
+    if (gshunt>0) {
+        loadShunts(gshunt);
+    }
 
     // Prevent convergence if limiting was applied
     return std::make_tuple(true, elsSystem.limitingApplied); 
@@ -276,7 +276,10 @@ std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious, Status
     
     // Now load gshunt if it is greater than 0.0
     // Do not load Jacobian
-    loadShunts(false);
+    auto gshunt = circuit.simulatorInternals().gshunt;
+    if (gshunt>0) {
+        loadShunts(gshunt, false);
+    }
 
     return std::make_tuple(true, elsResidual.limitingApplied);
 }

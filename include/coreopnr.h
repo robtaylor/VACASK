@@ -38,7 +38,7 @@ public:
     EvalAndLoadSetup& evalSetupResidual() { return elsResidual; };
 
 protected:
-    void loadShunts(bool loadJacobian=true);
+    void loadShunts(double gshunt, bool loadJacobian=true);
     bool evalAndLoadWrapper(EvalAndLoadSetup& els, Status& s);
 
     void setNodesetAndIcFlags(bool continuePrevious);

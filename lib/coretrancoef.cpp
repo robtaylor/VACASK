@@ -393,56 +393,60 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
 bool IntegratorCoeffs::solve(Int n) {
     // Gaussian elimination with partial pivoting
     Int diagRow = 0;
-    for(Int i=0; i<n; i++, diagRow+=n) {
+    double* mxptr = matrix.data();
+    double* rhsPtr = rhs.data();
+    double* diagRowPtr = mxptr;
+    for(Int i=0; i<n; i++, diagRowPtr+=n) {
         // Look for pivot
-        Int pivRow = diagRow;  // Pivot position
-        double pivot = std::abs(matrix[pivRow+i]);
+        double* pivRowPtr = diagRowPtr;
+        double pivot = std::abs(pivRowPtr[i]);
         Int pivRowNdx = i; // Pivot row index
-        Int atRow = pivRow+n; // Current position below diagonal
-        for(Int j=i+1; j<n; j++, atRow+=n) {
-            if (std::abs(matrix[atRow+i])>pivot) {
-                pivot = std::abs(matrix[atRow+i]);
-                pivRow = atRow;
+        double* atRowPtr = pivRowPtr+n;
+        for(Int j=i+1; j<n; j++, atRowPtr+=n) {
+            if (std::abs(atRowPtr[i])>pivot) {
+                pivot = std::abs(atRowPtr[i]);
+                // pivRow = atRow;
+                pivRowPtr = atRowPtr;
                 pivRowNdx = j;
             }
         }
         // Do we need to swap
-        if (i!=pivRowNdx) {
+        if (diagRowPtr!=pivRowPtr) {
             // Swap RHS
             double tmp;
-            tmp = rhs[i];
-            rhs[i] = rhs[pivRowNdx];
-            rhs[pivRowNdx] = tmp;
+            tmp = rhsPtr[i];
+            rhsPtr[i] = rhsPtr[pivRowNdx];
+            rhsPtr[pivRowNdx] = tmp;
             // Swap rows
             for(Int j=i; j<n; j++) {
-                tmp = matrix[diagRow+j];
-                matrix[diagRow+j] = matrix[pivRow+j];
-                matrix[pivRow+j] = tmp;
+                tmp = diagRowPtr[j];
+                diagRowPtr[j] = pivRowPtr[j];
+                pivRowPtr[j] = tmp;
             }
         }
         // Eliminate
-        Int subDiagRow = diagRow + n;
-        for(Int j=i+1; j<n; j++, subDiagRow+=n) {
-            double factor = matrix[subDiagRow+i]/matrix[diagRow+i];
+        double* subDiagRowPtr = diagRowPtr + n;
+        for(Int j=i+1; j<n; j++, subDiagRowPtr+=n) {
+            double factor = subDiagRowPtr[i]/diagRowPtr[i];
             // Below diagonal we get 0.0, no need to compute it
             for(Int k=i+1; k<n; k++) {
-                matrix[subDiagRow+k] -= factor*matrix[diagRow+k];
+                subDiagRowPtr[k] -= factor*diagRowPtr[k];
             }
             // Subtract RHS
-            rhs[j] -= factor*rhs[i];
-            // Store factor (LU decomposition)
-            matrix[subDiagRow+i] = factor;
+            rhsPtr[j] -= factor*rhsPtr[i];
+            // Store factor (LU decomposition) - no need to do this
+            // subDiagRowPtr[i] = factor;
             // For actual LU decomposition we also need to store row permutations
         }
     }
     // Back substitution, start with last row
-    diagRow -= n;
-    for(Int i=n-1; i>=0; i--, diagRow-=n) {
+    double* rowPtr = diagRowPtr - n;
+    for(Int i=n-1; i>=0; i--, rowPtr -= n) {
         for(Int j=i+1; j<n; j++) {
-            rhs[i] -= rhs[j]*matrix[diagRow+j];
+            rhsPtr[i] -= rhsPtr[j]*rowPtr[j];
         }
         // Divide
-        rhs[i] /= matrix[diagRow+i]; 
+        rhsPtr[i] /= rowPtr[i];
     }
     return true;
 }
