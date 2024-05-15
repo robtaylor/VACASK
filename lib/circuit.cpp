@@ -419,7 +419,7 @@ Node* Circuit::getNode(Id name, Node::Flags type, Status& s) {
             existingNode->incRef();
             return existingNode;
         } else {
-            s.set(Status::BadNode, "A node named '"+std::string(name)+"' exists but is of wrong type.");
+            s.set(Status::Conflicting, "A node named '"+std::string(name)+"' exists but is of wrong type.");
             return nullptr;
         }
     }
@@ -433,7 +433,7 @@ Node* Circuit::getNode(Id name, Node::Flags type, Status& s) {
 
 bool Circuit::releaseNode(Node* node, Status& s) {
     if (!findNode(node->name())) {
-        s.set(Status::Internal, "Node '"+std::string(node->name())+"' is not owned by this circuit.");
+        s.set(Status::NotFound, "Node '"+std::string(node->name())+"' is not owned by this circuit.");
         return false;
     }
     if (node->decRef()==0) {
@@ -526,7 +526,7 @@ bool Circuit::remove(Node* node, Status& s) {
     auto name = node->name();
     auto checkNode = findNode(name);
     if (!checkNode || checkNode!=node) {
-        s.set(Status::Internal, "Node '"+std::string(name)+"' is not owned by this circuit.");
+        s.set(Status::NotFound, "Node '"+std::string(name)+"' is not owned by this circuit.");
         return false;
     }
     nodeMap.erase(name);
@@ -538,7 +538,7 @@ bool Circuit::remove(Instance* instance, Status& s) {
     auto name = instance->name();
     auto checkInstance = findInstance(name);
     if (!checkInstance || checkInstance!=instance) {
-        s.set(Status::Internal, "Instance '"+std::string(name)+"' is not owned by this circuit.");
+        s.set(Status::NotFound, "Instance '"+std::string(name)+"' is not owned by this circuit.");
         return false;
     }
     instanceMap.erase(name);
@@ -549,7 +549,7 @@ bool Circuit::remove(Model* model, Status& s) {
     auto name = model->name();
     auto checkModel = findModel(name);
     if (!checkModel || checkModel!=model) {
-        s.set(Status::Internal, "Model '"+std::string(name)+"' is not owned by this circuit.");
+        s.set(Status::NotFound, "Model '"+std::string(name)+"' is not owned by this circuit.");
         return false;
     }
     modelMap.erase(name);
@@ -978,7 +978,7 @@ std::tuple<MatrixEntryIndex*, bool> Circuit::createJacobianEntry(Node* ne, Node*
     // Create entry
     auto [ptr, ok] = sparsityMap_.insert(e, u);
     if (!ok) {
-        s.set(Status::MatrixCreate, "Failed to create matrix entry.");
+        s.set(Status::CreationFailed, "Failed to create matrix entry.");
     }
 
     return std::make_tuple(ptr, ok);
@@ -1019,13 +1019,13 @@ bool Circuit::nodeOrdering(Status& s) {
 
     // Do we have at least one node
     if (nodeOrder.size()<=0) {
-        s.set(Status::BadNode, "No nodes defined.");
+        s.set(Status::NotFound, "No nodes defined.");
         return false;
     }
     
     // Do we have at least one ground node
     if (!nodeOrder[0]->checkFlags(Node::Flags::Ground)) {
-        s.set(Status::NoGround, "No ground node defined.");
+        s.set(Status::NotFound, "No ground node defined.");
         return false;
     }
 
@@ -1167,22 +1167,10 @@ bool Circuit::bind(
     Status& s
 ) {
     // Sanity checks
-    if (matResistReal && matResistCx) {
-        s.set(Status::Internal, "Cannot bind resistive part twice.");
-        return false;
-    }
-    if (matResistReal && compResist==Component::ImagPart) {
-        s.set(Status::Internal, "Cannot bind resistive part to imaginary part of real matrix.");
-        return false;
-    }
-    if (matReactReal && matReactCx) {
-        s.set(Status::Internal, "Cannot bind reactive part twice.");
-        return false;
-    }
-    if (matReactReal && compReact==Component::ImagPart) {
-        s.set(Status::Internal, "Cannot bind reactive part to imaginary part of real matrix.");
-        return false;
-    }
+    DBGCHECK(matResistReal && matResistCx, "Cannot bind resistive part twice.");
+    DBGCHECK(matResistReal && compResist==Component::ImagPart, "Cannot bind resistive part to imaginary part of real matrix.");
+    DBGCHECK(matReactReal && matReactCx, "Cannot bind reactive part twice.");
+    DBGCHECK(matReactReal && compReact==Component::ImagPart, "Cannot bind reactive part to imaginary part of real matrix.");
     // Call bind() for all devices
     for(auto& dev : devices) {
         if (!dev.get()->bind(

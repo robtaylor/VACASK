@@ -7,10 +7,7 @@ namespace NAMESPACE {
 
 bool vectorCheck(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     // Is it a vector type, but not a list
     *vp = Int(vp->isVector() && vp->type()!=Value::Type::ValueVec);
     return true;
@@ -18,10 +15,7 @@ bool vectorCheck(RpnStack& stack, Rpn::Arity argc, Status& s) {
 
 bool listCheck(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     // Is it a list
     *vp = Int(vp->type()==Value::Type::ValueVec);
     return true;
@@ -29,10 +23,7 @@ bool listCheck(RpnStack& stack, Rpn::Arity argc, Status& s) {
 
 bool len(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     if (!vp->isVector()) {
         s.set(Status::BadArguments, "Argument is not a vector/list."); 
         return false;
@@ -46,10 +37,7 @@ bool len(RpnStack& stack, Rpn::Arity argc, Status& s) {
 bool vectorBuild(RpnStack& stack, Rpn::Arity argc, Status& s) {
     // Number of values
     Value* np = stack.get(argc-1); 
-    if (!np) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!np, "Internal error. Attempt to get value from empty stack."); 
     if (np->type()!=Value::Type::Int) {
         s.set(Status::BadArguments, "First argument must be an integer."); 
         return false; 
@@ -65,14 +53,8 @@ bool vectorBuild(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value *vp = &dflVal;
     if (argc>1) {
         vp = stack.get(argc-2); 
-        if (!vp) { 
-            s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-            return false; 
-        } 
-        if (vp->isVector()) {
-            s.set(Status::BadArguments, "Second argument must be a scalar."); 
-            return false; 
-        }
+        DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
+        DBGCHECK(vp->isVector(), "Second argument must be a scalar."); 
     }
 
     // Construct vector
@@ -100,10 +82,7 @@ bool vectorBuild(RpnStack& stack, Rpn::Arity argc, Status& s) {
 
 // Variable argument count, possible counts: 1, 2, 3
 bool vectorRange(RpnStack& stack, Rpn::Arity argc, Status& s) {
-    if (stack.size()<argc) {
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    }
+    DBGCHECK(stack.size()<argc, "Internal error. Attempt to get value from empty stack."); 
     // Collect arguments
     auto t = Value::Type::Int;
     Value* args[3];
@@ -199,7 +178,7 @@ bool vectorRange(RpnStack& stack, Rpn::Arity argc, Status& s) {
 bool vectorPackPreprocess(Value& comp, Value::Type& t, size_t& j, bool& first, Status& s) {
     if (comp.type()==Value::Type::Value) {
         // Scalar Value type (list entry type) is prohibited
-        s.set(Status::Internal, "Internal error. Scalar Value type is not possible."); 
+        s.set(Status::Unsupported, "Scalar Value type is not supported by vector pack."); 
         return false; 
     } else if (comp.type()==Value::Type::ValueVec) {
         // Recursively check all components of list
@@ -290,10 +269,7 @@ void vectorPackCore(Value& res, Value& comp, size_t& j) {
 // Variable argument count, possible counts >=0
 bool vectorPack(RpnStack& stack, Rpn::Arity argc, Status& s) {
     // Check argument count
-    if (stack.size()<argc) {
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    }
+    DBGCHECK(stack.size()<argc, "Internal error. Attempt to get value from empty stack."); 
     
     // Default scalar type is Int (for zero-length vectors), initial length is 0
     auto st = Value::Type::Int;
@@ -462,15 +438,9 @@ template<typename Tin, typename Tsel> bool rpnSelectorFunc2(Value* arg1, Value* 
 
 bool mathFuncSelector2(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* v1p = stack.get(1); 
-    if (!v1p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v1p, "Internal error. Attempt to get value from empty stack."); 
     Value* v2p = stack.get(); 
-    if (!v2p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v2p, "Internal error. Attempt to get value from empty stack."); 
     // Check second value
     if (v2p->scalarType()!=Value::Type::Int) {
         s.set(Status::BadArguments, "Selector must be an integer or an integer vector."); 

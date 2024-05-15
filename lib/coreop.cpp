@@ -429,7 +429,7 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
         tried = true;
         converged = runSolver(continuePrevious, tmps);
         if (!converged) {
-            tmps.set(Status::AnalysisFailed, "Initial OP analysis failed.");
+            tmps.set(Status::Analysis, "Initial OP analysis failed.");
         }
         leave = circuit.checkFlags(Circuit::Flags::Abort);
         if (debug>0) {
@@ -500,7 +500,7 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
         // Did not leave early
         if (!tried) {
             // No algorithm tried
-            s.set(Status::NoAlg, "No operating point algorithm tried.");
+            s.set(Status::NotFound, "No operating point algorithm tried.");
         } else if (!converged) {
             // Tried, but no convergence, add error messages to s
             s.set(tmps);

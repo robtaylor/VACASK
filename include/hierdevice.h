@@ -30,7 +30,7 @@ public:
     virtual bool isHierarchical() const { return true; }; 
     // Generic model creation is not allowed, constructor must be used
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& parsedSubcircuit, Status& s=Status::ignore) {
-        s.set(Status::Internal, "Internal error, requested generic model creation from hierarchical device.");
+        DBGCHECK(true, "Internal error, requested generic model creation from hierarchical device.");
         return nullptr;
     }
     virtual void dump(int indent, std::ostream& os) const;

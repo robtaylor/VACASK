@@ -128,10 +128,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
 
     /*
     // Check if we have enough past steps
-    if (pastSteps.size()<numX_-1 || pastSteps.size()<numXdot_-1) {
-        s.set(Status::Internal, "Timestep history is too short.");
-        return false;
-    }
+    DBGCHECK(pastSteps.size()<numX_-1 || pastSteps.size()<numXdot_-1, "Timestep history is too short.");
     
     // Compute past timepoints, index 0 is timepoint 0.0 (last computed solution)
     normalizedTimePoint.resize(pastSteps.size()+1);
@@ -145,10 +142,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
         normalizedTimePoint[i] /= newStep;
     }
     */
-    if (pastSteps.valueCount()+1<numX_ || pastSteps.valueCount()+1<numXdot_) {
-        s.set(Status::Internal, "Timestep history is too short.");
-        return false;
-    }
+    DBGCHECK(pastSteps.valueCount()+1<numX_ || pastSteps.valueCount()+1<numXdot_, "Timestep history is too short.");
     
     // Compute past timepoints, index 0 is timepoint 0.0 (last computed solution)
     normalizedTimePoint.resize(pastSteps.valueCount()+1);

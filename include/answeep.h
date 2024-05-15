@@ -116,7 +116,7 @@ template<typename A> ScalarSweep* ScalarSweep::create(const A& settings, Status&
         specCount++;
     }
     if (specCount<=0) {
-        s.set(Status::Missing, "Sweep needs to specify values, mode, or step.");
+        s.set(Status::NotFound, "Sweep needs to specify values, mode, or step.");
         return nullptr;
     }
     if (specCount>1) {

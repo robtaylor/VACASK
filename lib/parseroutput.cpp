@@ -169,7 +169,7 @@ bool PTSubcircuitDefinition::verifyTerminals(Status& s) const {
     for(auto& term : terminals_) {
         auto [exIt, inserted] = tset.insert(term.name());
         if (!inserted) {
-            s.set(Status::BadTerminal, "Terminal '"+std::string(term.name())+"' is not unique.");
+            s.set(Status::Conflicting, "Terminal '"+std::string(term.name())+"' is not unique.");
             s.extend(location());
             return false;
         }

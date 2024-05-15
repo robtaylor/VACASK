@@ -132,14 +132,8 @@ typedef struct EvalAndLoadSetup {
     };
 
     bool initialize(Status& s=Status::ignore) {
-        if (states && states->size()<2) {
-            s.set(Status::Internal, "States history must have at least two slots.");
-            return false;
-        }
-        if (solution && solution->size()<2) {
-            s.set(Status::Internal, "Solution history must have at least two slots.");
-            return false;
-        }
+        DBGCHECK(states && states->size()<2, "States history must have at least two slots.");
+        DBGCHECK(solution && solution->size()<2, "Solution history must have at least two slots.");
         if (solution) {
             oldSolution = solution->data(oldSolutionSlot);
         }
@@ -153,14 +147,8 @@ typedef struct EvalAndLoadSetup {
             newStates = states->futureData();
         }
         if (integCoeffs) {
-            if (states->size()<integCoeffs->a().size()+1) {
-                s.set(Status::Internal, "Integration method requires a state history with at least "+std::to_string(integCoeffs->a().size()+1)+" slots.");
-                return false;
-            }
-            if (states->size()<integCoeffs->b().size()+1) {
-                s.set(Status::Internal, "Integration method requires a state history with at least "+std::to_string(integCoeffs->b().size()+1)+" slots.");
-                return false;
-            }
+            DBGCHECK(states->size()<integCoeffs->a().size()+1, "Integration method requires a state history with at least "+std::to_string(integCoeffs->a().size()+1)+" slots.");
+            DBGCHECK(states->size()<integCoeffs->b().size()+1, "Integration method requires a state history with at least "+std::to_string(integCoeffs->b().size()+1)+" slots.");
         }
 
         nextBreakPoint = -1.0;

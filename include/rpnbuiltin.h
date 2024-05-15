@@ -205,10 +205,7 @@ template<typename Tin, typename F> bool rpnAggregateFunc1(Value* arg, Status& s=
 // Math function with 1 argument, applied component-wise
 template<typename F> inline bool mathFuncComp1(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (vp->type()) { 
         case Value::Type::Int:     coreSt = rpnMathFunc1<Int, F>(vp, s); break; 
@@ -228,15 +225,9 @@ template<typename F> inline bool mathFuncComp1(RpnStack& stack, Rpn::Arity argc,
 // Math function with 2 arguments, applied component-wise
 template<typename F> inline bool mathFuncComp2(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* v1p = stack.get(1); 
-    if (!v1p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v1p, "Internal error. Attempt to get value from empty stack."); 
     Value* v2p = stack.get(); 
-    if (!v2p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v2p, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (type_pair(v1p->type(), v2p->type())) { 
         case type_pair(Value::Type::Int, Value::Type::Int):     coreSt = rpnMathFunc2<Int, Int, F>(v1p, v2p, s); break; 
@@ -276,10 +267,7 @@ bool mathFuncSelector2(RpnStack& stack, Rpn::Arity argc, Status& s);
 // Aggregates scalars/vectors into a numeric value
 template<typename F> inline bool mathAggregateFunc1(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (vp->type()) { 
         case Value::Type::Int:     coreSt = rpnAggregateFunc1<Int, F>(vp, s); break; 
@@ -303,10 +291,7 @@ template<typename F> inline bool mathAggregateFunc1(RpnStack& stack, Rpn::Arity 
 // Aggregates numerical scalars/vectors into a numeric value
 template<typename F> inline bool mathAggregateNumFunc1(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (vp->type()) { 
         case Value::Type::Int:     coreSt = rpnAggregateFunc1<Int, F>(vp, s); break; 
@@ -328,15 +313,9 @@ template<typename F> inline bool mathAggregateNumFunc1(RpnStack& stack, Rpn::Ari
 // Relational operator with 2 arguments, applied component-wise
 template<typename F> inline bool mathRelOpComp2(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* v1p = stack.get(1); 
-    if (!v1p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v1p, "Internal error. Attempt to get value from empty stack."); 
     Value* v2p = stack.get(); 
-    if (!v2p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v2p, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (type_pair(v1p->type(), v2p->type())) { 
         case type_pair(Value::Type::Int, Value::Type::Int):     coreSt = rpnMathFunc2<Int, Int, F>(v1p, v2p, s); break; 
@@ -378,10 +357,7 @@ template<typename F> inline bool mathRelOpComp2(RpnStack& stack, Rpn::Arity argc
 // Bitwise operator with 1 argument, applied component-wise
 template<typename F> inline bool mathBitOpComp1(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (vp->type()) { 
         case Value::Type::Int:     coreSt = rpnMathFunc1<Int, F>(vp, s); break; 
@@ -399,15 +375,9 @@ template<typename F> inline bool mathBitOpComp1(RpnStack& stack, Rpn::Arity argc
 // Bitwise operator with 2 arguments, applied component-wise
 template<typename F> inline bool mathBitOpComp2(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* v1p = stack.get(1); 
-    if (!v1p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v1p, "Internal error. Attempt to get value from empty stack."); 
     Value* v2p = stack.get(); 
-    if (!v2p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v2p, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (type_pair(v1p->type(), v2p->type())) { 
         case type_pair(Value::Type::Int, Value::Type::Int):     coreSt = rpnMathFunc2<Int, Int, F>(v1p, v2p, s); break; 
@@ -429,10 +399,7 @@ template<typename F> inline bool mathBitOpComp2(RpnStack& stack, Rpn::Arity argc
 // Logical operator with 1 argument, applied only to scalars
 template<typename F> inline bool mathLogicOp1(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (vp->type()) { 
         case Value::Type::Int:     coreSt = rpnMathFunc1<Int, F>(vp, s); break; 
@@ -452,15 +419,9 @@ template<typename F> inline bool mathLogicOp1(RpnStack& stack, Rpn::Arity argc, 
 // Relational operator with 2 arguments, applied only to scalars
 template<typename F> inline bool mathLogicOp2(RpnStack& stack, Rpn::Arity argc, Status& s) { 
     Value* v1p = stack.get(1); 
-    if (!v1p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v1p, "Internal error. Attempt to get value from empty stack."); 
     Value* v2p = stack.get(); 
-    if (!v2p) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!v2p, "Internal error. Attempt to get value from empty stack."); 
     bool coreSt = false;
     switch (type_pair(v1p->type(), v2p->type())) { 
         case type_pair(Value::Type::Int, Value::Type::Int):       coreSt = rpnMathFunc2<Int, Int, F>(v1p, v2p, s); break; 
@@ -489,10 +450,7 @@ template<typename F> inline bool mathLogicOp2(RpnStack& stack, Rpn::Arity argc, 
 // Type checking function
 template<Value::Type typeCode> inline bool scalarTypeCheck(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     // Get type code, remove vector bit
     *vp = Int(vp->scalarType()==typeCode);
     return true;
@@ -507,10 +465,7 @@ bool listCheck(RpnStack& stack, Rpn::Arity argc, Status& s);
 // Conversion function
 template<Value::Type typeCode> inline bool typeConversion(RpnStack& stack, Rpn::Arity argc, Status& s) {
     Value* vp = stack.get(); 
-    if (!vp) { 
-        s.set(Status::Internal, "Internal error. Attempt to get value from empty stack."); 
-        return false; 
-    } 
+    DBGCHECK(!vp, "Internal error. Attempt to get value from empty stack."); 
     // Need conversion?
     if (vp->scalarType()==typeCode) {
         return true;

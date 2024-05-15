@@ -173,7 +173,7 @@ bool OperatingPointCore::gminStepping(RunType type, Status& s) {
         if (!converged) {
             // Failed to converge, copy last message
             s.set(tmps);
-            s.set(Status::HomotopyFailed, homotopyProgress()+", dynamic "+steppingName+" stepping failed after "+std::to_string(itCount)+" step(s).");
+            s.set(Status::Homotopy, homotopyProgress()+", dynamic "+steppingName+" stepping failed after "+std::to_string(itCount)+" step(s).");
         }
     } else {
         // Leaving early, did not converge
@@ -262,7 +262,7 @@ bool OperatingPointCore::spice3GminStepping(Status& s) {
         if (!converged) {
             // Failed to converge, copy last message
             s.set(tmps);
-            s.set(Status::HomotopyFailed, homotopyProgress()+", SPICE3 gmin stepping failed after "+std::to_string(itCount)+" step(s).");
+            s.set(Status::Homotopy, homotopyProgress()+", SPICE3 gmin stepping failed after "+std::to_string(itCount)+" step(s).");
         }
     } else {
         // Leaving early, did not converge
@@ -296,7 +296,7 @@ bool OperatingPointCore::sourceStepping(Status& s) {
     tmps.clear();
     converged = runSolver(continuation, tmps);
     if (!converged) {
-        tmps.set(Status::HomotopyFailed, "Initial OP analysis at zero sources failed.");
+        tmps.set(Status::Homotopy, "Initial OP analysis at zero sources failed.");
     }
     leave = circuit.checkFlags(Circuit::Flags::Abort);
     if (debug>1) {
@@ -424,7 +424,7 @@ bool OperatingPointCore::sourceStepping(Status& s) {
         if (!converged) {
             // Failed to converge, copy last message
             s.set(tmps);
-            s.set(Status::HomotopyFailed, homotopyProgress()+", dynamic source stepping failed after "+std::to_string(itCount)+" step(s).");
+            s.set(Status::Homotopy, homotopyProgress()+", dynamic source stepping failed after "+std::to_string(itCount)+" step(s).");
         }
     } else {
         // Leaving early, did not converge
@@ -486,7 +486,7 @@ bool OperatingPointCore::spice3SourceStepping(Status& s) {
         if (!converged) {
             // Failed to converge, copy last message
             s.set(tmps);
-            s.set(Status::HomotopyFailed, homotopyProgress()+", SPICE3 source stepping failed after "+std::to_string(itCount)+" step(s).");
+            s.set(Status::Homotopy, homotopyProgress()+", SPICE3 source stepping failed after "+std::to_string(itCount)+" step(s).");
         }
     } else {
         // Leaving early, did not converge

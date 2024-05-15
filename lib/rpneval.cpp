@@ -179,7 +179,7 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
     if (stack_.size()==1) {
         stack_.pop(result);
     } else {
-        s.set(Status::Internal, std::string("Internal error. Final RPN stack contains ")+std::to_string(stack_.size())+" values insted of 1.");
+        DBGCHECK(true, std::string("Internal error. Final RPN stack contains ")+std::to_string(stack_.size())+" values insted of 1.");
         return false;
     }
     return true;

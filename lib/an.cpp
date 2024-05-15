@@ -148,7 +148,7 @@ bool Analysis::resolveOutputDescriptor(const OutputDescriptor& descr, Output::So
             srcs.emplace_back(sweeper.get(), descr.ndx);
             break;
         default:
-            s.set(Status::Internal, "Unknown output descriptor type.");
+            DBGCHECK(true, "Unknown output descriptor type.");
             return false;
     }
     return true;
@@ -358,7 +358,7 @@ bool Analysis::run(Status& s) {
                 }
                 break;
             } else if (!runOk) {
-                s.set(Status::AnalysisFailed, std::string("Analysis '")+std::string(name_)+"' failed.");
+                s.set(Status::Analysis, std::string("Analysis '")+std::string(name_)+"' failed.");
                 break;
             }
 
@@ -515,7 +515,7 @@ bool Analysis::run(Status& s) {
                         Simulator::dbg() << "Analysis '"+std::string(name_)+"' - stop requested.\n";
                     }
                 } else if (!runOk) {
-                    s.set(Status::AnalysisFailed, std::string("Analysis '")+std::string(name_)+"' failed.");
+                    s.set(Status::Analysis, std::string("Analysis '")+std::string(name_)+"' failed.");
                 }
             }
 

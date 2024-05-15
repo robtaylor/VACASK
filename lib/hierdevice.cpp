@@ -62,7 +62,7 @@ bool HierarchicalModel::buildTerminalMap(Status& s) {
         auto id = terminals[i].name();
         auto [itPrev, inserted] = terminalMap.insert({id, i});
         if (!inserted) {
-            s.set(Status::BadTerminal, "Terminal '"+std::string(id)+"' is not unique.");
+            s.set(Status::Conflicting, "Terminal '"+std::string(id)+"' is not unique.");
             s.extend(terminals[i].location());
             if (terminals[itPrev->second].location()) {
                 s.extend("Terminal was first defined here");
@@ -552,7 +552,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
         // Check for hierarchical recursion
         if (idata.isAncestor(mod)) {
             // Recursion detected
-            s.set(Status::HierarchicalRecursion, "Hierarchical recursion detected.");
+            s.set(Status::Recursion, "Hierarchical recursion detected.");
             s.extend(it->location());
             return false;
         }

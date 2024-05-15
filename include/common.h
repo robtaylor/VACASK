@@ -90,6 +90,13 @@ typedef std::complex<double> Complex;
 // Time relative tolerance
 const double timeRelativeTolerance = std::numeric_limits<double>::epsilon()*8;
 
+
+// Debug check, throw error if condition is true
+#ifdef SIMDEBUG
+    #define DBGCHECK(cond, msg) if (cond) { throw std::runtime_error(msg); }
+#else
+    #define DBGCHECK(cond, msg) 
+#endif
 }
 
 #endif

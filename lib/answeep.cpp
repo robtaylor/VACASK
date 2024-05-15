@@ -309,7 +309,7 @@ bool ParameterSweeper::bind(Circuit& circuit, IStruct<SimulatorOptions>& opt, St
             Model* modPtr;
             if (!it->model) {
                 // Instance name not given
-                s.set(Status::Missing, "Sweep '"+std::string(it->name)+"': instance name not given.");
+                s.set(Status::NotFound, "Sweep '"+std::string(it->name)+"': instance name not given.");
                 s.extend(it->location);
                 return false;
             } else {
@@ -320,7 +320,7 @@ bool ParameterSweeper::bind(Circuit& circuit, IStruct<SimulatorOptions>& opt, St
                     return false;
                 }
                 if (!it->parameter) {
-                    s.set(Status::Missing, "Sweep '"+std::string(it->name)+"': model parameter name not given.");
+                    s.set(Status::NotFound, "Sweep '"+std::string(it->name)+"': model parameter name not given.");
                     s.extend(it->location);
                     return false;
                 }
@@ -344,7 +344,7 @@ bool ParameterSweeper::bind(Circuit& circuit, IStruct<SimulatorOptions>& opt, St
             Instance* instPtr;
             if (!it->instance) {
                 // Instance name not given
-                s.set(Status::Missing, "Sweep '"+std::string(it->name)+"': instance name not given.");
+                s.set(Status::NotFound, "Sweep '"+std::string(it->name)+"': instance name not given.");
                 s.extend(it->location);
                 return false;
             } else {

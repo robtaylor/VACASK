@@ -515,9 +515,9 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     if (!finished) {
         if (freq>=0) {
             ss.str(""); ss << freq;
-            s.set(Status::NotConverged, std::string("Leaving AC transfer function frequency sweep at frequency=")+ss.str()+".");
+            s.set(Status::Analysis, std::string("Leaving AC transfer function frequency sweep at frequency=")+ss.str()+".");
         } else {
-            s.set(Status::NotConverged, "Leaving AC transfer function frequency sweep.");
+            s.set(Status::Analysis, "Leaving AC transfer function frequency sweep.");
         }
     }
 

@@ -960,8 +960,7 @@ bool TranCore::run(bool continuePrevious, Status& s) {
             breakDelta = breakPoints.at(0) - breakPoints.at(1);
         } else {
             // This should be impossible if break points mechanism works correctly
-            ss.str(""); ss << tSolve;
-            s.set(Status::Internal, "Evaluation timepoint t="+ss.str()+" is after latest breakpoint.");
+            DBGCHECK(true, "Evaluation timepoint t="+std::to_string(tSolve)+" is after latest breakpoint.");
             return false;
         }
         
@@ -1148,8 +1147,7 @@ bool TranCore::run(bool continuePrevious, Status& s) {
             // Fallback point tk should be between breakPoints.at(1) and breakPoints.at(0)
             // If not, panic
             if (tk<breakPoints.at(1) || tk>breakPoints.at(0)) {
-                ss.str(""); ss << tk;
-                s.set(Status::Internal, "Internal breakpoint handling error at rejection, t="+ss.str()+".");
+                DBGCHECK(true, "Internal breakpoint handling error at rejection, t="+std::to_string(tk)+".");
                 return false;
             }
             // Is next break point after tk
@@ -1302,7 +1300,7 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         
         // Check for timestep too small
         if (hk<tSolve*timeRelativeTolerance) {
-            s.set(Status::AnalysisFailed, "Timestep too small. Transient analysis aborted.");
+            s.set(Status::Analysis, "Timestep too small. Transient analysis aborted.");
             return false;
         }
     }

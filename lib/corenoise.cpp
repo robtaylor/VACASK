@@ -643,9 +643,9 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     if (!finished) {
         if (freq>=0) {
             ss.str(""); ss << freq;
-            s.set(Status::NotConverged, std::string("Leaving noise frequency sweep at frequency=")+ss.str()+".");
+            s.set(Status::Analysis, std::string("Leaving noise frequency sweep at frequency=")+ss.str()+".");
         } else {
-            s.set(Status::NotConverged, "Leaving noise frequency sweep.");
+            s.set(Status::Analysis, "Leaving noise frequency sweep.");
         }
     }
 

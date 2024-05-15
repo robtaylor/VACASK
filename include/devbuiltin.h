@@ -612,7 +612,7 @@ template<typename ModelParams, typename InstanceParams, typename InstanceData>
 bool BuiltinInstance<ModelParams, InstanceParams, InstanceData>::verifyTerminalsConnected(Status& s) {
     // If we require all terminals to be connected, do this
     if (connectedTerminalCount<model()->device()->terminalCount) {
-        s.set(Status::BadTerminal, "Instance has "+std::to_string(model()->device()->terminalCount)+" terminal(s) but only "+std::to_string(connectedTerminalCount)+" connection(s).");
+        s.set(Status::Conflicting, "Instance has "+std::to_string(model()->device()->terminalCount)+" terminal(s) but only "+std::to_string(connectedTerminalCount)+" connection(s).");
         return false;
     }
     return true;
