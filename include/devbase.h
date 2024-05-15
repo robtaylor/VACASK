@@ -130,7 +130,7 @@ typedef struct EvalAndLoadSetup {
         finishRequested = false;
         stopRequested = false;
     };
-    
+
     bool initialize(Status& s=Status::ignore) {
         if (states && states->size()<2) {
             s.set(Status::Internal, "States history must have at least two slots.");
@@ -177,7 +177,21 @@ typedef struct EvalAndLoadSetup {
     };
     void setBoundStep(double bound) { if (bound<boundStep) boundStep=bound; };
     void setDiscontinuity(Int i) { if (i<0) return; if (discontinuity<0 || i<discontinuity) discontinuity=i; };
-    bool setBreakPoint(double t, SimulatorInternals& internals, Status& s=Status::ignore);
+    bool setBreakPoint(double t, SimulatorInternals& internals) {
+        if (std::abs(t-internals.time) <= timeRelativeTolerance*internals.time) {
+            // Breakpoint now or close to now, it is too late to take it into account. 
+            // It should have been set earlier. 
+            // Signal discontinuity
+        } else if (t<internals.time) {
+            // Breakpoint in past, ignore
+        } else {
+            // Set next breakpoint
+            if (t<nextBreakPoint) {
+                nextBreakPoint = t;
+            }
+        }
+        return true;
+    };
     void setMaxFreq(double freq) { if (freq>maxFreq) maxFreq=freq; }; 
 } EvalAndLoadSetup;
 
@@ -264,7 +278,7 @@ public:
     ) { return true; };
 
     // Evaluate instances and load results
-    virtual bool evalAndLoad(Circuit& cir, EvalAndLoadSetup& els, Status& s=Status::ignore) { return true; };
+    virtual bool evalAndLoad(Circuit& cir, EvalAndLoadSetup& els) { return true; };
     
     // A model created with this method is owned by the circuit. 
     // No need to delete it manually, it will get deleted when the circuit is deleted. 

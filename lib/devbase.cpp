@@ -4,22 +4,6 @@
 
 namespace NAMESPACE {
 
-bool EvalAndLoadSetup::setBreakPoint(double t, SimulatorInternals& internals, Status& s) {
-    if (std::abs(t-internals.time) <= timeRelativeTolerance*internals.time) {
-        // Breakpoint now or close to now, it is too late to take it into account. 
-        // It should have been set earlier. 
-        // Signal discontinuity
-    } else if (t<internals.time) {
-        // Breakpoint in past, ignore
-    } else {
-        // Set next breakpoint
-        if (t<nextBreakPoint) {
-            nextBreakPoint = t;
-        }
-    }
-    return true;
-}
-
 Device::Device(Id name, const Loc& location) 
     : name_(name), loc(location) {
 }

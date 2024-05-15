@@ -300,7 +300,7 @@ bool OsdiDevice::bind(
     return true;
 }
 
-bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
     OsdiSimInfo simInfo;
@@ -369,7 +369,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els, Status& s)
             continue;
         }
         for(auto instance : model->instances()) {
-            if (!static_cast<OsdiInstance*>(instance)->evalAndLoadCore(circuit, simInfo, els, s)) {
+            if (!static_cast<OsdiInstance*>(instance)->evalAndLoadCore(circuit, simInfo, els)) {
                 depopulate(simInfo.paras);
                 return false;
             }

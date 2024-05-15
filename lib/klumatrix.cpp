@@ -660,22 +660,22 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     IndexType row, col;
     switch (lastError) {
         case Error::Memory:
-            s.set(Status::NoMem, "Out of memory.");
+            s.set(Status::LinearSolver, "Out of memory.");
             return false;
         case Error::Defaults:
-            s.set(Status::MatrixAnalysis, "Cannot set up KLU defaults.");
+            s.set(Status::LinearSolver, "Cannot set up KLU defaults.");
             return false;
         case Error::Analysis:
-            s.set(Status::MatrixAnalysis, "KLU matrix analysis failed. Probably the matrix is singular.");
+            s.set(Status::LinearSolver, "KLU matrix analysis failed. Probably the matrix is singular.");
             return false;
         case Error::ReciprocalPivotGrowth:
-            s.set(Status::MatrixRgrowth, "Failed to compute reciprocal pivot growth.");
+            s.set(Status::LinearSolver, "Failed to compute reciprocal pivot growth.");
             return false;
         case Error::ReciprocalCondEstimate:
-            s.set(Status::MatrixRcond, "Failed to compute reciprocal condition number estimate.");
+            s.set(Status::LinearSolver, "Failed to compute reciprocal condition number estimate.");
             return false;
         case Error::Solve:
-            s.set(Status::MatrixSolve, "Failed to solve factorized system.");
+            s.set(Status::LinearSolver, "Failed to solve factorized system.");
             return false;
         case Error::Factorization:
             txt = "Factorization failed, size="+std::to_string(AN);
@@ -688,7 +688,7 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
                 txt += std::string(", zero pivot @ column ")+std::to_string(errorIndex+1);
             }
             txt += ".";
-            s.set(Status::MatrixLU, txt);
+            s.set(Status::LinearSolver, txt);
             return false;
         case Error::Refactorization:
             txt = "Refactorization failed, size="+std::to_string(AN);
@@ -696,7 +696,7 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
                 txt += ", rank="+std::to_string(errorRank_);
             }
             txt += ".";
-            s.set(Status::MatrixLU, txt);
+            s.set(Status::LinearSolver, txt);
             return false;
         case Error::MatrixInfNan:
             if (errorNan) {
@@ -712,7 +712,7 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
                 txt += ", row "+std::to_string(row+1)+", column "+std::to_string(col+1);
             }
             txt +=".";
-            s.set(Status::NotFinite, txt);
+            s.set(Status::LinearSolver, txt);
             return false;
         case Error::VectorInfNan:
             if (errorNan) {

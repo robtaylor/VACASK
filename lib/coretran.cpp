@@ -451,7 +451,8 @@ bool TranCore::rebuild(Status& s) {
     }
 
     // Rebuild transient NR solver structures
-    if (!nrSolver.rebuild(s)) {
+    if (!nrSolver.rebuild()) {
+        s.set(Status::NonlinearSolver, "Failed to rebuild internal structures of nonlinear solver.");
         return false;
     }
 
@@ -848,8 +849,7 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         states.vector() = states.vector(1);
 
         // Solve
-        Status tmps;
-        auto solutionOk = nrSolver.run(true, tmps);
+        auto solutionOk = nrSolver.run(true);
         if (!solutionOk) {
             // Solver failed. Did we have an Abort request? 
             if (circuit.checkFlags(Circuit::Flags::Abort)) {

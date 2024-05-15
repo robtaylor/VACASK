@@ -18,7 +18,7 @@ public:
         NRSettings& settings, IntegratorCoeffs& integCoeffs
     ); 
 
-    virtual bool initialize(bool continuePrevious, Status& s=Status::ignore);
+    virtual bool initialize(bool continuePrevious);
 
     // No need to override buildSysten() and computeResidual() to set 
     // nodeset and ic flags to false because 

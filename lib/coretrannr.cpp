@@ -63,12 +63,12 @@ TranNRSolver::TranNRSolver(
     // elsResidual.linearizedResidualLoadOnlyIfLimited = true;
 }
 
-bool TranNRSolver::initialize(bool continuePrevious, Status& s) {
+bool TranNRSolver::initialize(bool continuePrevious) {
     // This method is called once on entering run()
     // This is the right place to set vectors
     
     // Call parent's initialize()
-    if (!OpNRSolver::initialize(continuePrevious, s)) {
+    if (!OpNRSolver::initialize(continuePrevious)) {
         return false;
     }
 

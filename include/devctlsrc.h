@@ -136,7 +136,7 @@ template<> bool BuiltinVccsInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // VCVS
 template<> void BuiltinVcvs::defineInternals();
@@ -152,7 +152,7 @@ template<> bool BuiltinVcvsInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCCS
 template<> void BuiltinCccs::defineInternals();
@@ -168,7 +168,7 @@ template<> bool BuiltinCccsInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCVS
 template<> void BuiltinCcvs::defineInternals();
@@ -184,7 +184,7 @@ template<> bool BuiltinCcvsInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 
 struct DevMutualInstanceParams {
@@ -233,7 +233,7 @@ template<> bool BuiltinMutualInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 
 }

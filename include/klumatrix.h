@@ -112,7 +112,7 @@ public:
     // Clear error
     void clearError() { lastError = Error::OK; }; 
 
-    // Format error, return false on error - this fnnction is not cheap (works with strings)
+    // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
 
     // Error element

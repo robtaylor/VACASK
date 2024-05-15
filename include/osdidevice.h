@@ -46,7 +46,7 @@ public:
         KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
         Status& s=Status::ignore
     );
-    virtual bool evalAndLoad( Circuit& circuit, EvalAndLoadSetup& els, Status& s=Status::ignore);
+    virtual bool evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els);
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& parsedModel, Status& s=Status::ignore);
     virtual void dump(int indent, std::ostream& os) const;
 

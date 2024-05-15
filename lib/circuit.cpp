@@ -1209,7 +1209,7 @@ bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)
             continue;
         }
         if ((!deviceSelector || deviceSelector(dev.get()))) {
-            if (!devPtr->evalAndLoad(*this, els, s)) {
+            if (!devPtr->evalAndLoad(*this, els)) {
                 return false;
             }
         }

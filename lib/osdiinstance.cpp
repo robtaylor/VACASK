@@ -496,7 +496,7 @@ bool OsdiInstance::bindCore(
     return true;
 }
 
-bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els, Status& s) {
+bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els) {
     // Get descriptor 
     auto descr = model()->device()->descriptor();
 

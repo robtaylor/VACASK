@@ -102,9 +102,9 @@ OpNRSolver::OpNRSolver(
     };
 }
 
-bool OpNRSolver::rebuild(Status& s) {
+bool OpNRSolver::rebuild() {
     // Call parent's rebuild
-    if (!NRSolver::rebuild(s)) {
+    if (!NRSolver::rebuild()) {
         return false;
     }
 
@@ -116,7 +116,7 @@ bool OpNRSolver::rebuild(Status& s) {
     return true;
 }
 
-bool OpNRSolver::initialize(bool continuePrevious, Status& s) {
+bool OpNRSolver::initialize(bool continuePrevious) {
     // This method is called once on entering run()
     // This is the right place to set up vectors
     
@@ -152,8 +152,8 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
     }
 }
 
-bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els, Status& s) {
-    if (!circuit.evalAndLoad(els, nullptr, s)) {
+bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+    if (!circuit.evalAndLoad(els, nullptr)) {
         // Load error
         if (settings.debug>2) {
             Simulator::dbg() << "Evaluation error.\n";
@@ -194,7 +194,7 @@ void OpNRSolver::setNodesetAndIcFlags(bool continuePrevious) {
     elsSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
 }
 
-std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s) {
+std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     auto n = circuit.unknownCount();
 
     // Remove forces originating from nodesets after nsiter iterations
@@ -229,7 +229,9 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
     circuit.simulatorInternals().initalizeLimiting = elsSystem.initializeLimiting; 
 
     // Evaluate and load
-    if (!evalAndLoadWrapper(elsSystem, s)) {
+    if (!evalAndLoadWrapper(elsSystem)) {
+        lastError = Error::EvalAndLoad;
+        errorIteration = iteration;
         return std::make_tuple(false, elsSystem.limitingApplied);
     }
     delta[0] = 0.0;
@@ -249,7 +251,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious, Status& s)
     return std::make_tuple(true, elsSystem.limitingApplied); 
 }
 
-std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious, Status& s) {
+std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = circuit.unknownCount();
 
@@ -269,7 +271,9 @@ std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious, Status
     elsSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
     
     // This time do not initialize limiting, divert new state to dummy vector
-    if (!evalAndLoadWrapper(elsResidual, s)) {
+    if (!evalAndLoadWrapper(elsResidual)) {
+        lastError = Error::EvalAndLoad;
+        errorIteration = iteration;
         return std::make_tuple(false, elsResidual.limitingApplied);
     }
     delta[0] = 0.0;

@@ -135,8 +135,8 @@ template<> bool BuiltinISourceInstance::bindCore(
     KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
     Status& s
 );
-template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
-template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s);
+template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
+template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 }
 

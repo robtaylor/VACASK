@@ -286,7 +286,8 @@ bool OperatingPointCore::rebuild(Status& s) {
     }
     
     // Rebuild NR solver structures
-    if (!nrSolver.rebuild(s)) {
+    if (!nrSolver.rebuild()) {
+        s.set(Status::NonlinearSolver, "Failed to rebuild internal structures of nonlinear solver.");
         return false;
     }
 
@@ -359,7 +360,12 @@ bool OperatingPointCore::runSolver(bool continuePrevious, Status& s) {
         }
     }
 
-    return nrSolver.run(hasInitialStates, s);
+    auto st = nrSolver.run(hasInitialStates);
+    if (!st) {
+        auto nr = UnknownNameResolver(circuit);
+        nrSolver.formatError(s, &nr); 
+    }
+    return st;
 }
 
 // System of equations is 

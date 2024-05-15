@@ -30,35 +30,52 @@ typedef struct NRSettings {
 
 class NRSolver {
 public:
+    enum class Error {
+        OK, 
+        ForcesIndex, 
+        EvalAndLoad, 
+        LinearSolver, 
+        Convergence
+    };
+
     NRSolver(
         Circuit& circuit, KluRealMatrix& jac, 
         VectorRepository<double>& states, VectorRepository<double>& solution, 
         NRSettings& settings
     );
 
+    // Get error
+    Error error() const { return lastError; };
+
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
+
     // Return value: ok, prevent convergence
-    virtual std::tuple<bool, bool> buildSystem(bool continuePrevious, Status& s=Status::ignore) = 0;
+    virtual std::tuple<bool, bool> buildSystem(bool continuePrevious) = 0;
 
     // Return values: ok, magnitude of residual component with maximal relative magnitude, 
     //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector
     //                corresponding node
     // Relative magnitude is computed wrt. tolerance. 
-    std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore);
+    std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms);
     
     // Return values: ok, magnitude of delta component with maximal relative magnitude, 
     //                maximal relative magnitude of component, corresponding node
     // Relative magnitude is computed wrt. tolerance. 
-    std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore);
+    std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms);
 
     // Return values: ok, prevent convergence
-    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious, Status& s=Status::ignore) = 0;
+    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious) = 0;
 
     // Rebuild internal structures that depend on topology
-    virtual bool rebuild(Status& s=Status::ignore);
+    virtual bool rebuild();
 
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
-    virtual bool initialize(bool continuePrevious, Status& s=Status::ignore) = 0;
+    virtual bool initialize(bool continuePrevious) = 0;
 
     // Resize forces repository
     void resizeForces(Int n);
@@ -67,9 +84,9 @@ public:
     Forces& forces(Int ndx);
 
     // Enable/disable forces slot
-    bool enableForces(Int ndx, bool enable, Status& s=Status::ignore) {
+    bool enableForces(Int ndx, bool enable) {
         if (ndx<0 || ndx>=forcesList.size()) {
-            s.set(Status::Range, "Force index out of range.");
+            lastError = Error::ForcesIndex;
             return false;
         }
         forcesEnabled[ndx] = enable; 
@@ -88,14 +105,14 @@ public:
     };
 
     // Return values: ok, number of iterations
-    bool run(bool continuePrevious, Status& s=Status::ignore);
+    bool run(bool continuePrevious);
 
     // Return number of iterations spent in NR loop
     Int iterations() const { return iteration; }; 
 
 protected:
     // Load forces
-    bool loadForces(bool loadJacobian=true, Status& s=Status::ignore); 
+    bool loadForces(bool loadJacobian=true); 
 
     // Passed from outside
     Circuit& circuit;
@@ -120,6 +137,9 @@ protected:
     Vector<double> delta;
     
     Int iteration;
+
+    Error lastError;
+    Int errorIteration;
 };
 
 }

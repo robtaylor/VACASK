@@ -223,7 +223,7 @@ template<> bool BuiltinVccsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
@@ -367,7 +367,7 @@ template<> bool BuiltinVcvsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
@@ -493,7 +493,7 @@ template<> bool BuiltinCccsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
@@ -636,7 +636,7 @@ template<> bool BuiltinCcvsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
@@ -899,7 +899,7 @@ template<> bool BuiltinMutualInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();

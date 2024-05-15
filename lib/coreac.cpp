@@ -376,7 +376,7 @@ bool AcCore::run(bool continuePrevious, Status& s) {
             if (debug>0) {
                 Simulator::dbg() << "Matrix is close to singular.\n";
             }
-            s.set(Status::MatrixLU, "Matrix is close to singular.");
+            s.set(Status::LinearSolver, "Matrix is close to singular.");
             error = true;
             break;
         }

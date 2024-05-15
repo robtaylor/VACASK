@@ -26,20 +26,18 @@ public:
         NRSettings& settings, Int forcesSize=2
     ); 
 
-    virtual bool rebuild(Status& s=Status::ignore);
-    virtual bool initialize(bool continuePrevious, Status& s=Status::ignore);
+    virtual bool rebuild();
+    virtual bool initialize(bool continuePrevious);
     
-    virtual std::tuple<bool, bool> buildSystem(bool continuePrevious, Status& s=Status::ignore);
-    // virtual std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms, Status& s=Status::ignore);
-    // virtual std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms, Status& s=Status::ignore);
-    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
+    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious);
 
     EvalAndLoadSetup& evalSetupSystem() { return elsSystem; };
     EvalAndLoadSetup& evalSetupResidual() { return elsResidual; };
 
 protected:
     void loadShunts(double gshunt, bool loadJacobian=true);
-    bool evalAndLoadWrapper(EvalAndLoadSetup& els, Status& s);
+    bool evalAndLoadWrapper(EvalAndLoadSetup& els);
 
     void setNodesetAndIcFlags(bool continuePrevious);
     

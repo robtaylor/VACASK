@@ -45,7 +45,7 @@ NRSolver::NRSolver(
     iteration(0) {
 }
 
-bool NRSolver::rebuild(Status& s) {
+bool NRSolver::rebuild() {
     // Allocate space in vectors
     auto n = circuit.unknownCount();
     diagPtrs.resize(n+1);
@@ -83,13 +83,14 @@ bool NRSolver::rebuild(Status& s) {
     return true;
 }
 
-bool NRSolver::loadForces(bool loadJacobian, Status& s) {
+bool NRSolver::loadForces(bool loadJacobian) {
     // Are any forces enabled? 
     auto nf = forcesList.size();
     
     // Get row norms
     if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm))) {
-        jac.formatError(s);
+        lastError = Error::LinearSolver;
+        errorIteration = iteration;
         if (settings.debug) {
             Simulator::dbg() << "Failed to compute row norms.\n";
         }
@@ -189,7 +190,7 @@ Forces& NRSolver::forces(Int ndx) {
     return forcesList.at(ndx);
 } 
 
-std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool computeNorms, Status& s) {
+std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool computeNorms) {
     // In delta we have the solution change
     // Check it for convergence
     
@@ -244,7 +245,7 @@ std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool
     return std::make_tuple(true, maxDelta, maxNormDelta, maxDeltaNode);
 }
 
-std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* residualOk, bool computeNorms, Status& s) {
+std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* residualOk, bool computeNorms) {
     // In residual we have the residual at previous solution
     // We are going to check that residual
     
@@ -301,7 +302,7 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
 
 
 
-bool NRSolver::run(bool continuePrevious, Status& s) {
+bool NRSolver::run(bool continuePrevious) {
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = solution.length()-1;
     
@@ -338,8 +339,10 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
     Int convIter = 0;
     bool converged = false;
 
+    clearError();
+
     // Initialize structures
-    if (!initialize(continuePrevious, s)) {
+    if (!initialize(continuePrevious)) {
         return false;
     }
 
@@ -383,7 +386,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         // Clear maximal residual contribution
         zero(maxResidualContribution);
         
-        auto [buildOk, preventConvergence] = buildSystem(continuePrevious, s);
+        auto [buildOk, preventConvergence] = buildSystem(continuePrevious);
         if (!buildOk) {
             // Load error or abort
             break;
@@ -391,7 +394,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         xdelta[0] = 0.0; // Set RHS bucket to 0
 
         // Add forced values to the system
-        if (haveForces() && !loadForces(true, s)) {
+        if (haveForces() && !loadForces(true)) {
             if (settings.debug) {
                 Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
             }
@@ -400,9 +403,8 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
 
         // Check if system is finite
         if (!jac.isFinite(settings.infCheck, settings.nanCheck)) {
-            // TODO: format error on request
-            auto nr = UnknownNameResolver(circuit);
-            jac.formatError(s, &nr);
+            lastError = Error::LinearSolver;
+            errorIteration = iteration;
             if (settings.debug) {
                 Simulator::dbg() << "A matrix entry is not finite. Solver failed.\n";
             }
@@ -410,8 +412,8 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         }
 
         if (!jac.isFinite(dataWithoutBucket(delta), settings.infCheck, settings.nanCheck)) {
-            auto nr = UnknownNameResolver(circuit);
-            jac.formatError(s, &nr);
+            lastError = Error::LinearSolver;
+            errorIteration = iteration;
             if (settings.debug) {
                 Simulator::dbg() << "An RHS entry is not finite. Solver failed.\n";
             }
@@ -435,7 +437,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         if (settings.residualCheck || computeResidualNorms) {
             bool residualCheckOk;
             std::tie(residualCheckOk, maxResidual, maxNormResidual, l2normResidual2, maxResidualNode) = 
-                checkResidual(settings.residualCheck ? &residualOk : nullptr, computeResidualNorms, s);
+                checkResidual(settings.residualCheck ? &residualOk : nullptr, computeResidualNorms);
             if (!residualCheckOk) { 
                 if (settings.debug) {
                     Simulator::dbg() << "Residual check error.\n";
@@ -492,8 +494,8 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
             // Full factorization
             if (!jac.factor()) {
                 // Failed, give up
-                auto nr = UnknownNameResolver(circuit);
-                jac.formatError(s, &nr);
+                lastError = Error::LinearSolver;
+                errorIteration = iteration;
                 if (settings.debug) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -503,7 +505,8 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
 
         // Solve, use vector without ground component (+1)
         if (!jac.solve(dataWithoutBucket(delta))) {
-            jac.formatError(s);
+            lastError = Error::LinearSolver;
+            errorIteration = iteration;
             if (settings.debug) {
                 Simulator::dbg() << "Failed to solve factored system.\n";
             }
@@ -534,7 +537,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         if (iteration>1) {
             bool deltaCheckOk;
             std::tie(deltaCheckOk, maxDelta, maxNormDelta, maxDeltaNode) =
-                checkDelta(&deltaOk, computeDeltaNorms, s);
+                checkDelta(&deltaOk, computeDeltaNorms);
             if (!deltaCheckOk) {
                 if (settings.debug) {
                     Simulator::dbg() << "Solution delta check error.\n";
@@ -627,7 +630,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
                 zero(delta);
 
                 // Compute residual
-                auto [residualComputationOk, dummy_] = computeResidual(continuePrevious, s);
+                auto [residualComputationOk, dummy_] = computeResidual(continuePrevious);
                 if (!residualComputationOk) {
                     // Residual computation error or abort
                     exitNrLoop = true;
@@ -635,7 +638,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
                 }
 
                 // Add forced values
-                if (haveForces() && !loadForces(false, s)) {
+                if (haveForces() && !loadForces(false)) {
                     if (settings.debug) {
                         Simulator::dbg() << "Failed to load forced values in iteration " << iteration << ", damping step " << (dampingSteps+1) << "\n";
                     }
@@ -645,7 +648,7 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
                 dampingSteps++;
                 
                 auto [residualCheckOk, dampedMaxResidual, dampedMaxNormResidual, dampedL2normResidual2, dummyNode] = 
-                    checkResidual(nullptr, true, s);
+                    checkResidual(nullptr, true);
                 if (!residualCheckOk) {
                     if (settings.debug) {
                         Simulator::dbg() << "Residual norm computation failed.\n";
@@ -731,11 +734,36 @@ bool NRSolver::run(bool continuePrevious, Status& s) {
         Simulator::dbg() << "NR algorithm " << (converged ? "converged in " : "failed to converge in ") << iteration << " iteration(s).\n";
     }
 
-    if (!converged) {
-        s.set(Status::NotConverged, std::string("Leaving core NR loop in iteration ")+std::to_string(iteration)+".");
+    if (!converged && lastError==Error::OK) {
+        lastError = Error::Convergence;
+        errorIteration = iteration;
     }
 
     return converged;
 }
+
+bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
+    switch (lastError) {
+        case Error::ForcesIndex:
+            s.set(Status::Range, "Force index out of range.");
+            return false;
+        case Error::EvalAndLoad:
+            s.extend("Evaluation/load error."); 
+            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
+            return false;
+        case Error::LinearSolver: 
+            jac.formatError(s, resolver);
+            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
+            return false;
+        case Error::Convergence:
+            s.set(Status::NonlinearSolver, "NR solver failed to converge.");
+            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
+            return false;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+}
+
 
 }

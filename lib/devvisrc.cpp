@@ -451,7 +451,7 @@ template<> bool BuiltinISourceInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
@@ -531,7 +531,7 @@ template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAn
     return true;
 }
 
-template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els, Status& s) {
+template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();

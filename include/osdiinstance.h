@@ -81,7 +81,7 @@ public:
         KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
         Status& s=Status::ignore
     );
-    bool evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els, Status& s=Status::ignore);
+    bool evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };
