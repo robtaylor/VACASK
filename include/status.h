@@ -9,18 +9,13 @@
 
 namespace NAMESPACE {
 
-// API level 0 provides only error messages
-// API level 1 adds location to error message
-
 class Status {
 public:
     enum Code : char {
         OK = 0, 
         NotFound, 
         Conflicting, 
-        Empty, 
         BadVersion, 
-        Unknown, 
         BadArguments, 
         BadConversion, 
         SizeMismatch, 

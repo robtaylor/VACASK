@@ -40,7 +40,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         descriptors = nullptr;
     }
     if (!descriptors)  {
-        s.set(Status::Empty, "OSDI file contains no models");
+        s.set(Status::NotFound, "OSDI file contains no models");
         return;
     }
 
@@ -78,7 +78,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
             }
             if (nArgs==-1) {
                 s.set(
-                    Status::Unknown, 
+                    Status::Unsupported, 
                     std::string("Unknown limit function '")+lft[i].name+"'."
                 );
                 descriptors = nullptr;

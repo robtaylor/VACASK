@@ -849,19 +849,19 @@ bool Circuit::elaborate(
 
     // Check if number of nodes is nonzero
     if (nodeCount()<=0) {
-        s.set(Status::Empty, "Circuit has no nodes.");
+        s.set(Status::NotFound, "Circuit has no nodes.");
         return false;
     }
 
     // Check if number of unknowns is nonzero
     if (unknownCount()<=0) {
-        s.set(Status::Empty, "Circuit has no unknowns.");
+        s.set(Status::NotFound, "Circuit has no unknowns.");
         return false;
     }
 
     // Check if there is at least one nonzero entry in sparsity map
     if (sparsityMap_.size()<=0) {
-        s.set(Status::Empty, "Sparsity pattern has no nonzero entries.");
+        s.set(Status::NotFound, "Sparsity pattern has no nonzero entries.");
         return false;
     }
     

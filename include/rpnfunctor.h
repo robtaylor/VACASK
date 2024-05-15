@@ -427,7 +427,7 @@ struct FwProd {
         using Tin = typename std::remove_reference<T>::type;
         if constexpr(Value::IsVectorType<Tin>::value) {
             if (x.size()==0) {
-                s.set(Status::Empty, "Cannot compute product of empty vector's components.");
+                s.set(Status::BadArguments, "Cannot compute product of empty vector's components.");
                 return false;
             }
         }
@@ -455,7 +455,7 @@ struct FwMinAggregate {
         if constexpr(Value::IsVectorType<Tin>::value) {
             Value::ScalarType<Tin> res = x[0];
             if (x.size()==0) {
-                s.set(Status::Empty, "Cannot compute minimum of empty vector's components.");
+                s.set(Status::BadArguments, "Cannot compute minimum of empty vector's components.");
                 return false;
             }
         }
@@ -482,7 +482,7 @@ struct FwMaxAggregate {
         using Tin = typename std::remove_reference<T>::type;
         if constexpr(Value::IsVectorType<Tin>::value) {
             if (x.size()==0) {
-                s.set(Status::Empty, "Cannot compute maximum of empty vector's components.");
+                s.set(Status::BadArguments, "Cannot compute maximum of empty vector's components.");
                 return false;
             }
         }
