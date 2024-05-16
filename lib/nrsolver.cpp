@@ -303,6 +303,9 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
 
 
 bool NRSolver::run(bool continuePrevious) {
+    // Clear error
+    lastError = Error::OK;
+
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = solution.length()-1;
     
@@ -343,6 +346,7 @@ bool NRSolver::run(bool continuePrevious) {
 
     // Initialize structures
     if (!initialize(continuePrevious)) {
+        // Assume initialize() has set lastError
         return false;
     }
 

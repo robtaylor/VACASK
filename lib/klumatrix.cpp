@@ -73,7 +73,7 @@ void SparsityMap::dump(int indent, std::ostream& os) const {
 
 template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueType>::KluMatrixCore() 
     : AN(0), AP(nullptr), AI(nullptr), numeric(nullptr), symbolic(nullptr),  
-      Ax(nullptr), smap(nullptr) {
+      Ax(nullptr), smap(nullptr), lastError(Error::OK) {
     // Sanity check: IndexType can only be int32_t or int64_t
     static_assert(
         std::is_same<IndexType, int>::value || std::is_same<IndexType, int64_t>::value, 
@@ -235,6 +235,8 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
             }
         }
     }
+    // Clear error
+    clearError();
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::factor() {

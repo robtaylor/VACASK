@@ -69,6 +69,7 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     
     // Call parent's initialize()
     if (!OpNRSolver::initialize(continuePrevious)) {
+        // Assume parent has set lastError
         return false;
     }
 

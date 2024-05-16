@@ -811,13 +811,13 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         predictorCoeffs.setOrder(order);
         integCoeffs.setOrder(order);
         bool havePredictor = pointsSinceLastDiscontinuity>=predictorCoeffs.minimalHistoryForPredictor();
-        if (havePredictor && !(predictorCoeffs.compute(pastTimesteps, hk, s) && predictorCoeffs.scalePredictor(hk, s))) {
-            s.extend("Failed to compute predictor coefficients.");
+        if (havePredictor && !(predictorCoeffs.compute(pastTimesteps, hk) && predictorCoeffs.scalePredictor(hk))) {
+            s.set(Status::Analysis, "Failed to compute predictor coefficients.");
             return false;
         }
         // Integrator coeffs must be scaled
-        if (!(integCoeffs.compute(pastTimesteps, hk, s) && integCoeffs.scaleDifferentiator(hk, s))) {
-            s.extend("Failed to compute integrator coefficients.");
+        if (!(integCoeffs.compute(pastTimesteps, hk) && integCoeffs.scaleDifferentiator(hk))) {
+            s.set(Status::Analysis, "Failed to compute integrator coefficients.");
             return false;
         }
 

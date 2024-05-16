@@ -104,6 +104,7 @@ public:
         return false;
     };
 
+    // Clear error, run solver
     // Return values: ok, number of iterations
     bool run(bool continuePrevious);
 

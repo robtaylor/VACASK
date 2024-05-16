@@ -37,7 +37,7 @@ public:
     bool setXmu(double xmu=0.5) { xmu_ = xmu; return xmu>=0 && xmu<=0.5; };
 
     // Compute coefficients
-    bool compute(CircularBuffer<double>& pastSteps, double newStep, Status& s=Status::ignore);
+    bool compute(CircularBuffer<double>& pastSteps, double newStep);
     
     // Coefficients for past values
     const std::vector<double>& a() const { return a_; };
@@ -49,8 +49,8 @@ public:
     double b1() const { return b1_; };
 
     // Compute scaled coefficients
-    bool scaleDifferentiator(double hk, Status& s=Status::ignore);
-    bool scalePredictor(double hk, Status& s=Status::ignore);
+    bool scaleDifferentiator(double hk);
+    bool scalePredictor(double hk);
 
     // Scaled coefficients
     const std::vector<double> aScaled() const { return aScaled_; };

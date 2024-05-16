@@ -105,6 +105,7 @@ OpNRSolver::OpNRSolver(
 bool OpNRSolver::rebuild() {
     // Call parent's rebuild
     if (!NRSolver::rebuild()) {
+        // Assume parent has set the error flag
         return false;
     }
 
@@ -155,6 +156,7 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
 bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
     if (!circuit.evalAndLoad(els, nullptr)) {
         // Load error
+        lastError = Error::EvalAndLoad;
         if (settings.debug>2) {
             Simulator::dbg() << "Evaluation error.\n";
         }

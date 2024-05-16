@@ -71,8 +71,7 @@ bool IntegratorCoeffs::size() {
     return true;
 }
 
-// bool IntegratorCoeffs::compute(std::vector<double>& pastSteps, double newStep, Status& s) {
-bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep, Status& s) {
+bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep) {
     pastSteps_ = &pastSteps;
     // Compute sizes of arrays
     switch (method_) {
@@ -225,7 +224,9 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             // std::cout << "\n";
             
             // Solve 
-            solve(n_);
+            if (!solve(n_)) {
+                return false;
+            }
 
             // Unpack
             b1_ = rhs[0];
@@ -273,7 +274,9 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             }
 
             // Solve
-            solve(n_);
+            if (!solve(n_)) {
+                return false;
+            }
 
             // Unpack
             for(Int i=0; i<numX_; i++) {
@@ -316,7 +319,9 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             }
 
             // Solve
-            solve(n_);
+            if (!solve(n_)) {
+                return false;
+            }
 
             // Unpack
             for(Int i=0; i<numXdot_; i++) {
@@ -353,7 +358,9 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
         }
 
         // Solve
-        solve(n_);
+        if (!solve(n_)) {
+            return false;
+        }
 
         // Unpack
         for(Int i=0; i<numX_; i++) {
@@ -445,9 +452,8 @@ bool IntegratorCoeffs::solve(Int n) {
     return true;
 }
 
-bool IntegratorCoeffs::scaleDifferentiator(double hk, Status& s) {
+bool IntegratorCoeffs::scaleDifferentiator(double hk) {
     if (hk==0.0) {
-        s.set(Status::DivZero, "Division by zero due to zero timestep.");
         return false;
     }
     hk_ = hk;
@@ -466,9 +472,8 @@ bool IntegratorCoeffs::scaleDifferentiator(double hk, Status& s) {
     return true;
 }
 
-bool IntegratorCoeffs::scalePredictor(double hk, Status& s) {
+bool IntegratorCoeffs::scalePredictor(double hk) {
     if (implicit_) {
-        s.set(Status::BadArguments, "Predictor cannot be implicit.");
         return false;
     }
     aScaled_ = a_;

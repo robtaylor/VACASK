@@ -131,7 +131,7 @@ public:
     // Error row
     IndexType errorRank() const { return errorRank_; };
 
-    // Rebuild it based on the given sparsity map
+    // Rebuild it based on the given sparsity map, set to zero, clear error
     bool rebuild(SparsityMap& m, EquationIndex n);
 
     // Checks if matrix is valid (rebuild completed successfully)
@@ -159,7 +159,7 @@ public:
     // Return number of nonzeros
     IndexType nnz() const { return AP[AN]; };
 
-    // Set entries to 0
+    // Set entries to 0, clear error
     void zero(Component what=Component::RealPart|Component::ImagPart);
 
     // Factorization
