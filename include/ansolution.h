@@ -45,10 +45,11 @@ struct PreprocessedUserForces {
     PreprocessedUserForces& operator=(const PreprocessedUserForces&)  = delete;
     PreprocessedUserForces& operator=(      PreprocessedUserForces&&) = default;
 
-    // Preprocess user specified nodeset/ic parameter values, tore node ptrs instead of string names. 
-    // If syntax is bad, return error. 
+    // Preprocess user specified nodeset/ic parameter values, store node ptrs instead of string names. 
+    // If syntax is bad, return error. Otherwise simply store the forced value, 
+    // node and id (or node pair and ids). 
+    // If node is not found, the corresponding force is ignored. 
     // Checks if all extradiagonal sparsity map entries are present. 
-    // Ignore nodes that are not found. They will be taken care of later. 
     // This is phase 1 of user forces processing. 
     // Return value: ok, needs to add entries to sparsity map
     std::tuple<bool, bool> set(Circuit& circuit, ValueVector& userForces, Status& s=Status::ignore);
@@ -65,19 +66,34 @@ struct PreprocessedUserForces {
 
 class Forces {
 public:
+    enum class Error {
+        OK, 
+        ConflictNode, 
+        ConflictDelta, 
+    };
+
     Forces();
 
     Forces           (const Forces&)  = delete;
     Forces           (      Forces&&) = default;
     Forces& operator=(const Forces&)  = delete;
     Forces& operator=(      Forces&&) = default;
-    
+
+    // Get error
+    Error error() const { return lastError; };
+
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
     // Create from stored solution, check for conflicts
-    bool set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError, Status& s=Status::ignore);
+    bool set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError);
     
     // Resolve to actual forces, check for conflicts
     // This is phase 2 of user forces processing. 
-    bool set(Circuit& circuit, const PreprocessedUserForces& userForces, bool uicMode, bool abortOnError, Status& s=Status::ignore);
+    bool set(Circuit& circuit, const PreprocessedUserForces& userForces, bool uicMode, bool abortOnError);
 
     // Clear forces
     void clear();
@@ -93,13 +109,16 @@ public:
     void dump(Circuit& circuit, std::ostream& os) const;
     
 private:
-    bool setForceOnUnknown(Circuit& circuit, Node* node, double value, Status& s);
-    bool setUicDelta(Circuit& circuit, Node* node1, Node* node2, double value, Status& s);
-
+    bool setForceOnUnknown(Circuit& circuit, Node* node, double value);
+    
     Vector<double> unknownValue_;
     Vector<bool> unknownForced_;
     Vector<double> deltaValue_;
     Vector<std::tuple<UnknownIndex, UnknownIndex>> deltaIndices_;
+
+    Error lastError;
+    Node* errorNode1;
+    Node* errorNode2;
 };
 
 }

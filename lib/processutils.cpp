@@ -88,9 +88,8 @@ std::tuple<bool, std::string, std::string> runProcess(
         //    do_some_stuff();
 
         c.wait(); //wait for the process to exit   
-        int result = c.exit_code();
-
-        auto ok = result==0;
+        
+        bool ok = c.exit_code()==0;
         if (!ok) {
             s.set(Status::Process, "Error running '"+prog+"'.");
         }

@@ -169,7 +169,7 @@ std::tuple<bool, bool> OperatingPointCore::preMapping(Status& s) {
     auto& nsParam = params.nodeset;
     if (nsParam.type()==Value::Type::String) {
         // It is a string. 
-        // Retrieve DC solution and set it as nodeset
+        // Will retrieve DC solution and set it as nodeset. 
         // Nothing to do here because DC solutions do not introduce delta foces. 
         return std::make_tuple(true, false);
     } else if (nsParam.type()==Value::Type::ValueVec) {
@@ -252,14 +252,11 @@ bool OperatingPointCore::rebuild(Status& s) {
                 Simulator::wrn() << "Warning, solution '"+solutionName+"' not found. No user nodesets applied.\n";
             } else {
                 // Nodesets from solution repository
-                Status tmps;
-                if (!nrSolver.forces(1).set(circuit, *solPtr, strictforce, tmps)) {
+                if (!nrSolver.forces(1).set(circuit, *solPtr, strictforce)) {
                     // Abort if strictforce is set
                     if (strictforce) {
-                        s.set(tmps);
+                        nrSolver.forces(1).formatError(s);
                         return false;
-                    } else {
-                        Simulator::wrn() << "Warning. " << tmps.message() << "\n";
                     }
                 }
             }
@@ -269,14 +266,11 @@ bool OperatingPointCore::rebuild(Status& s) {
         }
     } else if (params.nodeset.type()==Value::Type::ValueVec) {
         // A list with possibly delta forces
-        Status tmps;
-        if (!nrSolver.forces(1).set(circuit, preprocessedNodeset, false, strictforce, tmps)) {
+        if (!nrSolver.forces(1).set(circuit, preprocessedNodeset, false, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                s.set(tmps);
+                nrSolver.forces(1).formatError(s);
                 return false;
-            } else {
-                Simulator::wrn() << "Warning. " << tmps.message() << "\n";
             }
         }
     } else {
@@ -324,8 +318,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious, Status& s) {
             // Use nodesets to continue, but set no initial states vector nor initial solution. 
             // Ignore nodeset conflicts arising from stored solution. 
             // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
-            Status tmps;
-            nrSolver.forces(0).set(circuit, continueState->solution, false, tmps);
+            nrSolver.forces(0).set(circuit, continueState->solution, false);
             nrSolver.enableForces(0, true);
             // Disable user-specified nodesets
             nrSolver.enableForces(1, false);

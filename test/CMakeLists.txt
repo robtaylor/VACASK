@@ -9,7 +9,7 @@ message("Python library path for testing: ${PYTHON_LIB}")
 macro(prepare_netlist_test simfile)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${simfile}")
     add_test(NAME "${simfile}"
-        COMMAND $<TARGET_FILE:sim> "${CMAKE_CURRENT_SOURCE_DIR}/${simfile}"
+        COMMAND $<TARGET_FILE:sim> -dp "${CMAKE_CURRENT_SOURCE_DIR}/${simfile}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${simfile}"
     )
     

@@ -320,7 +320,7 @@ std::tuple<bool, bool> TranCore::preMapping(Status& s) {
     auto& icParam = params.ic;
     if (icParam.type()==Value::Type::String) {
         // It is a string. 
-        // Retrieve DC solution and set it as nodeset
+        // Will retrieve DC solution and set it as nodeset. 
         // Nothing to do here because DC solutions do not introduce delta foces. 
         return std::make_tuple(true, false);
     } else if (icParam.type()==Value::Type::ValueVec) {
@@ -415,14 +415,11 @@ bool TranCore::rebuild(Status& s) {
                 }
             } else {
                 // Initial conditions from solution repository
-                Status tmps;
-                if (!opCore_.solver().forces(2).set(circuit, *solPtr, strictforce, tmps)) {
+                if (!opCore_.solver().forces(2).set(circuit, *solPtr, strictforce)) {
                     // Abort on error if strictforce is set
                     if (strictforce) {
-                        s.set(tmps);
+                        opCore_.solver().forces(2).formatError(s);
                         return false;
-                    } else {
-                        Simulator::wrn() << "Warning. " << tmps.message() << "\n";
                     }
                 }
             }
@@ -432,16 +429,13 @@ bool TranCore::rebuild(Status& s) {
         }
     } else if (icParam.type()==Value::Type::ValueVec) {
         // A list with possibly delta forces
-        Status tmps;
         // Set slot 2, use op mode for setting up initial conditions
         bool uicMode = false;
-        if (!opCore_.solver().forces(2).set(circuit, preprocessedIc, uicMode, strictforce, tmps)) {
+        if (!opCore_.solver().forces(2).set(circuit, preprocessedIc, uicMode, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                s.set(tmps);
+                opCore_.solver().forces(2).formatError(s);
                 return false;
-            } else {
-                Simulator::wrn() << "Warning. " << tmps.message() << "\n";
             }
         }
     } else {
@@ -643,14 +637,11 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         auto strictforce = circuit.simulatorOptions().core().strictforce; 
         // First, build the RHS values using force mechanism
         bool uicMode = true;
-        Status tmps;
-        if (!uicForces.set(circuit, preprocessedIc, uicMode, strictforce, tmps)) {
+        if (!uicForces.set(circuit, preprocessedIc, uicMode, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                s.set(tmps);
+                uicForces.formatError(s);
                 return false;
-            } else {
-                Simulator::wrn() << "Warning. " << tmps.message() << "\n";
             }
         }
         // Copy values to RHS

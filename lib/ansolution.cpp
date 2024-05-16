@@ -21,74 +21,6 @@ void AnnotatedSolution::set(Circuit& circuit, Vector<double>& vec) {
 }
 
 
-Forces::Forces() {
-}
-
-bool Forces::setForceOnUnknown(Circuit& circuit, Node* node, double value, Status& s) {
-    // Unknown
-    auto u = node->unknownIndex();
-    // Is it a ground node
-    if (u==0) {
-        s.set(Status::NotFound, "Cannot force value on ground node '"+std::string(node->name())+"'.");
-        return false;
-    }
-    // Is it conflicting with a previous nodeset
-    if (unknownForced_[u] && unknownValue_[u]!=value) {
-        s.set(Status::NotFound, "Conflicting forces for node '"+std::string(node->name())+"'.");
-        return false;
-    }
-    unknownValue_[u] = value;
-    unknownForced_[u] = true;
-
-    return true;
-}
-
-bool Forces::set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError, Status& s) {
-    // Clear forced values
-    unknownValue_.clear();
-    unknownForced_.clear();
-    deltaValue_.clear();
-    deltaIndices_.clear();
-
-    // Number of unknowns
-    auto n = circuit.unknownCount();
-
-    // Make space for variable forces
-    unknownValue_.resize(n+1);
-    unknownForced_.resize(n+1, false);
-
-    bool error = false;
-
-    // Go through all solution components, excluding ground
-    auto nSol = solution.values().size();
-    for(decltype(nSol) i=1; i<nSol; i++) {
-        // Node
-        auto name = solution.names()[i];
-        auto value = solution.values()[i];
-        Node* node = circuit.findNode(name);
-        if (!node) {
-            // Node not found
-            continue;
-        }
-
-        if (!setForceOnUnknown(circuit, node, value, s)) {
-            error = true;
-            if (abortOnError) {
-                return false;
-            }
-        }
-    }
-
-    return !error;
-}
-
-void Forces::clear() {
-    unknownValue_.clear();
-    unknownForced_.clear();
-    deltaValue_.clear();
-    deltaIndices_.clear();
-}
-
 std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector& userForces, Status& s) {
     clear();
 
@@ -116,6 +48,11 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
                 }
                 id1 = it.val<String>();
                 node1 = circuit.findNode(id1);
+                // Node not found is an error
+                // if (!node1) {
+                //     s.set(Status::BadArguments, "Cannot find node '"+std::string(id1)+"' during force preprocessing.");
+                //     return std::make_tuple(false, false);
+                // }
                 state = 1;
                 break;
             case 1:
@@ -131,6 +68,11 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
                     case Value::Type::String:
                         id2 = it.val<String>();
                         node2 = circuit.findNode(id2);
+                        // Node not found is an error
+                        // if (!node2) {
+                        //     s.set(Status::BadArguments, "Cannot find node '"+std::string(id2)+"' during force preprocessing.");
+                        //     return std::make_tuple(false, false);
+                        // }
                         state = 2;
                         break;
                     default:
@@ -155,19 +97,23 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
                 break;
         }
         if (state==3) {
-            // Have single node
-            nodes.push_back(node1);
-            nodeIds.push_back(id1);
-            nodeValues.push_back(value);
+            // Have single node, ignore force if node is not found
+            if (node1) {
+                nodes.push_back(node1);
+                nodeIds.push_back(id1);
+                nodeValues.push_back(value);
+            }
             state = 0;
         } else if (state==4) {
-            // Have node pair
-            nodePairs.push_back(std::make_tuple(node1, node2)); 
-            nodeIdPairs.push_back(std::make_tuple(id1, id2));
-            nodePairValues.push_back(value); 
-
-            // Check existence of extradiagonal entries
-            // Skip check if an entry has been found that is not there
+            // Have node pair, ignore force if node is not found
+            if (node1 && node2) {
+                nodePairs.push_back(std::make_tuple(node1, node2)); 
+                nodeIdPairs.push_back(std::make_tuple(id1, id2));
+                nodePairValues.push_back(value); 
+            }
+            
+            // Check existence of extradiagonal entries, but only if both nodes were found. 
+            // No need to check if haveAllEntries is already false. 
             if (node1 && node2 && haveAllEntries) {
                 auto u1 = node1->unknownIndex();
                 auto u2 = node2->unknownIndex();
@@ -183,7 +129,70 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
     return std::make_tuple(true, !haveAllEntries);
 }
 
-bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, bool uicMode, bool abortOnError, Status& s) {
+
+Forces::Forces() {
+}
+
+bool Forces::setForceOnUnknown(Circuit& circuit, Node* node, double value) {
+    // Unknown
+    auto u = node->unknownIndex();
+    // Is it a ground node? 
+    if (u==0) {
+        // If yes, ignore the force. 
+        return true;
+    }
+    // Is it conflicting with a previous nodeset
+    if (unknownForced_[u] && unknownValue_[u]!=value) {
+        lastError = Error::ConflictNode;
+        errorNode1 = node;
+        return false;
+    }
+    unknownValue_[u] = value;
+    unknownForced_[u] = true;
+
+    return true;
+}
+
+bool Forces::set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError) {
+    // Clear forced values
+    unknownValue_.clear();
+    unknownForced_.clear();
+    deltaValue_.clear();
+    deltaIndices_.clear();
+
+    // Number of unknowns
+    auto n = circuit.unknownCount();
+
+    // Make space for variable forces
+    unknownValue_.resize(n+1);
+    unknownForced_.resize(n+1, false);
+
+    bool error = false;
+
+    // Go through all solution components, excluding ground
+    auto nSol = solution.values().size();
+    for(decltype(nSol) i=1; i<nSol; i++) {
+        // Node
+        auto name = solution.names()[i];
+        auto value = solution.values()[i];
+        Node* node = circuit.findNode(name);
+        if (!node) {
+            // Node not found
+            continue;
+        }
+
+        if (!setForceOnUnknown(circuit, node, value)) {
+            error = true;
+            if (abortOnError) {
+                return false;
+            }
+        }
+    }
+
+    return !error;
+}
+
+bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, bool uicMode, bool abortOnError) {
     // Clear forced values
     unknownValue_.clear();
     unknownForced_.clear();
@@ -205,17 +214,7 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         // Check if node was found
         auto node = preprocessed.nodes[i];
         auto value = preprocessed.nodeValues[i];
-        if (!node) {
-            s.set(Status::NotFound, "Cannot set forced value, node '"+std::string(preprocessed.nodeIds[i])+"' not found.");
-            error = true;
-            if (abortOnError) {
-                return false;
-            }
-            // Skip this node
-            continue; 
-        }
-        
-        if (!setForceOnUnknown(circuit, node, value, s)) {
+        if (!setForceOnUnknown(circuit, node, value)) {
             error = true;
             if (abortOnError) {
                 return false;
@@ -229,49 +228,20 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         // Check if both nodes were found
         auto [node1, node2] = preprocessed.nodePairs[i];
         auto [id1, id2] = preprocessed.nodeIdPairs[i]; 
-        std::string txt;
-        if (!node1) {
-            txt = "Cannot set forced value, first";
-        } else if (!node2) {
-            txt = "Cannot set forced value, second";
-        }
-        if (!node1 || !node2) {
-            s.set(Status::NotFound, txt+" node in node pair ('"+
-                std::string(id1)+"', "+
-                std::string(id2)+"') "+
-                "not found."
-            );
-            error = true;
-            if (abortOnError) {
-                return false;
-            }
-            // Skip this node pair
-            continue;
-        }
         
         // Get unknowns and value
         auto u1 = node1->unknownIndex();
         auto u2 = node2->unknownIndex();
         auto value = preprocessed.nodePairValues[i];
 
-        // Check if both nodes are ground
-        if (u1==0 && u2==0 && value!=0) {
-            s.set(Status::BadArguments, "Cannot set nonzero forced delta on node pair ('"+
-                std::string(id1)+"', "+
-                std::string(id2)+"')."
-            ); 
-            error = true;
-            if (abortOnError) {
-                return false;
-            }
-            // Skip this node pair
+        // Check if both nodes are ground? 
+        if (u1==0 && u2==0) {
+            // If yes, ignore force
             continue;
-        }
-
-        // Check if first node is ground, convert it to a force on an unknown
-        if (u1==0) {
+        } else if (u1==0) {
+            // Check if first node is ground, convert it to a force on an unknown
             // v(0,x) = value -> v(x)=-value
-            if (!setForceOnUnknown(circuit, node2, -value, s)) {
+            if (!setForceOnUnknown(circuit, node2, -value)) {
                 error = true;
                 if (abortOnError) {
                     return false;
@@ -279,7 +249,7 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
             }
         } else if (u2==0) {
             // v(x,0) = value -> v(x)=value
-            if (!setForceOnUnknown(circuit, node1, value, s)) {
+            if (!setForceOnUnknown(circuit, node1, value)) {
                 error = true;
                 if (abortOnError) {
                     return false;
@@ -293,10 +263,6 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         // Check if both nodes were found
         auto [node1, node2] = preprocessed.nodePairs[i];
         auto [id1, id2] = preprocessed.nodeIdPairs[i]; 
-        if (!node1 || !node2) {
-            // Skip this node pair
-            continue;
-        }
         
         // Get unknowns and value
         auto u1 = node1->unknownIndex();
@@ -304,12 +270,10 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         auto value = preprocessed.nodePairValues[i];
 
         // Check if both nodes are ground
-        if (u1==0 && u2==0 && value!=0) {
+        if (u1==0 && u2==0) {
             // Skip this node pair
             continue;
-        }
-
-        if (u1==0) {
+        } else if (u1==0) {
             // v(0,x) = value -> v(x)=-value, already handled
             continue;
         } else if (u2==0) {
@@ -322,11 +286,9 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
                 // Both nodes are forced
                 // Does delta force conflict with node forces
                 if (unknownValue_[u1]-unknownValue_[u2]!=value) {
-                    s.set(Status::NotFound, "Forcing delta on node pair ('"
-                        +std::string(node1->name())+"', '"
-                        +std::string(node2->name())
-                        +"'. conflicts previous forces."
-                    );
+                    lastError = Error::ConflictDelta;
+                    errorNode1 = node1;
+                    errorNode2 = node2;
                     error = true;
                     if (abortOnError) {
                         return false;
@@ -365,6 +327,32 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
     }
 
     return true;
+}
+
+void Forces::clear() {
+    unknownValue_.clear();
+    unknownForced_.clear();
+    deltaValue_.clear();
+    deltaIndices_.clear();
+}
+
+bool Forces::formatError(Status& s) const {
+    std::string txt;
+    switch (lastError) {
+        case Error::ConflictNode:
+            s.set(Status::Force, "Conflicting forces for node '"+std::string(errorNode1->name())+"'.");
+            return false;
+        case Error::ConflictDelta:
+            s.set(Status::Force, "Forcing delta on node pair ('"
+                        +std::string(errorNode1->name())+"', '"
+                        +std::string(errorNode2->name())
+                        +"') conflicts previous forces."
+                    );
+            return false;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
 }
 
 void Forces::dump(Circuit& circuit, std::ostream& os) const {
