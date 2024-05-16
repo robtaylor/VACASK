@@ -92,7 +92,7 @@ const std::filesystem::path& Platform::libraryPath() {
 #define to_str(s) str_expand(s)
 const std::string Platform::programName = to_str(PROGRAM_NAME);
 const std::string Platform::programVersion = to_str(PROGRAM_VERSION);
-const std::string Platform::programCopyright = "(c)" to_str(PROGRAM_COPYRIGHT) " EDA Lab FE, Arpad Buermen";
+const std::string Platform::programCopyright = "(c)" to_str(PROGRAM_COPYRIGHT) " EDA Lab FE Uni-Lj, Arpad Buermen";
 #undef str_expand
 #undef to_str
 } 
