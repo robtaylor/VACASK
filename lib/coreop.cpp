@@ -296,7 +296,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious, Status& s) {
         // Continue mode
         if (continueState &&
             continueState->valid && continueState->coherent &&
-            continueState->solution.values().size()==circuit.unknownCount() &&
+            continueState->solution.values().size()==circuit.unknownCount()+1 &&
             continueState->stateVector.size()==circuit.statesCount() 
         ) {
             // Continue a state

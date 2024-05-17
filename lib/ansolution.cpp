@@ -12,8 +12,16 @@ void AnnotatedSolution::set(Circuit& circuit, Vector<double>& vec) {
     names_.clear();
     values_.clear();
     auto n = vec.size();
-    // Skip ground unknown
-    for(decltype(n) i=1; i<n; i++) {
+    // Store all nodes (also ground). Later in Forces::set() we ignore it. 
+    // In OperatingPointCore::runSolver() we check if the stored solution is 
+    // consistent with the current circuit by comparing solution length 
+    // (it should be equal to number_of_unknowns+1). 
+    // If we stop storing ground, we also have to chage runSolver() to detect
+    // consistency correctly (now it should be equal to number_of_unknowns). 
+    // Also, we should change the code in OperatingPointCore::runSolver() 
+    // that copies the annotated solution to solution vector in 
+    // ordinary continue mode . 
+    for(decltype(n) i=0; i<n; i++) {
         auto node = circuit.reprNode(i);
         names_.push_back(node->name());
         values_.push_back(vec[i]);
