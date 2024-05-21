@@ -52,7 +52,7 @@ DcTfCore::~DcTfCore() {
 
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
-bool DcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool DcTfCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Clear source instance pointers, initialize to nullptrs
@@ -76,14 +76,16 @@ bool DcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
                 sources[ndx] = inst;
                 if (strict) {
                     if (!inst) {
-                        s.set(Status::NotFound, std::string("Source '")+std::string(name)+"' not found.");
+                        setError(DcTfError::NotFound);
+                        errorInstance = name;
                         ok = false;
                         break;
                     }
                 }
                 // Instance found, but is not a source... this is always an error
                 if (inst && !inst->model()->device()->isSource()) {
-                    s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' is not a source.");
+                    setError(DcTfError::NotSource);
+                    errorInstance = name;
                     ok = false;
                     break;
                 }
@@ -108,7 +110,7 @@ bool DcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
             break; 
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -117,18 +119,18 @@ bool DcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool DcTfCore::addDefaultOutputDescriptors(Status& s) {
+bool DcTfCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
-        return addAllTfZin(PTSave(Loc::bad, "default", Id(), Id()), false, sourceIndex, s);
+        return addAllTfZin(PTSave(Loc::bad, "default", Id(), Id()), sourceIndex);
     }
     return true;
 }
 
-bool DcTfCore::initializeOutputs(Id name, Status& s) {
+bool DcTfCore::initializeOutputs(Id name) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -143,14 +145,14 @@ bool DcTfCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool DcTfCore::finalizeOutputs(Status &s) {
+bool DcTfCore::finalizeOutputs() {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool DcTfCore::deleteOutputs(Id name, Status &s) {
+bool DcTfCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -169,7 +171,7 @@ bool DcTfCore::rebuild(Status& s) {
 
 // System of equations is 
 //   G(x) dx  = dJ
-bool DcTfCore::run(bool continuePrevious, Status& s) {
+bool DcTfCore::run(bool continuePrevious) {
     // Make sure structures are large enough
     incrementalSolution.resize(circuit.unknownCount()+1);
     tf.resize(sources.size());
@@ -177,14 +179,15 @@ bool DcTfCore::run(bool continuePrevious, Status& s) {
     zin.resize(sources.size());
 
     // Get output unknowns
-    auto [ok, up, un] = getOutput(params.out, s);
+    auto [ok, up, un] = getOutput(params.out);
     if (!ok) {
         return false;
     }
     
     // Compute operating point
-    auto opOk = opCore_.run(continuePrevious, s);
+    auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
+        setError(DcTfError::OpError);
         return false;
     }
 
@@ -234,7 +237,7 @@ bool DcTfCore::run(bool continuePrevious, Status& s) {
 
         // Solve
         if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
-            jacobian.formatError(s);
+            setError(DcTfError::MatrixError);
             error = true;
             break;
         }
@@ -279,6 +282,42 @@ bool DcTfCore::run(bool continuePrevious, Status& s) {
     }
     
     return true;
+}
+
+bool DcTfCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastDcTfError) {
+        case DcTfError::NotFound:
+            s.set(Status::Analysis, std::string("Source '")+std::string(errorInstance)+"' not found.");
+            break;
+        case DcTfError::NotSource:
+            s.set(Status::Analysis, std::string("Instance '")+std::string(errorInstance)+"' is not a source.");
+            break;
+        case DcTfError::EvalAndLoad:
+            s.set(Status::Analysis, "Jacobian evaluation failed.");
+            break;
+        case DcTfError::MatrixError:
+            jacobian.formatError(s, &nr);
+            break;
+        case DcTfError::OpError:
+            opCore_.formatError(s);
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    s.extend("Leaving DC incremental analysis.");
+    return false;
 }
 
 void DcTfCore::dump(std::ostream& os) const {

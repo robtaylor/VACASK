@@ -264,18 +264,18 @@ TranCore::~TranCore() {
     delete outfile;
 }
 
-bool TranCore::addDefaultOutputDescriptors(Status& s) {
+bool TranCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
-        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()), false, s);
+        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()));
     }
     return true;
 }
 
-bool TranCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool TranCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Resolve output descriptors
@@ -285,17 +285,17 @@ bool TranCore::resolveOutputDescriptors(bool strict, Status &s) {
         Instance *inst;
         switch (it->type) {
         case OutdSolComponent:
-            ok = addRealVarOutputSource(strict, it->id, solution, s);
+            ok = addRealVarOutputSource(strict, it->id, solution);
             break;
         case OutdOpvar:
-            ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2, s);
+            ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2);
             break;
         case OutdTime:
             outputSources.emplace_back(&(circuit.simulatorInternals().time));
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -305,12 +305,18 @@ bool TranCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool TranCore::addCoreOutputDescriptors(Status& s) {
+bool TranCore::addCoreOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
-    return addOutputDescriptor(OutputDescriptor(OutdTime, "time"));
+    
+    if (!addOutputDescriptor(OutputDescriptor(OutdTime, "time"))) {
+        lastError = Error::Descriptor;
+        errorId = "time";
+        return false;
+    }
+    return true;
 }
 
 std::tuple<bool, bool> TranCore::preMapping(Status& s) {
@@ -455,7 +461,7 @@ bool TranCore::rebuild(Status& s) {
     return true;
 }
 
-bool TranCore::initializeOutputs(Id name, Status& s) {
+bool TranCore::initializeOutputs(Id name) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -470,7 +476,7 @@ bool TranCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool TranCore::finalizeOutputs(Status &s) {
+bool TranCore::finalizeOutputs() {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
@@ -484,7 +490,7 @@ bool TranCore::finalizeOutputs(Status &s) {
     return true;
 }
 
-bool TranCore::deleteOutputs(Id name, Status &s) {
+bool TranCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -497,9 +503,10 @@ bool TranCore::deleteOutputs(Id name, Status &s) {
     return true;
 }
 
-bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els, Status& s) {
-    if (!circuit.evalAndLoad(els, nullptr, s)) {
+bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+    if (!circuit.evalAndLoad(els, nullptr)) {
         // Load error
+        setError(TranError::EvalAndLoad);
         if (circuit.simulatorOptions().core().tran_debug>1) {
             Simulator::dbg() << "Evaluation error.\n";
         }
@@ -531,7 +538,7 @@ Id TranCore::methodTrapezoidal = Id::createStatic("trap");
 Id TranCore::methodBDF2 = Id::createStatic("bdf2");
 Id TranCore::methodGear2 = Id::createStatic("gear2");
 
-bool TranCore::run(bool continuePrevious, Status& s) {
+bool TranCore::run(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals(); 
     auto debug = options.tran_debug;
@@ -548,17 +555,17 @@ bool TranCore::run(bool continuePrevious, Status& s) {
 
     // Check parameters
     if (params.step<=0) {
-        s.set(Status::BadArguments, "Transient time step must be greater than zero.");
+        setError(TranError::Tstep);
         return false;
     }
 
     if (params.stop<=0) {
-        s.set(Status::BadArguments, "Transient duration must be greater than zero.");
+        setError(TranError::Tstop);
         return false;
     }
 
     if (params.start>=params.stop) {
-        s.set(Status::BadArguments, "Transient recording start time is after stop time.");
+        setError(TranError::Tstart);
         return false;
     }
 
@@ -579,7 +586,8 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         maxOrder = 2;
         integCoeffs.setMethod(IntegratorCoeffs::Method::BDF, maxOrder, options.tran_xmu);
     } else {
-        s.set(Status::BadArguments, "Unknown integration method '"+std::string(options.tran_method)+"'.");
+        setError(TranError::Method);
+        errorId = options.tran_method;
         return false;
     }
 
@@ -626,7 +634,8 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         opCore_.solver().enableForces(2, true);
         
         // Run op analysis
-        if (!opCore_.run(continuePrevious, s)) {
+        if (!opCore_.run(continuePrevious)) {
+            setError(TranError::OpError);
             return false;
         }
     } else if (params.icMode==icModeUic) {
@@ -640,14 +649,14 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         if (!uicForces.set(circuit, preprocessedIc, uicMode, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                uicForces.formatError(s);
+                setError(TranError::UicForces);
                 return false;
             }
         }
         // Copy values to RHS
         solution.vector() = uicForces.unknownValue();
     } else {
-        s.set(Status::BadArguments, "Unknown IC mode.");
+        setError(TranError::IcMode);
         return false;
     }
     // opCore_.dump(Simulator::dbg()); Simulator::dbg() << "\n";
@@ -683,7 +692,8 @@ bool TranCore::run(bool continuePrevious, Status& s) {
     // in the future slot (-1)
     states.futureVector() = states.vector();
     // Evaluate and load residual and residual derivative in future slot
-    if (!evalAndLoadWrapper(elsInit, s)) {
+    if (!evalAndLoadWrapper(elsInit)) {
+        // Error was already set in the wrapper
         return false;
     }
     // Rotate states -1 and 0 so that future (-1) becomes current (0)
@@ -803,12 +813,12 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         integCoeffs.setOrder(order);
         bool havePredictor = pointsSinceLastDiscontinuity>=predictorCoeffs.minimalHistoryForPredictor();
         if (havePredictor && !(predictorCoeffs.compute(pastTimesteps, hk) && predictorCoeffs.scalePredictor(hk))) {
-            s.set(Status::Analysis, "Failed to compute predictor coefficients.");
+            setError(TranError::Predictor);
             return false;
         }
         // Integrator coeffs must be scaled
         if (!(integCoeffs.compute(pastTimesteps, hk) && integCoeffs.scaleDifferentiator(hk))) {
-            s.set(Status::Analysis, "Failed to compute integrator coefficients.");
+            setError(TranError::Corrector);
             return false;
         }
 
@@ -1291,7 +1301,7 @@ bool TranCore::run(bool continuePrevious, Status& s) {
         
         // Check for timestep too small
         if (hk<tSolve*timeRelativeTolerance) {
-            s.set(Status::Analysis, "Timestep too small. Transient analysis aborted.");
+            setError(TranError::TimestepTooSmall);
             return false;
         }
     }
@@ -1302,6 +1312,63 @@ bool TranCore::run(bool continuePrevious, Status& s) {
     
     return true; 
 }
+
+bool TranCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastTranError) {
+        case TranError::EvalAndLoad:
+            s.set(Status::Analysis, "Initial state evaluation failed.");
+            break;
+        case TranError::MatrixError:
+            jacobian.formatError(s, &nr);
+            break;
+        case TranError::OpError:
+            opCore_.formatError(s);
+            break;
+        case TranError::UicForces:
+            uicForces.formatError(s);
+            break;
+        case TranError::Tstep:
+            s.set(Status::Analysis, "Transient time step must be greater than zero.");
+            break;
+        case TranError::Tstop: 
+            s.set(Status::Analysis, "Transient stop time must be greater than zero.");
+            break;
+        case TranError::Tstart: 
+            s.set(Status::Analysis, "Transient recording start time is after stop time.");
+            break;
+        case TranError::Method: 
+            s.set(Status::Analysis, "Unknown integration method '"+std::string(errorId)+"'.");
+            break;
+        case TranError::IcMode: 
+            s.set(Status::Analysis, "Unknown initial conditions mode.");
+            break;
+        case TranError::Predictor:
+            s.set(Status::Analysis, "Failed to compute predictor coefficients.");
+            break;
+        case TranError::Corrector: 
+            s.set(Status::Analysis, "Failed to compute integrator coefficients.");
+            break;
+        case TranError::TimestepTooSmall: 
+            s.set(Status::Analysis, "Timestep too small. Transient analysis aborted.");
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    return false;
+}
+
 
 void TranCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);

@@ -1185,8 +1185,8 @@ bool Circuit::bind(
     return true;
 }
 
-bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*), Status& s) {
-    if (!els.initialize(s)) {
+bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)) {
+    if (!els.initialize()) {
         return false;
     }
     els.clearFlags();

@@ -58,7 +58,7 @@ AcCore::~AcCore() {
 
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
-bool AcCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool AcCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Resolve output descriptors
@@ -68,14 +68,14 @@ bool AcCore::resolveOutputDescriptors(bool strict, Status &s) {
         Instance *inst;
         switch (it->type) {
         case OutdSolComponent:
-            ok = addComplexVarOutputSource(strict, it->id, acSolution, s);
+            ok = addComplexVarOutputSource(strict, it->id, acSolution);
             break;
         case OutdFrequency:
             outputSources.emplace_back(&(circuit.simulatorInternals().frequency));
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -85,26 +85,31 @@ bool AcCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool AcCore::addCoreOutputDescriptors(Status& s) {
+bool AcCore::addCoreOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
-    return addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"));
+    if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
+        lastError = Error::Descriptor;
+        errorId = "frequency";
+        return false;
+    }
+    return true;
 }
 
-bool AcCore::addDefaultOutputDescriptors(Status& s) {
+bool AcCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
-        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()), false, s);
+        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()));
     }
     return true;
 }
 
-bool AcCore::initializeOutputs(Id name, Status& s) {
+bool AcCore::initializeOutputs(Id name) {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -123,7 +128,7 @@ bool AcCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool AcCore::finalizeOutputs(Status &s) {
+bool AcCore::finalizeOutputs() {
     if (outfile) {
         outfile->epilogue();
         delete outfile;
@@ -132,7 +137,7 @@ bool AcCore::finalizeOutputs(Status &s) {
     return true;
 }
 
-bool AcCore::deleteOutputs(Id name, Status &s) {
+bool AcCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -148,7 +153,7 @@ bool AcCore::deleteOutputs(Id name, Status &s) {
 bool AcCore::rebuild(Status& s) {
     // AC analysis matrix
     if (!acMatrix.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
-        acMatrix.formatError(s);
+        setError(AcError::MatrixError);
         return false;
     }
     
@@ -163,14 +168,17 @@ bool AcCore::rebuild(Status& s) {
 
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
-bool AcCore::run(bool continuePrevious, Status& s) {
+bool AcCore::run(bool continuePrevious) {
+    setError(AcError::OK);
+    
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
     acSolution.resize(n+1);
     
     // Compute operating point
-    auto opOk = opCore_.run(continuePrevious, s);
+    auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
+        setError(AcError::OpError);
         return false;
     }
 
@@ -225,9 +233,9 @@ bool AcCore::run(bool continuePrevious, Status& s) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(elsEval, nullptr, s)) {
+    if (!circuit.evalAndLoad(elsEval, nullptr)) {
         // Load error
-        s.extend("Exiting AC small-signal analysis.");
+        setError(AcError::EvalAndLoad);
         if (debug>0) {
             Simulator::dbg() << "Error in AC Jacobian evaluation.\n";
         }
@@ -256,8 +264,9 @@ bool AcCore::run(bool continuePrevious, Status& s) {
     }
 
     // Create sweeper, put it in unique ptr to free it when method returns
-    auto sweeper = ScalarSweep::create(params, s);
+    auto sweeper = ScalarSweep::create(params, errorStatus);
     if (!sweeper) {
+        setError(AcError::Sweeper);
         return false;
     }
     std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
@@ -272,13 +281,17 @@ bool AcCore::run(bool continuePrevious, Status& s) {
     do {
         // Compute should always succeed
         Value v;
-        sweeper->compute(v, s);
+        if (!sweeper->compute(v, errorStatus)) {
+            setError(AcError::SweepCompute);
+            error = true;
+            break;
+        }
 
         // The value, however, must be convertible to real
-        if (!v.convertInPlace(Value::Type::Real, s)) {
-            s.extend("Frequency value is not real.");
+        if (!v.convertInPlace(Value::Type::Real, errorStatus)) {
+            setError(AcError::BadFrequency);
             if (debug>0) {
-                Simulator::dbg() << "Frequency value is not real.\n";
+                Simulator::dbg() << "Frequency value cannot be converted to real.\n";
             }
             error = true;
             break;
@@ -299,9 +312,9 @@ bool AcCore::run(bool continuePrevious, Status& s) {
         acMatrix.zero(Component::ImagPart);
         zero(acSolution);
         elsLoad.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(elsLoad, nullptr, s)) {
+        if (!circuit.evalAndLoad(elsLoad, nullptr)) {
             // Load error
-            s.extend("Exiting AC small-signal analysis.");
+            setError(AcError::EvalAndLoad);
             if (debug>0) {
                 Simulator::dbg() << "Error in AC Jacobian load.\n";
             }
@@ -331,8 +344,7 @@ bool AcCore::run(bool continuePrevious, Status& s) {
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
         if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
-            auto nr = UnknownNameResolver(circuit);
-            acMatrix.formatError(s, &nr);
+            setError(AcError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
             }
@@ -353,8 +365,7 @@ bool AcCore::run(bool continuePrevious, Status& s) {
             // Full factorization
             if (!acMatrix.factor()) {
                 // Failed, give up
-                auto nr = UnknownNameResolver(circuit);
-                acMatrix.formatError(s, &nr);
+                setError(AcError::MatrixError);
                 if (debug>0) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -365,7 +376,7 @@ bool AcCore::run(bool continuePrevious, Status& s) {
         // Check if matrix is singular
         double rcond;
         if (!acMatrix.rcond(rcond)) {
-            acMatrix.formatError(s);
+            setError(AcError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "Condition number estimation failed.\n";
             }
@@ -376,14 +387,14 @@ bool AcCore::run(bool continuePrevious, Status& s) {
             if (debug>0) {
                 Simulator::dbg() << "Matrix is close to singular.\n";
             }
-            s.set(Status::LinearSolver, "Matrix is close to singular.");
+            setError(AcError::SingularMatrix);
             error = true;
             break;
         }
 
         // Solve, set bucket to 0.0
         if (!acMatrix.solve(dataWithoutBucket(acSolution))) {
-            acMatrix.formatError(s);
+            setError(AcError::MatrixError);
             if (debug>2) {
                 Simulator::dbg() << "Failed to solve factored system.\n";
             }
@@ -419,12 +430,7 @@ bool AcCore::run(bool continuePrevious, Status& s) {
     }
 
     if (!finished) {
-        if (freq>=0) {
-            ss.str(""); ss << freq;
-            s.set(Status::Analysis, std::string("Leaving AC frequency sweep at frequency=")+ss.str()+".");
-        } else {
-            s.set(Status::Analysis, "Leaving AC frequency sweep.");
-        }
+        errorFreq = freq;
     }
 
     // No need to bind resistive Jacobian enatries. 
@@ -434,10 +440,54 @@ bool AcCore::run(bool continuePrevious, Status& s) {
     return finished;
 }
 
+bool AcCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastAcError) {
+        case AcError::Sweeper:
+        case AcError::SweepCompute:
+            s.set(errorStatus);
+            break;
+        case AcError::EvalAndLoad:
+            s.set(Status::Analysis, "Jacobian evaluation failed.");
+            break;
+        case AcError::MatrixError:
+            acMatrix.formatError(s, &nr);
+            break;
+        case AcError::OpError:
+            opCore_.formatError(s);
+            break;
+        case AcError::SingularMatrix:
+            s.set(Status::Analysis, "Matrix is close to singular.");
+            break;
+        case AcError::BadFrequency:
+            s.set(Status::Analysis, "Frequency value cannot be converted to real.");
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    if (errorFreq>=0) {
+        ss.str(""); ss << errorFreq;
+        s.extend(std::string("Leaving frequency sweep at frequency=")+ss.str()+".");
+    } else {
+        s.extend("Leaving frequency sweep.");
+    }
+    return false;
+}
 
 void AcCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
-    os << "  Results" << std::endl;
+    os << "  Results\n";
     circuit.dumpSolution(os, acSolution.data(), "    ");
 }
 

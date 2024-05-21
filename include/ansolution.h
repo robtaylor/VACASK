@@ -79,9 +79,6 @@ public:
     Forces& operator=(const Forces&)  = delete;
     Forces& operator=(      Forces&&) = default;
 
-    // Get error
-    Error error() const { return lastError; };
-
     // Clear error
     void clearError() { lastError = Error::OK; }; 
 

@@ -47,7 +47,7 @@ DcIncrementalCore::~DcIncrementalCore() {
 
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
-bool DcIncrementalCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool DcIncrementalCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Resolve output descriptors
@@ -57,11 +57,11 @@ bool DcIncrementalCore::resolveOutputDescriptors(bool strict, Status &s) {
         Instance *inst;
         switch (it->type) {
         case OutdSolComponent:
-            ok = addRealVarOutputSource(strict, it->id, incrementalSolution, s);
+            ok = addRealVarOutputSource(strict, it->id, incrementalSolution);
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -71,18 +71,18 @@ bool DcIncrementalCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool DcIncrementalCore::addDefaultOutputDescriptors(Status& s) {
+bool DcIncrementalCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
-        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()), false, s);
+        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()));
     }
     return true;
 }
 
-bool DcIncrementalCore::initializeOutputs(Id name, Status& s) {
+bool DcIncrementalCore::initializeOutputs(Id name) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -97,14 +97,14 @@ bool DcIncrementalCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool DcIncrementalCore::finalizeOutputs(Status &s) {
+bool DcIncrementalCore::finalizeOutputs() {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool DcIncrementalCore::deleteOutputs(Id name, Status &s) {
+bool DcIncrementalCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -123,13 +123,14 @@ bool DcIncrementalCore::rebuild(Status& s) {
 
 // System of equations is 
 //   G(x) dx = dJ
-bool DcIncrementalCore::run(bool continuePrevious, Status& s) {
+bool DcIncrementalCore::run(bool continuePrevious) {
     auto n = circuit.unknownCount();
     // Make sure structures are large enough
     incrementalSolution.resize(n+1);
     
-    auto opOk = opCore_.run(continuePrevious, s);
+    auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
+        setError(DcIncrError::OpError);
         return false;
     }
 
@@ -159,9 +160,9 @@ bool DcIncrementalCore::run(bool continuePrevious, Status& s) {
     // Prepare RHS (add excitations given by delta parameter)
     zero(incrementalSolution);
     auto filter = [](Device* device) { return device->checkFlags(Device::Flags::GeneratesDCIncremental); };
-    if (!circuit.evalAndLoad(elsLoad, filter, s)) {
+    if (!circuit.evalAndLoad(elsLoad, filter)) {
         // Load error
-        s.extend("Exiting DC incremental analysis.");
+        setError(DcIncrError::EvalAndLoad);
         if (debug>0) {
             Simulator::dbg() << "Error in DC incremental excitation load.\n";
         }
@@ -184,7 +185,7 @@ bool DcIncrementalCore::run(bool continuePrevious, Status& s) {
 
     // Solve 
     if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
-        jacobian.formatError(s);
+        setError(DcIncrError::MatrixError);
         return false;
     }
 
@@ -201,6 +202,36 @@ bool DcIncrementalCore::run(bool continuePrevious, Status& s) {
     }
     
     return opOk;
+}
+
+bool DcIncrementalCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastDcIncrError) {
+        case DcIncrError::EvalAndLoad:
+            s.set(Status::Analysis, "Jacobian evaluation failed.");
+            break;
+        case DcIncrError::MatrixError:
+            jacobian.formatError(s, &nr);
+            break;
+        case DcIncrError::OpError:
+            opCore_.formatError(s);
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    s.extend("Leaving DC incremental analysis.");
+    return false;
 }
 
 void DcIncrementalCore::dump(std::ostream& os) const {

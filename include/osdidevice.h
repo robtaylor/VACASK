@@ -27,6 +27,15 @@ class OsdiDevice : public Device {
 public:
     friend class OsdiModel;
 
+    enum class Error {
+        OK,
+        Range,
+        NotFound, 
+        NotModel, 
+        NotInstance, 
+        BadType
+    };
+
     OsdiDevice(OsdiFile* of, int descriptorIndex, Id asName=Id::none, Loc location=Loc::bad, Status& s=Status::ignore);
     virtual ~OsdiDevice();
 
@@ -174,7 +183,7 @@ public:
     // Parameter access
     bool readParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Value& v, Status& s=Status::ignore) const;
     std::tuple<bool,bool> writeParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, const Value& v, bool free=false, Status& s=Status::ignore);
-    template<typename T> const T* parameterPtr(OsdiFile::OsdiParameterId osdiId, const void* coreMod, const void* coreInst, Status& s=Status::ignore) const;
+    template<typename T> const T* parameterPtr(OsdiFile::OsdiParameterId osdiId, const void* coreMod, const void* coreInst) const;
 
     static void populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals);
     static void depopulate(OsdiSimParas& sp);
@@ -201,21 +210,18 @@ private:
 // Template implementation
 
 // Can only read parameter via pointer, writing is not allowed
-template<typename T> const T* OsdiDevice::parameterPtr(OsdiFile::OsdiParameterId osdiId, const void* coreMod, const void* coreInst, Status& s) const {
+template<typename T> const T* OsdiDevice::parameterPtr(OsdiFile::OsdiParameterId osdiId, const void* coreMod, const void* coreInst) const {
     // Check index
     if (osdiId>=osdiIdCount()) {
-        s.set(Status::Range, std::string("OSDI parameter id=")+std::to_string(osdiId)+" out of range.");
         return nullptr;
     }
 
     // Check kind
     if (!coreInst && !isModelParameter(osdiId)) {
-        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not a model parameter.");
         return nullptr;
     }
 
     if (coreInst && !(isInstanceParameter(osdiId) || isOpvar(osdiId))) {
-        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not an instance parameter or opvar.");
         return nullptr;
     }
 
@@ -230,9 +236,6 @@ template<typename T> const T* OsdiDevice::parameterPtr(OsdiFile::OsdiParameterId
         bad = true;
     }
     if (bad) {
-        s.set(Status::Unsupported, 
-            std::string("Incorrect pointer type requested for OSDI parameter id=")+
-                std::to_string(osdiId)+" ("+Value::typeCodeToName(t)+").");
         return nullptr;
     }
 

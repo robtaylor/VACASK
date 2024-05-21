@@ -34,6 +34,18 @@ typedef struct AcParameters {
 
 class AcCore : public AnalysisCore {
 public:
+    typedef AcParameters Parameters;
+    enum class AcError {
+        OK, 
+        Sweeper, 
+        SweepCompute, 
+        EvalAndLoad, 
+        MatrixError, 
+        OpError, 
+        SingularMatrix, 
+        BadFrequency, 
+    };
+       
     AcCore(
         Analysis& analysis, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
@@ -46,22 +58,33 @@ public:
     AcCore& operator=(const AcCore&)  = delete;
     AcCore& operator=(      AcCore&&) = delete;
 
-    bool addCoreOutputDescriptors(Status& s=Status::ignore);
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastAcError = AcError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addCoreOutputDescriptors();
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
     OperatingPointCore& opCore_;
     OutputRawfile* outfile;
 
-private:
+protected:
+    void setError(AcError e) { lastAcError = e; lastError = Error::OK; };
+    AcError lastAcError;
+    double errorFreq;
+    Status errorStatus;
+
     VectorRepository<double>& dcSolution;
     VectorRepository<double>& dcStates;
     KluRealMatrix& dcJacobian;

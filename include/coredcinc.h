@@ -29,6 +29,14 @@ typedef struct DcIncrParameters {
 
 class DcIncrementalCore : public AnalysisCore {
 public:
+    typedef DcIncrParameters Parameters;
+    enum class DcIncrError {
+        OK, 
+        EvalAndLoad, 
+        MatrixError, 
+        OpError, 
+        SingularMatrix, 
+    };
     DcIncrementalCore(
         Analysis& analysis, DcIncrParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
         KluRealMatrix& jacobian, Vector<double>& incrementalSolution
@@ -40,21 +48,32 @@ public:
     DcIncrementalCore& operator=(const DcIncrementalCore&)  = delete;
     DcIncrementalCore& operator=(      DcIncrementalCore&&) = delete;
 
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastDcIncrError = DcIncrError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
     OperatingPointCore& opCore_;
     OutputRawfile* outfile;
 
-private:
+protected:
+    void setError(DcIncrError e) { lastDcIncrError = e; lastError = Error::OK; };
+    DcIncrError lastDcIncrError;
+    double errorFreq;
+    Status errorStatus;
+
     KluRealMatrix& jacobian;
     Vector<double>& incrementalSolution;
     DcIncrParameters& params;

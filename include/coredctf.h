@@ -30,6 +30,16 @@ typedef struct DcTfParameters {
 
 class DcTfCore : public AnalysisCore {
 public:
+    typedef DcTfParameters Parameters;
+    enum class DcTfError {
+        OK, 
+        NotFound, 
+        NotSource, 
+        EvalAndLoad, 
+        MatrixError, 
+        OpError, 
+        SingularMatrix, 
+    };
     DcTfCore(
         Analysis& analysis, DcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
@@ -43,21 +53,31 @@ public:
     DcTfCore& operator=(const DcTfCore&)  = delete;
     DcTfCore& operator=(      DcTfCore&&) = delete;
 
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastDcTfError = DcTfError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
     OperatingPointCore& opCore_;
     OutputRawfile* outfile;
 
-private:
+protected:
+    void setError(DcTfError e) { lastDcTfError = e; lastError = Error::OK; };
+    DcTfError lastDcTfError;
+    Id errorInstance;
+    
     KluRealMatrix& jacobian;
     Vector<double>& incrementalSolution;
 

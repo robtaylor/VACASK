@@ -49,10 +49,10 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coredctf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreac.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreactf.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/corenoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretrancoef.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretrannr.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretran.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/corenoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/an.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/ansupport.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/ansolution.h 
@@ -62,8 +62,8 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/andctf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anac.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anactf.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/antran.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/annoise.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/antran.h 
     libplatform.cpp 
     dynload.cpp 
     limitfunctions.cpp
@@ -112,10 +112,10 @@ add_library(simlib STATIC
     coredctf.cpp 
     coreac.cpp 
     coreactf.cpp 
+    corenoise.cpp
     coretrancoef.cpp 
     coretrannr.cpp 
     coretran.cpp
-    corenoise.cpp
     an.cpp
     ansupport.cpp 
     ansolution.cpp 
@@ -125,8 +125,8 @@ add_library(simlib STATIC
     andctf.cpp 
     anac.cpp 
     anactf.cpp 
-    antran.cpp 
     annoise.cpp 
+    antran.cpp 
 )
 target_include_directories(simlib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}

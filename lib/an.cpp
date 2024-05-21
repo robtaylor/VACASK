@@ -106,11 +106,16 @@ bool Analysis::addOutputDescriptors(Status& s) {
     // Add sweep variables
     auto nSweeps = sweeps_.size();
     for(decltype(nSweeps) i=0; i<nSweeps; i++) {
-        addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, sweeper->sweepName(i), i)); 
+        if (!addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, sweeper->sweepName(i), i))) {
+            s.set(Status::Analysis, "Failed to add output descriptor for sweep variable '"+std::string(sweeper->sweepName(i))+"'.");
+            return false;
+        }
     }
 
     // Add core output descriptors
-    addCoreOutputDescriptors();
+    if (!addCoreOutputDescriptors(s)) {
+        return false;
+    }
 
     // Add saves
     bool strict;
@@ -135,13 +140,14 @@ bool Analysis::addOutputDescriptors(Status& s) {
         }
     }
 
-    // Add default saves if needed
-    addDefaultOutputDescriptors(s);
+    // Add default saves if needed (no saves specified)
+    // Ignore errors and conflicts
+    addDefaultOutputDescriptors();
 
     return true;
 }
 
-bool Analysis::resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict, Status& s) {
+bool Analysis::resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict) {
     // Abstract analysis handles only sweep variables
     switch (descr.type) {
         case OutdSweepvar: 

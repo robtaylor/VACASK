@@ -161,7 +161,7 @@ public:
     virtual Id opvarName(ParameterIndex ndx) const { return data.parameterName(ndx); };
     virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return data.parameterType(ndx, s); };
     virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return data.getParameter(ndx, v, s); };
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx, Status& s=Status::ignore) const { return std::make_tuple(false, OutputSource()); };
+    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
     virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
 

@@ -38,6 +38,23 @@ typedef struct TranParameters {
 // This core uses no other core
 class TranCore : public AnalysisCore {
 public:
+    typedef TranParameters Parameters;
+    enum class TranError {
+        OK, 
+        Tstep, 
+        Tstop, 
+        Tstart, 
+        Method, 
+        IcMode, 
+        Predictor, 
+        Corrector, 
+        EvalAndLoad, 
+        MatrixError, 
+        OpError, 
+        UicForces, 
+        TimestepTooSmall, 
+    };
+    
     TranCore(
         Analysis& analysis, TranParameters& params, OperatingPointCore& opCore, 
         Circuit& circuit, 
@@ -50,18 +67,24 @@ public:
     TranCore& operator=(const TranCore&)  = delete;
     TranCore& operator=(      TranCore&&) = delete;
 
-    bool addCoreOutputDescriptors(Status& s=Status::ignore);
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastTranError = TranError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addCoreOutputDescriptors();
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     std::tuple<bool, bool> preMapping(Status& s=Status::ignore);
     bool populateStructures(Status& s=Status::ignore);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
@@ -76,6 +99,10 @@ public:
     static Id methodGear2;
 
 protected:
+    void setError(TranError e) { lastTranError = e; lastError = Error::OK; };
+    TranError lastTranError;
+    Id errorId;
+    
     KluRealMatrix& jacobian; // Resistive Jacobian
     VectorRepository<double>& solution; // Solution history
     VectorRepository<double>& states; // Circuit states
@@ -93,7 +120,7 @@ protected:
     Forces uicForces;
     
 private:
-    bool evalAndLoadWrapper(EvalAndLoadSetup& els, Status& s);
+    bool evalAndLoadWrapper(EvalAndLoadSetup& els);
 
     // Update breakpoint, but only if it is after last
     void updateBreakPoint(double& bp, double candidate, double last) { if (candidate<bp && candidate>last) bp = candidate; };

@@ -131,7 +131,7 @@ typedef struct EvalAndLoadSetup {
         stopRequested = false;
     };
 
-    bool initialize(Status& s=Status::ignore) {
+    bool initialize() {
         DBGCHECK(states && states->size()<2, "States history must have at least two slots.");
         DBGCHECK(solution && solution->size()<2, "Solution history must have at least two slots.");
         if (solution) {
@@ -642,14 +642,14 @@ public:
 
     // Returns an output source corresponding to an opvar with given index
     // Return value: ok, output source
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx, Status& s=Status::ignore) const { return std::make_tuple(false, OutputSource()); };
+    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
     
     // Noise API
     virtual ParameterIndex noiseSourceCount() const { return 0; };
     virtual Id noiseSourceName(ParameterIndex ndx) const { return Id(); };
     virtual std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return std::make_tuple(0, false); }
     virtual std::tuple<EquationIndex, EquationIndex> noiseExcitation(Circuit& cir, ParameterIndex ndx) const { return std::make_tuple(0, 0); };
-    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity, Status& s=Status::ignore) { return true; };
+    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity) { return true; };
 
     // Sets parameter defaults, computes node collapsing
     // Return value: ok, unknowns changed, sparsity changed

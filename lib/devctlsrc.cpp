@@ -133,7 +133,7 @@ template<typename InstanceData> static bool getCtlsrcOpvar(InstanceData& data, P
     return true;
 }
 
-template<typename InstanceData> static std::tuple<bool, OutputSource> ctlsrcOpvarOutputSource(InstanceData& data, ParameterIndex ndx, Status& s) { 
+template<typename InstanceData> static std::tuple<bool, OutputSource> ctlsrcOpvarOutputSource(InstanceData& data, ParameterIndex ndx) { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().ctl));
@@ -176,8 +176,8 @@ template<> bool BuiltinVccsInstance::getOpvar(ParameterIndex ndx, Value& v, Stat
     return getCtlsrcOpvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
-    return ctlsrcOpvarOutputSource(data, ndx, s);
+template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOpvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -311,8 +311,8 @@ template<> bool BuiltinVcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Stat
     return getCtlsrcOpvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
-    return ctlsrcOpvarOutputSource(data, ndx, s);
+template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOpvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -449,8 +449,8 @@ template<> bool BuiltinCccsInstance::getOpvar(ParameterIndex ndx, Value& v, Stat
     return getCtlsrcOpvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
-    return ctlsrcOpvarOutputSource(data, ndx, s);
+template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOpvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -579,8 +579,8 @@ template<> bool BuiltinCcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Stat
     return getCtlsrcOpvar(data, ndx, v, s); 
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
-    return ctlsrcOpvarOutputSource(data, ndx, s);
+template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOpvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, Status& s) {

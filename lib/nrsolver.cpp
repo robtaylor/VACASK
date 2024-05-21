@@ -752,7 +752,7 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
             s.set(Status::Range, "Force index out of range.");
             return false;
         case Error::EvalAndLoad:
-            s.extend("Evaluation/load error."); 
+            s.set(Status::NonlinearSolver, "Evaluation/load error.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
         case Error::LinearSolver: 

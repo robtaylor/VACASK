@@ -52,7 +52,7 @@ public:
     virtual Id opvarName(ParameterIndex ndx) const;
     virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const;
     virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const; 
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx, Status& s=Status::ignore) const;
+    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const;
     virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
 
@@ -69,7 +69,7 @@ public:
     virtual Id noiseSourceName(ParameterIndex ndx) const { return model()->device()->noiseSourceName(ndx); };
     virtual std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return model()->device()->noiseSourceIndex(name); }
     virtual std::tuple<EquationIndex, EquationIndex> noiseExcitation(Circuit& cir, ParameterIndex ndx) const;
-    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity, Status& s=Status::ignore);
+    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity);
 
     // Helpers for inlining in device, model, and instance virtual functions
     std::tuple<bool, bool, bool> setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, Status& s=Status::ignore);

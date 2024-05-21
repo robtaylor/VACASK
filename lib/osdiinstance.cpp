@@ -182,9 +182,8 @@ bool OsdiInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const {
     return model()->device()->readParameter(osdiId, const_cast<void*>(model()->core()), core_, v, s);
 }
 
-std::tuple<bool, OutputSource> OsdiInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const {
+std::tuple<bool, OutputSource> OsdiInstance::opvarOutputSource(ParameterIndex ndx) const {
     if (ndx>=model()->device()->opvarCount()) {
-        s.set(Status::Range, std::string("Opvar index id=")+std::to_string(ndx)+" out of range.");
         return std::make_tuple(false, OutputSource());
     }
     auto [t, ok] = opvarType(ndx);
@@ -195,25 +194,19 @@ std::tuple<bool, OutputSource> OsdiInstance::opvarOutputSource(ParameterIndex nd
     auto osdiId = model()->device()->opvarOsdiParameterId(ndx);
     switch (t) {
         case Value::Type::Int: {
-            const int* ptr = model()->device()->parameterPtr<int>(osdiId, model()->core(), core(), s);
+            const int* ptr = model()->device()->parameterPtr<int>(osdiId, model()->core(), core());
             if (ptr) {
                 return std::make_tuple(true, OutputSource(ptr));
             }
             break;
         }
         case Value::Type::Real: {
-            const double* ptr = model()->device()->parameterPtr<double>(osdiId, model()->core(), core(), s);
+            const double* ptr = model()->device()->parameterPtr<double>(osdiId, model()->core(), core());
             if (ptr) {
                 return std::make_tuple(true, OutputSource(ptr));
             }
             break;
         }
-        default:
-            s.set(Status::Unsupported, 
-                std::string("Opvar '")+
-                std::string(model()->device()->parameterName(osdiId))+ 
-                "' is of unsupported type ("+Value::typeCodeToName(t)+")."
-            );
     }
     return std::make_tuple(false, OutputSource());
 }
@@ -257,7 +250,7 @@ std::tuple<EquationIndex, EquationIndex> OsdiInstance::noiseExcitation(Circuit& 
     return std::make_tuple(e1, e2);
 }
 
-bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity, Status& s) { 
+bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity) { 
     model()->device()->descriptor()->load_noise(core(), model()->core(), freq, noiseDensity, logNoiseDensity);
     return true;
 }

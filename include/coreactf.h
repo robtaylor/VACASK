@@ -35,6 +35,20 @@ typedef struct AcTfParameters {
 
 class AcTfCore : public AnalysisCore {
 public:
+    typedef AcTfParameters Parameters;
+    enum class AcTfError {
+        OK, 
+        NotFound, 
+        NotSource, 
+        Sweeper, 
+        SweepCompute, 
+        EvalAndLoad, 
+        MatrixError, 
+        OpError, 
+        SingularMatrix, 
+        BadFrequency, 
+    };
+    
     AcTfCore(
         Analysis& analysis, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, 
@@ -49,22 +63,34 @@ public:
     AcTfCore& operator=(const AcTfCore&)  = delete;
     AcTfCore& operator=(      AcTfCore&&) = delete;
 
-    bool addCoreOutputDescriptors(Status& s=Status::ignore);
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastAcTfError = AcTfError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addCoreOutputDescriptors();
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
     OperatingPointCore& opCore_;
     OutputRawfile* outfile;
 
-private:
+protected:
+    void setError(AcTfError e) { lastAcTfError = e; lastError = Error::OK; };
+    AcTfError lastAcTfError;
+    double errorFreq;
+    Status errorStatus;
+    Id errorInstance;
+
     VectorRepository<double>& dcSolution;
     VectorRepository<double>& dcStates;
     KluRealMatrix& dcJacobian;

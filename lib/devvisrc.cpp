@@ -354,7 +354,7 @@ template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, S
     return true;
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
+template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx) const { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().v));
@@ -365,7 +365,7 @@ template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSou
     }
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const { 
+template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx) const { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().v));

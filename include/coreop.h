@@ -60,7 +60,15 @@ typedef struct OperatingPointState {
 class OperatingPointCore : public AnalysisCore {
 public:
     using RunType = OpRunType;
-
+    typedef OpParameters Parameters;
+    enum class OpError {
+        OK, 
+        InitialOp, 
+        SteppingSolver, 
+        SteppingSteps, 
+        NoAlgorithm, 
+    };
+    
     OperatingPointCore(
         Analysis& analysis, OpParameters& params, Circuit& circuit, 
         KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
@@ -72,8 +80,14 @@ public:
     OperatingPointCore& operator=(const OperatingPointCore&)  = delete;
     OperatingPointCore& operator=(      OperatingPointCore&&) = delete;
 
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastOpError = OpError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict, Status& s=Status::ignore);
 
     std::tuple<bool, bool> preMapping(Status& s=Status::ignore);
     bool populateStructures(Status& s=Status::ignore);
@@ -96,7 +110,12 @@ public:
     void dump(std::ostream& os) const;
 
 protected:
-    bool runSolver(bool continuePrevious, Status& s=Status::ignore);
+    void setError(OpError e) { lastOpError = e; lastError = Error::OK; };
+    OpError lastOpError;
+    RunType errorRunType; 
+    Int errorHomotopyIterations;
+
+    bool runSolver(bool continuePrevious);
     
     KluRealMatrix& jac; // Resistive Jacobian
     VectorRepository<double>& solution; // Solution history
@@ -118,10 +137,10 @@ private:
     NRSettings nrSettings;
     OpNRSolver nrSolver;
 
-    bool gminStepping(RunType type, Status& s=Status::ignore);
-    bool spice3GminStepping(Status& s=Status::ignore);
-    bool sourceStepping(Status& s=Status::ignore);
-    bool spice3SourceStepping(Status& s=Status::ignore);
+    bool gminStepping(RunType type);
+    bool spice3GminStepping();
+    bool sourceStepping();
+    bool spice3SourceStepping();
     std::string homotopyProgress() const;
     
     OpParameters& params;

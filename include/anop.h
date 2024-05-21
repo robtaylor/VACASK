@@ -37,10 +37,11 @@ public:
     static Analysis* create(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s=Status::ignore);
 
 protected:
-        virtual bool addCommonOutputDescriptor(const OutputDescriptor& desc);
+    virtual bool addCommonOutputDescriptor(const OutputDescriptor& desc);
     virtual bool addCoreOutputDescriptors(Status& s=Status::ignore);
     virtual bool resolveSave(const PTSave& save, bool verify, Status& s=Status::ignore);
-    virtual bool addDefaultOutputDescriptors(Status& s=Status::ignore);
+    virtual bool addDefaultOutputDescriptors();
+    virtual void clearOutputDescriptors();
     virtual bool resolveOutputDescriptors(bool strict, Status& s=Status::ignore);
 
     virtual std::tuple<bool, bool> preMapping(Status& s=Status::ignore);
@@ -58,7 +59,6 @@ protected:
     virtual bool restoreState(size_t ndx);
     virtual void makeStateIncoherent(size_t ndx);
 
-    virtual void clearOutputDescriptors();
     
 private:
     IStruct<OpParameters> params;

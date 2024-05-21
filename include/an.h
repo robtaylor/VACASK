@@ -30,7 +30,7 @@ public:
     // Converts an output descriptor to output source and stores it in the given output sources list
     // This handles output descriptors that are not specific for an analysis core, 
     // i.e. it is called by a core when resolving a descriptor is delegated to the analysis
-    bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict, Status& s);
+    bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict);
 
     // Sweep API
     bool addSweep(const SweepSettings& sw, Status& s=Status::ignore);
@@ -84,7 +84,7 @@ protected:
     IStruct<SimulatorOptions> originalSimOptions;
     IStruct<SimulatorOptions> simOptions;
     PTAnalysis& ptAnalysis;
-    UnknownNameResolver resolver;
+    UnknownNameResolver resolver; // TODO: remove
 
     // Analysis::run() steps:
 
@@ -132,7 +132,7 @@ protected:
     // produced no output descriptors. 
     // Called by addOutputDescriptors() after all save directives were interpreted. 
     // Calls addDefaultOutputDescriptors() method of all analysis cores. 
-    virtual bool addDefaultOutputDescriptors(Status& s=Status::ignore) = 0;
+    virtual bool addDefaultOutputDescriptors() = 0;
     
     // Resolve output descriptors of all analysis cores
     // Called by toplevel analysis function (an.cpp) when setting data sources 

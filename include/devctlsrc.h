@@ -128,7 +128,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinVccsInstance::principalParame
 template<> bool BuiltinVccsInstance::deleteHierarchy(Circuit& circuit, Status& s);
 template<> bool BuiltinVccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinVccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const;
+template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVccsInstance::bindCore(
     Circuit& circuit, 
@@ -144,7 +144,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinVcvsInstance::principalParame
 template<> bool BuiltinVcvsInstance::deleteHierarchy(Circuit& circuit, Status& s);
 template<> bool BuiltinVcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinVcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const;
+template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVcvsInstance::bindCore(
     Circuit& circuit, 
@@ -160,7 +160,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinCccsInstance::principalParame
 template<> bool BuiltinCccsInstance::deleteHierarchy(Circuit& circuit, Status& s);
 template<> bool BuiltinCccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinCccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const;
+template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCccsInstance::bindCore(
     Circuit& circuit, 
@@ -176,7 +176,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinCcvsInstance::principalParame
 template<> bool BuiltinCcvsInstance::deleteHierarchy(Circuit& circuit, Status& s);
 template<> bool BuiltinCcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinCcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx, Status& s) const;
+template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCcvsInstance::bindCore(
     Circuit& circuit, 

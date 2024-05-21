@@ -106,9 +106,6 @@ public:
 
     ~KluMatrixCore();
 
-    // Get error
-    Error error() const { return lastError; };
-
     // Clear error
     void clearError() { lastError = Error::OK; }; 
 

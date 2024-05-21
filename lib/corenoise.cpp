@@ -65,7 +65,7 @@ NoiseCore::~NoiseCore() {
 
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
-bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool NoiseCore::resolveOutputDescriptors(bool strict) {
     // Clear contribution offsets
     contributionOffset.clear();
     size_t atOffset = 2;
@@ -87,7 +87,8 @@ bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
                 inst = circuit.findInstance(name);
                 if (strict) {
                     if (!inst) {
-                        s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' not found.");
+                        setError(NoiseError::NotFound);
+                        errorInstance = name;
                         ok = false;
                         break;
                     }
@@ -107,7 +108,8 @@ bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
                 // Find instance
                 inst = circuit.findInstance(name);
                 if (strict && !inst) {
-                    s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' not found.");
+                    setError(NoiseError::NotFound);
+                    errorInstance = name;
                     ok = false;
                     break;
                 }
@@ -115,7 +117,9 @@ bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
                 if (inst) {
                     std::tie(contribIndex, found) = inst->noiseSourceIndex(contrib);
                     if (strict && !found) {
-                        s.set(Status::NotFound, std::string("Noise contribution '")+std::string(contrib)+"' of instance '"+std::string(name)+"' not found.");
+                        setError(NoiseError::ContribNotFound);
+                        errorInstance = name;
+                        errorContrib = contrib;
                         ok = false;
                         break;
                     }
@@ -143,7 +147,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
                 break;
             default:
                 // Delegate to parent
-                ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+                ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -152,31 +156,42 @@ bool NoiseCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool NoiseCore::addCoreOutputDescriptors(Status& s) {
+bool NoiseCore::addCoreOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
-    bool ok;
-    ok = addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"));
-    ok = ok && addOutputDescriptor(OutputDescriptor(OutdOutputNoise, "onoise"));
-    ok = ok && addOutputDescriptor(OutputDescriptor(OutdPowerGain, "gain"));
-    return ok;
+    if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
+        lastError = Error::Descriptor;
+        errorId = "frequency";
+        return false;
+    }
+    if (!addOutputDescriptor(OutputDescriptor(OutdOutputNoise, "onoise"))) {
+        lastError = Error::Descriptor;
+        errorId = "onoise";
+        return false;
+    }
+    if (!addOutputDescriptor(OutputDescriptor(OutdPowerGain, "gain"))) {
+        lastError = Error::Descriptor;
+        errorId = "gain";
+        return false;
+    }
+    return true;
 }
 
-bool NoiseCore::addDefaultOutputDescriptors(Status& s) {
+bool NoiseCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
         // Add total noise contributions of all instances (details=false)
-        return addAllNoiseContribInst(PTSave(Loc::bad, "default", Id(), Id()), false, false, s);
+        return addAllNoiseContribInst(PTSave(Loc::bad, "default", Id(), Id()), false);
     }
     return true;
 }
 
-bool NoiseCore::initializeOutputs(Id name, Status& s) {
+bool NoiseCore::initializeOutputs(Id name) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -191,14 +206,14 @@ bool NoiseCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool NoiseCore::finalizeOutputs(Status &s) {
+bool NoiseCore::finalizeOutputs() {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool NoiseCore::deleteOutputs(Id name, Status &s) {
+bool NoiseCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -229,7 +244,7 @@ bool NoiseCore::rebuild(Status& s) {
 
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
-bool NoiseCore::run(bool continuePrevious, Status& s) {
+bool NoiseCore::run(bool continuePrevious) {
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
     acSolution.resize(n+1);
@@ -237,20 +252,21 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     zero(results);
     
     // Get output unknowns
-    auto [outOk, up, un] = getOutput(params.out, s);
+    auto [outOk, up, un] = getOutput(params.out);
     if (!outOk) {
         return false;
     }
 
     // Get input source
-    auto [inOk, inputSource] = getInput(params.in, s);
+    auto [inOk, inputSource] = getInput(params.in);
     if (!inOk) {
         return false;
     }
     
     // Compute operating point
-    auto opOk = opCore_.run(continuePrevious, s);
+    auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
+        setError(NoiseError::OpError);
         return false;
     }
 
@@ -307,9 +323,9 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(elsEval, nullptr, s)) {
+    if (!circuit.evalAndLoad(elsEval, nullptr)) {
         // Load error
-        s.extend("Exiting small-signal noise analysis.");
+        setError(NoiseError::EvalAndLoad);
         if (debug>0) {
             Simulator::dbg() << "Error in AC Jacobian / noise evaluation.\n";
         }
@@ -338,8 +354,9 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     }
 
     // Create sweeper, put it in unique ptr to free it when method returns
-    auto sweeper = ScalarSweep::create(params, s);
+    auto sweeper = ScalarSweep::create(params, errorStatus);
     if (!sweeper) {
+        setError(NoiseError::Sweeper);
         return false;
     }
     std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
@@ -354,14 +371,15 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     do {
         // Compute should always succeed
         Value v;
-        sweeper->compute(v, s);
+        if (!sweeper->compute(v, errorStatus)) {
+            setError(NoiseError::SweepCompute);
+            error = true;
+            break;
+        }
 
         // The value, however, must be convertible to real
-        if (!v.convertInPlace(Value::Type::Real, s)) {
-            s.extend("Frequency value is not real.");
-            if (debug>0) {
-                Simulator::dbg() << "Frequency value is not real.\n";
-            }
+        if (!v.convertInPlace(Value::Type::Real, errorStatus)) {
+            setError(NoiseError::SweepCompute);
             error = true;
             break;
         }
@@ -377,9 +395,9 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
         // Load AC matrix, we must update the imaginary part only
         acMatrix.zero(Component::ImagPart);
         elsLoad.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(elsLoad, nullptr, s)) {
+        if (!circuit.evalAndLoad(elsLoad, nullptr)) {
             // Load error
-            s.extend("Exiting small-signal noise analysis.");
+            setError(NoiseError::EvalAndLoad);
             if (debug>0) {
                 Simulator::dbg() << "Error in AC Jacobian load.\n";
             }
@@ -396,8 +414,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
         if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
-            auto nr = UnknownNameResolver(circuit);
-            acMatrix.formatError(s, &nr);
+            setError(NoiseError::MatrixError);
             if (debug>2) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
             }
@@ -418,8 +435,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
             // Full factorization
             if (!acMatrix.factor()) {
                 // Failed, give up
-                auto nr = UnknownNameResolver(circuit);
-                acMatrix.formatError(s, &nr);
+                setError(NoiseError::MatrixError);
                 if (debug>0) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -430,7 +446,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
         // Check if matrix is singular
         double rcond;
         if (!acMatrix.rcond(rcond)) {
-            acMatrix.formatError(s);
+            setError(NoiseError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "Condition number estimation failed.\n";
             }
@@ -441,7 +457,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
             if (debug>0) {
                 Simulator::dbg() << "Matrix is close to singular.\n";
             }
-            s.set(Status::LinearSolver, "Matrix is close to singular.");
+            setError(NoiseError::SingularMatrix);
             error = true;
             break;
         }
@@ -461,7 +477,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
 
         // Solve, set bucket to 0.0
         if (!acMatrix.solve(dataWithoutBucket(acSolution))) {
-            acMatrix.formatError(s);
+            setError(NoiseError::MatrixError);
             if (debug>2) {
                 Simulator::dbg() << "Failed to solve factored system.\n";
             }
@@ -512,7 +528,8 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
                     // Collect noise excitations
                     noiseDensity.resize(nSources);
                     logNoiseDensity.resize(nSources);
-                    if (!inst->loadNoise(circuit, freq, noiseDensity.data(), logNoiseDensity.data(), s)) {
+                    if (!inst->loadNoise(circuit, freq, noiseDensity.data(), logNoiseDensity.data())) {
+                        setError(NoiseError::PsdError);
                         if (debug>0) {
                             Simulator::dbg() << "Failed to compute noise.\n";
                         }
@@ -547,7 +564,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
 
                         // Solve, set bucket to 0.0
                         if (!acMatrix.solve(dataWithoutBucket(acSolution))) {
-                            acMatrix.formatError(s);
+                            setError(NoiseError::MatrixError);
                             if (debug>2) {
                                 Simulator::dbg() << "Failed to solve factored system.\n";
                             }
@@ -641,12 +658,7 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     }
 
     if (!finished) {
-        if (freq>=0) {
-            ss.str(""); ss << freq;
-            s.set(Status::Analysis, std::string("Leaving noise frequency sweep at frequency=")+ss.str()+".");
-        } else {
-            s.set(Status::Analysis, "Leaving noise frequency sweep.");
-        }
+        errorFreq = freq;
     }
 
     // No need to bind resistive Jacobian entries. 
@@ -654,6 +666,60 @@ bool NoiseCore::run(bool continuePrevious, Status& s) {
     // We only changed the bindings of the reactive Jacobian entries. 
     
     return finished;
+}
+
+bool NoiseCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastNoiseError) {
+        case NoiseError::NotFound:
+            s.set(Status::Analysis, std::string("Instance '")+std::string(errorInstance)+"' not found.");
+            break;
+        case NoiseError::ContribNotFound:
+            s.set(Status::Analysis, std::string("Noise contribution '")+std::string(errorContrib)+"' of instance '"+std::string(errorInstance)+"' not found.");
+            break;
+        case NoiseError::Sweeper:
+        case NoiseError::SweepCompute:
+            s.set(errorStatus);
+            break;
+        case NoiseError::EvalAndLoad:
+            s.set(Status::Analysis, "Jacobian evaluation failed.");
+            break;
+        case NoiseError::PsdError:
+            s.set(Status::Analysis, "Power spectral density evaluation failed.");
+            break;
+        case NoiseError::MatrixError:
+            acMatrix.formatError(s, &nr);
+            break;
+        case NoiseError::OpError:
+            opCore_.formatError(s);
+            break;
+        case NoiseError::SingularMatrix:
+            s.set(Status::Analysis, "Matrix is close to singular.");
+            break;
+        case NoiseError::BadFrequency:
+            s.set(Status::Analysis, "Frequency value cannot be converted to real.");
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    if (errorFreq>=0) {
+        ss.str(""); ss << errorFreq;
+        s.extend(std::string("Leaving frequency sweep at frequency=")+ss.str()+".");
+    } else {
+        s.extend("Leaving frequency sweep.");
+    }
+    return false;
 }
 
 

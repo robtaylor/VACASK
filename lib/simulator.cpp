@@ -65,8 +65,8 @@ bool Simulator::setup(
     ok &= registerAnalysis<DcTf>("dctf", s);
     ok &= registerAnalysis<Ac>("ac", s);
     ok &= registerAnalysis<AcTf>("actf", s);
-    ok &= registerAnalysis<Tran>("tran", s);
     ok &= registerAnalysis<Noise>("noise", s);
+    ok &= registerAnalysis<Tran>("tran", s);
     
     return ok;
 }

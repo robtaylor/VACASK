@@ -35,6 +35,21 @@ typedef struct NoiseParameters {
 
 class NoiseCore : public AnalysisCore {
 public:
+    typedef NoiseParameters Parameters;
+    enum class NoiseError {
+        OK, 
+        NotFound, 
+        ContribNotFound, 
+        Sweeper, 
+        SweepCompute, 
+        EvalAndLoad, 
+        PsdError, 
+        MatrixError, 
+        OpError, 
+        SingularMatrix, 
+        BadFrequency, 
+    };
+    
     NoiseCore(
         Analysis& analysis, NoiseParameters& params, OperatingPointCore& opCore, 
         std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
@@ -51,22 +66,35 @@ public:
     NoiseCore& operator=(const NoiseCore&)  = delete;
     NoiseCore& operator=(      NoiseCore&&) = delete;
 
-    bool addCoreOutputDescriptors(Status& s=Status::ignore);
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore);
-    bool resolveOutputDescriptors(bool strict, Status &s);
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastNoiseError = NoiseError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addCoreOutputDescriptors();
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
-    bool finalizeOutputs(Status& s=Status::ignore);
-    bool deleteOutputs(Id name, Status& s=Status::ignore);
+    bool initializeOutputs(Id name);
+    bool run(bool continuePrevious);
+    bool finalizeOutputs();
+    bool deleteOutputs(Id name);
 
     void dump(std::ostream& os) const;
 
     OperatingPointCore& opCore_;
     OutputRawfile* outfile;
 
-private:
+protected:
+    void setError(NoiseError e) { lastNoiseError = e; lastError = Error::OK; };
+    NoiseError lastNoiseError;
+    double errorFreq;
+    Status errorStatus;
+    Id errorInstance;
+    Id errorContrib;
+    
     VectorRepository<double>& dcSolution;
     VectorRepository<double>& dcStates;
     KluRealMatrix& dcJacobian;

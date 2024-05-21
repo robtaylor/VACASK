@@ -24,12 +24,30 @@ class Analysis;
 // Analysis core, one analysis can have multiple analysis cores (i.e. op, tran, ...)
 class AnalysisCore {
 public: 
+    enum class Error {
+        OK, 
+        Arguments, 
+        NodeNotFound, 
+        OpvarNotFound, 
+        InstanceNotFound, 
+        OutputSpec, 
+        OutputType, 
+        InstanceNotSource, 
+        Descriptor, 
+    };
+
     AnalysisCore(Analysis& analysis, Circuit& circuit);
     
     AnalysisCore           (const AnalysisCore&)  = delete;
     AnalysisCore           (      AnalysisCore&&) = delete;
     AnalysisCore& operator=(const AnalysisCore&)  = delete;
     AnalysisCore& operator=(      AnalysisCore&&) = delete;
+
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
 
     // Clear output descriptors
     void clearOutputDescriptors();
@@ -40,14 +58,14 @@ public:
 
     // Add output descriptors that are not based on saves but are specific 
     // to analysis core (e.g. frequency, time). By default add nothing. 
-    bool addCoreOutputDescriptors(Status& s=Status::ignore);
+    bool addCoreOutputDescriptors() { return true; };
 
     // Add default output descriptors if no save has been provided
-    bool addDefaultOutputDescriptors(Status& s=Status::ignore) { return true; };
+    bool addDefaultOutputDescriptors() { return true; };
     
     // Resolve all output descriptors into output sources
     // Delegate resolving of unknown decriptors to analysis
-    bool resolveOutputDescriptors(bool strict, Status &s) { return true; };
+    bool resolveOutputDescriptors(bool strict) { return true; };
 
     // Core functionality
 
@@ -89,28 +107,34 @@ public:
     void dump(std::ostream& os) const;
 
     // Common handlers for save directive -> output descriptor(s) 
-    bool addAllUnknowns(const PTSave& save, bool verify, Status& s=Status::ignore);
-    bool addAllNodes(const PTSave& save, bool verify, Status& s=Status::ignore);
-    bool addNode(const PTSave& save, bool verify, Status& s=Status::ignore);
-    bool addFlow(const PTSave& save, bool verify, Status& s=Status::ignore);
-    bool addInstanceOpvar(const PTSave& save, bool verify, Status& s=Status::ignore);
-    bool addAllTfZin(const PTSave& save, bool verify, std::unordered_map<Id,size_t>& nameMap, Status& s=Status::ignore);
-    bool addTf(const PTSave& save, bool verify, std::unordered_map<Id,size_t>& nameMap, Status& s=Status::ignore);
-    bool addZin(const PTSave& save, bool verify, std::unordered_map<Id,size_t>& nameMap, Status& s=Status::ignore);
-    bool addYin(const PTSave& save, bool verify, std::unordered_map<Id,size_t>& nameMap, Status& s=Status::ignore);
-    bool addAllNoiseContribInst(const PTSave& save, bool verify, bool details, Status& s=Status::ignore);
-    bool addNoiseContribInst(const PTSave& save, bool verify, bool details, Status& s=Status::ignore);
+    bool addAllUnknowns(const PTSave& save);
+    bool addAllNodes(const PTSave& save);
+    bool addNode(const PTSave& save);
+    bool addFlow(const PTSave& save);
+    bool addInstanceOpvar(const PTSave& save);
+    bool addAllTfZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
+    bool addTf(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
+    bool addZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
+    bool addYin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
+    bool addAllNoiseContribInst(const PTSave& save, bool details);
+    bool addNoiseContribInst(const PTSave& save, bool details);
     
     // Common handlers for output descriptor -> output source
-    bool addRealVarOutputSource(bool strict, Id name, const Vector<double>& solution, Status& s=Status::ignore);
-    bool addRealVarOutputSource(bool strict, Id name, const VectorRepository<double>& solution, Status& s=Status::ignore);
-    bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution, Status& s=Status::ignore);
-    bool addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution, Status& s=Status::ignore);
-    bool addOpvarOutputSource(bool strict, Id instance, Id opvar, Status& s=Status::ignore);
+    // TODO: handle error formatting in callers
+    bool addRealVarOutputSource(bool strict, Id name, const Vector<double>& solution);
+    bool addRealVarOutputSource(bool strict, Id name, const VectorRepository<double>& solution);
+    bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution);
+    bool addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution);
+    bool addOpvarOutputSource(bool strict, Id instance, Id opvar);
 
 protected:
-    std::tuple<bool, UnknownIndex, UnknownIndex> getOutput(Value& v, Status& s=Status::ignore);
-    std::tuple<bool, Instance*> getInput(Id name, Status& s=Status::ignore);
+    enum Error lastError;
+    Int errorExpectedArgCount;
+    Id errorId;
+    Id errorId2;
+
+    std::tuple<bool, UnknownIndex, UnknownIndex> getOutput(Value& v);
+    std::tuple<bool, Instance*> getInput(Id name);
     Analysis& analysis;
     Circuit& circuit;
     Output::DescriptorList outputDescriptors;

@@ -61,7 +61,7 @@ AcTfCore::~AcTfCore() {
 
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
-bool AcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
+bool AcTfCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Clear source instance pointers, initialize to nullptrs
@@ -85,14 +85,16 @@ bool AcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
                 sources[ndx] = inst;
                 if (strict) {
                     if (!inst) {
-                        s.set(Status::NotFound, std::string("Source '")+std::string(name)+"' not found.");
+                        setError(AcTfError::NotFound);
+                        errorInstance = name;
                         ok = false;
                         break;
                     }
                 }
                 // Instance found, but is not a source... this is always an error
                 if (inst && !inst->model()->device()->isSource()) {
-                    s.set(Status::NotFound, std::string("Instance '")+std::string(name)+"' is not a source.");
+                    setError(AcTfError::NotSource);
+                    errorInstance = name; 
                     ok = false;
                     break;
                 }
@@ -120,7 +122,7 @@ bool AcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
             break; 
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict, s);
+            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -129,26 +131,31 @@ bool AcTfCore::resolveOutputDescriptors(bool strict, Status &s) {
     return ok;
 }
 
-bool AcTfCore::addCoreOutputDescriptors(Status& s) {
+bool AcTfCore::addCoreOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
-    return addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"));
+    if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
+        lastError = Error::Descriptor;
+        errorId = "frequency";
+        return false;
+    }
+    return true;
 }
 
-bool AcTfCore::addDefaultOutputDescriptors(Status& s) {
+bool AcTfCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
     }
     if (savesCount==0) {
-        return addAllTfZin(PTSave(Loc::bad, "default", Id(), Id()), false, sourceIndex, s);
+        return addAllTfZin(PTSave(Loc::bad, "default", Id(), Id()), sourceIndex);
     }
     return true;
 }
 
-bool AcTfCore::initializeOutputs(Id name, Status& s) {
+bool AcTfCore::initializeOutputs(Id name) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -163,14 +170,14 @@ bool AcTfCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool AcTfCore::finalizeOutputs(Status &s) {
+bool AcTfCore::finalizeOutputs() {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool AcTfCore::deleteOutputs(Id name, Status &s) {
+bool AcTfCore::deleteOutputs(Id name) {
     if (!params.writeOutput) {
         return true;
     }
@@ -201,7 +208,7 @@ bool AcTfCore::rebuild(Status& s) {
 
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
-bool AcTfCore::run(bool continuePrevious, Status& s) {
+bool AcTfCore::run(bool continuePrevious) {
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
     acSolution.resize(n+1);
@@ -210,14 +217,15 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     zin.resize(sources.size());
 
     // Get output unknowns
-    auto [ok, up, un] = getOutput(params.out, s);
+    auto [ok, up, un] = getOutput(params.out);
     if (!ok) {
         return false;
     }
     
     // Compute operating point
-    auto opOk = opCore_.run(continuePrevious, s);
+    auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
+        setError(AcTfError::OpError);
         return false;
     }
 
@@ -273,9 +281,9 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(elsEval, nullptr, s)) {
+    if (!circuit.evalAndLoad(elsEval, nullptr)) {
         // Load error
-        s.extend("Exiting AC small-signal transfer function analysis.");
+        setError(AcTfError::EvalAndLoad);
         if (debug>0) {
             Simulator::dbg() << "Error in AC Jacobian evaluation.\n";
         }
@@ -304,8 +312,9 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     }
 
     // Create sweeper, put it in unique ptr to free it when method returns
-    auto sweeper = ScalarSweep::create(params, s);
+    auto sweeper = ScalarSweep::create(params, errorStatus);
     if (!sweeper) {
+        setError(AcTfError::Sweeper);
         return false;
     }
     std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
@@ -320,14 +329,15 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     do {
         // Compute should always succeed
         Value v;
-        sweeper->compute(v, s);
+        if (!sweeper->compute(v, errorStatus)) {
+            setError(AcTfError::SweepCompute);
+            error = true;
+            break;
+        }
 
         // The value, however, must be convertible to real
-        if (!v.convertInPlace(Value::Type::Real, s)) {
-            s.extend("Frequency value is not real.");
-            if (debug>0) {
-                Simulator::dbg() << "Frequency value is not real.\n";
-            }
+        if (!v.convertInPlace(Value::Type::Real, errorStatus)) {
+            setError(AcTfError::BadFrequency);
             error = true;
             break;
         }
@@ -343,9 +353,9 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         // Load AC matrix, we must update the imaginary part only
         acMatrix.zero(Component::ImagPart);
         elsLoad.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(elsLoad, nullptr, s)) {
+        if (!circuit.evalAndLoad(elsLoad, nullptr)) {
             // Load error
-            s.extend("Exiting AC small-signal transfer function analysis.");
+            setError(AcTfError::EvalAndLoad);
             if (debug>0) {
                 Simulator::dbg() << "Error in AC Jacobian load.\n";
             }
@@ -363,7 +373,7 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         // since we loaded it without any computation (i.e. we only used mag and phase)
         if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
             auto nr = UnknownNameResolver(circuit);
-            acMatrix.formatError(s, &nr);
+            setError(AcTfError::MatrixError);
             if (debug>2) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
             }
@@ -384,8 +394,7 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
             // Full factorization
             if (!acMatrix.factor()) {
                 // Failed, give up
-                auto nr = UnknownNameResolver(circuit);
-                acMatrix.formatError(s, &nr);
+                setError(AcTfError::MatrixError);
                 if (debug>0) {
                     Simulator::dbg() << "LU factorization failed.\n";
                 }
@@ -396,7 +405,7 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
         // Check if matrix is singular
         double rcond;
         if (!acMatrix.rcond(rcond)) {
-            acMatrix.formatError(s);
+            setError(AcTfError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "Condition number estimation failed.\n";
             }
@@ -404,10 +413,10 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
             break;
         }
         if (rcond<1e-15) {
+            setError(AcTfError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "Matrix is close to singular.\n";
             }
-            s.set(Status::LinearSolver, "Matrix is close to singular.");
             error = true;
             break;
         }
@@ -448,7 +457,7 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
 
             // Solve, set bucket to 0.0
             if (!acMatrix.solve(dataWithoutBucket(acSolution))) {
-                acMatrix.formatError(s);
+                setError(AcTfError::MatrixError);
                 if (debug>2) {
                     Simulator::dbg() << "Failed to solve factored system.\n";
                 }
@@ -513,12 +522,7 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     }
 
     if (!finished) {
-        if (freq>=0) {
-            ss.str(""); ss << freq;
-            s.set(Status::Analysis, std::string("Leaving AC transfer function frequency sweep at frequency=")+ss.str()+".");
-        } else {
-            s.set(Status::Analysis, "Leaving AC transfer function frequency sweep.");
-        }
+        errorFreq = freq;
     }
 
     // No need to bind resistive Jacobian enatries. 
@@ -528,6 +532,56 @@ bool AcTfCore::run(bool continuePrevious, Status& s) {
     return finished;
 }
 
+bool AcTfCore::formatError(Status& s) const {
+    auto nr = UnknownNameResolver(circuit);
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(4);
+    
+    // First, handle AnalysisCore errors
+    if (lastError!=Error::OK) {
+        AnalysisCore::formatError(s);
+        return false;
+    }
+    
+    // Then handle AcCore errors
+    switch (lastAcTfError) {
+        case AcTfError::NotFound:
+            s.set(Status::Analysis, std::string("Source '")+std::string(errorInstance)+"' not found.");
+            break;
+        case AcTfError::NotSource:
+            s.set(Status::Analysis, std::string("Instance '")+std::string(errorInstance)+"' is not a source.");
+            break;
+        case AcTfError::Sweeper:
+        case AcTfError::SweepCompute:
+            s.set(errorStatus);
+            break;
+        case AcTfError::EvalAndLoad:
+            s.set(Status::Analysis, "Jacobian evaluation failed.");
+            break;
+        case AcTfError::MatrixError:
+            acMatrix.formatError(s, &nr);
+            break;
+        case AcTfError::OpError:
+            opCore_.formatError(s);
+            break;
+        case AcTfError::SingularMatrix:
+            s.set(Status::Analysis, "Matrix is close to singular.");
+            break;
+        case AcTfError::BadFrequency:
+            s.set(Status::Analysis, "Frequency value cannot be converted to real.");
+            break;
+        default:
+            s.set(Status::OK, "");
+            return true;
+    }
+    if (errorFreq>=0) {
+        ss.str(""); ss << errorFreq;
+        s.extend(std::string("Leaving frequency sweep at frequency=")+ss.str()+".");
+    } else {
+        s.extend("Leaving frequency sweep.");
+    }
+    return false;
+}
 
 void AcTfCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);

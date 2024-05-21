@@ -31,7 +31,11 @@ bool OperatingPoint::addCommonOutputDescriptor(const OutputDescriptor& desc) {
 }
 
 bool OperatingPoint::addCoreOutputDescriptors(Status& s) {
-    return core.addCoreOutputDescriptors(s);
+    if (!core.addCoreOutputDescriptors()) {
+        core.formatError(s);
+        return false;
+    }
+    return true;
 }
 
 bool OperatingPoint::resolveOutputDescriptors(bool strict, Status& s) {
@@ -46,29 +50,42 @@ bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
     static const auto idI = Id("i");
     static const auto idP = Id("p");
 
+    bool st = true;
     if (save.typeName() == idDefault) {
-        return core.addAllUnknowns(save, verify, s);
+        st = core.addAllUnknowns(save);
     } else if (save.typeName() == idFull) {
-        return core.addAllNodes(save, verify, s);
+        st = core.addAllNodes(save);
     } else if (save.typeName() == idV) {
-        return core.addNode(save, verify, s);
+        st = core.addNode(save);
     } else if (save.typeName() == idI) {
-        return core.addFlow(save, verify, s); 
+        st = core.addFlow(save);
     } else if (save.typeName() == idP) {
-        return core.addInstanceOpvar(save, verify, s);
+        st = core.addInstanceOpvar(save);
     } else {
         // Report error only if verification is required
         if (verify) {
             s.set(Status::Save, std::string("Analysis does not support save directive."));
             s.extend(save.location());
             return false;
+        } else {
+            // No verification required, OK
+            return true;
         }
     }
+
+    if (verify && !st) {
+        // Format error
+        core.formatError(s);
+        s.extend(save.location());
+        return false;
+    }
+
+    // No error
     return true;
 }
 
-bool OperatingPoint::addDefaultOutputDescriptors(Status& s) {
-    return core.addDefaultOutputDescriptors(s);
+bool OperatingPoint::addDefaultOutputDescriptors() {
+    return core.addDefaultOutputDescriptors();
 }
 
 bool OperatingPoint::initializeOutputs(Status& s) {
