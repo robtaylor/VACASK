@@ -702,7 +702,7 @@ bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalA
 
                 // Store residual in states vector
                 if (els.storeTerminalReactiveResidualState) {
-                    els.states->futureData()[nodeStateIndex] = residualReact;
+                    els.futureStates[nodeStateIndex] = residualReact;
                 }
 
                 // Compute derivative of residual wrt. time
@@ -712,11 +712,11 @@ bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalA
                     els.maxReactiveResidualDerivativeContribution
                 ) {
                     // Differentiate (compute flow)
-                    double flow = els.integCoeffs->differentiate(*(els.states), residualReact, nodeStateIndex);
+                    double flow = els.integCoeffs->differentiate(residualReact, nodeStateIndex);
                     
                     // Store flow in states vector
                     if (els.storeTerminalReactiveResidualDerivativeState) {
-                        els.states->futureData()[nodeStateIndex+1] = flow;
+                        els.futureStates[nodeStateIndex+1] = flow;
                     }
 
                     // Add flow to vector

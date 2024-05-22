@@ -3,8 +3,8 @@
 
 namespace NAMESPACE {
 
-IntegratorCoeffs::IntegratorCoeffs(Method method, Int order, Int historyOffset) 
-    : method_(method), order_(order), historyOffset_(historyOffset) {
+IntegratorCoeffs::IntegratorCoeffs(Method method, Int order) 
+    : method_(method), order_(order) {
     setOrder(order);
     b1_ = 0.0;
     err_ = 0.0;

@@ -238,12 +238,11 @@ TranCore::TranCore(
 ) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), solution(solution), states(states), 
     nrSolver(circuit, jacobian, states, solution, nrSettings, integCoeffs) {
-    // Slots 0 (current) and -1 (future) are used for NR solver
+    // Slots 0 (current) and -1 (future) are used for the NR solver
     // Slots 1, 2, ... correspond to past values (at t_{k}, t_{k-1}, ...)
-    // Therefore historyOffset needs to be set to 1
-    integCoeffs.setHistoryOffset(1);
-    predictorCoeffs.setHistoryOffset(1);
-
+    // Therefore historyOffset needs to be set to 1 when calling 
+    // preparePredictorHistory() and prepareDifferentiatorHistory(). 
+    
     // Make another forces slot in opCore_'s solver
     opCore_.solver().resizeForces(3);
 
@@ -811,7 +810,7 @@ bool TranCore::run(bool continuePrevious) {
         // Basically this means we have to recompute them at each timestep
         predictorCoeffs.setOrder(order);
         integCoeffs.setOrder(order);
-        bool havePredictor = pointsSinceLastDiscontinuity>=predictorCoeffs.minimalHistoryForPredictor();
+        bool havePredictor = pointsSinceLastDiscontinuity>=predictorCoeffs.minimalPredictorHistory(); // ???
         if (havePredictor && !(predictorCoeffs.compute(pastTimesteps, hk) && predictorCoeffs.scalePredictor(hk))) {
             setError(TranError::Predictor);
             return false;
@@ -829,13 +828,14 @@ bool TranCore::run(bool continuePrevious) {
             // Copy solution at t_k
             predictedSolution = solution.vector(1);
         } else {
-            // Predict solution based on slots 1, 2, ...
-            zero(predictedSolution);
+            // Prepare history for predictor, first past state is at offset 1 (we are using slots 1, 2, ...)
             if (options.tran_trapltefilter) {
-                predictorCoeffs.predict(filteredSolution, predictedSolution);
+                predictorCoeffs.preparePredictorHistory(filteredSolution, 1);
             } else {
-                predictorCoeffs.predict(solution, predictedSolution);
+                predictorCoeffs.preparePredictorHistory(solution, 1);
             }
+            // Predict solution
+            predictorCoeffs.predict(predictedSolution);
             // for(int i=1; i<=n; i++) {
             //     auto manual = solution.at(1)[i]+(solution.at(1)[i]-solution.at(2)[i])/pastTimesteps.at(0)*hk;
             //     std::cout << i << " " << predictedSolution[i] << " manual " << manual << "\n";
@@ -848,6 +848,9 @@ bool TranCore::run(bool continuePrevious) {
         // Predicted solution and states at t_k go to slot 0
         solution.vector() = predictedSolution;
         states.vector() = states.vector(1);
+
+        // Prepare differentiator history, first past state is at offset 1 (we are using slots 1, 2, ...)
+        integCoeffs.prepareDifferentiatorHistory(states, 1);
 
         // Solve
         auto solutionOk = nrSolver.run(true);

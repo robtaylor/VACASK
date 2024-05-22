@@ -120,8 +120,9 @@ typedef struct EvalAndLoadSetup {
 
     // Fast access pointers - do not set manually
     double* oldSolution; // with bucket
-    double* oldStates; // with bucket
-    double* newStates; // with bucket
+    double* oldStates; // states (current data)
+    double* newStates; // can be either from states (future data) or dummyStates (current data)
+    double* futureStates; // same as newStates
     
     // Methods
     void clearFlags() {
@@ -142,10 +143,12 @@ typedef struct EvalAndLoadSetup {
         }
         if (dummyStates) {
             // Dummy states are given when we want to avoid tainting future states
-            newStates = dummyStates->data();   
+            newStates = dummyStates->data();
         } else if (states) {
             newStates = states->futureData();
         }
+        futureStates = newStates;
+        
         if (integCoeffs) {
             DBGCHECK(states->size()<integCoeffs->a().size()+1, "Integration method requires a state history with at least "+std::to_string(integCoeffs->a().size()+1)+" slots.");
             DBGCHECK(states->size()<integCoeffs->b().size()+1, "Integration method requires a state history with at least "+std::to_string(integCoeffs->b().size()+1)+" slots.");

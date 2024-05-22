@@ -13,7 +13,7 @@ class IntegratorCoeffs {
 public:
     enum class Method { AdamsMoulton, BDF, AdamsBashforth, PolynomialExtrapolation };
 
-    IntegratorCoeffs(Method method=Method::AdamsMoulton, Int order=1, Int historyOffset=0); 
+    IntegratorCoeffs(Method method=Method::AdamsMoulton, Int order=1); 
 
     // Method
     Method method() const { return method_; };
@@ -24,9 +24,6 @@ public:
     // xmu for trapezoidal algorithm
     double xmu() const { return xmu_; }; 
 
-    // Change history offset
-    void setHistoryOffset(Int offs) { historyOffset_ = offs; };
-    
     // Change method
     bool setMethod(Method method, Int order, double xmu=0.5);
 
@@ -57,48 +54,70 @@ public:
     const std::vector<double> bScaled() const { return bScaled_; };
     double leadingCoeff() const { return leading_; }; 
 
-    // Differentiate state at tk+hk based on 
-    // - value history including future value and
-    // - derivative history
-    // To be used with implicit integration algorithms
-    double differentiate(VectorRepository<double>& states, double futureValue, StateIndex state) {
-        if (!implicit_) {
-            // Explicit algorithms cannot be used for this
-            throw std::length_error("Explicit algorithms cannot be used for computing future derivative.");
+    // Minimal number of past points needed by the predictor
+    size_t minimalPredictorHistory() {
+        return numX_;
+    };
+
+    // Minimal number of past points needed by the differentiator
+    size_t minimalDifferentiatorHistory() {
+        return std::max(numX_, numXdot_);
+    };
+
+    // Prepare fast array pointers on which predict() will operate
+    bool preparePredictorHistory(VectorRepository<double>& repo, Int historyOffset=1) {
+        DBGCHECK(numXdot_>0, "Predictors using past derivatives are not supported.");
+        predictorHistory.clear();
+        auto n = minimalPredictorHistory();
+        for(decltype(n) i=0; i<n; i++) {
+            predictorHistory.push_back(repo.data(historyOffset+i));
         }
+        return true;
+    };
+
+    // Prepare fast array pointers on which differentiate() will operate
+    // Also prepare fast pointer to future states
+    bool prepareDifferentiatorHistory(VectorRepository<double>& repo, Int historyOffset=1) {
+        DBGCHECK(!implicit_, "Explicit algorithms cannot be used for computing future derivative.");
+        differentiatorHistory.clear();
+        auto n = minimalDifferentiatorHistory();
+        for(decltype(n) i=0; i<n; i++) {
+            differentiatorHistory.push_back(repo.data(historyOffset+i));
+        }
+        return true;
+    };
+
+    // Differentiate state at tk+hk based on 
+    // - future value 
+    // - value history (state) and
+    // - derivative history (state+1)
+    // To be used with implicit integration algorithms
+    double differentiate(double futureValue, StateIndex state) {
         // Contribution of future value
         double deriv = leading_ * futureValue;
         // Contribution of past values
         for(Int i=0; i<aScaled_.size(); i++) {
-            deriv -= aScaled_[i] * states.data(historyOffset_+i)[state];
+            deriv -= aScaled_[i] * differentiatorHistory[i][state];
         }
         // Contribution of past derivatives
         for(Int i=0; i<bScaled_.size(); i++) {
-            deriv -= bScaled_[i] * states.data(historyOffset_+i)[state+1];
+            deriv -= bScaled_[i] * differentiatorHistory[i][state+1];
         }
-        
         return deriv;
     };
 
     // Predict value based on value history 
     // To be used with explicit algorithms (predictors)
-    // Assumes prediction is a zero vector
-    void predict(VectorRepository<double>& history, Vector<double>& prediction) {
-        if (numXdot_>0) {
-            // Does not handle predictors that use past derivative values
-            throw std::length_error("Predictors using past derivatives are not supported.");
-        }
-        auto n = history.length();
+    // No need to zero prediction before this function is called
+    void predict(Vector<double>& prediction) {
+        auto n = prediction.size();
         for(decltype(n) i=0; i<n; i++) {
+            double pred = 0;
             for(Int j=0; j<a_.size(); j++) {
-                prediction[i] += aScaled_[j] * history.at(historyOffset_+j)[i];
+                pred += aScaled_[j] * predictorHistory[j][i];
             }
+            prediction[i] = pred;
         }
-    };
-
-    // Minimal number of past points needed by the predictor
-    size_t minimalHistoryForPredictor() {
-        return std::max(numX_, numXdot_);
     };
 
     // Error coefficient multiplied by (order+1)!
@@ -122,8 +141,7 @@ private:
     Int numXdot_;
     bool implicit_;
     bool multistep_;
-    Int historyOffset_;
-
+    
     // Number of equations, matrix (ordered by rows), and RHS
     Int n_;
     std::vector<double> matrix; // row1, row2, ...
@@ -150,6 +168,10 @@ private:
     double hk_;
     double leading_;
     CircularBuffer<double>* pastSteps_;
+
+    // History - fast pointers
+    std::vector<double*> predictorHistory;
+    std::vector<double*> differentiatorHistory;
 };
 
 }

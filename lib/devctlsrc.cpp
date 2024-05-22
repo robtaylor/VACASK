@@ -952,8 +952,8 @@ template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAnd
     ) { 
         // Store residual state
         if (els.storeTerminalReactiveResidualState) {
-            els.states->futureData()[d.statesStartIndex] = d.res1; 
-            els.states->futureData()[d.statesStartIndex+2] = d.res2; 
+            els.futureStates[d.statesStartIndex] = d.res1; 
+            els.futureStates[d.statesStartIndex+2] = d.res2; 
         }
         
         // Compute residual derivative
@@ -963,13 +963,13 @@ template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAnd
             els.maxReactiveResidualDerivativeContribution
         ) {
             // Differentiate (compute flow)
-            double res1dot = els.integCoeffs->differentiate(*(els.states), d.res1, d.statesStartIndex);
-            double res2dot = els.integCoeffs->differentiate(*(els.states), d.res2, d.statesStartIndex+2);
+            double res1dot = els.integCoeffs->differentiate(d.res1, d.statesStartIndex);
+            double res2dot = els.integCoeffs->differentiate(d.res2, d.statesStartIndex+2);
 
             // Store flow in states vector
             if (els.storeTerminalReactiveResidualDerivativeState) {
-                els.states->futureData()[d.statesStartIndex+1] = res1dot;
-                els.states->futureData()[d.statesStartIndex+3] = res2dot;
+                els.futureStates[d.statesStartIndex+1] = res1dot;
+                els.futureStates[d.statesStartIndex+3] = res2dot;
             }
 
             // Add flow to vector
