@@ -481,13 +481,13 @@ bool AnalysisCore::formatError(Status& s) const {
         case Error::Arguments:
             switch (errorExpectedArgCount) {
                 case 0: 
-                    s.set(Status::Analysis, "Save directive does not accept arguments.");
+                    s.set(Status::Save, "Save directive does not accept arguments.");
                     break;
                 case 1:
-                    s.set(Status::Analysis, "Save directive requires one argument.");
+                    s.set(Status::Save, "Save directive requires one argument.");
                     break;
                 default:
-                    s.set(Status::Analysis, "Save directive requires "+std::to_string(errorExpectedArgCount)+" arguments.");
+                    s.set(Status::Save, "Save directive requires "+std::to_string(errorExpectedArgCount)+" arguments.");
                     break;
             }
             return false;
