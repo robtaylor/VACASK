@@ -6,7 +6,6 @@
 namespace NAMESPACE {
 
 // Pool 
-static const char* badIdCstring ="";
 
 CStringPool& Id::stringPool() {
     static CStringPool internal(stringPoolBlockSize, stringPoolGrowthFactor, stringPoolRetries);
@@ -23,6 +22,7 @@ std::unordered_map<const char*,IdentifierIndex,CstrHash,CstrEqual>& Id::nameToIn
 }
 
 std::deque<const char*>& Id::indexToName() {
+    static const char* badIdCstring ="";
     static std::deque<const char*> internal({badIdCstring});
     return internal;
 }
