@@ -93,7 +93,7 @@ template<typename Tin1, typename Tin2, typename F> bool rpnMathFunc2(Value* arg1
     size_t n = 0;
     if constexpr(Value::IsVectorType<Tin1>::value && Value::IsVectorType<Tin2>::value) {
         if (arg1->size()!=arg2->size()) {
-            s.set(Status::SizeMismatch, "Vector size mismatch.");
+            s.set(Status::BadArguments, "Vector size mismatch.");
             return false;
         }
         n = arg1->size();

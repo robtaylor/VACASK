@@ -18,7 +18,6 @@ public:
         BadVersion, 
         BadArguments, 
         BadConversion, 
-        SizeMismatch, 
         CreationFailed, 
         Redefinition, 
         Syntax, 
