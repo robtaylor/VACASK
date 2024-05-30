@@ -18,7 +18,7 @@ public:
     // there is an extra slot
     // 2 .. forces specified via ic analysis parameter
     //      can contain branch forces
-    // Slots containing branch forces affect the circuti topology. 
+    // Slots containing branch forces affect the circuit topology. 
     // They need to be set before rebuild() is called. 
     OpNRSolver(
         Circuit& circuit, KluRealMatrix& jac, 

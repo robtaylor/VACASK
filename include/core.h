@@ -11,7 +11,10 @@ template <>
     class hash <std::pair<NAMESPACE::Id,NAMESPACE::Id>> {
     public :
         size_t operator()(const pair<NAMESPACE::Id,NAMESPACE::Id> &x) const {
-            size_t h = std::hash<int>()(x.first) ^ std::hash<int>()(x.second);
+            size_t h = std::hash<size_t>{}(
+                ( x.first.id() << (sizeof(size_t)/2) ) ^ 
+                x.second.id()
+            );
             return  h;
         };
     };
