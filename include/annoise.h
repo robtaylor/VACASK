@@ -16,7 +16,7 @@ protected:
     KluComplexMatrix acMatrix; 
     Vector<Complex> acSolution;
 
-    std::unordered_map<std::pair<Id, Id>, size_t> contributionOffset; 
+    std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash> contributionOffset; 
     Vector<double> results;  
     double powerGain;
     double outputNoise;

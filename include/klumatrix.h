@@ -8,6 +8,7 @@
 #include "status.h"
 #include "identifier.h"
 #include "flags.h"
+#include "hash.h"
 #include "common.h"
 
 
@@ -38,10 +39,7 @@ public:
     
     typedef struct MatrixEntryPositionHash {
         auto operator()(const MatrixEntryPosition& p) const -> size_t {
-            return std::hash<size_t>{}(
-                (static_cast<size_t>(p.first) << (sizeof(size_t)/2)) ^ 
-                p.second
-            );
+            return hash_val(p.first, p.second);
         }
     } MatrixEntryPositionHash;
 

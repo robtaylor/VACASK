@@ -4,23 +4,16 @@
 #include <unordered_map>
 #include "circuit.h"
 #include "output.h"
+#include "hash.h"
 #include "common.h"
 
-namespace std {
-template <>
-    class hash <std::pair<NAMESPACE::Id,NAMESPACE::Id>> {
-    public :
-        size_t operator()(const pair<NAMESPACE::Id,NAMESPACE::Id> &x) const {
-            size_t h = std::hash<size_t>{}(
-                ( x.first.id() << (sizeof(size_t)/2) ) ^ 
-                x.second.id()
-            );
-            return  h;
-        };
-    };
-}
-
 namespace NAMESPACE {
+
+typedef struct IdPairHash {
+    size_t operator()(const std::pair<Id,Id> &x) const {
+        return hash_val(x.first.id(), x.second.id());
+    }
+} IdPairHash;
 
 class Analysis;
 

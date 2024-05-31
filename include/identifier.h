@@ -125,11 +125,16 @@ private:
 
 }
 
-// Hash functor for Id (specialization of std::hash)
-template<> struct std::hash<NAMESPACE::Id> {
-    std::size_t operator()(const NAMESPACE::Id& k) const {
-        return std::hash<NAMESPACE::IdentifierIndex>()(k.id());
+// Do this in std namespace because there are many maps using Id as key and 
+// we don't want to explicitnly specify the hash function each time. 
+namespace std {
+    // Hash functor for Id (specialization of std::hash)
+    template<> struct hash<NAMESPACE::Id> {
+        std::size_t operator()(const NAMESPACE::Id& k) const {
+            return hash<NAMESPACE::IdentifierIndex>()(k.id());
+        };
     };
-};
+}
+
 
 #endif

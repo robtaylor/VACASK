@@ -35,7 +35,7 @@ instantiateIntrospection(NoiseParameters);
 
 NoiseCore::NoiseCore(
     Analysis& analysis, NoiseParameters& params, OperatingPointCore& opCore, 
-    std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
+    std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset, 
     Circuit& circuit, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
