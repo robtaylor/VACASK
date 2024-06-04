@@ -111,10 +111,15 @@ endif()
 # Custom build types
 # 
 
-# Profiling debug version
-set(CMAKE_CXX_FLAGS_DEBUGPROFILE "${CMAKE_CXX_FLAGS_DEBUG} -pg" CACHE STRING
+# Profiling debug version -pg -fprofile-arcs -ftest-coverage --coverage
+# Also does lien coverage
+# Function profile
+#   gprof <binary> gmon.out
+# Line-by-line profile
+#   gprof -l <binary> gmon.out
+set(CMAKE_CXX_FLAGS_DEBUGPROFILE "${CMAKE_CXX_FLAGS_DEBUG} -pg -fprofile-arcs -ftest-coverage --coverage" CACHE STRING
     "Flags used by the C++ compiler during debug profile builds." FORCE)
-set(CMAKE_C_FLAGS_DEBUGPROFILE "${CMAKE_C_FLAGS_DEBUG} -pg" CACHE STRING
+set(CMAKE_C_FLAGS_DEBUGPROFILE "${CMAKE_C_FLAGS_DEBUG} -pg -fprofile-arcs -ftest-coverage --coverage" CACHE STRING
     "Flags used by the C compiler during debug profile builds." FORCE)
 set(CMAKE_EXE_LINKER_FLAGS_DEBUGPROFILE "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -pg" CACHE STRING
     "Flags used for linking binaries during debug profile builds." FORCE)
@@ -122,9 +127,9 @@ set(CMAKE_SHARED_LINKER_FLAGS_DEBUGPROFILE "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -
     "Flags used by the shared libraries linker during debug profile builds." FORCE)
 
 # Profiling release version
-set(CMAKE_CXX_FLAGS_RELEASEPROFILE "${CMAKE_CXX_FLAGS_RELEASE} -pg" CACHE STRING
+set(CMAKE_CXX_FLAGS_RELEASEPROFILE "${CMAKE_CXX_FLAGS_RELEASE} -pg -fprofile-arcs -ftest-coverage --coverage" CACHE STRING
 "Flags used by the C++ compiler during release profile builds." FORCE)
-set(CMAKE_C_FLAGS_RELEASEPROFILE "${CMAKE_C_FLAGS_RELEASE} -pg" CACHE STRING
+set(CMAKE_C_FLAGS_RELEASEPROFILE "${CMAKE_C_FLAGS_RELEASE} -pg -fprofile-arcs -ftest-coverage --coverage" CACHE STRING
 "Flags used by the C compiler during release profile builds." FORCE)
 set(CMAKE_EXE_LINKER_FLAGS_RELEASEPROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -pg" CACHE STRING
 "Flags used for linking binaries during release profile builds." FORCE)
