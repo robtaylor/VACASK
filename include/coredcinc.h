@@ -34,6 +34,7 @@ public:
         OK, 
         EvalAndLoad, 
         MatrixError, 
+        SolutionError, 
         OpError, 
         SingularMatrix, 
     };
@@ -47,9 +48,6 @@ public:
     DcIncrementalCore           (      DcIncrementalCore&&) = delete;
     DcIncrementalCore& operator=(const DcIncrementalCore&)  = delete;
     DcIncrementalCore& operator=(      DcIncrementalCore&&) = delete;
-
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastDcIncrError = DcIncrError::OK; }; 
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -69,6 +67,9 @@ public:
     OutputRawfile* outfile;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastDcIncrError = DcIncrError::OK; }; 
+
     void setError(DcIncrError e) { lastDcIncrError = e; lastError = Error::OK; };
     DcIncrError lastDcIncrError;
     double errorFreq;

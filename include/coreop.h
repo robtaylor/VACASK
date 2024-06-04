@@ -80,9 +80,6 @@ public:
     OperatingPointCore& operator=(const OperatingPointCore&)  = delete;
     OperatingPointCore& operator=(      OperatingPointCore&&) = delete;
 
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastOpError = OpError::OK; }; 
-
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
 
@@ -110,7 +107,11 @@ public:
     void dump(std::ostream& os) const;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastOpError = OpError::OK; }; 
+
     void setError(OpError e) { lastOpError = e; lastError = Error::OK; };
+    
     OpError lastOpError;
     RunType errorRunType; 
     Int errorHomotopyIterations;

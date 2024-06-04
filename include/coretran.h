@@ -67,9 +67,6 @@ public:
     TranCore& operator=(const TranCore&)  = delete;
     TranCore& operator=(      TranCore&&) = delete;
 
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastTranError = TranError::OK; }; 
-
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
 
@@ -99,6 +96,9 @@ public:
     static Id methodGear2;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastTranError = TranError::OK; }; 
+
     void setError(TranError e) { lastTranError = e; lastError = Error::OK; };
     TranError lastTranError;
     Id errorId;

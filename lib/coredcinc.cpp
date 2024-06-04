@@ -124,6 +124,7 @@ bool DcIncrementalCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx = dJ
 bool DcIncrementalCore::run(bool continuePrevious) {
+    clearError();
     auto n = circuit.unknownCount();
     // Make sure structures are large enough
     incrementalSolution.resize(n+1);
@@ -192,6 +193,14 @@ bool DcIncrementalCore::run(bool continuePrevious) {
     // Set solution bucket to 0
     incrementalSolution[0] = 0.0;
 
+    if (options.solutioncheck && !jacobian.isFinite(dataWithoutBucket(incrementalSolution), true, true)) {
+        setError(DcIncrError::SolutionError);
+        if (options.smsig_debug) {
+            Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
+        }
+        return false;
+    }
+    
     if (debug>0) {
         Simulator::dbg() << "DC incremental analysis finished.\n";
     }
@@ -223,11 +232,14 @@ bool DcIncrementalCore::formatError(Status& s) const {
         case DcIncrError::MatrixError:
             jacobian.formatError(s, &nr);
             break;
+        case DcIncrError::SolutionError:
+            jacobian.formatError(s, &nr);
+            s.extend("Solution component is not finite.");
+            break;
         case DcIncrError::OpError:
             opCore_.formatError(s);
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     s.extend("Leaving DC incremental analysis.");

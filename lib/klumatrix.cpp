@@ -11,6 +11,7 @@ void SparsityMap::clear() {
     ordering.clear();
 }
 
+/*
 std::tuple<MatrixEntryIndex*, bool> SparsityMap::insert(EquationIndex e, UnknownIndex u) {
     auto [it, inserted] = smap.insert({std::make_pair(e, u), 0});
     return std::make_tuple(&(it->second), true);
@@ -23,6 +24,7 @@ std::tuple<MatrixEntryIndex, bool> SparsityMap::find(EquationIndex e, UnknownInd
     }
     return std::make_tuple(it->second, true);
 }
+*/
 
 // We could make ordering more efficient - now we must order up to n^2 elements 
 // which is on average n^2 log(n^2) operations with std::sort(). 
@@ -126,6 +128,8 @@ template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueT
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, EquationIndex n) {
+    clearError();
+    
     this->~KluMatrixCore();
 
     smap = &m;
@@ -240,6 +244,8 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::factor() {
+    clearError();
+
     if (numeric) {
         if constexpr(std::is_same<int32_t, IndexType>::value) {
             klu_free_numeric(&numeric, &common);
@@ -272,6 +278,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::refactor() {
+    clearError();
+
     if (!numeric) {
         return factor();
     }
@@ -300,6 +308,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::rgrowth(double& rgrowth) {
+    clearError();
+
     int st;
     if constexpr(std::is_same<ValueType, Complex>::value) {
         if constexpr(std::is_same<int32_t, IndexType>::value) {
@@ -323,6 +333,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::rcond(double& rcond) {
+    clearError();
+
     int st;
     if constexpr(std::is_same<ValueType, Complex>::value) {
         if constexpr(std::is_same<int32_t, IndexType>::value) {
@@ -346,6 +358,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::isFinite(bool infCheck, bool nanCheck) {
+    clearError();
+
     if (!infCheck && !nanCheck) {
         return true;
     }
@@ -385,6 +399,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::isFinite(ValueType* vec, bool infCheck, bool nanCheck) {
+    clearError();
+
     if (!infCheck && !nanCheck) {
         return true;
     }
@@ -444,6 +460,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::solve(ValueType* b) {
+    clearError();
+    
     int st;
     if constexpr(std::is_same<ValueType, Complex>::value) {
         if constexpr(std::is_same<int32_t, IndexType>::value) {
@@ -729,10 +747,8 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
             }
             txt += ".";
             return false;
-        default:
-            s.set(Status::OK, "");
-            return true;
     }
+    return true;
 }
 
 // Instantiate template class for int32 and int64 indices, double and Complex values

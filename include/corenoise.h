@@ -45,6 +45,7 @@ public:
         EvalAndLoad, 
         PsdError, 
         MatrixError, 
+        SolutionError, 
         OpError, 
         SingularMatrix, 
         BadFrequency, 
@@ -66,9 +67,6 @@ public:
     NoiseCore& operator=(const NoiseCore&)  = delete;
     NoiseCore& operator=(      NoiseCore&&) = delete;
 
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastNoiseError = NoiseError::OK; }; 
-
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
 
@@ -88,6 +86,9 @@ public:
     OutputRawfile* outfile;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastNoiseError = NoiseError::OK; }; 
+
     void setError(NoiseError e) { lastNoiseError = e; lastError = Error::OK; };
     NoiseError lastNoiseError;
     double errorFreq;

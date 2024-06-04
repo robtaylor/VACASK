@@ -22,6 +22,9 @@ typedef struct SimulatorOptions  {
     Id relref;
     Real restol;
     Real vnrestol;
+    Int matrixcheck;
+    Int rhscheck;
+    Int solutioncheck;
     Int infcheck;
     Int nancheck;
     Int sweep_debug; 

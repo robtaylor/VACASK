@@ -62,6 +62,7 @@ AcTfCore::~AcTfCore() {
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
 bool AcTfCore::resolveOutputDescriptors(bool strict) {
+    clearError();
     // Clear output sources
     outputSources.clear();
     // Clear source instance pointers, initialize to nullptrs
@@ -132,6 +133,7 @@ bool AcTfCore::resolveOutputDescriptors(bool strict) {
 }
 
 bool AcTfCore::addCoreOutputDescriptors() {
+    clearError();
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -209,6 +211,8 @@ bool AcTfCore::rebuild(Status& s) {
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
 bool AcTfCore::run(bool continuePrevious) {
+    clearError();
+
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
     acSolution.resize(n+1);
@@ -371,7 +375,7 @@ bool AcTfCore::run(bool continuePrevious) {
         
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
-        if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
+        if (options.matrixcheck && !acMatrix.isFinite(true, true)) {
             auto nr = UnknownNameResolver(circuit);
             setError(AcTfError::MatrixError);
             if (debug>2) {
@@ -465,6 +469,15 @@ bool AcTfCore::run(bool continuePrevious) {
                 break;
             }
             acSolution[0] = 0.0;
+
+            if (options.solutioncheck && !acMatrix.isFinite(dataWithoutBucket(acSolution), true, true)) {
+                setError(AcTfError::SolutionError);
+                if (options.smsig_debug) {
+                    Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
+                }
+                error = true;
+                break;
+            }
 
             // Collect results
             tf[i] = acSolution[up] - acSolution[un];
@@ -561,6 +574,10 @@ bool AcTfCore::formatError(Status& s) const {
         case AcTfError::MatrixError:
             acMatrix.formatError(s, &nr);
             break;
+        case AcTfError::SolutionError:
+            acMatrix.formatError(s, &nr);
+            s.extend("Solution component is not finite.");
+            break;
         case AcTfError::OpError:
             opCore_.formatError(s);
             break;
@@ -571,7 +588,6 @@ bool AcTfCore::formatError(Status& s) const {
             s.set(Status::Analysis, "Frequency value cannot be converted to real.");
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     if (errorFreq>=0) {

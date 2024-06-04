@@ -305,6 +305,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
 }
 
 bool TranCore::addCoreOutputDescriptors() {
+    clearError();
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -386,8 +387,9 @@ bool TranCore::rebuild(Status& s) {
         .dampingFactor = options.nr_damping, 
         .dampingStep = options.nr_dampingstep, 
         .dampingSteps = options.nr_dampingsteps, 
-        .infCheck = bool(options.infcheck), 
-        .nanCheck = bool(options.nancheck),  
+        .matrixCheck = bool(options.matrixcheck), 
+        .rhsCheck = bool(options.rhscheck), 
+        .solutionCheck = bool(options.solutioncheck), 
         .forceFactor = options.nr_force, 
     };
 
@@ -503,6 +505,7 @@ bool TranCore::deleteOutputs(Id name) {
 }
 
 bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+    clearError();
     if (!circuit.evalAndLoad(els, nullptr)) {
         // Load error
         setError(TranError::EvalAndLoad);
@@ -538,6 +541,7 @@ Id TranCore::methodBDF2 = Id::createStatic("bdf2");
 Id TranCore::methodGear2 = Id::createStatic("gear2");
 
 bool TranCore::run(bool continuePrevious) {
+    clearError();
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals(); 
     auto debug = options.tran_debug;
@@ -1366,7 +1370,6 @@ bool TranCore::formatError(Status& s) const {
             s.set(Status::Analysis, "Timestep too small. Transient analysis aborted.");
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     return false;

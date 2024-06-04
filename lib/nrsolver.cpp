@@ -88,14 +88,7 @@ bool NRSolver::loadForces(bool loadJacobian) {
     auto nf = forcesList.size();
     
     // Get row norms
-    if (!jac.rowMaxNorm(dataWithoutBucket(rowNorm))) {
-        lastError = Error::LinearSolver;
-        errorIteration = iteration;
-        if (settings.debug) {
-            Simulator::dbg() << "Failed to compute row norms.\n";
-        }
-        return false;
-    }
+    jac.rowMaxNorm(dataWithoutBucket(rowNorm));
 
     // Load forces
     auto n = circuit.unknownCount();
@@ -304,7 +297,7 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
 
 bool NRSolver::run(bool continuePrevious) {
     // Clear error
-    lastError = Error::OK;
+    clearError();
 
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = solution.length()-1;
@@ -406,7 +399,7 @@ bool NRSolver::run(bool continuePrevious) {
         }
 
         // Check if system is finite
-        if (!jac.isFinite(settings.infCheck, settings.nanCheck)) {
+        if (settings.matrixCheck && !jac.isFinite(true, true)) {
             lastError = Error::LinearSolver;
             errorIteration = iteration;
             if (settings.debug) {
@@ -415,7 +408,7 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
 
-        if (!jac.isFinite(dataWithoutBucket(delta), settings.infCheck, settings.nanCheck)) {
+        if (settings.rhsCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
             lastError = Error::LinearSolver;
             errorIteration = iteration;
             if (settings.debug) {
@@ -513,6 +506,15 @@ bool NRSolver::run(bool continuePrevious) {
             errorIteration = iteration;
             if (settings.debug) {
                 Simulator::dbg() << "Failed to solve factored system.\n";
+            }
+            break;
+        }
+
+        if (settings.solutionCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
+            lastError = Error::SolutionError;
+            errorIteration = iteration;
+            if (settings.debug) {
+                Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
             }
             break;
         }
@@ -747,6 +749,7 @@ bool NRSolver::run(bool continuePrevious) {
 }
 
 bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
+    auto matrixError = jac.formatError(s, resolver);
     switch (lastError) {
         case Error::ForcesIndex:
             s.set(Status::Range, "Force index out of range.");
@@ -756,17 +759,18 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
         case Error::LinearSolver: 
-            jac.formatError(s, resolver);
+            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
+            return false;
+        case Error::SolutionError:
+            s.extend("Solution component is not finite."); 
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
         case Error::Convergence:
             s.set(Status::NonlinearSolver, "NR solver failed to converge.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
-        default:
-            s.set(Status::OK, "");
-            return true;
     }
+    return matrixError;
 }
 
 

@@ -22,6 +22,9 @@ typedef struct NRSettings {
     Real dampingFactor {0.8};
     Real dampingStep {1.0};
     Int dampingSteps {0};
+    bool matrixCheck {};
+    bool rhsCheck {};
+    bool solutionCheck {};
     bool infCheck {};
     bool nanCheck {};
     Real forceFactor {1e5}; 
@@ -35,6 +38,7 @@ public:
         ForcesIndex, 
         EvalAndLoad, 
         LinearSolver, 
+        SolutionError, 
         Convergence
     };
 
@@ -82,6 +86,8 @@ public:
 
     // Enable/disable forces slot
     bool enableForces(Int ndx, bool enable) {
+        lastError = Error::OK;
+
         if (ndx<0 || ndx>=forcesList.size()) {
             lastError = Error::ForcesIndex;
             return false;

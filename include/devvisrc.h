@@ -44,6 +44,11 @@ struct DevSourceInstanceParams {
     Real offset;
     Real scale;
     Real stretch;
+    Real pwlperiod;
+    Real twidth;
+    Id allbrkpts; // yes, no, auto
+    Real slopetol;
+    Real reltol;
     // AC, DC incremental
     Real mag;
     Real phase; // degrees (only for AC)

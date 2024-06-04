@@ -39,7 +39,16 @@ public:
     
     typedef struct MatrixEntryPositionHash {
         auto operator()(const MatrixEntryPosition& p) const -> size_t {
-            return hash_val(p.first, p.second);
+            if constexpr(sizeof(MatrixEntryPosition)<=sizeof(size_t)) {
+                // Faster hash if entry coordinates are 32+32 bits on a machine with a 64-bit size_t
+                return std::hash<size_t>{}(
+                    (static_cast<size_t>(p.first) << (sizeof(size_t)*8/2)) +
+                    p.second
+                );
+            } else {
+                // Standard approach
+                return hash_val(p.first, p.second);
+            }
         }
     } MatrixEntryPositionHash;
 
@@ -54,10 +63,19 @@ public:
     // Insert, the returned pointer points to an integer that 
     // will containt the entry index after enumerate() is called
     // bool value indicates if a pre-existing entry was found
-    std::tuple<MatrixEntryIndex*, bool> insert(EquationIndex e, UnknownIndex u);
+    std::tuple<MatrixEntryIndex*, bool> insert(EquationIndex e, UnknownIndex u) {
+        auto [it, inserted] = smap.insert({std::make_pair(e, u), 0});
+        return std::make_tuple(&(it->second), true);
+    };
 
     // Find, bool value indicates if an entry was found
-    std::tuple<MatrixEntryIndex, bool> find(EquationIndex e, UnknownIndex u) const;
+    std::tuple<MatrixEntryIndex, bool> find(EquationIndex e, UnknownIndex u) const  {
+        auto it = smap.find(std::make_pair(e, u));
+        if (it==smap.end()) {
+            return std::make_tuple(0, false);
+        }
+        return std::make_tuple(it->second, true);
+    };
 
     // Get vector of sorted matrix entry positions
     std::vector<MatrixEntryPosition>& positions() { return ordering; };
@@ -106,9 +124,6 @@ public:
     KluMatrixCore& operator=(      KluMatrixCore&&) = delete;
 
     ~KluMatrixCore();
-
-    // Clear error
-    void clearError() { lastError = Error::OK; }; 
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
@@ -229,6 +244,9 @@ private:
     
     double bucket_;
     
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
     Error lastError;
     IndexType errorIndex;
     IndexType errorRank_;

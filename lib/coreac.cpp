@@ -86,6 +86,7 @@ bool AcCore::resolveOutputDescriptors(bool strict) {
 }
 
 bool AcCore::addCoreOutputDescriptors() {
+    clearError();
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -151,6 +152,7 @@ bool AcCore::deleteOutputs(Id name) {
 }
     
 bool AcCore::rebuild(Status& s) {
+    clearError();
     // AC analysis matrix
     if (!acMatrix.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
         setError(AcError::MatrixError);
@@ -169,7 +171,7 @@ bool AcCore::rebuild(Status& s) {
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
 bool AcCore::run(bool continuePrevious) {
-    setError(AcError::OK);
+    clearError();
     
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
@@ -343,7 +345,7 @@ bool AcCore::run(bool continuePrevious) {
 
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
-        if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
+        if (options.matrixcheck && !acMatrix.isFinite(true, true)) {
             setError(AcError::MatrixError);
             if (debug>0) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
@@ -402,6 +404,15 @@ bool AcCore::run(bool continuePrevious) {
             break;
         }
         acSolution[0] = 0.0;
+
+        if (options.solutioncheck && !acMatrix.isFinite(dataWithoutBucket(acSolution), true, true)) {
+            setError(AcError::SolutionError);
+            if (options.smsig_debug) {
+                Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
+            }
+            error = true;
+            break;
+        }
         
         // Dump solution point
         if (params.writeOutput && outfile) {
@@ -463,6 +474,10 @@ bool AcCore::formatError(Status& s) const {
         case AcError::MatrixError:
             acMatrix.formatError(s, &nr);
             break;
+        case AcError::SolutionError:
+            acMatrix.formatError(s, &nr);
+            s.extend("Solution component is not finite.");
+            break;
         case AcError::OpError:
             opCore_.formatError(s);
             break;
@@ -473,7 +488,6 @@ bool AcCore::formatError(Status& s) const {
             s.set(Status::Analysis, "Frequency value cannot be converted to real.");
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     if (errorFreq>=0) {

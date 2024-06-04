@@ -31,6 +31,15 @@ template<> int Introspection<DevSourceInstanceParams>::setup() {
     registerMember(ampl);
     registerMember(freq);
     registerMember(sinephase);
+    registerMember(wave);
+    registerMember(offset);
+    registerMember(scale);
+    registerMember(stretch);
+    registerMember(pwlperiod);
+    registerMember(twidth);
+    registerMember(allbrkpts);
+    registerMember(slopetol);
+    registerMember(reltol);
     registerMember(mag);
     registerMember(phase);
     return 0;
@@ -56,6 +65,16 @@ DevSourceInstanceParams::DevSourceInstanceParams() {
     ampl = 1.0;
     freq = 1e3;
     sinephase = 0.0;
+
+    wave = RealVector();
+    offset = 0.0;
+    scale = 1.0;
+    stretch = 1.0;
+    pwlperiod = 0.0;
+    twidth = 0.0;
+    allbrkpts = "auto";
+    slopetol = 0.0;
+    reltol = 0.1;
 
     mag = 0.0;
     phase = 0.0;
@@ -86,6 +105,11 @@ DevISourceInstanceData::DevISourceInstanceData() {
 static Id typeSine = Id::createStatic("sine");
 static Id typePulse = Id::createStatic("pulse");
 static Id typeDc = Id::createStatic("dc");
+static Id typePwl = Id::createStatic("pwl");
+
+static Id valYes = Id::createStatic("yes");
+static Id valNo = Id::createStatic("no");
+static Id valAuto = Id::createStatic("auto");
 
 template<typename InstanceParams, typename InstanceData> 
 std::tuple<bool, bool, bool> sourceSetup(InstanceParams& params, InstanceData& data, Loc loc, Circuit& circuit, Status& s) { 
@@ -122,6 +146,30 @@ std::tuple<bool, bool, bool> sourceSetup(InstanceParams& params, InstanceData& d
             s.extend(loc);
             return std::make_tuple(false, false, false);
         }
+    } else if (p.type == typePwl) {
+        d.typeCode = IndependentSourceType::Pwl;
+        // No points .. error
+        if (p.wave.size()==0) {
+            s.set(Status::BadArguments, "Pwl waveform needs at least one point.");
+            s.extend(loc);
+            return std::make_tuple(false, false, false);
+        }
+        
+        // Need pairs of values
+        if (p.wave.size()%2 == 1) {
+            s.set(Status::BadArguments, "Pwl waveform needs an even number of values.");
+            s.extend(loc);
+            return std::make_tuple(false, false, false);
+        }
+        
+        // Check time scale monotonicity, extract endpoints and length
+
+        // If there are at least 2 point, check scale, stretch, pwlperiod, twidth
+
+        // Check slopetol and reltol
+
+        // Breakpoint handling mechanism
+
     } else if (p.type == typeDc) {
         d.typeCode = IndependentSourceType::Dc;
     } else {
@@ -143,7 +191,14 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
         val = params.dc;
         break;
     case IndependentSourceType::Sine:
-        val = params.sinedc+params.ampl*std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180);
+        if (time<params.delay) {
+            // For t < delay the value is equal to value at t=delay
+            val = params.sinedc+params.ampl*std::sin(params.phase*PI/180);
+            nextBreak = params.delay;
+        } else {
+            // For t >= delay start sine at given phase
+            val = params.sinedc+params.ampl*std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180);
+        }
         break;
     case IndependentSourceType::Pulse:
         if (time<params.delay) {

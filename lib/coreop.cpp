@@ -228,8 +228,9 @@ bool OperatingPointCore::rebuild(Status& s) {
         .dampingFactor = options.nr_damping, 
         .dampingStep = options.nr_dampingstep, 
         .dampingSteps = options.nr_dampingsteps, 
-        .infCheck = bool(options.infcheck), 
-        .nanCheck = bool(options.nancheck),  
+        .matrixCheck = bool(options.matrixcheck), 
+        .rhsCheck = bool(options.rhscheck), 
+        .solutionCheck = bool(options.solutioncheck), 
         .forceFactor = options.nr_force, 
     };
 
@@ -393,7 +394,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
 //   - spice3 source stepping
 // Each message starts with a nrSolver error message
 bool OperatingPointCore::run(bool continuePrevious, Status& s) {
-    setError(OpError::OK);
+    clearError();
 
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
@@ -508,24 +509,24 @@ bool OperatingPointCore::formatError(Status& s) const {
     auto nr = UnknownNameResolver(circuit);
     std::stringstream ss;
     ss << std::scientific << std::setprecision(4);
+
+    // Delegate to NRSolver (which in turn delegates to KluMatrix)
+    auto solverError = nrSolver.formatError(s, &nr);
     
     // First, handle AnalysisCore errors
     if (lastError!=Error::OK) {
-        formatError(s);
+        AnalysisCore::formatError(s);
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle OperatingPointCore errors
     switch (lastOpError) {
         case OpError::InitialOp:
-            nrSolver.formatError(s);
             s.extend("Initial OP analysis failed.");
-            break;
+            return false;
         case OpError::SteppingSolver:
         case OpError::SteppingSteps:
-            if (lastOpError==OpError::SteppingSolver) {
-                nrSolver.formatError(s);
-            } else {
+            if (lastOpError==OpError::SteppingSteps) {
                 s.set(Status::Analysis, "Homotopy reached step limit.");
             }
             switch (errorRunType) {
@@ -554,15 +555,12 @@ bool OperatingPointCore::formatError(Status& s) const {
                     );
                     break;
             }
-            break;
+            return false;
         case OpError::NoAlgorithm:
             s.set(Status::Analysis, "No operating point algorithm tried."); 
-            break;
-        default:
-            s.set(Status::OK, "");
-            return true;
+            return false;
     }
-    return false;
+    return solverError;
 }
 
 void OperatingPointCore::dump(std::ostream& os) const {

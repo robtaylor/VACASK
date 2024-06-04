@@ -66,6 +66,7 @@ NoiseCore::~NoiseCore() {
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
 bool NoiseCore::resolveOutputDescriptors(bool strict) {
+    clearError();
     // Clear contribution offsets
     contributionOffset.clear();
     size_t atOffset = 2;
@@ -157,6 +158,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
 }
 
 bool NoiseCore::addCoreOutputDescriptors() {
+    clearError();
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -245,6 +247,7 @@ bool NoiseCore::rebuild(Status& s) {
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
 bool NoiseCore::run(bool continuePrevious) {
+    clearError();
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough
     acSolution.resize(n+1);
@@ -413,7 +416,7 @@ bool NoiseCore::run(bool continuePrevious) {
         
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
-        if (!acMatrix.isFinite(options.infcheck, options.nancheck)) {
+        if (options.matrixcheck && !acMatrix.isFinite(true, true)) {
             setError(NoiseError::MatrixError);
             if (debug>2) {
                 Simulator::dbg() << "A matrix entry is not finite.\n";
@@ -485,6 +488,15 @@ bool NoiseCore::run(bool continuePrevious) {
             break;
         }
         acSolution[0] = 0.0;
+
+        if (options.solutioncheck && !acMatrix.isFinite(dataWithoutBucket(acSolution), true, true)) {
+            setError(NoiseError::SolutionError);
+            if (options.smsig_debug) {
+                Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
+            }
+            error = true;
+            break;
+        }
         
         // Power gain
         // Note that for $mfactor!=1 this gain is from the magnitude of the source 
@@ -700,6 +712,10 @@ bool NoiseCore::formatError(Status& s) const {
         case NoiseError::MatrixError:
             acMatrix.formatError(s, &nr);
             break;
+        case NoiseError::SolutionError:
+            acMatrix.formatError(s, &nr);
+            s.extend("Solution component is not finite.");
+            break;
         case NoiseError::OpError:
             opCore_.formatError(s);
             break;
@@ -710,7 +726,6 @@ bool NoiseCore::formatError(Status& s) const {
             s.set(Status::Analysis, "Frequency value cannot be converted to real.");
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     if (errorFreq>=0) {

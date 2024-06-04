@@ -29,9 +29,10 @@ SimulatorOptions::SimulatorOptions() {
     restol = 1e-12; // >0, residual tolerance (A, applied to potential nodes)
     vnrestol = 1e-6; // >0, residual tolerance (V, applied to flow nodes)
 
-    infcheck = 1; // check matrix and rhs for inf
-    nancheck = 1; // check matrix and rhs for nan
-
+    matrixcheck = 0; // check matrix for inf and nan
+    rhscheck = 1; // check rhs vector for inf and nan
+    solutioncheck = 1; // check solution vector for inf and nan
+    
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
 
     op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
@@ -174,9 +175,10 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(restol);
     registerMember(vnrestol);
 
-    registerMember(infcheck);
-    registerMember(nancheck);
-
+    registerMember(matrixcheck);
+    registerMember(rhscheck);
+    registerMember(solutioncheck);
+    
     registerMember(sweep_debug);
     
     registerMember(nr_conviter);

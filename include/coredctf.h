@@ -37,6 +37,7 @@ public:
         NotSource, 
         EvalAndLoad, 
         MatrixError, 
+        SolutionError, 
         OpError, 
         SingularMatrix, 
     };
@@ -52,9 +53,6 @@ public:
     DcTfCore           (      DcTfCore&&) = delete;
     DcTfCore& operator=(const DcTfCore&)  = delete;
     DcTfCore& operator=(      DcTfCore&&) = delete;
-
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastDcTfError = DcTfError::OK; }; 
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -74,6 +72,9 @@ public:
     OutputRawfile* outfile;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastDcTfError = DcTfError::OK; }; 
+
     void setError(DcTfError e) { lastDcTfError = e; lastError = Error::OK; };
     DcTfError lastDcTfError;
     Id errorInstance;

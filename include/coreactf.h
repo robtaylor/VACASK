@@ -44,6 +44,7 @@ public:
         SweepCompute, 
         EvalAndLoad, 
         MatrixError, 
+        SolutionError, 
         OpError, 
         SingularMatrix, 
         BadFrequency, 
@@ -62,9 +63,6 @@ public:
     AcTfCore           (      AcTfCore&&) = delete;
     AcTfCore& operator=(const AcTfCore&)  = delete;
     AcTfCore& operator=(      AcTfCore&&) = delete;
-
-    // Clear error
-    void clearError() { AnalysisCore::clearError(); lastAcTfError = AcTfError::OK; }; 
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -85,6 +83,9 @@ public:
     OutputRawfile* outfile;
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastAcTfError = AcTfError::OK; }; 
+
     void setError(AcTfError e) { lastAcTfError = e; lastError = Error::OK; };
     AcTfError lastAcTfError;
     double errorFreq;

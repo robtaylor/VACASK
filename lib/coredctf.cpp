@@ -53,6 +53,7 @@ DcTfCore::~DcTfCore() {
 // Implement this in every derived class so that calls to 
 // resolveOutputDescriptor() will be inlined. 
 bool DcTfCore::resolveOutputDescriptors(bool strict) {
+    clearError();
     // Clear output sources
     outputSources.clear();
     // Clear source instance pointers, initialize to nullptrs
@@ -172,6 +173,7 @@ bool DcTfCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx  = dJ
 bool DcTfCore::run(bool continuePrevious) {
+    clearError();
     // Make sure structures are large enough
     incrementalSolution.resize(circuit.unknownCount()+1);
     tf.resize(sources.size());
@@ -245,6 +247,15 @@ bool DcTfCore::run(bool continuePrevious) {
         // Set bucket to 0
         rhsVec[0] = 0.0;
 
+        if (options.solutioncheck && !jacobian.isFinite(dataWithoutBucket(incrementalSolution), true, true)) {
+            setError(DcTfError::SolutionError);
+            if (options.smsig_debug) {
+                Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
+            }
+            error = true;
+            break;
+        }
+        
         // Compute TF
         tf[i] = rhsVec[up] - rhsVec[un];
 
@@ -309,11 +320,14 @@ bool DcTfCore::formatError(Status& s) const {
         case DcTfError::MatrixError:
             jacobian.formatError(s, &nr);
             break;
+        case DcTfError::SolutionError:
+            jacobian.formatError(s, &nr);
+            s.extend("Solution component is not finite.");
+            break;
         case DcTfError::OpError:
             opCore_.formatError(s);
             break;
         default:
-            s.set(Status::OK, "");
             return true;
     }
     s.extend("Leaving DC incremental analysis.");

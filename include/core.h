@@ -39,9 +39,6 @@ public:
     AnalysisCore& operator=(const AnalysisCore&)  = delete;
     AnalysisCore& operator=(      AnalysisCore&&) = delete;
 
-    // Clear error
-    void clearError() { lastError = Error::OK; }; 
-
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
 
@@ -124,6 +121,9 @@ public:
     bool addOpvarOutputSource(bool strict, Id instance, Id opvar);
 
 protected:
+    // Clear error
+    void clearError() { lastError = Error::OK; }; 
+
     enum Error lastError;
     Int errorExpectedArgCount;
     Id errorId;

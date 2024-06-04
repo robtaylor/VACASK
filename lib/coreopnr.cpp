@@ -154,6 +154,7 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
 }
 
 bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+    lastError = Error::OK;
     if (!circuit.evalAndLoad(els, nullptr)) {
         // Load error
         lastError = Error::EvalAndLoad;
@@ -197,6 +198,8 @@ void OpNRSolver::setNodesetAndIcFlags(bool continuePrevious) {
 }
 
 std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
+    lastError = Error::OK;
+
     auto n = circuit.unknownCount();
 
     // Remove forces originating from nodesets after nsiter iterations
@@ -254,6 +257,8 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
 }
 
 std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
+    lastError = Error::OK;
+    
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = circuit.unknownCount();
 

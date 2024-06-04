@@ -32,6 +32,7 @@ bool AnalysisCore::addOutputDescriptor(OutputDescriptor&& descr) {
 }
 
 bool AnalysisCore::addAllUnknowns(const PTSave& save) {
+    clearError();
     if (save.objName() || save.subName()) {
         // No parameters should be passed for default
         lastError = Error::Arguments;
@@ -51,6 +52,7 @@ bool AnalysisCore::addAllUnknowns(const PTSave& save) {
 }
     
 bool AnalysisCore::addAllNodes(const PTSave& save) {
+    clearError();
     if (save.objName() || save.subName()) {
         // No parameters should be passed for default
         lastError = Error::Arguments;
@@ -74,6 +76,7 @@ bool AnalysisCore::addAllNodes(const PTSave& save) {
 }
 
 bool AnalysisCore::addNode(const PTSave& save) {
+    clearError();
     if (!save.objName() || save.subName()) {
         // One parameter should be passed
         lastError = Error::Arguments;
@@ -87,6 +90,7 @@ bool AnalysisCore::addNode(const PTSave& save) {
 }
 
 bool AnalysisCore::addFlow(const PTSave& save) {
+    clearError();
     if (!save.objName() || save.subName()) {
         // One parameter should be passed
         lastError = Error::Arguments;
@@ -103,6 +107,7 @@ bool AnalysisCore::addFlow(const PTSave& save) {
 }
 
 bool AnalysisCore::addInstanceOpvar(const PTSave& save) {
+    clearError();
     if (!save.objName() || !save.subName()) {
         // Both parameters should be passed
         lastError = Error::Arguments;
@@ -117,6 +122,7 @@ bool AnalysisCore::addInstanceOpvar(const PTSave& save) {
 }
 
 bool AnalysisCore::addAllTfZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap) {
+    clearError();
     if (save.objName() || save.subName()) {
         // No parameters should be passed for default
         lastError = Error::Arguments;
@@ -157,6 +163,7 @@ bool AnalysisCore::addAllTfZin(const PTSave& save, std::unordered_map<Id,size_t>
 }
 
 bool AnalysisCore::addTf(const PTSave& save, std::unordered_map<Id,size_t>& nameMap) {
+    clearError();
     if (!save.objName() || save.subName()) {
         // One parameter should be passed
         lastError = Error::Arguments;
@@ -179,6 +186,7 @@ bool AnalysisCore::addTf(const PTSave& save, std::unordered_map<Id,size_t>& name
 }
 
 bool AnalysisCore::addZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap) {
+    clearError();
     if (!save.objName() || save.subName()) {
         // One parameter should be passed
         lastError = Error::Arguments;
@@ -200,6 +208,7 @@ bool AnalysisCore::addZin(const PTSave& save, std::unordered_map<Id,size_t>& nam
 }
 
 bool AnalysisCore::addYin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap) {
+    clearError();
     if (!save.objName() || save.subName()) {
         // One parameter should be passed
         lastError = Error::Arguments;
@@ -221,6 +230,7 @@ bool AnalysisCore::addYin(const PTSave& save, std::unordered_map<Id,size_t>& nam
 }
 
 bool AnalysisCore::addAllNoiseContribInst(const PTSave& save, bool details) {
+    clearError();
     if (save.objName() || save.subName()) {
         // No parameters should be passed for default
         lastError = Error::Arguments;
@@ -260,6 +270,7 @@ bool AnalysisCore::addAllNoiseContribInst(const PTSave& save, bool details) {
 }
 
 bool AnalysisCore::addNoiseContribInst(const PTSave& save, bool details) {
+    clearError();
     if (details) {
         // Expect only one argument
         if (!save.objName() || save.subName()) {
@@ -306,6 +317,7 @@ bool AnalysisCore::addNoiseContribInst(const PTSave& save, bool details) {
 }
     
 bool AnalysisCore::addRealVarOutputSource(bool strict, Id name, const Vector<double>& solution) {
+    clearError();
     // Solution vector component
     auto node = circuit.findNode(name);
     // Get unknown
@@ -324,6 +336,7 @@ bool AnalysisCore::addRealVarOutputSource(bool strict, Id name, const Vector<dou
 }
 
 bool AnalysisCore::addRealVarOutputSource(bool strict, Id name, const VectorRepository<double>& solution) {
+    clearError();
     // Solution vector component
     auto node = circuit.findNode(name);
     // Get unknown
@@ -342,6 +355,7 @@ bool AnalysisCore::addRealVarOutputSource(bool strict, Id name, const VectorRepo
 }
 
 bool AnalysisCore::addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution) {
+    clearError();
     // Solution vector component
     auto node = circuit.findNode(name);
     // Get unknown
@@ -360,6 +374,7 @@ bool AnalysisCore::addComplexVarOutputSource(bool strict, Id name, const Vector<
 }
 
 bool AnalysisCore::addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution) {
+    clearError();
     // Solution vector component
     auto node = circuit.findNode(name);
     // Get unknown
@@ -378,6 +393,7 @@ bool AnalysisCore::addComplexVarOutputSource(bool strict, Id name, const VectorR
 }
 
 bool AnalysisCore::addOpvarOutputSource(bool strict, Id instance, Id opvar) {
+    clearError();
     auto inst = circuit.findInstance(instance);
     if (inst) {
         // Find opvar
@@ -405,6 +421,7 @@ bool AnalysisCore::addOpvarOutputSource(bool strict, Id instance, Id opvar) {
 }
 
 std::tuple<bool, UnknownIndex, UnknownIndex> AnalysisCore::getOutput(Value& v) {
+    clearError();
     if (v.type()==Value::Type::String) {
         // Output is a string
         Id id = v.val<String>();
@@ -462,6 +479,7 @@ std::tuple<bool, UnknownIndex, UnknownIndex> AnalysisCore::getOutput(Value& v) {
 }
 
 std::tuple<bool, Instance*> AnalysisCore::getInput(Id name) {
+    clearError();
     auto inst = circuit.findInstance(name);
     if (!inst) {
         lastError = Error::InstanceNotFound;
@@ -512,10 +530,8 @@ bool AnalysisCore::formatError(Status& s) const {
         case Error::Descriptor:
             s.set(Status::Analysis, std::string("Failed to add output descriptor for '")+std::string(errorId)+"'.");
             return false;
-        default:
-            s.set(Status::OK, "");
-            return true;
     }
+    return true;
 }
 
 void AnalysisCore::dump(std::ostream& os) const {
