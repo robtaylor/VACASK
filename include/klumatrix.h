@@ -9,6 +9,7 @@
 #include "identifier.h"
 #include "flags.h"
 #include "hash.h"
+#include "acct.h"
 #include "common.h"
 
 
@@ -125,6 +126,12 @@ public:
 
     ~KluMatrixCore();
 
+    // Set accounting structure
+    void setAccounting(Accounting& accounting) { acct = &accounting; }; 
+
+    // Turn off accounting
+    void noAccounting() { acct = nullptr; };
+
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
 
@@ -232,6 +239,7 @@ public:
     void dumpVector(std::ostream& os, ValueType* v, int colw=12, int prec=2);
     
 private:
+    Accounting* acct;
     bool isComplex_;
     IndexType AN;
     IndexType* AP;

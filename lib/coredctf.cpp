@@ -173,6 +173,8 @@ bool DcTfCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx  = dJ
 bool DcTfCore::run(bool continuePrevious) {
+    jacobian.setAccounting(circuit.tables().accounting());
+
     clearError();
     // Make sure structures are large enough
     incrementalSolution.resize(circuit.unknownCount()+1);

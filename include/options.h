@@ -25,8 +25,6 @@ typedef struct SimulatorOptions  {
     Int matrixcheck;
     Int rhscheck;
     Int solutioncheck;
-    Int infcheck;
-    Int nancheck;
     Int sweep_debug; 
     Int nr_conviter;
     Int nr_residualcheck;

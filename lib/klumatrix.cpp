@@ -75,7 +75,7 @@ void SparsityMap::dump(int indent, std::ostream& os) const {
 
 template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueType>::KluMatrixCore() 
     : AN(0), AP(nullptr), AI(nullptr), numeric(nullptr), symbolic(nullptr),  
-      Ax(nullptr), smap(nullptr), lastError(Error::OK) {
+      Ax(nullptr), smap(nullptr), lastError(Error::OK), acct(nullptr) {
     // Sanity check: IndexType can only be int32_t or int64_t
     static_assert(
         std::is_same<IndexType, int>::value || std::is_same<IndexType, int64_t>::value, 
@@ -244,6 +244,11 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::factor() {
+    auto t0 = Accounting::wclk();
+    if (acct) {
+        acct->acctNew.point.factor++;
+    }
+
     clearError();
 
     if (numeric) {
@@ -267,6 +272,9 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
         }
     }
     auto nr = numericalRank();
+    if (acct) {
+        acct->acctNew.point.tfactor += Accounting::wclkDelta(t0);
+    }
     // Check status and numerical rank if it was computed
     if (!numeric || (nr>=0 && nr!=AN)) {
         lastError = Error::Factorization;
@@ -278,6 +286,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::refactor() {
+    auto t0 = Accounting::wclk();
+    if (acct) {
+        acct->acctNew.point.refactor++;
+    }
+
     clearError();
 
     if (!numeric) {
@@ -298,6 +311,9 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
         }
     }
     auto nr = numericalRank();
+    if (acct) {
+        acct->acctNew.point.trefactor += Accounting::wclkDelta(t0);
+    }
     // Check status and numerical rank if it was computed
     if (!st || (nr>=0 && nr!=AN)) {
         lastError = Error::Refactorization;
@@ -460,6 +476,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 }
 
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::solve(ValueType* b) {
+    auto t0 = Accounting::wclk();
+    if (acct) {
+        acct->acctNew.point.solve++;
+    }
+
     clearError();
     
     int st;
@@ -476,6 +497,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
             st = klu_l_solve(symbolic, numeric, AN, 1, b, &common);
         }
     }
+
+    if (acct) {
+        acct->acctNew.point.tsolve += Accounting::wclkDelta(t0);
+    }
+    
     if (!st) {
         lastError = Error::Solve;
         return false;

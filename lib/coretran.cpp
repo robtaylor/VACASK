@@ -1105,7 +1105,7 @@ bool TranCore::run(bool continuePrevious) {
             // - 2*hk
             // - maximal timestep from t_k to t_{k+1} that keeps LTE small enough
             auto hkRatio = hk/hkNew;
-            if (hkRatio > options.tran_redofactor) {
+            if (options.tran_redofactor>0 && hkRatio > options.tran_redofactor) {
                 // The timestep we used for reaching t_{k+1} is greater than tran_redofactor*hkNew. 
                 // LTE is too large, need to reject timepoint
                 accept = false;

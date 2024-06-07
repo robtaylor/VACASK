@@ -171,6 +171,8 @@ bool AcCore::rebuild(Status& s) {
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
 bool AcCore::run(bool continuePrevious) {
+    acMatrix.setAccounting(circuit.tables().accounting());
+    
     clearError();
     
     auto n = circuit.unknownCount(); 

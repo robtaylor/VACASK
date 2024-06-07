@@ -31,6 +31,15 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
 
     os << "\n";
 
+    os << pfx << "LU factorizations:        " << acctNew.point.factor << "\n";
+    os << pfx << "LU refactorizations:      " << acctNew.point.refactor << "\n";
+    os << pfx << "LU solve calls:           " << acctNew.point.solve << "\n";
+    os << pfx << "LU factorization time:    " << acctNew.point.tfactor << "\n";
+    os << pfx << "LU refactorization time:  " << acctNew.point.trefactor << "\n";
+    os << pfx << "LU solve time:            " << acctNew.point.tsolve << "\n";
+
+    os << "\n";
+
     os << pfx << "Accepted timepoints:      " << acctNew.point.accepted << "\n";
     os << pfx << "Rejected timepoints:      " << acctNew.point.rejected << "\n";
 

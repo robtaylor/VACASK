@@ -122,8 +122,8 @@ SimulatorOptions::SimulatorOptions() {
     tran_itl = 20;  // >0, maximal number of iterations per timepoint
     tran_ft = 0.25; // 0<x<1, factor for cutting the timestep when iterations>tran_itl*tran_imaxfactor
                     // Also used for detecting large drop in timestep. 
-    tran_redofactor = 1.1; // If timestep/lte_computed_timestep > redofactor
-                           // reject timepoint
+    tran_redofactor = 1.1; // If timestep/lte_computed_timestep > redofactor reject timepoint. 
+                           // No LTE-based rejections take place if redofactor=0
     tran_lteratio = 3.5; // x>1, LTE overestimation factor (greater values mean more loose LTE tolerance)
     tran_spicelte = 0; // 0 .. correct LTE handling
                        // 1 .. (incorrect) SPICE-like LTE handling

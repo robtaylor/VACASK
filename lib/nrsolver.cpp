@@ -299,6 +299,8 @@ bool NRSolver::run(bool continuePrevious) {
     auto t0 = Accounting::wclk();
     circuit.tables().accounting().acctNew.point.nrcall++;
 
+    jac.setAccounting(circuit.tables().accounting());
+
     // Clear error
     clearError();
 

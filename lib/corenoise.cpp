@@ -247,6 +247,8 @@ bool NoiseCore::rebuild(Status& s) {
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
 bool NoiseCore::run(bool continuePrevious) {
+    acMatrix.setAccounting(circuit.tables().accounting());
+    
     clearError();
     auto n = circuit.unknownCount(); 
     // Make sure structures are large enough

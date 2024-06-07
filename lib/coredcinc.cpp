@@ -124,6 +124,8 @@ bool DcIncrementalCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx = dJ
 bool DcIncrementalCore::run(bool continuePrevious) {
+    jacobian.setAccounting(circuit.tables().accounting());
+
     clearError();
     auto n = circuit.unknownCount();
     // Make sure structures are large enough
