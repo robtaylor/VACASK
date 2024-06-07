@@ -18,9 +18,8 @@ control
   abort always
 
   options temp=27 
-  // infcheck and nancheck declare NR iteration as failed when inf/nan occurs.
-  // They are on by default, anyway. 
-  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 infcheck=1 nancheck=1
+  // matrixcheck declares NR iteration as failed when inf/nan occurs in the matrix
+  options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 matrixcheck=1
 
   save default p(d1, gd)
 

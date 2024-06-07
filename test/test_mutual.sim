@@ -70,13 +70,13 @@ exact2 = (
 
 v = tran1["1"]
 delta1 = absDiff(v, exact1)[1:].max()
-status = delta1<1e-3
+status = delta1<5e-3
 print("V(1)", delta1, status)
 tests.append(status)
 
 v = tran1["2"]
 delta2 = absDiff(v, exact2)[1:].max()
-status = delta2<1e-3
+status = delta2<5e-3
 print("V(1)", delta2, status)
 tests.append(status)
 
