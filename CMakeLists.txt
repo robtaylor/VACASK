@@ -112,7 +112,7 @@ endif()
 # 
 
 # Profiling debug version -pg -fprofile-arcs -ftest-coverage --coverage
-# Also does lien coverage
+# Also does line coverage
 # Function profile
 #   gprof <binary> gmon.out
 # Line-by-line profile
