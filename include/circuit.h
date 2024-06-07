@@ -397,6 +397,8 @@ public:
         Status& s=Status::ignore
     );
 
+    ParserTables& tables() { return tables_; };
+
 private:
     // Remove node from map and delete it regardless of its ref count
     bool remove(Node* node, Status& s=Status::ignore);

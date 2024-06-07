@@ -235,6 +235,9 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     PTParameterMap* optionsMap, 
     Status& s
 ) {
+    auto t0 = Accounting::wclk();
+    tables_.accounting().acctNew.sweep.chgelab++; 
+    
     // Mark circuit as unelaborated
     clearFlags(Flags::Elaborated);
 
@@ -243,6 +246,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         auto [ok, changed] = sweeper->write(ParameterSweeper::ParameterFamily::Variable, what, s);
         if (!ok) {
             s.extend("Failed to write swept variables.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -257,6 +261,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     if (variablesChanged) { 
         if (!updateGlobalContext(s)) {
             s.extend("Failed to update global context.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
         
@@ -264,6 +269,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         if (optionsMap && optionsMap->size()>0) {
             if (auto [ok, changed] = optPtr->setParameters(*optionsMap, variableEvaluator_, s); !ok) {
                 s.extend("Failed to apply options expressions.");
+                tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
                 return std::make_tuple(false, false, false);
             }
         }
@@ -273,6 +279,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
             // Update analysis parameters with expressions
             if (auto [ok, changed] = an->updateParameterExpressions(s); !ok) {
                 s.extend("Failed to update analysis parameters.");
+                tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
                 return std::make_tuple(false, false, false);
             }
         }
@@ -282,6 +289,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     if (sweeper) { 
         if (auto [ok, _] = sweeper->write(ParameterSweeper::ParameterFamily::Option, what, s); !ok) {
             s.extend("Failed to write swept options.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -298,6 +306,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         auto [ok, changed] = sweeper->write(ParameterSweeper::ParameterFamily::Instance | ParameterSweeper::ParameterFamily::Model, what, s); 
         if (!ok) {
             s.extend("Failed to write swept instance and model parameters.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
         if (changed) {
@@ -318,6 +327,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         std::tie(ok, hierarchyChanged) = propagateDownHierarchy(s);
         if (!ok) {
             s.extend("Failed to propagate changes down hierarchy.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -326,12 +336,14 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     if (hierarchyChanged) {
         if (!buildEntityLists(s)) {
             s.extend("Failed to rebuild entity lists.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
 
         // Order nodes
         if (!nodeOrdering(s)) {
             s.extend("Failed to rebuild node ordering.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -350,6 +362,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         std::tie(ok, unknownsChanged, sparsityChanged) = setup(mappingAffectingOptionsChanged, s);
         if (!ok) {
             s.extend("Circuit setup failed.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -361,6 +374,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         std::tie(preMappingOk, analysisNeedsSparsity) = an->preMapping(s);
         if (!preMappingOk) {
             s.extend("Failed to pre-map analysis.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -373,6 +387,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     if (mapUnknownsNeeded) {
         if (!mapUnknowns(s)) {
             s.extend("Failed to map unknowns to nodes.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -384,6 +399,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     if (buildNeeded) {
         if (!buildSparsityAndStates(s)) {
             s.extend("Failed to create sparsity pattern and allocate states.");
+            tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
             return std::make_tuple(false, false, false);
         }
     }
@@ -391,12 +407,14 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     // Populate structures with parts needed by the analysis
     if (an && analysisNeedsSparsity && !an->populateStructures(s)) { 
         s.extend("Failed to map analysis.");
+        tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
         return std::make_tuple(false, false, false);
     }
 
     // Enumerate Jacobian entries
     if (buildNeeded && !enumerateSystem(s)) {
         s.extend("System enumeration failed.");
+        tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
         return std::make_tuple(false, false, false);
     }
 
@@ -408,7 +426,8 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
 
     // Mark circuit as elaborated
     setFlags(Flags::Elaborated);
-        
+    
+    tables_.accounting().acctNew.sweep.tchgelab += Accounting::wclkDelta(t0);
     return std::make_tuple(true, hierarchyChanged, mapUnknownsNeeded || buildNeeded);
 }
 

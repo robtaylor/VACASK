@@ -649,6 +649,9 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
                     obj->dump(0, Simulator::out());
                 }
             }
+        } else if (what=="stats") {
+            Simulator::out() << "Stats:\n";
+            interpreter.tables().accounting().dumpTotal(2, Simulator::out());
         } else {
             s.set(Status::NotFound, "Unknown keyword '"+std::string(what)+"'.");
             return false;

@@ -1,5 +1,6 @@
 add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/common.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/acct.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/libplatform.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/flags.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/exportdef.h 
@@ -64,6 +65,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anactf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/annoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/antran.h 
+    acct.cpp
     libplatform.cpp 
     dynload.cpp 
     limitfunctions.cpp

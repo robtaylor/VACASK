@@ -373,7 +373,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
     // For a method of order j-1 LTE is determined by coefficient 
     // 
     //        1         numX-1      t_{k-i} - t_k        numXdot-1  t_{k-i} - t_k
-    // C_j = --- ( -1 +  sum   a_i (-------------)^j + j   sum     (-------------)^(j-1)
+    // C_j = --- ( -1 +  sum   a_i (-------------)^j + j   sum     (-------------)^(j-1) )
     //       j!          i=0             h_k               i=-1           h_k
     //
     // LTE at t_{k+1} = C_j x^(j)(t_k) h_k^j

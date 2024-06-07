@@ -296,6 +296,9 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
 
 
 bool NRSolver::run(bool continuePrevious) {
+    auto t0 = Accounting::wclk();
+    circuit.tables().accounting().acctNew.point.nrcall++;
+
     // Clear error
     clearError();
 
@@ -340,6 +343,7 @@ bool NRSolver::run(bool continuePrevious) {
     // Initialize structures
     if (!initialize(continuePrevious)) {
         // Assume initialize() has set lastError
+        circuit.tables().accounting().acctNew.point.tnr += Accounting::wclkDelta(t0);
         return false;
     }
 
@@ -509,6 +513,8 @@ bool NRSolver::run(bool continuePrevious) {
             }
             break;
         }
+
+        circuit.tables().accounting().acctNew.point.nriter++;
 
         if (settings.solutionCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
             lastError = Error::SolutionError;
@@ -745,6 +751,7 @@ bool NRSolver::run(bool continuePrevious) {
         errorIteration = iteration;
     }
 
+    circuit.tables().accounting().acctNew.point.tnr += Accounting::wclkDelta(t0);
     return converged;
 }
 

@@ -510,7 +510,7 @@ bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
         // Load error
         setError(TranError::EvalAndLoad);
         if (circuit.simulatorOptions().core().tran_debug>1) {
-            Simulator::dbg() << "Evaluation error.\n";
+            Simulator::dbg() << "  Evaluation error.\n";
         }
         return false;
     }
@@ -521,7 +521,7 @@ bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
     // Handle abort right now, finish and stop are handled outside NR loop
     if (circuit.checkFlags(Circuit::Flags::Abort)) {
         if (circuit.simulatorOptions().core().tran_debug>1) {
-            Simulator::dbg() << "Abort requested during evaluation.\n";
+            Simulator::dbg() << "  Abort requested during evaluation.\n";
         }
         return false;
     }
@@ -766,7 +766,6 @@ bool TranCore::run(bool continuePrevious) {
     // Currently IC solution and state are in slot 0
     
     // Timestep loop
-    reducedOrderTime = -1;
     // Number of past points since last discontinuity
     size_t pointsSinceLastDiscontinuity;
     if (params.icMode==icModeOp) {
@@ -798,7 +797,7 @@ bool TranCore::run(bool continuePrevious) {
 
         if (debug>1) {
             ss.str(""); ss << tSolve;
-            Simulator::dbg() << "Solving at t="+ss.str();
+            Simulator::dbg() << "  Solving at t="+ss.str();
             ss.str(""); ss << hk;
             Simulator::dbg() << " with hk="+ss.str()+"\n";
         }
@@ -974,14 +973,17 @@ bool TranCore::run(bool continuePrevious) {
         
         // Maximal timestep 
         double hmax;
+        hmax = params.stop - params.start;
+        // Limit to tran_rmax*step if tran_rmax>=1
         if (options.tran_rmax>=1) {
-            // tran_rmax*step
-            hmax = options.tran_rmax*params.step;
-        } else {
+            hmax = std::min(hmax, options.tran_rmax*params.step);
+        } 
+        // Limit to (stop-start)/tran_minpts if tran_minpts>0
+        if (options.tran_minpts>0) {
             // distance to stop
-            hmax = params.stop; // - tSolve;
+            hmax = std::min(hmax, (params.stop - params.start)/options.tran_minpts); // - tSolve;
         }
-        // Limit by maxStep
+        // Limit by maxStep if given
         if (params.maxStep>0) {
             hmax = std::min(hmax, params.maxStep);
         }
@@ -1002,7 +1004,7 @@ bool TranCore::run(bool continuePrevious) {
             // Reduce integration order to 1
             newOrder = 1;
             if (debug>1) {
-                Simulator::dbg() << "Solver failed, rejecting point, setting order to 1.\n";
+                Simulator::dbg() << "  Solver failed, rejecting point, setting order to 1.\n";
             }
         } else if (!havePredictor) {
             // Cannot use LTE timestep control, not even with order=1, 
@@ -1011,9 +1013,10 @@ bool TranCore::run(bool continuePrevious) {
             accept = true;
             hkNew = hk; 
             if (debug>1) {
-                Simulator::dbg() << "Cannot estimate LTE. Will accept the point and keep the step unchanged.\n";
+                Simulator::dbg() << "  Cannot estimate LTE. Will accept the point and keep the step unchanged.\n";
             }
         } else {
+            // TODO: better comments for breakpoint handling
             // Solution OK, solver iterations count small enough, assume the timestep will be accepted
             // We have a predicted value because havePredicotr==false was handled in previous else if. 
             accept = true;
@@ -1067,7 +1070,13 @@ bool TranCore::run(bool continuePrevious) {
                 //     << " delta=" << (solution.vector()[i] - predictedSolution[i])
                 //     << " lte=" << lte << " tol=" << tol << "\n";// ratio>1 means we need to decrease timestep
                 
-                auto ratio = std::abs(lte)/(tol*options.tran_lteratio);
+                double ratio;
+                if (options.tran_spicelte) {
+                    // SPICE forgets to divide tol by (order+1)!
+                    ratio = std::abs(lte)/(tol*options.tran_lteratio*IntegratorCoeffs::ffactorial(order+1));
+                } else {
+                    ratio = std::abs(lte)/(tol*options.tran_lteratio);
+                }
                 // Looking for largest ratio (worst LTE)
                 if (ratio>maxRatio) {
                     maxRatio = ratio;
@@ -1076,12 +1085,18 @@ bool TranCore::run(bool continuePrevious) {
             // Update timestep only if maxRatio>0 (0 means no LTE, so step can become infinite)
             // LTE grows with (order+1)-th power of the timestep
             if (maxRatio>0) {
-                auto hkFactor = std::pow(maxRatio, -1.0/(order+1));
+                double hkFactor;
+                if (options.tran_spicelte) {
+                    hkFactor = std::pow(maxRatio, -1.0/order);
+                } else {
+                    hkFactor = std::pow(maxRatio, -1.0/(order+1));
+                }
+                // auto hkFactor = std::pow(maxRatio, -1.0/(order));
                 hkNew = std::min(hkNew, hk * hkFactor);
             }
             if (debug>1) {
                 ss.str(""); ss << maxRatio;
-                Simulator::dbg() << "Maximal LTE/tol="+ss.str();
+                Simulator::dbg() << "  Maximal LTE/tol="+ss.str();
                 ss.str(""); ss << hkNew;
                 Simulator::dbg() << " suggests dt="+ss.str()+".\n";
             }
@@ -1089,27 +1104,24 @@ bool TranCore::run(bool continuePrevious) {
             // hkNew is now the smallest of these two
             // - 2*hk
             // - maximal timestep from t_k to t_{k+1} that keeps LTE small enough
-            if (hk > options.tran_redofactor*hkNew) {
+            auto hkRatio = hk/hkNew;
+            if (hkRatio > options.tran_redofactor) {
                 // The timestep we used for reaching t_{k+1} is greater than tran_redofactor*hkNew. 
-                // This means we are significantly above maximal LTE at t_{k+1}. 
-                // Reject the timestep, use hkNew as step starting from tk. 
+                // LTE is too large, need to reject timepoint
                 accept = false;
                 if (debug>1) {
                     ss.str(""); ss << hkNew;
-                    Simulator::dbg() << "Timestep found to be too large. Rejecting point and using dt="+ss.str()+".\n";
+                    Simulator::dbg() << "  Timestep too large, rejecting point. hk/hknew=" << hkRatio << ", new dt="+ss.str()+".\n";
                 }
             } else {
                 // LTE at t_{k+1} is small enough, accept timestep, 
                 // use hkNew as next timestep
                 accept = true;
-                // Order increase is allowed if we are not running with reduced order. 
-                if (reducedOrderTime<tk+hk) {
-                    // Increase order
-                    if (newOrder<maxOrder) {
-                        newOrder = newOrder + 1;
-                        if (debug>1) {
-                            Simulator::dbg() << "Increasing order to "+std::to_string(newOrder)+".\n";
-                        }
+                // Increase order
+                if (newOrder<maxOrder) {
+                    newOrder = newOrder + 1;
+                    if (debug>1) {
+                        Simulator::dbg() << "  Increasing order to "+std::to_string(newOrder)+".\n";
                     }
                 }
             }
@@ -1125,6 +1137,7 @@ bool TranCore::run(bool continuePrevious) {
         double cutOrigin;
         if (accept) {
             // Accepting the timepoint
+            circuit.tables().accounting().acctNew.point.accepted++;
             // Where are we with respect to breakpoints
             if (std::abs(breakPoints.at(0)-tSolve) <= timeRelativeTolerance*tSolve) {
                 // At last stored breakpoint
@@ -1152,6 +1165,7 @@ bool TranCore::run(bool continuePrevious) {
             cutOrigin = tSolve;
         } else {
             // Rejecting the timepoint
+            circuit.tables().accounting().acctNew.point.rejected++;
             // Fallback point tk should be between breakPoints.at(1) and breakPoints.at(0)
             // If not, panic
             if (tk<breakPoints.at(1) || tk>breakPoints.at(0)) {
@@ -1177,7 +1191,7 @@ bool TranCore::run(bool continuePrevious) {
         if (boundStep>0) {
             if (debug>1 && boundStep<hkNew) {
                 ss.str(""); ss << boundStep;
-                Simulator::dbg() << "Instance(s) limit timestep to dt="+ss.str()+".\n";
+                Simulator::dbg() << "  Instance(s) limit timestep to dt="+ss.str()+".\n";
             }
             hkNew = std::min(hkNew, boundStep);
         }
@@ -1186,7 +1200,7 @@ bool TranCore::run(bool continuePrevious) {
         if (hmax>0) {
             if (hmax<hkNew && debug>1) {
                 ss.str(""); ss << hmax;
-                Simulator::dbg() << "Timestep limited by hmax to dt="+ss.str()+".\n";
+                Simulator::dbg() << "  Timestep limited by hmax to dt="+ss.str()+".\n";
             }
             hkNew = std::min(hkNew, hmax);
         }
@@ -1195,7 +1209,7 @@ bool TranCore::run(bool continuePrevious) {
         double cutPoint = breakPoints.at(0);
         if (debug>1) {
             ss.str(""); ss << cutPoint;
-            Simulator::dbg() << "Next break point is at t="+ss.str()+".\n";
+            Simulator::dbg() << "  Next break point is at t="+ss.str()+".\n";
         }
 
         // Do timestep cutting due to break points
@@ -1205,7 +1219,7 @@ bool TranCore::run(bool continuePrevious) {
             hkNew = cutPoint - cutOrigin;
             if (debug>1) {
                 ss.str(""); ss << hkNew;
-                Simulator::dbg() << "Timestep cut due to break point, dt="+ss.str()+".\n";
+                Simulator::dbg() << "  Timestep cut due to break point, dt="+ss.str()+".\n";
             }
         } else if (cutPoint-tNext<0.1*hkNew) {
             // Cut point is not crossed, but next point is close to the cut point
@@ -1213,7 +1227,7 @@ bool TranCore::run(bool continuePrevious) {
             hkNew /= 2;
             if (debug>1) {
                 ss.str(""); ss << hkNew;
-                Simulator::dbg() << "Next timepoint is close to a break point. Setting dt="+ss.str()+".\n";
+                Simulator::dbg() << "  Next timepoint is close to a break point. Setting dt="+ss.str()+".\n";
             }
         }
         
@@ -1245,7 +1259,7 @@ bool TranCore::run(bool continuePrevious) {
             // If we are accepting a point at a discontinuty
             if (discontinuity>=0) {
                 if (debug>1) {
-                    Simulator::dbg() << "Discontinuity reached, setting order to 1.\n";
+                    Simulator::dbg() << "  Discontinuity reached, setting order to 1.\n";
                 }
                 
                 // Set order to 1

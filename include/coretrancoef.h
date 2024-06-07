@@ -129,6 +129,16 @@ public:
     Int pastStatesNeeded() const { return std::max(numX_, numXdot_); }
 
     void dump(std::ostream& os, bool scaled=false);
+
+    static double ffactorial(int n) {
+        static std::vector<double> cache = { 1, 1, 2, 6, 24, 120, 720, 5040, 40320 };
+        if (n>=cache.size()) {
+            for(int i=cache.size(); i<=n; i++) {
+                cache.push_back(cache[i-1]*i);
+            }
+        }
+        return cache[n];
+    };
     
 private:
     bool size();

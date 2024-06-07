@@ -112,14 +112,21 @@ SimulatorOptions::SimulatorOptions() {
                      // and we need a minimum of 2 intermediate points. This means we need 
                      // a step that is at most 1/3 of the distance between breakpoints. 
                      // Therefore 0<tran_fbr<=1/3. 
-    tran_rmax = 10.0;  // ratio of step to maximal timestep
-                    // <1 means that the timestep has no upper limit
+    tran_rmax = 0.0; // ratio of step to timestep upper limit
+                     // <1 means that the timestep has no upper limit based on step
+    tran_minpts = 50; // Minimal number of timepoints from start to stop (excluding start). 
+                      // <1 means that timestep is not limited by simulation interval
+                      // If rmax and minpts are both disabled, the simulation interval is 
+                      // the upper limit to timestep. 
+                      // The upper limit to timestep can be further reduced by specifying maxstep. 
     tran_itl = 20;  // >0, maximal number of iterations per timepoint
     tran_ft = 0.25; // 0<x<1, factor for cutting the timestep when iterations>tran_itl*tran_imaxfactor
                     // Also used for detecting large drop in timestep. 
-    tran_redofactor = 1.1; // x>1.0, factor with which the LTE computed timestep is multiplied to obtain hx. 
-                           // If the timestep used for reaching the computed point is above hx the point is rejected. 
+    tran_redofactor = 1.1; // If timestep/lte_computed_timestep > redofactor
+                           // reject timepoint
     tran_lteratio = 3.5; // x>1, LTE overestimation factor (greater values mean more loose LTE tolerance)
+    tran_spicelte = 0; // 0 .. correct LTE handling
+                       // 1 .. (incorrect) SPICE-like LTE handling
     tran_xmu = 0.5; // for trapezoidal algorithm (Adams-Moulton of order 2) chooses a mixture between trapezoidal and Euler
                     // 0 = pure Euler, 0.5 = pure trapezoidal
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
@@ -135,6 +142,9 @@ SimulatorOptions::SimulatorOptions() {
                     // 2 = if cannot bind always signal error
     strictforce = 1; // 0 = ignore conflicting nodeset/ic and print warning
                      // 1 = abort on nodeset/ic conflicts
+    accounting = 0; // 0 = accounting enabled outside analyses only
+                    // 1 = accounting enabled outside and inside analyses
+                    
 }
 
 SimulatorInternals::SimulatorInternals() {
@@ -220,10 +230,12 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_ffmax);
     registerMember(tran_fbr);
     registerMember(tran_rmax);
+    registerMember(tran_minpts);
     registerMember(tran_itl);
     registerMember(tran_ft);
     registerMember(tran_redofactor);
     registerMember(tran_lteratio);
+    registerMember(tran_spicelte);
     registerMember(tran_xmu);
     registerMember(tran_trapltefilter);
 
@@ -231,6 +243,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(strictoutput);
     registerMember(strictsave);
     registerMember(strictforce);
+    registerMember(accounting);
 
     return 0;
 }

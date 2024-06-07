@@ -69,6 +69,7 @@ public:
 
     bool clearVariables(Status& s=Status::ignore);
     Circuit& circuit() { return circuit_; }; 
+    ParserTables& tables() { return tables_; };
     RpnEvaluator& variableEvaluator() { return circuit_.variableEvaluator(); }; 
 
     bool addAbort(Id cmd);

@@ -64,16 +64,19 @@ typedef struct SimulatorOptions  {
     Real tran_ffmax;
     Real tran_fbr;
     Real tran_rmax;
+    Int tran_minpts;
     Int tran_itl;
     Real tran_ft;
     Real tran_redofactor;
     Real tran_lteratio;
+    Int tran_spicelte;
     Real tran_xmu;
     Int tran_trapltefilter;
     Id rawfile;
     Int strictoutput;
     Int strictsave;
     Int strictforce;
+    Int accounting;
     
     SimulatorOptions();
 

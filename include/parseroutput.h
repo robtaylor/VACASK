@@ -9,6 +9,7 @@
 #include "rpnexpr.h"
 #include "filestack.h"
 #include "identifier.h"
+#include "acct.h"
 #include "common.h"
 
 
@@ -408,9 +409,13 @@ public:
     // Post-parse checks
     bool verify(Status& s=Status::ignore) const;
 
+    // Accounting
+    Accounting& accounting() { return acct_; };
+
     void dump(int indent, std::ostream& os);
 
 private:
+    Accounting acct_;
     std::string title_;
     FileStack fileStack_;
     PTSubcircuitDefinition defaultSubDef_;

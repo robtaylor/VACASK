@@ -133,7 +133,6 @@ private:
     CircularBuffer<double> pastTimesteps;
     IntegratorCoeffs integCoeffs; 
     IntegratorCoeffs predictorCoeffs; 
-    double reducedOrderTime;
     CircularBuffer<double> breakPoints;
     double acceptedBoundStep;
     double acceptedHmax;
