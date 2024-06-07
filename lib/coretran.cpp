@@ -832,7 +832,12 @@ bool TranCore::run(bool continuePrevious) {
             predictedSolution = solution.vector(1);
         } else {
             // Prepare history for predictor, first past state is at offset 1 (we are using slots 1, 2, ...)
-            if (options.tran_trapltefilter) {
+            if (
+                options.tran_trapltefilter && 
+                integCoeffs.method()==IntegratorCoeffs::Method::AdamsMoulton && 
+                integCoeffs.order()==2
+            ) {
+                // Use filtered history if we are using trapezoidal algorithm
                 predictorCoeffs.preparePredictorHistory(filteredSolution, 1);
             } else {
                 predictorCoeffs.preparePredictorHistory(solution, 1);
@@ -867,6 +872,7 @@ bool TranCore::run(bool continuePrevious) {
         
         if (solutionOk && options.tran_trapltefilter) {
             // Solver success, apply trap ringing filter
+            // Do this only if method we were using was trapezoidal
             if (integCoeffs.method()==IntegratorCoeffs::Method::AdamsMoulton && integCoeffs.order()==2) {
                 // Need at least 3 past points
                 if (trapHistory>=3) {
@@ -1045,7 +1051,12 @@ bool TranCore::run(bool continuePrevious) {
             double maxRatio = 0.0;
             for(decltype(n) i=1; i<=n; i++) {
                 double lte;
-                if (options.tran_trapltefilter) {
+                if (
+                    options.tran_trapltefilter && 
+                    integCoeffs.method()==IntegratorCoeffs::Method::AdamsMoulton && 
+                    integCoeffs.order()==2
+                ) {
+                    // Use filtered history if the algorithm we are using is trapezoidal
                     lte = factor*(filteredSolution.vector()[i] - predictedSolution[i]);
                 } else {
                     lte = factor*(solution.vector()[i] - predictedSolution[i]);
