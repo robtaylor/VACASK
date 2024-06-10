@@ -37,11 +37,12 @@ public:
     bool addSweep(SweepSettings&& sw, Status& s=Status::ignore);
     size_t sweepCount() const { return sweeps_.size(); };
     SweepSettings& sweep(size_t i) { return sweeps_[i]; };
-
+    bool updateSweeper(Int advancedSweepIndex, Status& s=Status::ignore);
+    
     // Setup api
     void setSaves(PTSavesVector* commonSaves);
     void setParametrization(const PTParameterMap* optionsMap);
-    
+
     // Interface method, does sweeping if needed
     bool run(Status& s=Status::ignore);
 
@@ -84,8 +85,7 @@ protected:
     IStruct<SimulatorOptions> originalSimOptions;
     IStruct<SimulatorOptions> simOptions;
     PTAnalysis& ptAnalysis;
-    UnknownNameResolver resolver; // TODO: remove
-
+    
     // Analysis::run() steps:
 
     // Call Sweeper::bind() 

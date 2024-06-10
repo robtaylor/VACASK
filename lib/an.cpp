@@ -6,7 +6,7 @@ namespace NAMESPACE {
 
 Analysis::Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : name_(name), circuit(circuit), sweeper(nullptr), 
-      ptAnalysis(ptAnalysis), resolver(circuit), commonSaves(nullptr) {
+      ptAnalysis(ptAnalysis), commonSaves(nullptr) {
 }
 
 Analysis::~Analysis() {
@@ -72,12 +72,9 @@ Analysis* Analysis::create(
     an->simOptions.core() = an->originalSimOptions.core();
     
     // Add sweeps
-    // Sweep settings can depend on global circuit parameters
-    // But if during sweep a global parameter changed and the sweep settings depend on it
-    // they will not be affected by the change. Basically sweep parameters are taken 
-    // as they are before the sweep is initiated. 
-    // To perform an analysis with sweep settings changed due to changed global parameters 
-    // an analysis has to be recreated. 
+    // Sweep settings can depend on circuit variables
+    // If during sweep a variable changes the change is applied to all inner sweeps relative 
+    // to the sweep causing the variable change. 
     auto& anSweeps = ptAnalysis.sweeps();
     for(auto it=anSweeps.data().cbegin(); it!=anSweeps.data().cend(); ++it) {
         IStruct<SweepSettings> sw;
@@ -170,6 +167,24 @@ bool Analysis::addSweep(SweepSettings&& sw, Status& s) {
     return true;
 }
 
+bool Analysis::updateSweeper(Int advancedSweepIndex, Status& s) {
+    // Loop from advancedSweepIndex+1 to end of sweeps
+    for(Int i=advancedSweepIndex+1; i<sweeps_.size(); i++) {
+        // Recompute expressions, update sweeps_ structure
+        IStruct<SweepSettings> sw;
+        sw.core() = sweeps_[i];
+        auto [ok, changed] = sw.setParameters(ptAnalysis.sweeps().data()[i].parameters().expressions(), circuit.variableEvaluator(), s);
+        if (!ok) {
+            return false;
+        }
+        sweeps_[i] = sw.core();
+    }
+    if (!sweeper.get()->update(sweeps_, advancedSweepIndex, s)) {
+        return false;
+    }
+    return true;
+}
+
 bool Analysis::run(Status& s) {
     // Output descriptors are created with analysis
     // Binding must be done here, just before the core analysis is run
@@ -250,7 +265,7 @@ bool Analysis::run(Status& s) {
 
             // Set current sweep point
             auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-                sweeper.get(), ParameterSweeper::WriteValues::Sweep, 
+                sweeper.get(), advancedSweepIndex, ParameterSweeper::WriteValues::Sweep, 
                 this, &simOptions, 
                 &parameterizedOptions, 
                 s
@@ -424,7 +439,7 @@ bool Analysis::run(Status& s) {
 
         // Restore original state
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-            sweeper.get(), ParameterSweeper::WriteValues::StoredState, 
+            sweeper.get(), advancedSweepIndex, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
             &parameterizedOptions, 
             s
@@ -439,7 +454,7 @@ bool Analysis::run(Status& s) {
 
         // Set analysis options
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-            nullptr, ParameterSweeper::WriteValues::Sweep, 
+            nullptr, 0, ParameterSweeper::WriteValues::Sweep, 
             this, &simOptions, 
             &parameterizedOptions, 
             s
@@ -543,7 +558,7 @@ bool Analysis::run(Status& s) {
         
         // Restore original state (interactive simulator mode)
         std::tie(ok, hierarchyChanged, needsCoreRebuild) = circuit.elaborateChanges(
-            nullptr, ParameterSweeper::WriteValues::StoredState, 
+            nullptr, 0, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
             &parameterizedOptions, 
             s

@@ -1,0 +1,52 @@
+Sweeping circuit variables
+
+ground 0 
+
+load "resistor.osdi"
+load "diode.osdi"
+
+model resistor resistor
+model vsource vsource
+model d diode is=1e-12 n=2
+
+v1 (1 0) vsource dc=2
+r1 (1 2) resistor r=1
+d1 (2 0) d
+
+control
+  abort always
+
+  options sweep_debug=0
+  options rawfile="binary" strictsave=1
+  
+  // Test analysis parameter sweep via variable
+  var vsup=2
+  sweep vsup variable="vsup" values=[1, 2, 3, 4]
+  sweep v1 instance="v1" parameter="dc" from=0 to=vsup mode="lin" points=5
+    analysis dc1 op
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import absDiff, relDiff
+import numpy as np
+import sys, os
+import diocalc
+
+tests = []
+
+dc1 = rawread('dc1.raw').get(sweeps=1)
+
+for ii in range(dc1.sweepGroups):
+    exact = dc1.sweepData(ii)['vsup']
+    scale = dc1[ii, 'v1'] 
+    vend = dc1[ii, 'v1'].max()
+    status = (exact == vend)
+    print("AN vsup=", vend, "exact=", exact, status)
+    tests.append(status)
+
+if ("SIM_TEST" in os.environ and os.environ["SIM_TEST"]=="yes"):
+    sys.exit(not all(tests))
+>>>FILE

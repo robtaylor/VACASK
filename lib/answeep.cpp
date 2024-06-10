@@ -6,7 +6,6 @@
 
 namespace NAMESPACE {
 
-// TODO: propagate swept variable to subsequent sweeps
 // TODO: speed up parameter change propagation (do it only for changed instances/models)
 // TODO: speed up topology rebuild
 
@@ -15,11 +14,7 @@ Id ScalarSweep::modeDec = Id::createStatic("dec");
 Id ScalarSweep::modeOct = Id::createStatic("oct"); 
 
 ScalarSweep::ScalarSweep() 
-    : valid(false), at_(0), end(0) {
-}
-
-bool ScalarSweep::isValid() const {
-    return valid;
+    : at_(0), end(0) {
 }
 
 Int ScalarSweep::valueIndex() const {
@@ -47,15 +42,17 @@ std::string ScalarSweep::progress() const {
     return std::to_string(at_+1)+"/"+std::to_string(end);
 }
 
+bool ScalarSweep::setupSteppedSweep(Real from_, Real to_, Real step_, Status& s) {
+    from = from_;
+    to = to_;
+    step = step_;
 
-SteppedScalarSweep::SteppedScalarSweep(Real from, Real to, Real step, Status& s)
-    : ScalarSweep(), from(from), to(to), step(step) {
     if (from<=to && step>0) {
         // Increasing
         double nStepsF = (to - from) / step;
         if (nStepsF-1>std::numeric_limits<Int>::max()) {
             s.set(Status::Range, "Sweep step too small.");
-            return;
+            return false;
         }
         end = std::ceil(nStepsF);
         // Do not neccessarily include 'to' in sweep
@@ -70,7 +67,7 @@ SteppedScalarSweep::SteppedScalarSweep(Real from, Real to, Real step, Status& s)
         double nStepsF = (to - from) / step;
         if (nStepsF-1>std::numeric_limits<Int>::max()) {
             s.set(Status::Range, "Sweep step too small.");
-            return;
+            return false;
         }
         end = std::ceil(nStepsF);
         // Do not neccessarily include 'to' in sweep
@@ -83,98 +80,100 @@ SteppedScalarSweep::SteppedScalarSweep(Real from, Real to, Real step, Status& s)
     } else {
         // Error
         s.set(Status::Range, "Bad steped sweep range. Check from, to, and step.");
-        return;
+        return false;
     }
-    valid = true;
-}
-
-bool SteppedScalarSweep::compute(Value& v, Status& s) const {
-    v = from + step*at_;
+    sweepType = SweepType::Stepped;
     return true;
 }
 
-
-ValueScalarSweep::ValueScalarSweep(const Value& values, Status& s) 
-    : ScalarSweep(), vals(values) {
+bool ScalarSweep::setupValueSweep(const Value& values, Status& s) {
+    vals = &values;
     if (!values.isVector()) {
         s.set(Status::BadArguments, "Sweep values must be a vector.");
-        return;
+        return false;
     }
     if (values.size()<=0) {
         s.set(Status::BadArguments, "Values vector must have at least one component.");
-        return;
+        return false;
     }
     if (values.size()>std::numeric_limits<Int>::max()) {
         s.set(Status::Range, "Too many sweep values given.");
-        return;
-    }
-    end = values.size();
-    valid = true;
-}
-
-bool ValueScalarSweep::compute(Value& v, Status& s) const {
-    if (!vals.getScalar(v, at_, s)) {
         return false;
     }
+    end = values.size();
+    sweepType = SweepType::Value;
     return true;
 }
 
-
-LinearScalarSweep::LinearScalarSweep(Real from, Real to, Int points, Status& s) 
-    : ScalarSweep(), from(from), to(to) {
+bool ScalarSweep::setupLinearSweep(Real from_, Real to_, Int points, Status& s) {
+    from = from_;
+    to = to_;
     if (points<0) {
         s.set(Status::Range, "Number of intervals (specified by points parameter) must be nonnegative.");
-        return;
+        return false;
     }
     end = points+1;
-    valid = true;
-}
-
-bool LinearScalarSweep::compute(Value& v, Status& s) const {
-    if (end<2) {
-        v = from;
-    } else {
-        v = from + (to - from)/(end-1)*at_;
-    }
+    sweepType = SweepType::Lin;
     return true;
 }
 
-
-LogScalarSweep::LogScalarSweep(Real from, Real to, Real factor, Int pointsPerFactor, Status& s)
-    : ScalarSweep(), from(from), to(to) {
+bool ScalarSweep::setupLogSweep(Real from_, Real to_, Real factor, Int pointsPerFactor, Status& s) {
+    from = from_;
+    to = to_;
+    factor = factor;
     if (pointsPerFactor<=0) {
         s.set(Status::Range, "Number of sweep points must be greater than zero.");
-        return;
+        return false;
     }
     if (factor<=0) {
         s.set(Status::Range, "Factor must be greater than zero.");
-        return;
+        return false;
     }
     // Logarthmic steps (per decade)
     if (from<=0 || to<=0) {
         s.set(Status::Range, "Starting point and end point of a logarithmic sweep must be greater than zero.");
-        return;
+        return false;
     }
     // Compute number of points
     auto nStepsF = std::abs(pointsPerFactor * std::log(to / from)/std::log(factor));
     if (nStepsF-2>std::numeric_limits<Int>::max()) {
         s.set(Status::Range, "Too many points in sweep.");
-        return;
+        return false;
     }
     end = std::ceil(nStepsF) + 1;
-    valid = true;
+    sweepType = SweepType::Log;
+    return true;
 }
 
-bool LogScalarSweep::compute(Value& v, Status& s) const {
-    if (end<2) {
-        v = from;
-    } else {
-        v = std::exp(
-            std::log(from)+
-            (std::log(to) - std::log(from)) / (end-1) * at_
-        );
+bool ScalarSweep::compute(Value& v, Status& s) const {
+    switch (sweepType) {
+        case SweepType::Stepped:
+            v = from + step*at_;
+            return true;
+        case SweepType::Value:
+            if (!vals->getScalar(v, at_, s)) {
+                return false;
+            }
+            return true;
+        case SweepType::Lin:
+            if (end<2) {
+                v = from;
+            } else {
+                v = from + (to - from)/(end-1)*at_;
+            }
+            return true;
+        case SweepType::Log:
+            if (end<2) {
+                v = from;
+            } else {
+                v = std::exp(
+                    std::log(from)+
+                    (std::log(to) - std::log(from)) / (end-1) * at_
+                );
+            }
+            return true;
     }
-    return true;
+    return false;
 }
 
 
@@ -218,8 +217,10 @@ instantiateIntrospection(SweepSettings);
 
 ParameterSweeper::ParameterSweeper(const std::vector<SweepSettings>& settings, Status& s) 
     : settings(settings) {
+    scalarSweeps.resize(settings.size());
     // Check sweep, compute steps
-    for(auto it=settings.cbegin(); it!=settings.cend(); ++it) {
+    size_t atSweep = 0;
+    for(auto it=settings.cbegin(); it!=settings.cend(); ++it, atSweep++) {
         if (it->component>=0) {
             s.set(Status::Unsupported, "Sweep '"+std::string(it->name)+"': vector component sweeps are not suppported yet.");
             s.extend(it->location);
@@ -258,15 +259,25 @@ ParameterSweeper::ParameterSweeper(const std::vector<SweepSettings>& settings, S
             return;
         }
 
-        auto sweep = ScalarSweep::create(*it, s);
-        if (!sweep) {
-            s.extend("Sweep '"+std::string(it->name)+"': failed to create scalar sweep.");
+        if (!scalarSweeps[atSweep].setup(*it, s)) {
+            s.extend("Failed to set up sweep '"+std::string(it->name)+"'.");
             s.extend(it->location); 
             return;
         }
-        scalarSweeps.push_back(std::unique_ptr<ScalarSweep>(sweep));
     }
     valid = true;
+}
+
+bool ParameterSweeper::update(const std::vector<SweepSettings>& settings, int advancedSweepIndex, Status& s) {
+    for(int i=advancedSweepIndex+1; i<settings.size(); i++) {
+        auto& swp = settings[i];
+        if (!scalarSweeps[i].setup(settings[i], s)) {
+            s.extend("Failed to update sweep '"+std::string(swp.name)+"'.");
+            s.extend(swp.location); 
+            return false;
+        }
+    }
+    return true;
 }
 
 bool ParameterSweeper::isValid() const {
@@ -408,7 +419,7 @@ bool ParameterSweeper::storeState(Status& s) {
 
 void ParameterSweeper::reset() { 
     for(auto& it : scalarSweeps) {
-        it->reset();
+        it.reset();
     }
 }
 
@@ -419,10 +430,10 @@ std::tuple<bool, Int> ParameterSweeper::advance() {
     for(decltype(n) i=0; i<n; i++) {
         // Start with innermost sweep
         auto ndx = n-1-i;
-        auto finished = scalarSweeps[ndx]->advance();
+        auto finished = scalarSweeps[ndx].advance();
         if (finished) {
             // Reset, move on to outer sweep
-            scalarSweeps[ndx]->reset();
+            scalarSweeps[ndx].reset();
         } else {
             // No need to reset, done
             incrementedSweepIndex = ndx;
@@ -440,9 +451,9 @@ std::string ParameterSweeper::progress() const {
         if (i>0) {
             txt += ", ";
         }
-        txt += scalarSweeps[i]->progress();
+        txt += scalarSweeps[i].progress();
         Value v;
-        if (scalarSweeps[i]->compute(v)) {
+        if (scalarSweeps[i].compute(v)) {
             txt += " ("+v.str()+")";
         }
         
@@ -468,7 +479,7 @@ std::tuple<bool, bool> ParameterSweeper::write(ParameterFamily types, WriteValue
             vPtr = &(storedValues[i]);
         } else {
             // Compute value
-            if (!scalarSweeps[i]->compute(v, s)) { 
+            if (!scalarSweeps[i].compute(v, s)) { 
                 return std::make_tuple(false, false);
             }
             vPtr = &v;
@@ -494,11 +505,11 @@ Id ParameterSweeper::sweepName(Int ndx) const {
 }
     
 Int ParameterSweeper::valueIndex(Int ndx) const {
-    return scalarSweeps[ndx]->at();
+    return scalarSweeps[ndx].at();
 }
 
 bool ParameterSweeper::compute(Int ndx, Value& v, Status& s) const {
-    return scalarSweeps[ndx]->compute(v, s);
+    return scalarSweeps[ndx].compute(v, s);
 }
 
 }

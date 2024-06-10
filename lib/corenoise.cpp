@@ -359,15 +359,14 @@ bool NoiseCore::run(bool continuePrevious) {
     }
 
     // Create sweeper, put it in unique ptr to free it when method returns
-    auto sweeper = ScalarSweep::create(params, errorStatus);
-    if (!sweeper) {
+    ScalarSweep sweeper;
+    if (!sweeper.setup(params, errorStatus)) {
         setError(NoiseError::Sweeper);
         return false;
     }
-    std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
-
+    
     // Frequency sweep
-    sweeper->reset();
+    sweeper.reset();
     bool finished = false;
     double freq = -1.0;
     std::stringstream ss;
@@ -376,7 +375,7 @@ bool NoiseCore::run(bool continuePrevious) {
     do {
         // Compute should always succeed
         Value v;
-        if (!sweeper->compute(v, errorStatus)) {
+        if (!sweeper.compute(v, errorStatus)) {
             setError(NoiseError::SweepCompute);
             error = true;
             break;
@@ -664,7 +663,7 @@ bool NoiseCore::run(bool continuePrevious) {
             break;
         }
         
-        finished = sweeper->advance();
+        finished = sweeper.advance();
     } while (!finished && !error);
 
     if (debug>0) {

@@ -230,7 +230,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
 // Make circuit consistent. 
 
 std::tuple<bool, bool, bool> Circuit::elaborateChanges(
-    ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
+    ParameterSweeper* sweeper, int advancedSweepIndex, ParameterSweeper::WriteValues what, 
     Analysis* an, IStruct<SimulatorOptions>* options, 
     PTParameterMap* optionsMap, 
     Status& s
@@ -251,9 +251,16 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         }
     }
 
-    // Did global parameters change (also includes changes before swept global parameters are written)
+    // Did circuit variables change (also includes changes before swept global parameters are written)
     bool variablesChanged = checkFlags(Circuit::Flags::VariablesChanged);
 
+    // Propagate variable changes to inner sweeps
+    if (sweeper && variablesChanged) {
+        if (!an->updateSweeper(advancedSweepIndex, s)) {
+            return std::make_tuple(false, false, false);
+        }
+    }
+    
     // Simulator options structure that will be updated and written to the circuit
     auto optPtr = options ? options : &simOptions;
     

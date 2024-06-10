@@ -90,7 +90,7 @@ bool CommandInterpreter::elaborateChanges(Status& s) {
     }
     PTParameterMap optionsExpressions; 
     auto [ok, hierarchyChanged, mappingChanged] = circuit_.elaborateChanges(
-        nullptr, ParameterSweeper::WriteValues::Sweep, 
+        nullptr, 0, ParameterSweeper::WriteValues::Sweep, 
         nullptr, &opt, 
         // No need to specify options expressions - they were processed when opt was built
         nullptr, 

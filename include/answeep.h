@@ -5,6 +5,7 @@
 #include "flags.h"
 #include "identifier.h"
 #include "options.h"
+#include "parseroutput.h"
 #include "status.h"
 #include "common.h"
 #include <memory>
@@ -15,10 +16,11 @@ namespace NAMESPACE {
 // TODO: sweeping of vector parameters, should work only with values= which should be a list
 class ScalarSweep {
 public:
-    ScalarSweep();
+    enum class SweepType {
+        Stepped, Lin, Log, Value
+    };
 
-    // Is sweep valid
-    bool isValid() const;
+    ScalarSweep();
 
     // Index corresponding to point at which the sweep is now (0-based)
     Int valueIndex() const;
@@ -36,18 +38,38 @@ public:
     bool advance();
 
     // Computes the sweep value
-    virtual bool compute(Value& v, Status& s=Status::ignore) const = 0;
+    bool compute(Value& v, Status& s=Status::ignore) const;
 
     // Format progress
     std::string progress() const;
 
-    // Factory function, uses any kind of struct that has all the neccessary components
-    template<typename A> static ScalarSweep* create(const A& settings, Status& s=Status::ignore);
+    // Set up a sweep
+    bool setupSteppedSweep(Real from_, Real to_, Real step_, Status& s=Status::ignore);
+    bool setupValueSweep(const Value& values, Status& s=Status::ignore);
+    bool setupLinearSweep(Real from_, Real to_, Int points, Status& s=Status::ignore); 
+    bool setupLogSweep(Real from_, Real to_, Real factor_, Int pointsPerFactor, Status& s=Status::ignore); 
+
+    // Set up a scalar sweep based on settings structure
+    template<typename A> bool setup(const A& settings, Status& s=Status::ignore);
 
 protected: 
-    bool valid;
+    // Common fields
     Int at_;
     Int end;
+    SweepType sweepType;
+
+    // For range sweep (stepped, lin, dec, oct)
+    Real from;
+    Real to;
+
+    // For stepped sweep
+    Real step;
+
+    // For value sweep
+    const Value* vals;
+
+    // For log sweep
+    Real factor;
 
 private:
     static Id modeLin;
@@ -55,55 +77,7 @@ private:
     static Id modeOct;
 };
 
-
-class SteppedScalarSweep : public ScalarSweep {
-public:
-    SteppedScalarSweep(Real from, Real to, Real step, Status& s=Status::ignore);
-
-    virtual bool compute(Value& v, Status& s=Status::ignore) const;
-
-protected:
-    Real from;
-    Real to;
-    Real step;
-};
-
-
-class ValueScalarSweep : public ScalarSweep {
-public:
-    ValueScalarSweep(const Value& values, Status& s=Status::ignore);
-
-    virtual bool compute(Value& v, Status& s=Status::ignore) const;
-
-protected:
-    const Value& vals;
-};
-
-
-class LinearScalarSweep : public ScalarSweep {
-public:
-    LinearScalarSweep(Real from, Real to, Int points, Status& s=Status::ignore);
-
-    virtual bool compute(Value& v, Status& s=Status::ignore) const;
-
-protected:
-    Real from;
-    Real to;
-};
-
-
-class LogScalarSweep : public ScalarSweep {
-public:
-    LogScalarSweep(Real from, Real to, Real factor, Int pointsPerFactor, Status& s=Status::ignore);
-
-    virtual bool compute(Value& v, Status& s=Status::ignore) const;
-
-protected:
-    Real from;
-    Real to;
-};
-
-template<typename A> ScalarSweep* ScalarSweep::create(const A& settings, Status& s) {
+template<typename A> bool ScalarSweep::setup(const A& settings, Status& s) {
     // Check if any sweep is pecified
     int specCount=0;
     if (settings.values.isVector()) {
@@ -115,46 +89,31 @@ template<typename A> ScalarSweep* ScalarSweep::create(const A& settings, Status&
     if (settings.step!=0) {
         specCount++;
     }
-    if (specCount<=0) {
-        s.set(Status::NotFound, "Sweep needs to specify values, mode, or step.");
-        return nullptr;
-    }
     if (specCount>1) {
         s.set(Status::Conflicting, "Sweep needs to specify only one of the following: values, mode, step.");
-        return nullptr;
+        return false;
     }
 
-    ScalarSweep* sweep = nullptr;
     if (settings.values.isVector()) {
-        sweep = new ValueScalarSweep(settings.values, s);
-        if (!sweep->isValid()) {
-            delete sweep;
-            return nullptr;
-        }
+        return setupValueSweep(settings.values, s);
     } else if (settings.mode) {
         if (settings.mode==ScalarSweep::modeLin) {
-            sweep = new LinearScalarSweep(settings.from, settings.to, settings.points, s);
+            return setupLinearSweep(settings.from, settings.to, settings.points, s);
         } else if (settings.mode==ScalarSweep::modeDec) {
-            sweep = new LogScalarSweep(settings.from, settings.to, 10, settings.points, s);
+            return setupLogSweep(settings.from, settings.to, 10, settings.points, s);
         } else if (settings.mode==ScalarSweep::modeOct) {
-            sweep = new LogScalarSweep(settings.from, settings.to, 2, settings.points, s);
+            return setupLogSweep(settings.from, settings.to, 2, settings.points, s);
         } else {
             s.set(Status::BadArguments, "Unknown sweep mode.");
-            return nullptr;
-        }
-        if (!sweep->isValid()) {
-            delete sweep; 
-            return nullptr;
+            return false;
         }
     } else if (settings.step!=0) {
-        sweep = new SteppedScalarSweep(settings.from, settings.to, settings.step, s);
-        if (!sweep->isValid()) {
-            delete sweep;
-            return nullptr;
-        }
+        return setupSteppedSweep(settings.from, settings.to, settings.step, s);
     }
-    return sweep;
+    s.set(Status::NotFound, "Sweep needs to specify values, mode, or step.");
+    return false;
 }
+
 
 
 // Sweep settings
@@ -199,6 +158,9 @@ public:
     
     ParameterSweeper(const std::vector<SweepSettings>& settings, Status& s=Status::ignore);
 
+    // Update
+    bool update(const std::vector<SweepSettings>& settings, int advancedSweepIndex, Status& s=Status::ignore);
+
     // Check if constructor was successfull
     bool isValid() const; 
 
@@ -234,7 +196,7 @@ public:
 private:
     bool valid;
     const std::vector<SweepSettings>& settings;
-    std::vector<std::unique_ptr<ScalarSweep>> scalarSweeps;
+    std::vector<ScalarSweep> scalarSweeps;
     std::vector<ParameterFamily> parameterFamily;
     std::vector<Parameterized*> parameterizedObject;
     std::vector<ParameterIndex> parameterIndex;

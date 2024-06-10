@@ -267,16 +267,15 @@ bool AcCore::run(bool continuePrevious) {
         return true;
     }
 
-    // Create sweeper, put it in unique ptr to free it when method returns
-    auto sweeper = ScalarSweep::create(params, errorStatus);
-    if (!sweeper) {
+    // Create sweeper
+    ScalarSweep sweeper;
+    if (!sweeper.setup(params, errorStatus)) {
         setError(AcError::Sweeper);
         return false;
     }
-    std::unique_ptr<ScalarSweep> sweeperPtr(sweeper);
     
     // Frequency sweep
-    sweeper->reset();
+    sweeper.reset();
     bool finished = false;
     double freq = -1.0;
     std::stringstream ss;
@@ -285,7 +284,7 @@ bool AcCore::run(bool continuePrevious) {
     do {
         // Compute should always succeed
         Value v;
-        if (!sweeper->compute(v, errorStatus)) {
+        if (!sweeper.compute(v, errorStatus)) {
             setError(AcError::SweepCompute);
             error = true;
             break;
@@ -435,7 +434,7 @@ bool AcCore::run(bool continuePrevious) {
             break;
         }
         
-        finished = sweeper->advance();
+        finished = sweeper.advance();
     } while (!finished && !error);
     
     if (debug>0) {
