@@ -44,14 +44,12 @@ typedef struct AcctData {
 } AcctData;
 
 typedef struct Accounting {
-    AcctData acctOld;
+    AcctData acctPrevParse;
+    AcctData acctPrevAnalysis;
+    AcctData acctPrevSweepPoint;
+    AcctData acctPrevPoint;
     AcctData acctNew;
     
-    /*void advanceParse() { acctOld.parse = acctNew.parse; };
-    void advanceAnalysis() { acctOld.analysis = acctNew.analysis; };
-    void advanceSweep() { acctOld.sweep = acctNew.sweep; };
-    void advancePoint() { acctOld.point = acctNew.point; };*/
-
     // High resolution wall clock
     typedef decltype(std::chrono::high_resolution_clock::now()) Timepoint; 
     static Timepoint wclk() { return std::chrono::high_resolution_clock::now(); }; 
