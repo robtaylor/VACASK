@@ -699,7 +699,7 @@ bool Circuit::elaborate(
     Status& s
 ) { 
     auto t0 = Accounting::wclk();
-    tables_.accounting().acctNew.analysis.elab++;
+    tables_.accounting().acctNew.elab++;
     
     clear();
     clearFlags(Flags::Elaborated);
@@ -722,7 +722,7 @@ bool Circuit::elaborate(
     // (i.e. behave as if they were defined in the toplevel definition). 
     defaultToplevelModel_ = processSubcircuitDefinition(tables_.defaultSubDef(), &defIdSet, topDefName, "", 0, s);
     if (!defaultToplevelModel_) {
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
     
@@ -742,7 +742,7 @@ bool Circuit::elaborate(
     for(auto it=tables_.groundNodes().cbegin(); it!=tables_.groundNodes().cend(); ++it) {
         if (!addGround(it->name(), s)) {
             s.set(Status::CreationFailed, "Failed to add ground node '"+std::string(it->name())+"'.");
-            tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
             return false;
         }
     }
@@ -751,7 +751,7 @@ bool Circuit::elaborate(
     for(auto& it : tables_.globalNodes()) {
         if (!addGlobal(it.name(), s)) { 
             s.set(Status::CreationFailed, "Failed to add global node '"+std::string(it.name())+"'.");
-            tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
             return false;
         }
     }
@@ -764,12 +764,12 @@ bool Circuit::elaborate(
         auto model = findModel(actualName);
         if (!model) {
             s.set(Status::BadArguments, "Subcircuit definition '"+std::string(defName)+"' not found.\nOnly subcircuit definitions from the default toplevel circuit can be used.");
-            tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
             return false;
         }
         if (!model->device()->isHierarchical()) {
             s.set(Status::BadArguments, "'"+std::string(defName)+"' is not a subcircuit definition.");
-            tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
             return false;
         }
         HierarchicalModel* hMod = static_cast<HierarchicalModel*>(model);
@@ -799,7 +799,7 @@ bool Circuit::elaborate(
         if (!buildTopInstance(hMod, instanceName, toplevelContext_[i], s)) {
             // Revert to context stack state before building
             Instance::revertContext(*this, contextMarker);
-            tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
             return false;
         }
         // For second and all further toplevel instances the context
@@ -819,14 +819,14 @@ bool Circuit::elaborate(
     // Build entity lists
     if (!buildEntityLists(s)) {
         s.extend("Initial entity list building failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Order nodes
     if (!nodeOrdering(s)) {
         s.extend("Initial node ordering failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
@@ -834,21 +834,21 @@ bool Circuit::elaborate(
     auto [ok, unknownsChanged, sparsityChanged] = setup(true, s);
     if (!ok) {
         s.extend("Initial circuit setup failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Assign unknowns to nodes
     if (!mapUnknowns(s)) {
         s.extend("Initial unknown mapping failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Build sparsity pattern and states vector entries
     if (!buildSparsityAndStates(s)) {
         s.extend("Initial sparsity pattern creation and states allocation failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
@@ -856,7 +856,7 @@ bool Circuit::elaborate(
     // We enumerate Jacobian entries
     if (!enumerateSystem(s)) {
         s.extend("System enumeration failed.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
@@ -865,21 +865,21 @@ bool Circuit::elaborate(
     // Check if number of nodes is nonzero
     if (nodeCount()<=0) {
         s.set(Status::NotFound, "Circuit has no nodes.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Check if number of unknowns is nonzero
     if (unknownCount()<=0) {
         s.set(Status::NotFound, "Circuit has no unknowns.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Check if there is at least one nonzero entry in sparsity map
     if (sparsityMap_.size()<=0) {
         s.set(Status::NotFound, "Sparsity pattern has no nonzero entries.");
-        tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
     
@@ -893,7 +893,7 @@ bool Circuit::elaborate(
     // Mark circuit as elaborated
     setFlags(Flags::Elaborated);
 
-    tables_.accounting().acctNew.analysis.telab += Accounting::wclkDelta(t0); 
+    tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0); 
     return true;
 }
 
@@ -1206,10 +1206,10 @@ bool Circuit::bind(
 
 bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)) {
     auto t0 = Accounting::wclk();
-    tables_.accounting().acctNew.point.load++; 
+    tables_.accounting().acctNew.load++; 
     
     if (!els.initialize()) {
-        tables_.accounting().acctNew.point.tload += Accounting::wclkDelta(t0);
+        tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
         return false;
     }
     els.clearFlags();
@@ -1221,12 +1221,12 @@ bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)
         }
         if ((!deviceSelector || deviceSelector(dev.get()))) {
             if (!devPtr->evalAndLoad(*this, els)) {
-                tables_.accounting().acctNew.point.tload += Accounting::wclkDelta(t0);
+                tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
                 return false;
             }
         }
     }
-    tables_.accounting().acctNew.point.tload += Accounting::wclkDelta(t0);
+    tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
     return true;
 }
 

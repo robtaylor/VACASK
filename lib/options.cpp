@@ -119,10 +119,11 @@ SimulatorOptions::SimulatorOptions() {
                       // If rmax and minpts are both disabled, the simulation interval is 
                       // the upper limit to timestep. 
                       // The upper limit to timestep can be further reduced by specifying maxstep. 
-    tran_itl = 20;  // >0, maximal number of iterations per timepoint
-    tran_ft = 0.25; // 0<x<1, factor for cutting the timestep when iterations>tran_itl*tran_imaxfactor
-                    // Also used for detecting large drop in timestep. 
-    tran_redofactor = 1.1; // If timestep/lte_computed_timestep > redofactor reject timepoint. 
+    tran_itl = 10;  // >0, maximal number of iterations per timepoint
+    tran_ft = 0.25; // 0<x<1, factor for cutting the timestep when iterations>tran_itl
+    tran_predictor = 0; // 1 .. use predictor for computing initial guess 
+                        // 0 .. use previous solution as initial guess
+    tran_redofactor = 2.5; // If timestep/lte_computed_timestep > redofactor reject timepoint. 
                            // No LTE-based rejections take place if redofactor=0
     tran_lteratio = 3.5; // x>1, LTE overestimation factor (greater values mean more loose LTE tolerance)
     tran_spicelte = 0; // 0 .. correct LTE handling
@@ -233,6 +234,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_minpts);
     registerMember(tran_itl);
     registerMember(tran_ft);
+    registerMember(tran_predictor);
     registerMember(tran_redofactor);
     registerMember(tran_lteratio);
     registerMember(tran_spicelte);

@@ -65,6 +65,7 @@ typedef struct SimulatorOptions  {
     Int tran_minpts;
     Int tran_itl;
     Real tran_ft;
+    Int tran_predictor;
     Real tran_redofactor;
     Real tran_lteratio;
     Int tran_spicelte;

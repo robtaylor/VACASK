@@ -246,7 +246,11 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::factor() {
     auto t0 = Accounting::wclk();
     if (acct) {
-        acct->acctNew.point.factor++;
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.cxfactor++;
+        } else {
+            acct->acctNew.factor++;
+        }
     }
 
     clearError();
@@ -271,12 +275,20 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
             numeric = klu_l_factor(AP, AI, Ax, symbolic, &common);
         }
     }
+    bool isSingular = common.status==KLU_SINGULAR;
     auto nr = numericalRank();
     if (acct) {
-        acct->acctNew.point.tfactor += Accounting::wclkDelta(t0);
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.tcxfactor += Accounting::wclkDelta(t0);
+        } else {
+            acct->acctNew.tfactor += Accounting::wclkDelta(t0);
+        }
+    }
+    if (isSingular) {
+        std::cout << "singular\n";
     }
     // Check status and numerical rank if it was computed
-    if (!numeric || (nr>=0 && nr!=AN)) {
+    if (!numeric || isSingular || (nr>=0 && nr!=AN)) {
         lastError = Error::Factorization;
         errorIndex = singularColumn();
         errorRank_ = numericalRank();
@@ -288,7 +300,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::refactor() {
     auto t0 = Accounting::wclk();
     if (acct) {
-        acct->acctNew.point.refactor++;
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.cxrefactor++;
+        } else {
+            acct->acctNew.refactor++;
+        }
     }
 
     clearError();
@@ -310,12 +326,20 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
             st = klu_l_refactor(AP, AI, Ax, symbolic, numeric, &common);
         }
     }
+    bool isSingular = common.status==KLU_SINGULAR;
     auto nr = numericalRank();
     if (acct) {
-        acct->acctNew.point.trefactor += Accounting::wclkDelta(t0);
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.tcxrefactor += Accounting::wclkDelta(t0);
+        } else {
+            acct->acctNew.trefactor += Accounting::wclkDelta(t0);
+        }
+    }
+    if (isSingular) {
+        std::cout << "singular refactor\n";
     }
     // Check status and numerical rank if it was computed
-    if (!st || (nr>=0 && nr!=AN)) {
+    if (!st || isSingular || (nr>=0 && nr!=AN)) {
         lastError = Error::Refactorization;
         errorRank_ = numericalRank();
         return false;
@@ -478,7 +502,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::solve(ValueType* b) {
     auto t0 = Accounting::wclk();
     if (acct) {
-        acct->acctNew.point.solve++;
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.cxsolve++;
+        } else {
+            acct->acctNew.solve++;
+        }
     }
 
     clearError();
@@ -499,7 +527,11 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     }
 
     if (acct) {
-        acct->acctNew.point.tsolve += Accounting::wclkDelta(t0);
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            acct->acctNew.tcxsolve += Accounting::wclkDelta(t0);
+        } else {
+            acct->acctNew.tsolve += Accounting::wclkDelta(t0);
+        }
     }
     
     if (!st) {

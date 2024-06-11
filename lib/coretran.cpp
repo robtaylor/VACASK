@@ -853,15 +853,28 @@ bool TranCore::run(bool continuePrevious) {
         // Turn off predictor for debugging purposes
         // zero(predictedSolution);
         
-        // Predicted solution and states at t_k go to slot 0
-        solution.vector() = predictedSolution;
+        // Initial NR solution and states at t_k go to slot 0
+        if (options.tran_predictor) {
+            // Use predicted solution
+            solution.vector() = predictedSolution;
+        } else {
+            // Use previous solution
+            solution.vector() = solution.vector(1);
+        }
         states.vector() = states.vector(1);
 
         // Prepare differentiator history, first past state is at offset 1 (we are using slots 1, 2, ...)
         integCoeffs.prepareDifferentiatorHistory(states, 1);
 
-        // Solve
+        // Solve, use maxSolution for tolerances if point local tolerance is used
+        if (options.relref == SimulatorOptions::relrefPointlocal) {
+            nrSolver.setExtraSolutionToleranceReferences(true, nullptr);
+        } else {
+            nrSolver.setExtraSolutionToleranceReferences(true, maxSolution.data());
+        }
+        
         auto solutionOk = nrSolver.run(true);
+        // Simulator::out() << "  Solver iterations: " << nrSolver.iterations() << "\n";
         if (!solutionOk) {
             // Solver failed. Did we have an Abort request? 
             if (circuit.checkFlags(Circuit::Flags::Abort)) {
@@ -1009,8 +1022,14 @@ bool TranCore::run(bool continuePrevious) {
             hkNew = hk*options.tran_ft;
             // Reduce integration order to 1
             newOrder = 1;
-            if (debug>1) {
-                Simulator::dbg() << "  Solver failed, rejecting point, setting order to 1.\n";
+            if (debug>0) {
+                if (debug>0) {
+                    Status tmps;
+                    auto nr = UnknownNameResolver(circuit);
+                    nrSolver.formatError(tmps, &nr);
+                    Simulator::out() << tmps.message() << "\n";
+                }
+                Simulator::dbg() << "  Solver failed, will reject point.\n";
             }
         } else if (!havePredictor) {
             // Cannot use LTE timestep control, not even with order=1, 
@@ -1120,9 +1139,9 @@ bool TranCore::run(bool continuePrevious) {
                 // The timestep we used for reaching t_{k+1} is greater than tran_redofactor*hkNew. 
                 // LTE is too large, need to reject timepoint
                 accept = false;
-                if (debug>1) {
+                if (debug>0) {
                     ss.str(""); ss << hkNew;
-                    Simulator::dbg() << "  Timestep too large, rejecting point. hk/hknew=" << hkRatio << ", new dt="+ss.str()+".\n";
+                    Simulator::dbg() << "  Timestep too large, hk/hknew=" << hkRatio << ". Will reject point.\n";
                 }
             } else {
                 // LTE at t_{k+1} is small enough, accept timestep, 
@@ -1148,7 +1167,7 @@ bool TranCore::run(bool continuePrevious) {
         double cutOrigin;
         if (accept) {
             // Accepting the timepoint
-            circuit.tables().accounting().acctNew.point.accepted++;
+            circuit.tables().accounting().acctNew.accepted++;
             // Where are we with respect to breakpoints
             if (std::abs(breakPoints.at(0)-tSolve) <= timeRelativeTolerance*tSolve) {
                 // At last stored breakpoint
@@ -1176,7 +1195,7 @@ bool TranCore::run(bool continuePrevious) {
             cutOrigin = tSolve;
         } else {
             // Rejecting the timepoint
-            circuit.tables().accounting().acctNew.point.rejected++;
+            circuit.tables().accounting().acctNew.rejected++;
             // Fallback point tk should be between breakPoints.at(1) and breakPoints.at(0)
             // If not, panic
             if (tk<breakPoints.at(1) || tk>breakPoints.at(0)) {

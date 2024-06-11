@@ -19,7 +19,7 @@ bool Parser::parseNetlistFile(const char* const filename, ParserTables& tab, Par
     assert( filename != nullptr );
 
     auto t0 = Accounting::wclk();
-    tab.accounting().acctNew.parse.parse++;
+    tab.accounting().acctNew.parse++;
     
     if (Simulator::fileDebug()) {
         Simulator::dbg() << "Opening file '" << filename << "'.\n";
@@ -28,31 +28,31 @@ bool Parser::parseNetlistFile(const char* const filename, ParserTables& tab, Par
     auto stackPosition = tab.fileStack().addFile(filename);
     if (stackPosition==FileStack::badFileId) {
         s.set(Status::NotFound, std::string("File '")+filename+"' not found.");
-        tab.accounting().acctNew.parse.tparse += Accounting::wclkDelta(t0);
+        tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
         return false;
     }
     
     std::ifstream in_file(tab.fileStack().canonicalName(stackPosition));
     if(!in_file.good()) {
         s.set(Status::NotFound, std::string("Failed to open file '")+filename+"'.");
-        tab.accounting().acctNew.parse.tparse += Accounting::wclkDelta(t0);
+        tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
         return false;
     }
     auto st = netlistParseHelper(in_file, tab, extras, s);
-    tab.accounting().acctNew.parse.tparse += Accounting::wclkDelta(t0);
+    tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
     return st;
 }
 
 bool Parser::parseNetlistString(const std::string& input, ParserTables& tab, ParserExtras& extras, Status& s) {
     auto t0 = Accounting::wclk();
-    tab.accounting().acctNew.parse.parse++;
+    tab.accounting().acctNew.parse++;
     
     std::istringstream stream;
     stream.str(input);
     tab.fileStack().addStringFile(input);
 
     auto st = netlistParseHelper(stream, tab, extras, s); 
-    tab.accounting().acctNew.parse.tparse += Accounting::wclkDelta(t0);
+    tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
     return st;
 }
 
@@ -63,7 +63,7 @@ bool Parser::parseNetlistString(const std::string&& input, ParserTables& tab, Pa
     tab.fileStack().addStringFile(input);
 
     auto st = netlistParseHelper(stream, tab, extras, s); 
-    tab.accounting().acctNew.parse.tparse += Accounting::wclkDelta(t0);
+    tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
     return st;
 }
 

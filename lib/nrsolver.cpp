@@ -42,7 +42,7 @@ NRSolver::NRSolver(
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings
 ) : circuit(circuit), jac(jac), states(states), solution(solution), settings(settings), 
-    iteration(0) {
+    iteration(0), newxref_(false), histxref_(nullptr) {
 }
 
 bool NRSolver::rebuild() {
@@ -206,10 +206,18 @@ std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool
         *deltaOk = true;
     }
 
+    double* xdelta = delta.data();
+
     // Use 1-based index (with bucket) because same indexing is used for variables
     for(decltype(n) i=1; i<=n; i++) {
         auto rn = circuit.reprNode(i);
-        double tol = circuit.solutionTolerance(rn, xprev[i]);
+        double tolref = std::fabs(xprev[i]);
+        if (newxref_) {
+            double xnew = xprev[i] - xdelta[i];
+            tolref = std::max(tolref, std::fabs(xnew));
+        }
+        tolref = histxref_ ? std::max(tolref, std::fabs(histxref_[i])) : tolref;
+        double tol = circuit.solutionTolerance(rn, tolref);
         // Absolute solution change 
         double deltaAbs = fabs(delta[i]);
         
@@ -297,7 +305,7 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
 
 bool NRSolver::run(bool continuePrevious) {
     auto t0 = Accounting::wclk();
-    circuit.tables().accounting().acctNew.point.nrcall++;
+    circuit.tables().accounting().acctNew.nrcall++;
 
     jac.setAccounting(circuit.tables().accounting());
 
@@ -345,7 +353,7 @@ bool NRSolver::run(bool continuePrevious) {
     // Initialize structures
     if (!initialize(continuePrevious)) {
         // Assume initialize() has set lastError
-        circuit.tables().accounting().acctNew.point.tnr += Accounting::wclkDelta(t0);
+        circuit.tables().accounting().acctNew.tnr += Accounting::wclkDelta(t0);
         return false;
     }
 
@@ -516,7 +524,7 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
 
-        circuit.tables().accounting().acctNew.point.nriter++;
+        circuit.tables().accounting().acctNew.nriter++;
 
         if (settings.solutionCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
             lastError = Error::SolutionError;
@@ -753,7 +761,7 @@ bool NRSolver::run(bool continuePrevious) {
         errorIteration = iteration;
     }
 
-    circuit.tables().accounting().acctNew.point.tnr += Accounting::wclkDelta(t0);
+    circuit.tables().accounting().acctNew.tnr += Accounting::wclkDelta(t0);
     return converged;
 }
 

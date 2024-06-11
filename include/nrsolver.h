@@ -55,6 +55,12 @@ public:
     // Return value: ok, prevent convergence
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious) = 0;
 
+    // Set extra reference vectors for solution tolerance computation
+    void setExtraSolutionToleranceReferences(bool newxref, double* histxref) {
+        newxref_ = newxref;
+        histxref_ = histxref;
+    };
+
     // Return values: ok, magnitude of residual component with maximal relative magnitude, 
     //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector
     //                corresponding node
@@ -137,6 +143,9 @@ protected:
 
     // Stores residual (before solving), and negative delta (after solving)
     Vector<double> delta;
+
+    bool newxref_;
+    double* histxref_;
     
     Int iteration;
 

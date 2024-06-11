@@ -5,43 +5,52 @@ namespace NAMESPACE {
 
 void Accounting::dumpTotal(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    os << pfx << "Parser invocations:       " << acctNew.parse.parse << "\n";
-    os << pfx << "Parse time:               " << acctNew.parse.tparse << "\n";
+    os << pfx << "Parser invocations:           " << acctNew.parse << "\n";
+    os << pfx << "Parse time:                   " << acctNew.tparse << "\n";
 
     os << "\n";
 
-    os << pfx << "Elaborations:             " << acctNew.analysis.elab << "\n";
-    os << pfx << "Elaboration time:         " << acctNew.analysis.telab << "\n";
+    os << pfx << "Elaborations:                 " << acctNew.elab << "\n";
+    os << pfx << "Elaboration time:             " << acctNew.telab << "\n";
 
     os << "\n";
 
-    os << pfx << "Partial elaborations:     " << acctNew.sweep.chgelab << "\n";
-    os << pfx << "Partial elaboration time: " << acctNew.sweep.tchgelab << "\n";
+    os << pfx << "Partial elaborations:         " << acctNew.chgelab << "\n";
+    os << pfx << "Partial elaboration time:     " << acctNew.tchgelab << "\n";
 
     os << "\n";
 
-    os << pfx << "Eval and load calls:      " << acctNew.point.load << "\n";
-    os << pfx << "Eval and load time:       " << acctNew.point.tload << "\n";
+    os << pfx << "Eval and load calls:          " << acctNew.load << "\n";
+    os << pfx << "Eval and load time:           " << acctNew.tload << "\n";
 
     os << "\n";
 
-    os << pfx << "NR solver calls:          " << acctNew.point.nrcall << "\n";
-    os << pfx << "NR solver iterations:     " << acctNew.point.nriter << "\n";
-    os << pfx << "NR solver time:           " << acctNew.point.tnr << "\n";
+    os << pfx << "NR solver calls:              " << acctNew.nrcall << "\n";
+    os << pfx << "NR solver iterations:         " << acctNew.nriter << "\n";
+    os << pfx << "NR solver time:               " << acctNew.tnr << "\n";
 
     os << "\n";
 
-    os << pfx << "LU factorizations:        " << acctNew.point.factor << "\n";
-    os << pfx << "LU refactorizations:      " << acctNew.point.refactor << "\n";
-    os << pfx << "LU solve calls:           " << acctNew.point.solve << "\n";
-    os << pfx << "LU factorization time:    " << acctNew.point.tfactor << "\n";
-    os << pfx << "LU refactorization time:  " << acctNew.point.trefactor << "\n";
-    os << pfx << "LU solve time:            " << acctNew.point.tsolve << "\n";
+    os << pfx << "Real factorizations:          " << acctNew.factor << "\n";
+    os << pfx << "Real refactorizations:        " << acctNew.refactor << "\n";
+    os << pfx << "Real solve calls:             " << acctNew.solve << "\n";
+    os << pfx << "Real factorization time:      " << acctNew.tfactor << "\n";
+    os << pfx << "Real refactorization time:    " << acctNew.trefactor << "\n";
+    os << pfx << "Real solve time:              " << acctNew.tsolve << "\n";
+    
+    os << "\n";
+
+    os << pfx << "Complex factorizations:       " << acctNew.cxfactor << "\n";
+    os << pfx << "Complex refactorizations:     " << acctNew.cxrefactor << "\n";
+    os << pfx << "Complex solve calls:          " << acctNew.cxsolve << "\n";
+    os << pfx << "Complex factorization time:   " << acctNew.tcxfactor << "\n";
+    os << pfx << "Complex refactorization time: " << acctNew.tcxrefactor << "\n";
+    os << pfx << "Complex solve time:           " << acctNew.tcxsolve << "\n";
 
     os << "\n";
 
-    os << pfx << "Accepted timepoints:      " << acctNew.point.accepted << "\n";
-    os << pfx << "Rejected timepoints:      " << acctNew.point.rejected << "\n";
+    os << pfx << "Accepted timepoints:          " << acctNew.accepted << "\n";
+    os << pfx << "Rejected timepoints:          " << acctNew.rejected << "\n";
 
 }
 

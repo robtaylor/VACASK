@@ -650,6 +650,16 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
                 }
             }
         } else if (what=="stats") {
+            auto n = circuit.unknownCount();
+            auto nnz = circuit.sparsityMap().size();
+            
+            Simulator::out() << "System stats:\n";
+            Simulator::out() << "  Number of unknonws:           " << n << "\n";
+            Simulator::out() << "  Initial number of nonzeros:   " << nnz << "\n";
+            Simulator::out() << "  Initial sparsity:             " << (1.0*nnz/n/n) << "\n";
+
+            Simulator::out() << "\n";
+
             Simulator::out() << "Stats:\n";
             interpreter.tables().accounting().dumpTotal(2, Simulator::out());
         } else {
