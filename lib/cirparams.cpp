@@ -230,7 +230,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
 // Make circuit consistent. 
 
 std::tuple<bool, bool, bool> Circuit::elaborateChanges(
-    ParameterSweeper* sweeper, int advancedSweepIndex, ParameterSweeper::WriteValues what, 
+    ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
     Analysis* an, IStruct<SimulatorOptions>* options, 
     PTParameterMap* optionsMap, 
     Status& s
@@ -256,7 +256,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
 
     // Propagate variable changes to inner sweeps
     if (sweeper && variablesChanged) {
-        if (!an->updateSweeper(advancedSweepIndex, s)) {
+        if (!an->updateSweeper(s)) {
             return std::make_tuple(false, false, false);
         }
     }

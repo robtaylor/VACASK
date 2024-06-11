@@ -5,7 +5,7 @@
 namespace NAMESPACE {
 
 Analysis::Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
-    : name_(name), circuit(circuit), sweeper(nullptr), 
+    : name_(name), circuit(circuit), sweeper(circuit, ptAnalysis.sweeps()), 
       ptAnalysis(ptAnalysis), commonSaves(nullptr) {
 }
 
@@ -71,27 +71,8 @@ Analysis* Analysis::create(
     // Set up initial simulator options for analysis
     an->simOptions.core() = an->originalSimOptions.core();
     
-    // Add sweeps
-    // Sweep settings can depend on circuit variables
-    // If during sweep a variable changes the change is applied to all inner sweeps relative 
-    // to the sweep causing the variable change. 
-    auto& anSweeps = ptAnalysis.sweeps();
-    for(auto it=anSweeps.data().cbegin(); it!=anSweeps.data().cend(); ++it) {
-        IStruct<SweepSettings> sw;
-        sw.core().name = it->name();
-        sw.core().location = it->location();
-        auto [ok, changed] = sw.setParameters(it->parameters(), circuit.variableEvaluator(), s);
-        if (!ok) {
-            s.extend("Error in sweep setup for analysis '"+std::string(ptAnalysis.name())+"'.");
-            s.extend(it->location());
-            delete an;
-            return nullptr;
-        }
-        an->addSweep(std::move(sw.core()));
-    }
-
     // Build analysis state repository
-    an->resizeAnalysisStateStorage(anSweeps.data().size());
+    an->resizeAnalysisStateStorage(an->sweepCount());
 
     return an;
 }
@@ -101,10 +82,10 @@ bool Analysis::addOutputDescriptors(Status& s) {
     clearOutputDescriptors();
 
     // Add sweep variables
-    auto nSweeps = sweeps_.size();
+    auto nSweeps = sweepCount();
     for(decltype(nSweeps) i=0; i<nSweeps; i++) {
-        if (!addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, sweeper->sweepName(i), i))) {
-            s.set(Status::Analysis, "Failed to add output descriptor for sweep variable '"+std::string(sweeper->sweepName(i))+"'.");
+        if (!addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, ptAnalysis.sweeps().data()[i].name(), i))) {
+            s.set(Status::Analysis, "Failed to add output descriptor for sweep variable '"+std::string(ptAnalysis.sweeps().data()[i].name())+"'.");
             return false;
         }
     }
@@ -148,7 +129,7 @@ bool Analysis::resolveOutputDescriptor(const OutputDescriptor& descr, Output::So
     // Abstract analysis handles only sweep variables
     switch (descr.type) {
         case OutdSweepvar: 
-            srcs.emplace_back(sweeper.get(), descr.ndx);
+            srcs.emplace_back(&sweeper, descr.ndx);
             break;
         default:
             DBGCHECK(true, "Unknown output descriptor type.");
@@ -157,32 +138,8 @@ bool Analysis::resolveOutputDescriptor(const OutputDescriptor& descr, Output::So
     return true;
 }
 
-bool Analysis::addSweep(const SweepSettings& sw, Status& s) {
-    sweeps_.push_back(sw);
-    return true;
-}
-
-bool Analysis::addSweep(SweepSettings&& sw, Status& s) {
-    sweeps_.push_back(std::move(sw));
-    return true;
-}
-
-bool Analysis::updateSweeper(Int advancedSweepIndex, Status& s) {
-    // Loop from advancedSweepIndex+1 to end of sweeps
-    for(Int i=advancedSweepIndex+1; i<sweeps_.size(); i++) {
-        // Recompute expressions, update sweeps_ structure
-        IStruct<SweepSettings> sw;
-        sw.core() = sweeps_[i];
-        auto [ok, changed] = sw.setParameters(ptAnalysis.sweeps().data()[i].parameters().expressions(), circuit.variableEvaluator(), s);
-        if (!ok) {
-            return false;
-        }
-        sweeps_[i] = sw.core();
-    }
-    if (!sweeper.get()->update(sweeps_, advancedSweepIndex, s)) {
-        return false;
-    }
-    return true;
+bool Analysis::updateSweeper(Status& s) {
+    return sweeper.update(advancedSweepIndex, s);
 }
 
 bool Analysis::run(Status& s) {
@@ -217,33 +174,32 @@ bool Analysis::run(Status& s) {
     bool runOk = false;
 
     // Do we have sweep(s)
-    if (sweeps_.size()>0) {
+    if (ptAnalysis.sweeps().data().size()>0) {
         // Sweep required
         if (sweepDebug>0) {
             Simulator::dbg() << "Starting sweep, analysis '" << std::string(name_) << "'.\n";
         }
 
-        // Create sweeper
-        sweeper = std::make_unique<ParameterSweeper>(sweeps_, s);
-        if (!sweeper->isValid()) {
-            s.extend("Failed to initialize sweep.");
+        // Setup sweeper
+        if (!sweeper.setup(s)) {
+            s.extend("Failed to set up sweep for analysis '"+std::string(name_)+"'.");
             return false;
         }
-
+        
         // Bind sweeper to actual parameters and options
-        if (!sweeper->bind(circuit, simOptions, s)) {
+        if (!sweeper.bind(circuit, simOptions, s)) {
             s.extend("Failed to bind sweep parameters.");
             return false;
         }
 
         // Collect current values so we can restore them later
-        if (!sweeper->storeState(s)) {
+        if (!sweeper.storeState(s)) {
             s.extend("Failed to store initial circuit state.");
             return false;
         }
 
         // Reset sweeper
-        sweeper->reset();
+        sweeper.reset();
 
         // Variable indicating that the outputs are bound
         bool outputsBound = false;
@@ -254,18 +210,18 @@ bool Analysis::run(Status& s) {
         // Main sweep loop
         bool haveStoredState = false;
         // Initially the outermost sweep index increases
-        Int advancedSweepIndex = 0;
+        advancedSweepIndex = 0;
         do {
             // Assume analysis failed
             runOk = false;
 
             if (sweepDebug>0) {
-                Simulator::dbg() << "Sweep point: " << sweeper->progress() << ".\n";
+                Simulator::dbg() << "Sweep point: " << sweeper.progress() << ".\n";
             }
 
             // Set current sweep point
             auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-                sweeper.get(), advancedSweepIndex, ParameterSweeper::WriteValues::Sweep, 
+                &sweeper, ParameterSweeper::WriteValues::Sweep, 
                 this, &simOptions, 
                 &parameterizedOptions, 
                 s
@@ -284,7 +240,7 @@ bool Analysis::run(Status& s) {
 
             // Need to re-bind sweeper if hierarchy changed
             if (hierarchyChanged) {
-                if (!sweeper->bind(circuit, simOptions, s)) {
+                if (!sweeper.bind(circuit, simOptions, s)) {
                     s.extend("Failed to re-bind sweep parameters.");
                     runOk = false;
                     break;
@@ -375,7 +331,7 @@ bool Analysis::run(Status& s) {
                 // In future we will have to implement some kind of continue analysis option
                 if (sweepDebug>1) {
                     Simulator::dbg() << "Analysis '"+std::string(name_)+"' - stop requested.\n";
-                    Simulator::dbg() << "Exiting sweep @ "+sweeper->progress()+".\n";
+                    Simulator::dbg() << "Exiting sweep @ "+sweeper.progress()+".\n";
                 }
                 break;
             } else if (!runOk) {
@@ -385,7 +341,7 @@ bool Analysis::run(Status& s) {
 
             // Advance sweeper
             bool finished;
-            std::tie(finished, advancedSweepIndex) = sweeper->advance();
+            std::tie(finished, advancedSweepIndex) = sweeper.advance();
             if (finished) {
                 if (sweepDebug>0) {
                     Simulator::dbg() << "Sweep finished.\n";
@@ -404,7 +360,7 @@ bool Analysis::run(Status& s) {
             // Update stored analysis state for the sweep that advanced its index and all its inner sweeps
             // Store state only if continuation is used for that particular sweep
             for(auto i=updateStatesFrom; i<sweepCount(); i++) {
-                if (sweeps_.at(i).continuation) {
+                if (sweeper.continuation(i)) {
                     if (sweepDebug>1) {
                         Simulator::dbg() << "Updating analysis state for sweep level " << (i+1) << ".\n";
                     }
@@ -420,7 +376,7 @@ bool Analysis::run(Status& s) {
         } while (true);
 
         if (!runOk) { 
-            s.extend("Sweep aborted @ "+sweeper->progress()+".");
+            s.extend("Sweep aborted @ "+sweeper.progress()+".");
         } 
 
         // Finalize outputs
@@ -439,7 +395,7 @@ bool Analysis::run(Status& s) {
 
         // Restore original state
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-            sweeper.get(), advancedSweepIndex, ParameterSweeper::WriteValues::StoredState, 
+            &sweeper, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
             &parameterizedOptions, 
             s
@@ -450,11 +406,12 @@ bool Analysis::run(Status& s) {
         }
     } else {
         // No sweep
+        advancedSweepIndex = 0;
         bool outputInitialized = false;
 
         // Set analysis options
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
-            nullptr, 0, ParameterSweeper::WriteValues::Sweep, 
+            nullptr, ParameterSweeper::WriteValues::Sweep, 
             this, &simOptions, 
             &parameterizedOptions, 
             s
@@ -558,7 +515,7 @@ bool Analysis::run(Status& s) {
         
         // Restore original state (interactive simulator mode)
         std::tie(ok, hierarchyChanged, needsCoreRebuild) = circuit.elaborateChanges(
-            nullptr, 0, ParameterSweeper::WriteValues::StoredState, 
+            nullptr, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
             &parameterizedOptions, 
             s

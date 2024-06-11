@@ -33,11 +33,8 @@ public:
     bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict);
 
     // Sweep API
-    bool addSweep(const SweepSettings& sw, Status& s=Status::ignore);
-    bool addSweep(SweepSettings&& sw, Status& s=Status::ignore);
-    size_t sweepCount() const { return sweeps_.size(); };
-    SweepSettings& sweep(size_t i) { return sweeps_[i]; };
-    bool updateSweeper(Int advancedSweepIndex, Status& s=Status::ignore);
+    size_t sweepCount() const { return ptAnalysis.sweeps().data().size(); };
+    bool updateSweeper(Status& s=Status::ignore);
     
     // Setup api
     void setSaves(PTSavesVector* commonSaves);
@@ -77,11 +74,11 @@ public:
     virtual void dump(std::ostream& os) const;
 
 protected:
-    std::vector<SweepSettings> sweeps_;
+    // std::vector<SweepSettings> sweeps_;
     
     Id name_;
     Circuit& circuit;
-    std::unique_ptr<ParameterSweeper> sweeper;
+    ParameterSweeper sweeper;
     IStruct<SimulatorOptions> originalSimOptions;
     IStruct<SimulatorOptions> simOptions;
     PTAnalysis& ptAnalysis;
@@ -192,6 +189,7 @@ private:
         return factoryMap;
     };
     const PTSavesVector* commonSaves;
+    Int advancedSweepIndex;
 };
 
 }

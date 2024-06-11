@@ -391,7 +391,7 @@ public:
     // Adds sparsity map entries and state vector slots requested by analysis (if needed)
     // Return value: ok, hierarchy changed, analysis binding needed
     std::tuple<bool, bool, bool> elaborateChanges(
-        ParameterSweeper* sweeper, int advancedSweepIndex, ParameterSweeper::WriteValues what, 
+        ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
         Analysis* an, IStruct<SimulatorOptions>* opt, 
         PTParameterMap* optionsMap, 
         Status& s=Status::ignore

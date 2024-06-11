@@ -215,35 +215,71 @@ template<> int Introspection<SweepSettings>::setup() {
 }
 instantiateIntrospection(SweepSettings);
 
-ParameterSweeper::ParameterSweeper(const std::vector<SweepSettings>& settings, Status& s) 
-    : settings(settings) {
-    scalarSweeps.resize(settings.size());
-    // Check sweep, compute steps
-    size_t atSweep = 0;
-    for(auto it=settings.cbegin(); it!=settings.cend(); ++it, atSweep++) {
-        if (it->component>=0) {
-            s.set(Status::Unsupported, "Sweep '"+std::string(it->name)+"': vector component sweeps are not suppported yet.");
-            s.extend(it->location);
-            return;
+ParameterSweeper::ParameterSweeper(Circuit& circuit, const PTSweeps& ptSweeps) 
+    : circuit(circuit), ptSweeps(ptSweeps) {
+}
+
+bool ParameterSweeper::setup(Status& s) {
+    // Number of sweeps
+    auto n = ptSweeps.data().size();
+
+    // Clear sweep settings
+    settings.clear();
+
+    // Resize settings
+    settings.resize(n);
+
+    // Clear family vector, scalar sweeps vector
+    parameterFamily.clear();
+    scalarSweeps.clear();
+
+    // Resize scalar sweeps vector
+    scalarSweeps.resize(n);
+    
+    // Sweep settings can depend on circuit variables. 
+    // If during sweep a variable changes the change is applied to all inner sweeps 
+    // relative to the sweep causing the variable change. 
+    for(decltype(n) i=0; i<n; i++) {
+        auto& ptcomp = ptSweeps.data()[i];
+        auto& comp = settings[i];
+        
+        // Evaluate settings
+        IStruct<SweepSettings> sw;
+        sw.core().name = ptcomp.name();
+        sw.core().location = ptcomp.location();
+        auto [ok, changed] = sw.setParameters(ptSweeps.data()[i].parameters(), circuit.variableEvaluator(), s);
+        if (!ok) {
+            s.extend("Error in settings evaluation for sweep '"+std::string(ptcomp.name())+"'.");
+            s.extend(ptcomp.location());
+            return false;
         }
+        comp = std::move(sw.core());
+
+        // Vector component sweeps not supported yet
+        if (comp.component>=0) {
+            s.set(Status::Unsupported, "Sweep '"+std::string(comp.name)+"': vector component sweeps are not suppported yet.");
+            s.extend(comp.location);
+            return false;
+        }
+
         // Check if we have anything to sweep
         int specCount = 0;
-        if (it->variable) {
+        if (comp.variable) {
             // option given, sweep circuit option
             specCount++;
             parameterFamily.push_back(ParameterFamily::Variable);
         }
-        if (it->option) {
+        if (comp.option) {
             // option given, sweep circuit option
             specCount++;
             parameterFamily.push_back(ParameterFamily::Option);
         }
-        if (it->model) {
+        if (comp.model) {
             // model given, sweep model parameter
             specCount++;
             parameterFamily.push_back(ParameterFamily::Model);
         }
-        if (it->instance) {
+        if (comp.instance) {
             // model given, sweep model parameter
             specCount++;
             parameterFamily.push_back(ParameterFamily::Instance);
@@ -254,22 +290,34 @@ ParameterSweeper::ParameterSweeper(const std::vector<SweepSettings>& settings, S
         }
         if (specCount>1) {
             // Error
-            s.set(Status::Conflicting, "Sweep '"+std::string(it->name)+"': specify only one of the following: global, option, model, instance.");
-            s.extend(it->location);
-            return;
+            s.set(Status::Conflicting, "Sweep '"+std::string(comp.name)+"': specify only one of the following: global, option, model, instance.");
+            s.extend(comp.location);
+            return false;
         }
 
-        if (!scalarSweeps[atSweep].setup(*it, s)) {
-            s.extend("Failed to set up sweep '"+std::string(it->name)+"'.");
-            s.extend(it->location); 
-            return;
+        // Setup ScalarSweep
+        if (!scalarSweeps[i].setup(comp, s)) {
+            s.extend("Failed to set up sweep '"+std::string(comp.name)+"'.");
+            s.extend(comp.location); 
+            return false;
         }
     }
-    valid = true;
+    return true;
 }
 
-bool ParameterSweeper::update(const std::vector<SweepSettings>& settings, int advancedSweepIndex, Status& s) {
-    for(int i=advancedSweepIndex+1; i<settings.size(); i++) {
+bool ParameterSweeper::update(int advancedSweepIndex, Status& s) {
+     // Loop from advancedSweepIndex+1 to end of sweeps
+    for(Int i=advancedSweepIndex+1; i<settings.size(); i++) {
+        // Recompute expressions, update settings structure
+        IStruct<SweepSettings> sw;
+        sw.core() = settings[i];
+        auto [ok, changed] = sw.setParameters(ptSweeps.data()[i].parameters().expressions(), circuit.variableEvaluator(), s);
+        if (!ok) {
+            return false;
+        }
+        settings[i] = sw.core();
+
+        // Set up scalar sweep
         auto& swp = settings[i];
         if (!scalarSweeps[i].setup(settings[i], s)) {
             s.extend("Failed to update sweep '"+std::string(swp.name)+"'.");
@@ -278,10 +326,6 @@ bool ParameterSweeper::update(const std::vector<SweepSettings>& settings, int ad
         }
     }
     return true;
-}
-
-bool ParameterSweeper::isValid() const {
-    return valid;
 }
 
 bool ParameterSweeper::bind(Circuit& circuit, IStruct<SimulatorOptions>& opt, Status& s) {

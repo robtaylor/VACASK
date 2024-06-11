@@ -156,13 +156,16 @@ public:
     enum class WriteValues { StoredState, Sweep };
     enum class ParameterFamily { Instance=1<<0, Model=1<<1, Option=1<<2, Variable=1<<3 };
     
-    ParameterSweeper(const std::vector<SweepSettings>& settings, Status& s=Status::ignore);
+    ParameterSweeper(Circuit& circuit, const PTSweeps& ptSweeps);
+
+    // Setup sweeper (evaluate expressions, fill settings structures)
+    bool setup(Status& s=Status::ignore);
 
     // Update
-    bool update(const std::vector<SweepSettings>& settings, int advancedSweepIndex, Status& s=Status::ignore);
+    bool update(int advancedSweepIndex, Status& s=Status::ignore);
 
-    // Check if constructor was successfull
-    bool isValid() const; 
+    // Number of sweeps
+    int count() const { return settings.size(); };
 
     // Bind (lookup instances, models, and simulator options)
     bool bind(Circuit& circuit, IStruct<SimulatorOptions>& opt, Status& s=Status::ignore);
@@ -172,6 +175,9 @@ public:
 
     // Reset
     void reset();
+
+    // Does i-th sweep use continuation
+    bool continuation(int i) { return settings[i].continuation; };
 
     // Advance, return value: sweep done, index of sweep that was incremented (resets do not count)
     std::tuple<bool, Int> advance();
@@ -194,8 +200,9 @@ public:
     bool compute(Int ndx, Value& v, Status& s=Status::ignore) const;
 
 private:
-    bool valid;
-    const std::vector<SweepSettings>& settings;
+    Circuit& circuit;
+    const PTSweeps& ptSweeps;
+    std::vector<SweepSettings> settings;
     std::vector<ScalarSweep> scalarSweeps;
     std::vector<ParameterFamily> parameterFamily;
     std::vector<Parameterized*> parameterizedObject;
