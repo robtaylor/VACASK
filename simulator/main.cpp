@@ -64,6 +64,9 @@ int main(int argc, char**argv) {
 #ifdef SIMDEBUG
     Simulator::out() << "\n" << "Warning! This is a debug build. Simulator will be slow.\n";
 #endif
+#ifdef SIMPROFILE
+    Simulator::out() << "\n" << "Warning! This binary is instrumeted for profiling and code coverage.\n";
+#endif
     Simulator::out() << "\n";
 
     bool needFile = true;

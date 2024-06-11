@@ -164,6 +164,8 @@ message("* Current build type is : ${CMAKE_BUILD_TYPE}")
 # Define SIMDEBUG preprocessor macro when build type is Debug
 add_compile_definitions("$<$<CONFIG:Debug>:SIMDEBUG>")
 add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMDEBUG>")
+add_compile_definitions("$<$<CONFIG:ReleaseProfile>:SIMPROFILE>")
+add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMPROFILE>")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
