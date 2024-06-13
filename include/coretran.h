@@ -53,6 +53,7 @@ public:
         OpError, 
         UicForces, 
         TimestepTooSmall, 
+        BadLteReference, 
     };
     
     TranCore(
@@ -109,8 +110,6 @@ protected:
 
     Vector<double> predictedSolution;
     Vector<double> scaledLte;
-
-    Vector<double> maxSolution;
 
     OutputRawfile* outfile;
 

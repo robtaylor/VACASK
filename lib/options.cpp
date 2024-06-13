@@ -6,8 +6,10 @@
 
 namespace NAMESPACE {
 
-Id SimulatorOptions::relrefPointlocal = Id::createStatic("pointlocal");
-Id SimulatorOptions::relrefAlllocal = Id::createStatic("alllocal");
+Id SimulatorOptions::relrefPointLocal = Id::createStatic("pointlocal"); // at given time for each unknown separately
+Id SimulatorOptions::relrefLocal = Id::createStatic("local"); // maximum over past time for each unknown separately
+Id SimulatorOptions::relrefPointGlobal = Id::createStatic("pointglobal"); // at given time, maximum over all unknowns
+Id SimulatorOptions::relrefGlobal = Id::createStatic("global"); // maximum over past time, maximum over all unknowns
 Id SimulatorOptions::rawfileAscii = Id::createStatic("ascii");
 Id SimulatorOptions::rawfileBinary = Id::createStatic("binary");
 
@@ -23,9 +25,13 @@ SimulatorOptions::SimulatorOptions() {
     reltol = 1e-3; // 0<x<1, Relative tolerance 
     abstol = 1e-12; // >0, absolute current tolerance
     vntol = 1e-6; // >0, absolute voltage tolerance
-    relref = relrefAlllocal; // reference value for reltol 
-                           // pointlocal = separate for each unknown, each timepoint
-                           // alllocal = separate for each unknown, largest value over all past timepoints
+    relrefsol = relrefLocal; // reference value for solution delta reltol
+                             // pointlocal = separate for each unknown, each timepoint
+                             // local = separate for each unknown, maximum over past timepoints
+                             // pointglobal = maximum over all unknowns, separate for each timepoint
+                             // global = maximum over all unknowns, maximum over past timepoints
+    relrefres = relrefLocal; // reference value for residual reltol
+    relreflte = relrefLocal; // reference value for lte reltol
     restol = 1e-12; // >0, residual tolerance (A, applied to potential nodes)
     vnrestol = 1e-6; // >0, residual tolerance (V, applied to flow nodes)
 
@@ -182,7 +188,9 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(reltol);
     registerMember(abstol);
     registerMember(vntol);
-    registerMember(relref);
+    registerMember(relrefsol);
+    registerMember(relrefres);
+    registerMember(relreflte);
     registerMember(restol);
     registerMember(vnrestol);
 

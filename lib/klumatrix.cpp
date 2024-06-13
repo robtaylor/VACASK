@@ -284,9 +284,6 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
             acct->acctNew.tfactor += Accounting::wclkDelta(t0);
         }
     }
-    if (isSingular) {
-        std::cout << "singular\n";
-    }
     // Check status and numerical rank if it was computed
     if (!numeric || isSingular || (nr>=0 && nr!=AN)) {
         lastError = Error::Factorization;
@@ -334,9 +331,6 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
         } else {
             acct->acctNew.trefactor += Accounting::wclkDelta(t0);
         }
-    }
-    if (isSingular) {
-        std::cout << "singular refactor\n";
     }
     // Check status and numerical rank if it was computed
     if (!st || isSingular || (nr>=0 && nr!=AN)) {

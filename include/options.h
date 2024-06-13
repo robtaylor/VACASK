@@ -19,7 +19,9 @@ typedef struct SimulatorOptions  {
     Real reltol; 
     Real abstol;
     Real vntol;
-    Id relref;
+    Id relrefsol;
+    Id relrefres;
+    Id relreflte;
     Real restol;
     Real vnrestol;
     Int matrixcheck;
@@ -83,8 +85,10 @@ typedef struct SimulatorOptions  {
     bool operator==(const SimulatorOptions& other) const = default;
     bool operator!=(const SimulatorOptions& other) const = default; 
 
-    static Id relrefPointlocal;
-    static Id relrefAlllocal;
+    static Id relrefPointLocal;
+    static Id relrefLocal;
+    static Id relrefPointGlobal;
+    static Id relrefGlobal;
     static Id rawfileAscii;
     static Id rawfileBinary; 
 

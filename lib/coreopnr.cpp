@@ -111,7 +111,7 @@ bool OpNRSolver::rebuild() {
 
     // Allocate space in vetors
     auto n = circuit.unknownCount();
-    maxResidualContribution.resize(n+1);
+    maxResidualContribution_.resize(n+1);
     dummyStates.resize(circuit.statesCount());
     
     return true;
@@ -125,7 +125,44 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     bool computeMaxResidualContribution = settings.residualCheck || settings.dampingSteps>0;
     elsSystem.resistiveResidual = delta.data();
     elsSystem.linearizedResistiveRhsResidual = delta.data();
-    elsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution.data() : nullptr;
+    elsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
+
+    // Set up tolerance reference value for solution
+    auto& options = circuit.simulatorOptions().core();
+    if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
+        settings.globalSolRef = false;
+        settings.historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefLocal) {
+        settings.globalSolRef = false;
+        settings.historicSolRef = true;
+    } else if (options.relrefsol==SimulatorOptions::relrefPointGlobal) {
+        settings.globalSolRef = true;
+        settings.historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefGlobal) {
+        settings.globalSolRef = true;
+        settings.historicSolRef = true;
+    } else {
+        lastError = Error::BadSolReference;
+        return false;
+    }
+
+    // Set up tolerance reference value for residual
+    if (options.relrefres==SimulatorOptions::relrefPointLocal) {
+        settings.globalResRef = false;
+        settings.historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefLocal) {
+        settings.globalResRef = false;
+        settings.historicResRef = true;
+    } else if (options.relrefres==SimulatorOptions::relrefPointGlobal) {
+        settings.globalResRef = true;
+        settings.historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefGlobal) {
+        settings.globalResRef = true;
+        settings.historicResRef = true;
+    } else {
+        lastError = Error::BadResReference;
+        return false;
+    }
     
     // Set vectors for computing residual (for damping)
     elsResidual.resistiveResidual = delta.data(); 

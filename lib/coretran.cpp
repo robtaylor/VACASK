@@ -237,7 +237,7 @@ TranCore::TranCore(
     KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
 ) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), solution(solution), states(states), 
-    nrSolver(circuit, jacobian, states, solution, nrSettings, integCoeffs) {
+    nrSolver(circuit, jacobian, states, solution, nrSettings, integCoeffs) { 
     // Slots 0 (current) and -1 (future) are used for the NR solver
     // Slots 1, 2, ... correspond to past values (at t_{k}, t_{k-1}, ...)
     // Therefore historyOffset needs to be set to 1 when calling 
@@ -783,13 +783,13 @@ bool TranCore::run(bool continuePrevious) {
     // Number of consecutive points computed with trapezoidal integration
     size_t trapHistory = 0;
     
-    // Initialize maximal solution
-    maxSolution.resize(n+1);
-    zero(maxSolution);
-    for(decltype(n) i=1; i<=n; i++) {
-        maxSolution[i] = std::abs(solution.vector()[i]);
+    // Initialize maximal past solution and residual contribution
+    if (params.icMode==icModeOp) {
+        nrSolver.initializeMaxima(opCore_.solver());
+    } else {
+        nrSolver.resetMaxima();
     }
-
+    
     while (true) {
         // NR will be applied at tk+hk
         auto tSolve = tk+hk;
@@ -866,13 +866,7 @@ bool TranCore::run(bool continuePrevious) {
         // Prepare differentiator history, first past state is at offset 1 (we are using slots 1, 2, ...)
         integCoeffs.prepareDifferentiatorHistory(states, 1);
 
-        // Solve, use maxSolution for tolerances if point local tolerance is used
-        if (options.relref == SimulatorOptions::relrefPointlocal) {
-            nrSolver.setExtraSolutionToleranceReferences(true, nullptr);
-        } else {
-            nrSolver.setExtraSolutionToleranceReferences(true, maxSolution.data());
-        }
-        
+        // Solve
         auto solutionOk = nrSolver.run(true);
         // Simulator::out() << "  Solver iterations: " << nrSolver.iterations() << "\n";
         if (!solutionOk) {
@@ -1065,6 +1059,16 @@ bool TranCore::run(bool continuePrevious) {
             // alllocal     local               local           local                   conservative
             // point local  point local         point local     point local
 
+            // Compute global reference values across past
+            // Compute maximum across all unknowns at this point 
+            double pointMax = 0;
+            for(decltype(n) i=1; i<=n; i++) {
+                double c = std::fabs(solution.vector()[i]);
+                if (c>pointMax) {
+                    pointMax = c;
+                }
+            }
+
             // Go through all unknowns, except for the ground
             bool haveRatio = false;
             double maxRatio = 0.0;
@@ -1087,12 +1091,21 @@ bool TranCore::run(bool continuePrevious) {
                 // Greater lteratio results in greater LTE tolerance and greater timestep
 
                 double tol;
-                if (options.relref == SimulatorOptions::relrefPointlocal) {
-                    // Point-local tolerance
+                if (options.relreflte == SimulatorOptions::relrefGlobal) {
+                    // Maximum over all unknowns, maximum over past timepoints
+                    tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                } else if (options.relreflte == SimulatorOptions::relrefPointGlobal) {
+                    // Maximum over all unknowns, for each timepoint
+                    tol = circuit.solutionTolerance(rn, nrSolver.pointMaxSolution());
+                } else if (options.relreflte == SimulatorOptions::relrefLocal) {
+                    // For each unknown, maximum over past timepoints
+                    tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);
+                } else if (options.relreflte == SimulatorOptions::relrefPointLocal) {
+                    // For each unknown, for each timepoint
                     tol = circuit.solutionTolerance(rn, solution.vector()[i]);
                 } else {
-                    // Local tolerance 
-                    tol = circuit.solutionTolerance(rn, maxSolution[i]);
+                    setError(TranError::BadLteReference);
+                    return false;
                 }
 
                 // std::cout << i << " predicted=" << predictedSolution[i] 
@@ -1167,6 +1180,10 @@ bool TranCore::run(bool continuePrevious) {
         double cutOrigin;
         if (accept) {
             // Accepting the timepoint
+
+            // Update maxima
+            nrSolver.updateMaxima();
+
             circuit.tables().accounting().acctNew.accepted++;
             // Where are we with respect to breakpoints
             if (std::abs(breakPoints.at(0)-tSolve) <= timeRelativeTolerance*tSolve) {
@@ -1278,14 +1295,6 @@ bool TranCore::run(bool continuePrevious) {
         if (accept) {
             nPoints++; 
             
-            // Update max solution
-            for(decltype(n) i=1; i<=n; i++) {
-                auto comp = std::abs(solution.vector()[i]);
-                if (comp>maxSolution[i]) {
-                    maxSolution[i] = comp;
-                }
-            }
-
             // If we are accepting a point at a discontinuty
             if (discontinuity>=0) {
                 if (debug>1) {
@@ -1412,6 +1421,9 @@ bool TranCore::formatError(Status& s) const {
             break;
         case TranError::TimestepTooSmall: 
             s.set(Status::Analysis, "Timestep too small. Transient analysis aborted.");
+            break;
+        case TranError::BadLteReference: 
+            s.set(Status::Analysis, "Unsupported relreflte value.");
             break;
         default:
             return true;

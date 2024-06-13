@@ -42,7 +42,7 @@ NRSolver::NRSolver(
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings
 ) : circuit(circuit), jac(jac), states(states), solution(solution), settings(settings), 
-    iteration(0), newxref_(false), histxref_(nullptr) {
+    iteration(0) {
 }
 
 bool NRSolver::rebuild() {
@@ -52,6 +52,9 @@ bool NRSolver::rebuild() {
     isFlow.resize(n+1);
     delta.resize(n+1);
     rowNorm.resize(n+1);
+    historicMaxSolution_.resize(n+1);
+    historicMaxResidualContribution_.resize(n+1);
+    resetMaxima();
     
     // Bind diagonal matrix elements
     // Needed for forcing unknown values and setting gshunts
@@ -183,6 +186,45 @@ Forces& NRSolver::forces(Int ndx) {
     return forcesList.at(ndx);
 } 
 
+void NRSolver::resetMaxima() {
+    zero(historicMaxSolution_);
+    zero(historicMaxResidualContribution_);
+    globalMaxSolution_ = 0;
+    globalMaxResidualContribution_ = 0;
+    pointMaxSolution_ = 0;
+    pointMaxResidualContribution_ = 0;
+}  
+
+void NRSolver::initializeMaxima(NRSolver& other) {
+    historicMaxSolution_ = other.historicMaxSolution();
+    globalMaxSolution_ = other. globalMaxSolution();
+    historicMaxResidualContribution_ = other.historicMaxResidualContribution();
+    globalMaxResidualContribution_ = other.globalMaxResidualContribution();
+}
+
+void NRSolver::updateMaxima() {
+    auto n = circuit.unknownCount();
+    auto* x = solution.data();
+    auto* mrc = maxResidualContribution_.data();
+    for(decltype(n) i=1; i<=n; i++) {
+        double c;
+        c = std::fabs(x[i]);
+        if (c>historicMaxSolution_[i]) {
+            historicMaxSolution_[i] = c;
+        }
+        if (c>globalMaxSolution_) {
+            globalMaxSolution_ = c;
+        }
+        c = std::fabs(mrc[i]);
+        if (c>historicMaxResidualContribution_[i]) {
+            historicMaxResidualContribution_[i] = c;
+        }
+        if (c>globalMaxResidualContribution_) {
+            globalMaxResidualContribution_ = c;
+        }
+    }
+}
+
 std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool computeNorms) {
     // In delta we have the solution change
     // Check it for convergence
@@ -208,16 +250,38 @@ std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool
 
     double* xdelta = delta.data();
 
+    // Get point maximum
+    pointMaxSolution_ = 0;
+    for(decltype(n) i=1; i<=n; i++) {
+        double c = std::fabs(xprev[i]);
+        if (c>pointMaxSolution_) {
+            pointMaxSolution_ = c;
+        }
+    }
+
     // Use 1-based index (with bucket) because same indexing is used for variables
     for(decltype(n) i=1; i<=n; i++) {
         auto rn = circuit.reprNode(i);
+
+        // Compute tolerance reference
         double tolref = std::fabs(xprev[i]);
-        if (newxref_) {
-            double xnew = xprev[i] - xdelta[i];
-            tolref = std::max(tolref, std::fabs(xnew));
+        
+        // Cannot account for new solution because damping has not been performed yet
+
+        // Account for global and historic references
+        if (settings.historicSolRef) {
+            if (settings.globalSolRef) {
+                tolref = std::max(tolref, globalMaxSolution_);
+            } else {
+                tolref = std::max(tolref, historicMaxSolution_[i]);
+            }
+        } else if (settings.globalSolRef) {
+            tolref = std::max(tolref, pointMaxSolution_);
         }
-        tolref = histxref_ ? std::max(tolref, std::fabs(histxref_[i])) : tolref;
+        
+        // Compute tolerance
         double tol = circuit.solutionTolerance(rn, tolref);
+
         // Absolute solution change 
         double deltaAbs = fabs(delta[i]);
         
@@ -263,13 +327,38 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
     if (residualOk) {
         *residualOk = true;
     }
+
+    // Get point maximum
+    pointMaxResidualContribution_ = 0;
+    for(decltype(n) i=1; i<=n; i++) {
+        double c = std::fabs(maxResidualContribution_[i]);
+        if (c>pointMaxResidualContribution_) {
+            pointMaxResidualContribution_ = c;
+        }
+    }
     
     // Go through all variables (except ground)
     for(decltype(n) i=1; i<=n; i++) {
         // Get representative node for i-th variable
         auto rn = circuit.reprNode(i);
+
+        // Compute tolerance reference
+        double tolref = std::fabs(maxResidualContribution_[i]);
+
+        // Account for global and historic references
+        if (settings.historicResRef) {
+            if (settings.globalResRef) {
+                tolref = std::max(tolref, globalMaxResidualContribution_);
+            } else {
+                tolref = std::max(tolref, historicMaxResidualContribution_[i]);
+            }
+        } else if (settings.globalResRef) {
+            tolref = std::max(tolref, pointMaxResidualContribution_);
+        }
+
         // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-        auto tol = circuit.residualTolerance(rn, maxResidualContribution[i]);
+        auto tol = circuit.residualTolerance(rn, tolref);
+
         // Residual component
         double rescomp = fabs(delta[i]);
     
@@ -300,8 +389,6 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
     
     return std::make_tuple(true, maxResidual, maxNormResidual, l2normResidual2, maxResidualNode); 
 }
-
-
 
 bool NRSolver::run(bool continuePrevious) {
     auto t0 = Accounting::wclk();
@@ -395,7 +482,7 @@ bool NRSolver::run(bool continuePrevious) {
         // std::cout << "\n";
         
         // Clear maximal residual contribution
-        zero(maxResidualContribution);
+        zero(maxResidualContribution_);
         
         auto [buildOk, preventConvergence] = buildSystem(continuePrevious);
         if (!buildOk) {
@@ -630,8 +717,14 @@ bool NRSolver::run(bool continuePrevious) {
         // Not converged yet, compute new solution 
         if (settings.dampingSteps<=0) {
             // Static damping
+            // Update pointMaxSolution_
+            pointMaxSolution_ = 0;
             for(decltype(n) i=1; i<=n; i++) {
                 xnew[i] = xprev[i] - xdelta[i]*settings.dampingFactor;
+                double c = std::fabs(xnew[i]);
+                if (c>pointMaxSolution_) {
+                    pointMaxSolution_ = c;
+                }
             }
         } else {
             // Dynamic damping, note that maxResidualContribVec and l2normResidual2 are available
@@ -644,8 +737,14 @@ bool NRSolver::run(bool continuePrevious) {
             double dampingFactor = settings.dampingFactor;
             do {
                 // Compute new solution
+                // Update pointMaxSolution_
+                pointMaxSolution_ = 0;
                 for(decltype(n) i=1; i<=n; i++) {
                     xnew[i] = xprev[i] - xdelta[i]*dampingFactor;
+                    double c = std::fabs(xnew[i]);
+                    if (c>pointMaxSolution_) {
+                        pointMaxSolution_ = c;
+                    }
                 }
 
                 // Zero residual/delta
@@ -786,6 +885,12 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
             s.set(Status::NonlinearSolver, "NR solver failed to converge.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
+        case Error::BadSolReference: 
+            s.set(Status::NonlinearSolver, "Unsupported relrefsol value.");
+            break;
+        case Error::BadResReference: 
+            s.set(Status::NonlinearSolver, "Unsupported relrefres value.");
+            break;
     }
     return matrixError;
 }

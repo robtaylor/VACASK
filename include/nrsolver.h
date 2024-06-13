@@ -25,6 +25,10 @@ typedef struct NRSettings {
     bool matrixCheck {};
     bool rhsCheck {};
     bool solutionCheck {};
+    bool historicSolRef {false};
+    bool globalSolRef {false};
+    bool historicResRef {false};
+    bool globalResRef {false};
     Real forceFactor {1e5}; 
 } NRSettings;
 
@@ -37,7 +41,9 @@ public:
         EvalAndLoad, 
         LinearSolver, 
         SolutionError, 
-        Convergence
+        Convergence, 
+        BadSolReference, 
+        BadResReference, 
     };
 
     NRSolver(
@@ -55,11 +61,26 @@ public:
     // Return value: ok, prevent convergence
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious) = 0;
 
-    // Set extra reference vectors for solution tolerance computation
-    void setExtraSolutionToleranceReferences(bool newxref, double* histxref) {
-        newxref_ = newxref;
-        histxref_ = histxref;
-    };
+    // Reset solution maxima and residual maxima
+    void resetMaxima();
+
+    // Initialize maxima from another solver
+    void initializeMaxima(NRSolver& other);
+
+    // Update historic and global maxima (across history and unknowns)
+    void updateMaxima();
+
+    // Return max historic solution vector
+    const Vector<double>& historicMaxSolution() const { return historicMaxSolution_; };
+    const Vector<double>& historicMaxResidualContribution() const { return historicMaxResidualContribution_; };
+
+    // Return max global historic solution
+    double globalMaxSolution() const { return globalMaxSolution_; };
+    double globalMaxResidualContribution() const { return globalMaxResidualContribution_; };
+
+    // Return point max solution
+    double pointMaxSolution() const { return pointMaxSolution_; };
+    double pointMaxResidualContribution() const { return pointMaxResidualContribution_; };
 
     // Return values: ok, magnitude of residual component with maximal relative magnitude, 
     //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector
@@ -81,6 +102,8 @@ public:
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
     virtual bool initialize(bool continuePrevious) = 0;
+
+    double* maxResidualContribution() { return maxResidualContribution_.data(); }; 
 
     // Resize forces repository
     void resizeForces(Int n);
@@ -130,7 +153,15 @@ protected:
     NRSettings& settings;
 
     // Internal structure for max residual contribution
-    Vector<double> maxResidualContribution;
+    Vector<double> maxResidualContribution_; // maximal residual contributionm at this point
+    
+    // Historic and global maxima
+    Vector<double> historicMaxResidualContribution_; // across produced solutions, updated on external command
+    double globalMaxResidualContribution_; // accross time and all points, updated on external command
+    double pointMaxResidualContribution_; // at current point solution
+    Vector<double> historicMaxSolution_; // across produced solutions, updated on external command
+    double globalMaxSolution_; // accross time and all points, updated on external command
+    double pointMaxSolution_; // at current point solution
     
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
@@ -143,9 +174,6 @@ protected:
 
     // Stores residual (before solving), and negative delta (after solving)
     Vector<double> delta;
-
-    bool newxref_;
-    double* histxref_;
     
     Int iteration;
 

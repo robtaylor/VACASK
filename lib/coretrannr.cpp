@@ -74,7 +74,44 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     }
 
     // Set output vector for building linear system (reactive residual derivative)
-    elsSystem.reactiveResidualDerivative = delta.data(), 
+    elsSystem.reactiveResidualDerivative = delta.data();
+
+    // Set up tolerance reference value for solution
+    auto& options = circuit.simulatorOptions().core();
+    if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
+        settings.globalSolRef = false;
+        settings.historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefLocal) {
+        settings.globalSolRef = false;
+        settings.historicSolRef = true;
+    } else if (options.relrefsol==SimulatorOptions::relrefPointGlobal) {
+        settings.globalSolRef = true;
+        settings.historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefGlobal) {
+        settings.globalSolRef = true;
+        settings.historicSolRef = true;
+    } else {
+        lastError = Error::BadSolReference;
+        return false;
+    }
+
+    // Set up tolerance reference value for residual
+    if (options.relrefres==SimulatorOptions::relrefPointLocal) {
+        settings.globalResRef = false;
+        settings.historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefLocal) {
+        settings.globalResRef = false;
+        settings.historicResRef = true;
+    } else if (options.relrefres==SimulatorOptions::relrefPointGlobal) {
+        settings.globalResRef = true;
+        settings.historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefGlobal) {
+        settings.globalResRef = true;
+        settings.historicResRef = true;
+    } else {
+        lastError = Error::BadResReference;
+        return false;
+    }
     
     // Set output vector for computing residual (reactive residual derivative)
     elsResidual.reactiveResidualDerivative = delta.data();
