@@ -467,7 +467,7 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
     // Try source stepping
     auto skipsrc = options.op_skipsrc;
     auto srcsteps = options.op_srcsteps;
-    auto spice3src = options.op_spice3gmin;
+    auto spice3src = options.op_spice3src;
     if (!converged && !leave && !skipsrc && !skiphomotopy && srcsteps>1) { 
         tried = true;
         if (!spice3src) {
