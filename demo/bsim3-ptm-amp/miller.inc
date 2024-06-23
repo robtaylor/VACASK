@@ -1,4 +1,4 @@
-// Miller opamp definition
+// Miller OTA definition
 
 include "../mosmm.inc"
 

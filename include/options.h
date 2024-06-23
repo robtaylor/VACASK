@@ -22,6 +22,7 @@ typedef struct SimulatorOptions  {
     Id relrefsol;
     Id relrefres;
     Id relreflte;
+    Id relref;
     Real restol;
     Real vnrestol;
     Int matrixcheck;
@@ -89,6 +90,12 @@ typedef struct SimulatorOptions  {
     static Id relrefLocal;
     static Id relrefPointGlobal;
     static Id relrefGlobal;
+    static Id relrefRelref;
+    
+    static Id relrefAlllocal;
+    static Id relrefSigglobal;
+    static Id relrefAllglobal;
+
     static Id rawfileAscii;
     static Id rawfileBinary; 
 

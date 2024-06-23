@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import optimize
 
-# Solve diode voltage when diode is in series with a resistor
+# Solve for diode voltage when diode is in series with a resistor
 # and powered by a voltage source. 
 # This module is used in testing. 
 

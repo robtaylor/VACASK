@@ -90,6 +90,20 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     } else if (options.relrefsol==SimulatorOptions::relrefGlobal) {
         settings.globalSolRef = true;
         settings.historicSolRef = true;
+    } else if (options.relrefsol==SimulatorOptions::relrefRelref) {
+        if (options.relref == SimulatorOptions::relrefAlllocal) {
+            settings.globalSolRef = false;
+            settings.historicSolRef = true;
+        } else if (options.relref == SimulatorOptions::relrefSigglobal) {
+            settings.globalSolRef = true;
+            settings.historicSolRef = true;
+        } else if (options.relref == SimulatorOptions::relrefAllglobal) {
+            settings.globalSolRef = true;
+            settings.historicSolRef = true;
+        } else {
+            lastError = Error::BadSolReference;
+            return false;
+        }
     } else {
         lastError = Error::BadSolReference;
         return false;
@@ -108,6 +122,20 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     } else if (options.relrefres==SimulatorOptions::relrefGlobal) {
         settings.globalResRef = true;
         settings.historicResRef = true;
+    } else if (options.relrefres==SimulatorOptions::relrefRelref) {
+        if (options.relref == SimulatorOptions::relrefAlllocal) {
+            settings.globalResRef = false;
+            settings.historicResRef = true;
+        } else if (options.relref == SimulatorOptions::relrefSigglobal) {
+            settings.globalResRef = false;
+            settings.historicResRef = true;
+        } else if (options.relref == SimulatorOptions::relrefAllglobal) {
+            settings.globalResRef = true;
+            settings.historicResRef = true;
+        } else {
+            lastError = Error::BadResReference;
+            return false;
+        }
     } else {
         lastError = Error::BadResReference;
         return false;

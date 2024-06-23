@@ -47,7 +47,7 @@
             // "args": [ "-df", "${workspaceFolder}/test/test_resistor.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_capacitor.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_inductor.sim" ],
-             "args": [ "-df", "${workspaceFolder}/test/test_mutual.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_mutual.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_inverter.sim" ],
             // "args": [ "-df", "-dt", "${workspaceFolder}/test/test_diode.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/timestep.sim" ],
@@ -79,7 +79,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vacask",
-            "args": [ "${workspaceFolder}/test/test_opnodeset.sim" ],
+            "args": [ "${workspaceFolder}/test/timestep.sim" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/test/manual_run",
             "environment": [

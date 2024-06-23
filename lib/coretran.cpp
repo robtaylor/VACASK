@@ -1048,16 +1048,18 @@ bool TranCore::run(bool continuePrevious) {
 
             // Spectre reference value for reltol
             // (from Designer's guide to Spice and Spectre)
-            // global      .. max abs over time and nodes
-            // local       .. max abs over time, individual for each node
-            // point local .. abs, individual for each node
+            // global      .. max abs over time and nodes 
+            // local       .. max abs over time, individual for each node 
+            // pointlocal  .. abs, individual for each node 
             //
-            // relref       solution delta      lte criterion   residual criterion      errpreset
+            // pointglobal .. max abs over nodes, individual for each time (an extra not availbale in Spectre)
+            //
+            // relref       solution delta      lte criterion   residual criterion      errpreset (Spectre)
             //              (2.9)               (4.57)          (2.10)
             // allglobal    global              global          global                  liberal
             // sigglobal    global              global          local                   moderate
             // alllocal     local               local           local                   conservative
-            // point local  point local         point local     point local
+            // pointlocal   pointlocal          pointlocal      pointlocal
 
             // Compute global reference values across past
             // Compute maximum across all unknowns at this point 
@@ -1090,6 +1092,8 @@ bool TranCore::run(bool continuePrevious) {
                 // Scale tolerance by lteratio>1
                 // Greater lteratio results in greater LTE tolerance and greater timestep
 
+                // TODO: compute a globalMaxSolution() and pointMaxSolution() for each node type separately (voltage and current)
+
                 double tol;
                 if (options.relreflte == SimulatorOptions::relrefGlobal) {
                     // Maximum over all unknowns, maximum over past timepoints
@@ -1103,6 +1107,20 @@ bool TranCore::run(bool continuePrevious) {
                 } else if (options.relreflte == SimulatorOptions::relrefPointLocal) {
                     // For each unknown, for each timepoint
                     tol = circuit.solutionTolerance(rn, solution.vector()[i]);
+                } else if (options.relreflte == SimulatorOptions::relrefRelref) {
+                    if (options.relref == SimulatorOptions::relrefAlllocal) {
+                        // For each unknown, maximum over past timepoints
+                        tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);
+                    } else if (options.relref == SimulatorOptions::relrefSigglobal) {
+                        // Maximum over all unknowns, maximum over past timepoints
+                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                    } else if (options.relref == SimulatorOptions::relrefAllglobal) {
+                        // Maximum over all unknowns, maximum over past timepoints
+                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                    } else {
+                        setError(TranError::BadLteReference);
+                        return false;
+                    }
                 } else {
                     setError(TranError::BadLteReference);
                     return false;

@@ -2,3 +2,5 @@
 #   settings-windows.json or
 #   settings-linux.json
 settings.json
+__pycache__
+
