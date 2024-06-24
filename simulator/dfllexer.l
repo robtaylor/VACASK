@@ -547,12 +547,12 @@ after INCEND we have
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
             }
-<BODY>\<\<\<[a-zA-Z0-9_]+[\t ]*\n {
+<BODY>\<\<\<[a-zA-Z0-9_]+[\r\t ]*\n {
                 loc->lines();
                 sbuf = "";
                 marker = yytext+3;
                 // Trim trailing spaces
-                auto pos = marker.find_last_not_of("\n\t ");
+                auto pos = marker.find_last_not_of("\n\r\t ");
                 marker = marker.substr(0, pos+1);
                 stringStart = loc->begin;
                 yy_push_state(LONGQUOTED);
