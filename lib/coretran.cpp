@@ -665,8 +665,10 @@ bool TranCore::run(bool continuePrevious) {
     // opCore_.dump(Simulator::dbg()); Simulator::dbg() << "\n";
     nPoints++; 
 
-    // Write results at t=0
-    outfile->addPoint();
+    // Write results at t=0, but only if tstart=0
+    if (params.start<=0) {
+        outfile->addPoint();
+    }
     
     // Initialize reactive residual state of instances
     // Compute next breakpoint
