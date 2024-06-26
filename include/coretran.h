@@ -54,6 +54,7 @@ public:
         UicForces, 
         TimestepTooSmall, 
         BadLteReference, 
+        BreakPointPanic, 
     };
     
     TranCore(

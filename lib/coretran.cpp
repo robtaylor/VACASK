@@ -716,6 +716,9 @@ bool TranCore::run(bool continuePrevious) {
     // Due to stop we definitely have a finite break point after 0.0
     breakPoints.add(nextBreakPoint);
 
+    // Now breakPoints[0] is nextBreakpoint and breakPoints[1] is 0.0
+    // breakPoints[1] <= t < breakPoints[0]
+    
     // Need to store last accepted point's boundStep value
     // so that we can apply it when timepoint is rejected
     acceptedBoundStep = elsInit.boundStep;
@@ -751,6 +754,9 @@ bool TranCore::run(bool continuePrevious) {
 
     // Set timestep
     auto hk = h0;
+
+    // Set next timepoint
+    auto tSolve = tk+hk;
     
     // Set current algorithm order
     order = 1;
@@ -793,8 +799,7 @@ bool TranCore::run(bool continuePrevious) {
     }
     
     while (true) {
-        // NR will be applied at tk+hk
-        auto tSolve = tk+hk;
+        // NR will be applied at tSolve
         internals.time = tSolve;
 
         if (debug>1) {
@@ -957,6 +962,8 @@ bool TranCore::run(bool continuePrevious) {
             break;
         }
 
+        // breakPoints.at(1) <= tk < tSolve <= breakPoints.at(0)
+        
         // Next break point assuming tSolve will be accepted,
         nextBreakPoint = nrSolver.evalSetupSystem().nextBreakPoint;
         auto boundStep = nrSolver.evalSetupSystem().boundStep;
@@ -965,26 +972,6 @@ bool TranCore::run(bool continuePrevious) {
         // tsolve=tk+hk>0 because tk>=0 and hk>0. 
         updateBreakPoint(nextBreakPoint, params.stop, tSolve);
         updateBreakPoint(nextBreakPoint, params.start, tSolve);
-        
-        // breakPoints.at(1) <= tk, tSolve <= breakPoints.at(0)
-        // breakDeltaReject is used if tSolve is rejected
-        // Note that even if tSolve is at breakPoints.at(0) after rejection 
-        // it will be <breakPoints.at(0) due to reduced step
-        double breakDeltaReject = breakPoints.at(0) - breakPoints.at(1);
-        
-        // Compute distance between break points before and after tSolve
-        double breakDelta; 
-        if (std::abs(tSolve-breakPoints.at(0))<=tSolve*timeRelativeTolerance) {
-            // tSolve is at breakPoints.at(0)
-            breakDelta = nextBreakPoint - breakPoints.at(0);
-        } else if (tSolve < breakPoints.at(0)) {
-            // tSolve is before breakPointas.at(0)
-            breakDelta = breakPoints.at(0) - breakPoints.at(1);
-        } else {
-            // This should be impossible if break points mechanism works correctly
-            DBGCHECK(true, "Evaluation timepoint t="+std::to_string(tSolve)+" is after latest breakpoint.");
-            return false;
-        }
         
         // Maximal timestep 
         double hmax;
@@ -1206,7 +1193,10 @@ bool TranCore::run(bool continuePrevious) {
 
             circuit.tables().accounting().acctNew.accepted++;
             // Where are we with respect to breakpoints
-            if (std::abs(breakPoints.at(0)-tSolve) <= timeRelativeTolerance*tSolve) {
+            // Note that this is no way to compare floats, 
+            // but we set tSolve to breakPoints.at(0) when we 
+            // reached breakPoints.at(0) so it should be OK. 
+            if (tSolve == breakPoints.at(0)) {
                 // At last stored breakpoint
                 // Store next break point
                 breakPoints.add(nextBreakPoint);
@@ -1237,6 +1227,7 @@ bool TranCore::run(bool continuePrevious) {
             // If not, panic
             if (tk<breakPoints.at(1) || tk>breakPoints.at(0)) {
                 DBGCHECK(true, "Internal breakpoint handling error at rejection, t="+std::to_string(tk)+".");
+                setError(TranError::BreakPointPanic);
                 return false;
             }
             // Is next break point after tk
@@ -1263,7 +1254,7 @@ bool TranCore::run(bool continuePrevious) {
             hkNew = std::min(hkNew, boundStep);
         }
 
-        // Limit timestep to due to hmax
+        // Limit timestep due to hmax
         if (hmax>0) {
             if (hmax<hkNew && debug>1) {
                 ss.str(""); ss << hmax;
@@ -1279,23 +1270,31 @@ bool TranCore::run(bool continuePrevious) {
             Simulator::dbg() << "  Next break point is at t="+ss.str()+".\n";
         }
 
-        // Do timestep cutting due to break points
+        // Timestep cutting (next point crosses breakpoint) 
+        // and shortening (next point close to, but before breakpoint)
         auto tNext = cutOrigin + hkNew;
+        double tSolveNew;
         if (tNext>cutPoint) {
             // Next point crosses the cut point, cut the next step
+            // Make sure next solve point is exactly at breakpoint
             hkNew = cutPoint - cutOrigin;
+            tSolveNew = cutPoint;
             if (debug>1) {
                 ss.str(""); ss << hkNew;
                 Simulator::dbg() << "  Timestep cut due to break point, dt="+ss.str()+".\n";
             }
         } else if (cutPoint-tNext<0.1*hkNew) {
             // Cut point is not crossed, but next point is close to the cut point
-            // Divide hkNew by two so that the timestep after hkNew will not be too small
+            // Shorten timestep, i.e. divide hkNew by two so that the timestep after hkNew will not be too small
             hkNew /= 2;
+            tSolveNew = cutOrigin + hkNew;
             if (debug>1) {
                 ss.str(""); ss << hkNew;
                 Simulator::dbg() << "  Next timepoint is close to a break point. Setting dt="+ss.str()+".\n";
             }
+        } else {
+            // No cutting or shortening
+            tSolveNew = tNext;
         }
         
         // // Force timepoints
@@ -1375,8 +1374,9 @@ bool TranCore::run(bool continuePrevious) {
             // Nothing to do, t_k slot (1) remains at the same place
         }
         
-        // Set new hk and order
+        // Set new hk, tSolve, and order
         hk = hkNew;
+        tSolve = tSolveNew;
         order = newOrder;
         
         // Check for timestep too small
@@ -1384,7 +1384,7 @@ bool TranCore::run(bool continuePrevious) {
             setError(TranError::TimestepTooSmall);
             return false;
         }
-    }
+    } // while
 
     if (debug) {
         Simulator::dbg() << "Transient analysis completed.\n";
@@ -1444,6 +1444,9 @@ bool TranCore::formatError(Status& s) const {
             break;
         case TranError::BadLteReference: 
             s.set(Status::Analysis, "Unsupported relreflte value.");
+            break;
+        case TranError::BreakPointPanic: 
+            s.set(Status::Analysis, "Panic in breakpoint handling.");
             break;
         default:
             return true;

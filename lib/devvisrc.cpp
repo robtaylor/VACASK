@@ -181,6 +181,9 @@ std::tuple<bool, bool, bool> sourceSetup(InstanceParams& params, InstanceData& d
     return std::make_tuple(true, false, false); 
 }
 
+// A device model should not rely on tolerances. 
+// Its only job is to produce consistent reponses, i.e. 
+// in this case t5 should match t1 in the next period. 
 template<typename InstanceParams, typename InstanceData> 
 std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceData& data, double time) {
     double val;
@@ -209,13 +212,15 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
             // Waveform started, see where we are
             // Time since start of this repetition
             double basetime = params.delay;
+            int64_t cycle = 0; 
             // Start of current period
             if (params.period<=0) {
                 // Not periodic
                 basetime = params.delay;
             } else {
                 // Periodic
-                basetime = params.delay + std::floor((time-params.delay)/params.period)*params.period;
+                cycle = static_cast<int64_t>(std::floor((time-params.delay)/params.period));
+                basetime = params.delay + cycle*params.period;
             }
             // Significant time points
             auto t0 = basetime; // start of rise
@@ -223,13 +228,15 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
             auto t2 = t1 + params.width; // start of fall
             auto t3 = t2 + params.fall; // end of fall
             auto t4 = t0 + params.period; // end of period
+            auto t5 = params.delay + (cycle+1)*params.period + params.rise; // next period, end of rise
             // Relative time since start of period
             double reltime = time - basetime;
-            if (time>=t0 && time<t1-timeRelativeTolerance*t1) {
+            Simulator::dbg().setf(std::ios::scientific, std::ios::floatfield);
+            if (time<t1) {
                 // Rising
                 val = (time-t0)/params.rise*(params.val1-params.val0)+params.val0;
                 nextBreak = t1;
-            } else if (time>=t1 && time<t2-timeRelativeTolerance*t2) {
+            } else if (time<t2) {
                 // On top
                 val = params.val1;
                 // Set next break only if width>0
@@ -239,24 +246,35 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
             } else if (params.fall<=0) {
                 // Fall not set, stay on top, no breakpoint
                 val = params.val1;
-            } else if (time>=t2 && time<t3-timeRelativeTolerance*t3) {
+            } else if (time<t3) {
                 // Falling
                 val = (time-t2)/params.fall*(params.val0-params.val1)+params.val1;
                 nextBreak = t3;
-            } else {
+            } else if (time<t4) {
                 // After fall, back on base level
                 val = params.val0;
                 // Beakpoint only if period is set
                 if (params.period>0) {
                     nextBreak = t4;
                 }
-            } 
+            } else {
+                if (params.period>0) {
+                    // Periodic waveform, rising flank of next period
+                    // We may end up here for the first point of next period due to tolerances, 
+                    // Compute rising flank with origin at t4
+                    val = (time-t4)/params.rise*(params.val1-params.val0)+params.val0;
+                    nextBreak = t5;
+                } else {
+                    // Not periodic, back on base level after fall
+                    val = params.val0;
+                }
+            }
         }
         break;
     }
     
     // Simulator::dbg() << "val=" << val << " next break=" << nextBreak << "\n";
-    // Simulator::dbg() << " next break=" << nextBreak << "\n";
+    // Simulator::dbg() << "t=" << time << " next break=" << nextBreak << "\n";
     
     return std::make_tuple(val, nextBreak);
 }
