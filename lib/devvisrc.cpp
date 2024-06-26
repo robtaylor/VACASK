@@ -231,7 +231,7 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
             auto t5 = params.delay + (cycle+1)*params.period + params.rise; // next period, end of rise
             // Relative time since start of period
             double reltime = time - basetime;
-            Simulator::dbg().setf(std::ios::scientific, std::ios::floatfield);
+            // Simulator::dbg().setf(std::ios::scientific, std::ios::floatfield);
             if (time<t1) {
                 // Rising
                 val = (time-t0)/params.rise*(params.val1-params.val0)+params.val0;

@@ -613,8 +613,10 @@ bool TranCore::run(bool continuePrevious) {
     predictedSolution.resize(n+1);
     scaledLte.resize(n+1);
     pastTimesteps.upsize(n+1);
-    // Entries 1 and 2 ... break points before and including last accepted solution
-    // Entry 0 ... next break point reported at last accepted solution 
+    
+    // breakPoints.at(1) <= tk < tSolve <= breakPoints.at(0)
+    //   Entry 1 ... break points before and including last accepted solution
+    //   Entry 0 ... next break point reported at last computed solution (tSolve)
     breakPoints.upsize(3);
     
     // Compute initial solution at t=0
@@ -709,16 +711,14 @@ bool TranCore::run(bool continuePrevious) {
     // Therefore t=0 is the first past breakpoint. 
     breakPoints.add(0.0);
 
-    // Next breakpoint, take into account stop and start
+    // Retrieve next breakpoint, take into account stop time and start time
+    // Ignore breakpoints <=0
     double nextBreakPoint = elsInit.nextBreakPoint;
     updateBreakPoint(nextBreakPoint, params.stop, 0.0);
     updateBreakPoint(nextBreakPoint, params.start, 0.0);
-    // Due to stop we definitely have a finite break point after 0.0
+    // Due to stop time we definitely have a finite break point after 0.0
     breakPoints.add(nextBreakPoint);
 
-    // Now breakPoints[0] is nextBreakpoint and breakPoints[1] is 0.0
-    // breakPoints[1] <= t < breakPoints[0]
-    
     // Need to store last accepted point's boundStep value
     // so that we can apply it when timepoint is rejected
     acceptedBoundStep = elsInit.boundStep;
@@ -755,6 +755,9 @@ bool TranCore::run(bool continuePrevious) {
     // Set timestep
     auto hk = h0;
 
+    // Compute tSolve as tk + hk, except when tk+hk=breakpoint. 
+    // At breakpoints tSolve=breakpoint to avoid rounding errors. 
+       
     // Set next timepoint
     auto tSolve = tk+hk;
     
@@ -962,13 +965,11 @@ bool TranCore::run(bool continuePrevious) {
             break;
         }
 
-        // breakPoints.at(1) <= tk < tSolve <= breakPoints.at(0)
-        
         // Next break point assuming tSolve will be accepted,
         nextBreakPoint = nrSolver.evalSetupSystem().nextBreakPoint;
         auto boundStep = nrSolver.evalSetupSystem().boundStep;
         auto discontinuity = nrSolver.evalSetupSystem().discontinuity;
-        // Next break point is guaranteed to be in the future
+        // Update breakpoint with stop and start time, ignore breakpoints <= tSolve
         // tsolve=tk+hk>0 because tk>=0 and hk>0. 
         updateBreakPoint(nextBreakPoint, params.stop, tSolve);
         updateBreakPoint(nextBreakPoint, params.start, tSolve);
@@ -1024,7 +1025,6 @@ bool TranCore::run(bool continuePrevious) {
                 Simulator::dbg() << "  Cannot estimate LTE. Will accept the point and keep the step unchanged.\n";
             }
         } else {
-            // TODO: better comments for breakpoint handling
             // Solution OK, solver iterations count small enough, assume the timestep will be accepted
             // We have a predicted value because havePredicotr==false was handled in previous else if. 
             accept = true;
@@ -1192,7 +1192,7 @@ bool TranCore::run(bool continuePrevious) {
             nrSolver.updateMaxima();
 
             circuit.tables().accounting().acctNew.accepted++;
-            // Where are we with respect to breakpoints
+            
             // Note that this is no way to compare floats, 
             // but we set tSolve to breakPoints.at(0) when we 
             // reached breakPoints.at(0) so it should be OK. 
