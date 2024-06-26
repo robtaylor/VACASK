@@ -75,8 +75,8 @@ public:
     const Vector<double>& historicMaxResidualContribution() const { return historicMaxResidualContribution_; };
 
     // Return max global historic solution
-    double globalMaxSolution() const { return globalMaxSolution_; };
-    double globalMaxResidualContribution() const { return globalMaxResidualContribution_; };
+    const Vector<double>& globalMaxSolution() const { return globalMaxSolution_; };
+    const Vector<double>& globalMaxResidualContribution() const { return globalMaxResidualContribution_; };
 
     // Return point max solution
     double pointMaxSolution() const { return pointMaxSolution_; };
@@ -157,11 +157,17 @@ protected:
     
     // Historic and global maxima
     Vector<double> historicMaxResidualContribution_; // across produced solutions, updated on external command
-    double globalMaxResidualContribution_; // accross time and all points, updated on external command
+    Vector<double> globalMaxResidualContribution_; // accross time and all points, updated on external command
+                                                   // one component per each residual nature
     double pointMaxResidualContribution_; // at current point solution
     Vector<double> historicMaxSolution_; // across produced solutions, updated on external command
-    double globalMaxSolution_; // accross time and all points, updated on external command
+    Vector<double> globalMaxSolution_; // accross time and all points, updated on external command
+                                       // one component per each solution nature
     double pointMaxSolution_; // at current point solution
+
+    // Solution natures and residual natures are currently limited to 
+    //   0 .. voltage
+    //   1 .. current
     
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;

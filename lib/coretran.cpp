@@ -1064,6 +1064,11 @@ bool TranCore::run(bool continuePrevious) {
             bool haveRatio = false;
             double maxRatio = 0.0;
             for(decltype(n) i=1; i<=n; i++) {
+                // Representative node, associated potential nature index
+                auto rn = circuit.reprNode(i);
+                bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+                size_t ndx = isPotential ? 0 : 1;
+
                 double lte;
                 if (
                     options.tran_trapltefilter && 
@@ -1077,16 +1082,13 @@ bool TranCore::run(bool continuePrevious) {
                 }
                 
                 // Compute tolerance
-                auto rn = circuit.reprNode(i);
                 // Scale tolerance by lteratio>1
                 // Greater lteratio results in greater LTE tolerance and greater timestep
-
-                // TODO: compute a globalMaxSolution() and pointMaxSolution() for each node type separately (voltage and current)
 
                 double tol;
                 if (options.relreflte == SimulatorOptions::relrefGlobal) {
                     // Maximum over all unknowns, maximum over past timepoints
-                    tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                    tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
                 } else if (options.relreflte == SimulatorOptions::relrefPointGlobal) {
                     // Maximum over all unknowns, for each timepoint
                     tol = circuit.solutionTolerance(rn, nrSolver.pointMaxSolution());
@@ -1102,10 +1104,10 @@ bool TranCore::run(bool continuePrevious) {
                         tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);
                     } else if (options.relref == SimulatorOptions::relrefSigglobal) {
                         // Maximum over all unknowns, maximum over past timepoints
-                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
                     } else if (options.relref == SimulatorOptions::relrefAllglobal) {
                         // Maximum over all unknowns, maximum over past timepoints
-                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution());
+                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
                     } else {
                         setError(TranError::BadLteReference);
                         return false;

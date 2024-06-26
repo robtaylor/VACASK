@@ -54,6 +54,8 @@ bool NRSolver::rebuild() {
     rowNorm.resize(n+1);
     historicMaxSolution_.resize(n+1);
     historicMaxResidualContribution_.resize(n+1);
+    globalMaxResidualContribution_.resize(n+1);
+    globalMaxSolution_.resize(n+1);
     resetMaxima();
     
     // Bind diagonal matrix elements
@@ -189,15 +191,15 @@ Forces& NRSolver::forces(Int ndx) {
 void NRSolver::resetMaxima() {
     zero(historicMaxSolution_);
     zero(historicMaxResidualContribution_);
-    globalMaxSolution_ = 0;
-    globalMaxResidualContribution_ = 0;
+    zero(globalMaxSolution_);
+    zero(globalMaxResidualContribution_);
     pointMaxSolution_ = 0;
     pointMaxResidualContribution_ = 0;
 }  
 
 void NRSolver::initializeMaxima(NRSolver& other) {
     historicMaxSolution_ = other.historicMaxSolution();
-    globalMaxSolution_ = other. globalMaxSolution();
+    globalMaxSolution_ = other.globalMaxSolution();
     historicMaxResidualContribution_ = other.historicMaxResidualContribution();
     globalMaxResidualContribution_ = other.globalMaxResidualContribution();
 }
@@ -207,20 +209,31 @@ void NRSolver::updateMaxima() {
     auto* x = solution.data();
     auto* mrc = maxResidualContribution_.data();
     for(decltype(n) i=1; i<=n; i++) {
+        bool isPotential = ((circuit.reprNode(i)->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        
         double c;
+        size_t ndx;
+        
+        // Voltage nodes -> potential nature is voltage (0) 
+        // Flow nodes -> potential nature is current (1) 
+        ndx = isPotential ? 0 : 1;
         c = std::fabs(x[i]);
         if (c>historicMaxSolution_[i]) {
             historicMaxSolution_[i] = c;
         }
-        if (c>globalMaxSolution_) {
-            globalMaxSolution_ = c;
+        if (c>globalMaxSolution_[ndx]) {
+            globalMaxSolution_[ndx] = c;
         }
+        
+        // Voltage nodes -> flow nature is current (1) 
+        // Flow nodes -> flow nature is voltage (0) 
+        ndx = isPotential ? 1 : 0;
         c = std::fabs(mrc[i]);
         if (c>historicMaxResidualContribution_[i]) {
             historicMaxResidualContribution_[i] = c;
         }
-        if (c>globalMaxResidualContribution_) {
-            globalMaxResidualContribution_ = c;
+        if (c>globalMaxResidualContribution_[ndx]) {
+            globalMaxResidualContribution_[ndx] = c;
         }
     }
 }
@@ -261,7 +274,10 @@ std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool
 
     // Use 1-based index (with bucket) because same indexing is used for variables
     for(decltype(n) i=1; i<=n; i++) {
+        // Representative node, associated potential nature index
         auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 0 : 1;
 
         // Compute tolerance reference
         double tolref = std::fabs(xprev[i]);
@@ -271,7 +287,7 @@ std::tuple<bool, double, double, Node*> NRSolver::checkDelta(bool* deltaOk, bool
         // Account for global and historic references
         if (settings.historicSolRef) {
             if (settings.globalSolRef) {
-                tolref = std::max(tolref, globalMaxSolution_);
+                tolref = std::max(tolref, globalMaxSolution_[ndx]);
             } else {
                 tolref = std::max(tolref, historicMaxSolution_[i]);
             }
@@ -339,8 +355,10 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
     
     // Go through all variables (except ground)
     for(decltype(n) i=1; i<=n; i++) {
-        // Get representative node for i-th variable
+        // Representative node, associated flow nature index
         auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 1 : 0;
 
         // Compute tolerance reference
         double tolref = std::fabs(maxResidualContribution_[i]);
@@ -348,7 +366,7 @@ std::tuple<bool, double, double, double, Node*> NRSolver::checkResidual(bool* re
         // Account for global and historic references
         if (settings.historicResRef) {
             if (settings.globalResRef) {
-                tolref = std::max(tolref, globalMaxResidualContribution_);
+                tolref = std::max(tolref, globalMaxResidualContribution_[ndx]);
             } else {
                 tolref = std::max(tolref, historicMaxResidualContribution_[i]);
             }
