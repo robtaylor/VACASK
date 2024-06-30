@@ -127,6 +127,47 @@ template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueT
     }
 }
 
+template<typename IndexType, typename ValueType> double* KluMatrixCore<IndexType, ValueType>::valueArray() {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        return nullptr;
+    } else {
+        return data();
+    }
+} 
+
+template<typename IndexType, typename ValueType> 
+Complex* KluMatrixCore<IndexType, ValueType>::cxValueArray() {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        return data();
+    } else {
+        return nullptr;
+    }
+} 
+
+template<typename IndexType, typename ValueType> 
+std::tuple<IndexType, bool> KluMatrixCore<IndexType, ValueType>::valueIndex(IndexType row, IndexType col) {
+    return smap->find(row, col);
+}
+
+template<typename IndexType, typename ValueType> 
+double* KluMatrixCore<IndexType, ValueType>::valuePtr(IndexType row, IndexType col, Component comp) {
+    return elementPtr(row, col, comp);
+}
+
+template<typename IndexType, typename ValueType> 
+Complex* KluMatrixCore<IndexType, ValueType>::cxValuePtr(IndexType row, IndexType col) {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        auto [entryOffset, found] = smap->find(row, col);
+        if (found) {
+            return Ax+entryOffset;
+        } else {
+            return &bucket_;
+        }
+    } else {
+        return nullptr;
+    }
+}
+
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, EquationIndex n) {
     clearError();
     

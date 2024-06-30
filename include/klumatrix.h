@@ -97,7 +97,34 @@ private:
 typedef enum Component { RealPart=1, ImagPart=2 } Component;
 DEFINE_FLAG_OPERATORS(Component);
 
-template<typename IndexType, typename ValueType> class KluMatrixCore {
+
+template<typename IndexType> class MatrixAccess {
+public:
+    // Return array holding matrix nonzero elements
+    // For complex matrices returns nullptr
+    virtual double* valueArray() = 0;
+
+    // Return array holding matrix nonzero elements
+    // For real matrices returns nullptr
+    virtual Complex* cxValueArray() = 0;
+
+    // Return index into element array corresponding to row, column (1-based)
+    // Return value: index, found
+    virtual std::tuple<IndexType, bool> valueIndex(IndexType row, IndexType col) = 0;
+
+    // Return pointer to element's component
+    // Returns bucket if element not found 
+    // Returns nullptr if imaginary part is requested for a real matrix
+    virtual double* valuePtr(IndexType row, IndexType col, Component comp=RealPart) = 0;
+
+    // Return pointer to element's component (complex matrix)
+    // Returns complex bucket if element not found 
+    // Returns nullptr if matrix is real 
+    virtual Complex* cxValuePtr(IndexType row, IndexType col) = 0;
+};
+
+
+template<typename IndexType, typename ValueType> class KluMatrixCore : public MatrixAccess<IndexType> {
 public: 
     using Common = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_common, klu_l_common>::type;
     using Symbolic = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_symbolic, klu_l_symbolic>::type;
@@ -124,7 +151,13 @@ public:
     KluMatrixCore& operator=(const KluMatrixCore&)  = delete;
     KluMatrixCore& operator=(      KluMatrixCore&&) = delete;
 
-    ~KluMatrixCore();
+    virtual ~KluMatrixCore();
+
+    virtual double* valueArray();
+    virtual Complex* cxValueArray();
+    virtual std::tuple<IndexType, bool> valueIndex(IndexType row, IndexType col);
+    virtual double* valuePtr(IndexType row, IndexType col, Component comp=RealPart) ;
+    virtual Complex* cxValuePtr(IndexType row, IndexType col);
 
     // Set accounting structure
     void setAccounting(Accounting& accounting) { acct = &accounting; }; 
@@ -169,7 +202,7 @@ public:
                 return (comp==Component::ImagPart) ? nullptr : (Ax+entryOffset);
             }
         } else {
-            return &bucket_;
+            return reinterpret_cast<double*>(&bucket_);
         }
     };
 
@@ -250,7 +283,7 @@ private:
     Common common;
     SparsityMap* smap;
     
-    double bucket_;
+    ValueType bucket_;
     
     // Clear error
     void clearError() { lastError = Error::OK; }; 
