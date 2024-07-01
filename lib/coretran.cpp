@@ -372,7 +372,7 @@ bool TranCore::rebuild(Status& s) {
     // Bind Jacobian entries
     // OperatingPointCore has bound the resistive part of the Jacobian
     // Let's bind the reactive part 
-    if (!circuit.bind(nullptr, nullptr, Component::RealPart, &jacobian, nullptr, Component::RealPart, s)) {
+    if (!circuit.bind(nullptr, Component::RealPart, &jacobian, Component::RealPart, s)) {
         return false;
     }
     

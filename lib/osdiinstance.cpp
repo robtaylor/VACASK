@@ -432,8 +432,8 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
 
 bool OsdiInstance::bindCore(
     Circuit& circuit, 
-    KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-    KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, 
+    KluMatrixAccess* matReact, Component compReact, 
     Status& s
 ) {
     auto descr = model()->device()->descriptor();
@@ -461,28 +461,20 @@ bool OsdiInstance::bindCore(
         auto u = nu->unknownIndex();
         
         // Set resistive Jacobian element pointer
-        if (matResistReal) {
-            // Real matrix
-            jacResistArray[i] = matResistReal->elementPtr(e, u, compResist);
-        } else if (matResistCx) {
-            // Complex matrix
-            jacResistArray[i] = matResistCx->elementPtr(e, u, compResist); 
+        if (matResist && !(jacResistArray[i] = matResist->valuePtr(e, u, compResist))) {
+            s.set(Status::BadConversion, "Matrix is of incorrect type.");
+            return false;
         }
 
         // Set reactive Jacobian element pointer
-        if (matReactReal) {
-            // Real matrix
+        if (matReact) {
             auto reactivePointer = reactiveJacobianPointer(i);
             if (reactivePointer) {
                 // Set reactive Jacobian pointer
-                *reactivePointer = matReactReal->elementPtr(e, u, compReact);
-            }
-        } else if (matReactCx) {
-            // Complex matrix
-            auto reactivePointer = reactiveJacobianPointer(i);
-            if (reactivePointer) {
-                // Set reactive Jacobian pointer
-                *reactivePointer = matReactCx->elementPtr(e, u, compReact);
+                if (!(*reactivePointer = matReact->valuePtr(e, u, compReact))) {
+                    s.set(Status::BadConversion, "Matrix is of incorrect type.");
+                    return false;
+                }
             }
         }
     }

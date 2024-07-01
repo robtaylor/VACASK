@@ -161,7 +161,7 @@ bool AcCore::rebuild(Status& s) {
     
     // Resistive Jacobian entries remain bound to OP Jacobian, 
     // reactive parts will be bound to imaginary entries of acMatrix
-    if (!circuit.bind(nullptr, nullptr, Component::RealPart, nullptr, &acMatrix, Component::ImagPart, s)) {
+    if (!circuit.bind(nullptr, Component::RealPart, &acMatrix, Component::ImagPart, s)) {
         return false;
     }
     

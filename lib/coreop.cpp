@@ -213,7 +213,7 @@ bool OperatingPointCore::populateStructures(Status& s) {
 bool OperatingPointCore::rebuild(Status& s) {
     // Bind Jacobian entries
     // Resistive parts bound to entries of jac, reactive parts not bound
-    if (!circuit.bind(&jac, nullptr, Component::RealPart, nullptr, nullptr, Component::RealPart, s)) {
+    if (!circuit.bind(&jac, Component::RealPart, nullptr, Component::RealPart, s)) {
         return false;
     }
 

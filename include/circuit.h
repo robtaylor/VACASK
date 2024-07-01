@@ -310,8 +310,8 @@ public:
     bool preAnalysis(Status& s=Status::ignore);
     bool nodeOrdering(Status& s=Status::ignore);
     bool bind(
-        KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-        KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, 
+        KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
     // Return value: ok, hierarchy changed

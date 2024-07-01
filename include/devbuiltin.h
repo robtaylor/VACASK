@@ -25,8 +25,8 @@ public:
     virtual bool preAnalysis(Circuit& circuit, Status& s=Status::ignore);
     virtual bool bind(
         Circuit& circuit, 
-        KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-        KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, 
+        KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
     virtual bool evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els);
@@ -184,15 +184,15 @@ public:
     bool populateStructuresCore(Circuit& circuit, Status& s=Status::ignore);
     bool bindCore(
         Circuit& circuit, 
-        KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-        KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, 
+        KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
     bool evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
     
 protected:
     // Get Jacobian entry pointer
-    void jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluRealMatrix* realMat, KluComplexMatrix* cxMat, Component cxComp);
+    void jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluMatrixAccess* mat, Component comp);
 
     // Create internal nodes for unconnected terminals
     bool createNodesForUnconnectedTerminals(Circuit& circuit, Status& s=Status::ignore);
@@ -301,8 +301,8 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::populateStructure
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::bind(
     Circuit& circuit, 
-    KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-    KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, 
+    KluMatrixAccess* matReact, Component compReact, 
     Status& s
 ) {
     using InstanceType = BuiltinInstance<ModelParams, InstanceParams, InstanceData>;
@@ -311,8 +311,8 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::bind(
         for(auto instance : model->instances()) {
             if (!static_cast<InstanceType*>(instance)->bindCore(
                 circuit, 
-                matResistReal, matResistCx, compResist, 
-                matReactReal, matReactCx, compReact, 
+                matResist, compResist, 
+                matReact, compReact, 
                 s
             )) {
                 return false;
@@ -578,14 +578,8 @@ std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, Instan
 }
     
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
-void BuiltinInstance<ModelParams, InstanceParams, InstanceData>::jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluRealMatrix* realMat, KluComplexMatrix* cxMat, Component cxComp) {
-    if (realMat) {
-        // Set destination to point to teal matrix entry
-        destination = realMat->elementPtr(e, u, cxComp);
-    } else if (cxMat) {
-        // Set destination to point to complex matrix entry
-        destination = cxMat->elementPtr(e, u, cxComp); 
-    }
+void BuiltinInstance<ModelParams, InstanceParams, InstanceData>::jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluMatrixAccess* mat, Component comp) {
+    destination = mat->valuePtr(e, u, comp);
 }
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 

@@ -258,13 +258,11 @@ public:
     virtual bool preAnalysis(Circuit& circuit, Status& s=Status::ignore) { return true; };
     
     // Stores pointers to variables where the Jacobian values will be written at load
-    // Because templated virtual functions are not allowed, we must have an argument
-    // for a real matrix and an argument for a complex matrix. Only one can be passed, 
-    // the other one must be a nullptr. 
+    // Uses virtual methods to correctly handle real and complex matrices. 
     virtual bool bind(
         Circuit& cir, 
-        KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-        KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, 
+        KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     ) { return true; };
 

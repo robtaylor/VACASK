@@ -280,8 +280,8 @@ bool OsdiDevice::populateStructures(Circuit& circuit, Status& s) {
 
 bool OsdiDevice::bind(
     Circuit& circuit, 
-    KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-    KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, 
+    KluMatrixAccess* matReact, Component compReact, 
     Status& s
 ) {
     // Call bind() for all instances
@@ -289,8 +289,8 @@ bool OsdiDevice::bind(
         for(auto instance : model->instances()) {
             if (!static_cast<OsdiInstance*>(instance)->bindCore(
                 circuit, 
-                matResistReal, matResistCx, compResist, 
-                matReactReal, matReactCx, compReact, 
+                matResist, compResist, 
+                matReact, compReact, 
                 s
             )) {
                 return false;

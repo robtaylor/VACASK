@@ -77,8 +77,8 @@ public:
     bool populateStructuresCore(Circuit& circuit, Status& s=Status::ignore);
     bool bindCore(
         Circuit& circuit, 
-        KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-        KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, 
+        KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
     bool evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els);

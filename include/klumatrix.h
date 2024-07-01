@@ -297,7 +297,7 @@ private:
 // Default KLU matrix flavor
 typedef KluMatrixCore<MatrixEntryIndex, double> KluRealMatrix;
 typedef KluMatrixCore<MatrixEntryIndex, Complex> KluComplexMatrix;
-
+typedef MatrixAccess<MatrixEntryIndex> KluMatrixAccess;
 }
 
 #endif

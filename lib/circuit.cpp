@@ -1181,21 +1181,16 @@ bool Circuit::enumerateSystem(Status& s) {
 }
 
 bool Circuit::bind(
-    KluRealMatrix* matResistReal, KluComplexMatrix* matResistCx, Component compResist, 
-    KluRealMatrix* matReactReal, KluComplexMatrix* matReactCx, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, 
+    KluMatrixAccess* matReact, Component compReact, 
     Status& s
 ) {
-    // Sanity checks
-    DBGCHECK(matResistReal && matResistCx, "Cannot bind resistive part twice.");
-    DBGCHECK(matResistReal && compResist==Component::ImagPart, "Cannot bind resistive part to imaginary part of real matrix.");
-    DBGCHECK(matReactReal && matReactCx, "Cannot bind reactive part twice.");
-    DBGCHECK(matReactReal && compReact==Component::ImagPart, "Cannot bind reactive part to imaginary part of real matrix.");
     // Call bind() for all devices
     for(auto& dev : devices) {
         if (!dev.get()->bind(
             *this, 
-            matResistReal, matResistCx, compResist,  
-            matReactReal, matReactCx, compReact, 
+            matResist, compResist,  
+            matReact, compReact, 
             s
         )) {
             return false;
