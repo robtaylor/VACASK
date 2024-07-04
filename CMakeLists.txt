@@ -66,7 +66,7 @@ message(STATUS "Staged library directory: ${STAGED_LIBRARY_DIRECTORY}")
 find_package(Python 3 COMPONENTS Interpreter)
 
 # Look for openvaf Verilog-A compiler
-message(CHECK_START "Looking for openvaf-reloaded Verilog-A compiler")
+message(CHECK_START "Looking for OpenVAF-reloaded Verilog-A compiler")
 if (DEFINED OPENVAF_DIR)
   find_program(OPENVAF_COMPILER openvaf-r PATHS "${OPENVAF_DIR}" NO_DEFAULT_PATH)
 else()

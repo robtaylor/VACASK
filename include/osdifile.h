@@ -24,6 +24,7 @@ class OsdiDevice;
 class OsdiFile {
 public:
     typedef uint32_t OsdiVersionType;
+    typedef uint32_t OsdiDescriptorSize;
     typedef uint32_t OsdiDeviceIndex;
     typedef uint32_t OsdiLimitFunctionCount;
     typedef uint32_t OsdiParameterId;
@@ -74,7 +75,7 @@ public:
             return std::make_tuple(0, false);
         }
         // Must be instance parameter
-        if ((descriptors[deviceIndex].param_opvar[it->second].flags & PARA_KIND_MASK) != PARA_KIND_INST) {
+        if ((descriptors[deviceIndex]->param_opvar[it->second].flags & PARA_KIND_MASK) != PARA_KIND_INST) {
             return std::make_tuple(0, false);
         }
         return std::make_tuple(osdiIdSimInstIdLists[deviceIndex][it->second], true);
@@ -85,7 +86,7 @@ public:
             return std::make_tuple(0, false);
         }
         // Must be instance or model parameter (both are valid model parameters)
-        auto tmp = descriptors[deviceIndex].param_opvar[it->second].flags & PARA_KIND_MASK;
+        auto tmp = descriptors[deviceIndex]->param_opvar[it->second].flags & PARA_KIND_MASK;
         if (tmp != PARA_KIND_INST && tmp != PARA_KIND_MODEL) {
             return std::make_tuple(0, false);
         }
@@ -97,7 +98,7 @@ public:
             return std::make_tuple(0, false);
         }
         // Must be opvar parameter
-        if ((descriptors[deviceIndex].param_opvar[it->second].flags & PARA_KIND_MASK) != PARA_KIND_OPVAR) {
+        if ((descriptors[deviceIndex]->param_opvar[it->second].flags & PARA_KIND_MASK) != PARA_KIND_OPVAR) {
             return std::make_tuple(0, false);
         }
         return std::make_tuple(osdiIdSimInstIdLists[deviceIndex][it->second], true);
@@ -114,7 +115,7 @@ public:
     };
     // Number of osdi parameters+opvars
     inline OsdiParameterId osdiIdCount(OsdiDeviceIndex deviceIndex) const {
-        return descriptors[deviceIndex].num_params+descriptors[deviceIndex].num_opvars;
+        return descriptors[deviceIndex]->num_params+descriptors[deviceIndex]->num_opvars;
     };
     // Simulator id of parameter/opvar -> primary name
     inline Id instanceParameterName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
@@ -152,7 +153,7 @@ public:
     };
     // Osdi parameter id -> Value type
     inline Value::Type parameterType(OsdiDeviceIndex deviceIndex, OsdiParameterId osdiId) const {
-        auto& param = descriptors[deviceIndex].param_opvar[osdiId];
+        auto& param = descriptors[deviceIndex]->param_opvar[osdiId];
         switch (param.flags & PARA_TY_MASK) {
             case PARA_TY_INT:
                 if (param.len>0) {
@@ -188,10 +189,10 @@ public:
     };
 
     // Number of nodes
-    TerminalIndex staticNodeCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex].num_nodes; };
+    TerminalIndex staticNodeCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex]->num_nodes; };
 
     // Number of terminals
-    TerminalIndex terminalCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex].num_terminals; };
+    TerminalIndex terminalCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex]->num_terminals; };
 
     // Node index
     std::tuple<TerminalIndex, bool> nodeIndex(OsdiDeviceIndex deviceIndex, Id name) const { 
@@ -207,7 +208,7 @@ public:
     inline Id nodeName(OsdiDeviceIndex deviceIndex, TerminalIndex ndx) const { return nodeNameLists[deviceIndex][ndx]; };
 
     // Number of noise sources
-    inline ParameterIndex noiseSourceCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex].num_noise_src; };
+    inline ParameterIndex noiseSourceCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex]->num_noise_src; };
 
     // Noise source name
     inline Id noiseSourceName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const { return noiseSourceNames[deviceIndex][ndx]; }; 
@@ -224,8 +225,8 @@ public:
     // Noise source nodes
     inline std::tuple<OsdiNodeIndex, OsdiNodeIndex> noiseExcitation(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
         return std::make_tuple(
-            descriptors[deviceIndex].noise_sources[ndx].nodes.node_1, 
-            descriptors[deviceIndex].noise_sources[ndx].nodes.node_2
+            descriptors[deviceIndex]->noise_sources[ndx].nodes.node_1, 
+            descriptors[deviceIndex]->noise_sources[ndx].nodes.node_2
         );
     };
 
@@ -236,8 +237,10 @@ private:
     void* handle;
     std::string file;
     bool valid;
-    OsdiDescriptor* descriptors;
+    void* descriptorArray;
+    std::vector<OsdiDescriptor*> descriptors;
     OsdiDeviceIndex descriptorCount;
+    size_t descriptorSize;
     
     // Map from device name to device index
     std::unordered_map<Id,OsdiDeviceIndex> deviceNameToIndex;

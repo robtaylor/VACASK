@@ -29,7 +29,7 @@ static void toLowercase(std::string& s) {
 OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s) 
     : handle(handle_), file(file_), valid(false) {
     // Descriptors table
-    descriptors = (OsdiDescriptor*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTORS");
+    descriptorArray = dynamicLibrarySymbol(handle, "OSDI_DESCRIPTORS");
     
     // Descriptor count
     auto ptr = (OsdiDeviceIndex*)dynamicLibrarySymbol(handle, "OSDI_NUM_DESCRIPTORS");
@@ -37,9 +37,9 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         descriptorCount = *ptr;
     } else  {
         descriptorCount = 0;
-        descriptors = nullptr;
+        descriptorArray = nullptr;
     }
-    if (!descriptors)  {
+    if (!descriptorArray)  {
         s.set(Status::NotFound, "OSDI file contains no models");
         return;
     }
@@ -49,29 +49,30 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     auto minor = ((OsdiVersionType*)dynamicLibrarySymbol(handle, "OSDI_VERSION_MINOR"));
     if (!major || !minor) {
         s.set(Status::BadVersion, "Failed to retrieve OSDI interface version.");
-        descriptors = nullptr;
+        descriptorArray = nullptr;
         return;
     } else {
-        if (*major!=0 || *minor!=4) {
-            s.set(Status::BadVersion, "Wrong OSDI interface version. Only v0.4 is supported.");
-            descriptors = nullptr;
+        // 
+        if (!(*major>0 || *minor>=4)) {
+            s.set(
+                Status::BadVersion, "Unsupported OSDI interface version ("+
+                std::to_string(*major)+"."+std::to_string(*minor)+
+                "). Required version >=0.4."
+            );
+            descriptorArray = nullptr;
             return;
         }
     }
 
     // Size of descriptor
-    auto descrsize = ((OsdiVersionType*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTOR_SIZE"));
-    if (!descrsize) {
+    auto ptrs = ((OsdiDescriptorSize*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTOR_SIZE"));
+    if (!ptrs) {
         s.set(Status::BadVersion, "Failed to retrieve OSDI descriptor size.");
-        descriptors = nullptr;
+        descriptorArray = nullptr;
         return;
     }
 
-    if (*descrsize!=sizeof(OsdiDescriptor)) {
-        s.set(Status::BadVersion, "OSDI descriptor size does not match header declaration.");
-        descriptors = nullptr;
-        return;
-    }
+    descriptorSize = *ptrs;
 
     // Limit function table
     OsdiLimFunction* lft = (OsdiLimFunction*)dynamicLibrarySymbol(handle, "OSDI_LIM_TABLE");
@@ -95,7 +96,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                     Status::Unsupported, 
                     std::string("Unknown limit function '")+lft[i].name+"'."
                 );
-                descriptors = nullptr;
+                descriptorArray = nullptr;
             } else if (!OsdiFile::limitFunctionTable[j].ptr) {
                 s.set(
                     Status::BadArguments,                     
@@ -104,13 +105,13 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                         ") for limit function '"+lft[i].name+"'."
                     
                 );
-                descriptors = nullptr;
+                descriptorArray = nullptr;
             }
         }
     }
 
     // Stop on error
-    if (!descriptors) {
+    if (!descriptorArray) {
         return;
     }
     
@@ -120,9 +121,19 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         *funcPtr = (void *)osdiLogMessage;
     }
 
+    // Prepare descriptors vector - we need this because the OSDI version used by
+    // the module may be newer than the OSDI version in out header file and the 
+    // descriptor structure may be larger than we think. All newer features are 
+    // in the part beyond the one we can access with our desxcriptor declaration. 
+    char* p = reinterpret_cast<char*>(descriptorArray);
+    for(decltype(descriptorCount) i=0; i<descriptorCount; i++) {
+        descriptors.push_back(reinterpret_cast<OsdiDescriptor*>(p));
+        p += descriptorSize;
+    }
+
     // Device index
     for(OsdiDeviceIndex i=0; i<descriptorCount; i++) {
-        deviceNameToIndex[Id(descriptors[i].name)] = i;
+        deviceNameToIndex[Id(descriptors[i]->name)] = i;
     }
 
     // Build parameter name to id translators and lists of instance parameter ids
@@ -141,7 +152,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     nodeNameLists.resize(descriptorCount);
     nodeMaps.resize(descriptorCount);
     for(int i=0; i<descriptorCount; i++) {
-        OsdiDescriptor* desc = descriptors+i;
+        OsdiDescriptor* desc = descriptors[i];
         auto& translator = paramOsdiIdTranslators[i];
         osdiIdSimInstIdLists[i].resize(desc->num_params+desc->num_opvars);
         osdiIdSimModIdLists[i].resize(desc->num_params+desc->num_opvars);
@@ -149,7 +160,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         for(OsdiParameterId j=0; j<desc->num_params+desc->num_opvars; j++) {
             auto& paramInfo = desc->param_opvar[j];
             // Add lowercase name to list of primary parameter names
-            std::string tmp = descriptors[i].param_opvar[j].name[0];
+            std::string tmp = descriptors[i]->param_opvar[j].name[0];
             toLowercase(tmp);
             osdiIdPrimaryParamName[i].push_back(tmp);
             // Add name and aliases to id translator
@@ -225,13 +236,13 @@ OsdiFile::~OsdiFile() {
 }
 
 Id OsdiFile::deviceIdentifier(OsdiDeviceIndex index, Status& s) {
-    if (index>=descriptorCount || descriptors==nullptr) {
+    if (index>=descriptorCount || descriptors.size()==0) {
         s.set(Status::NotFound, 
             std::string("Device index ")+std::to_string(index)+" out of bounds [0.."+std::to_string(descriptorCount-1)+"]."
         );
         return Id::none;
     }
-    return Id(descriptors[index].name);
+    return Id(descriptors[index]->name);
 }
 
 std::tuple<OsdiFile::OsdiDeviceIndex,bool> OsdiFile::deviceIndex(Id name, Status& s) {
@@ -246,13 +257,13 @@ std::tuple<OsdiFile::OsdiDeviceIndex,bool> OsdiFile::deviceIndex(Id name, Status
 }
 
 OsdiDescriptor* OsdiFile::deviceDescriptor(OsdiDeviceIndex index, Status& s) {
-    if (index>=descriptorCount || descriptors==nullptr) {
+    if (index>=descriptorCount || descriptors.size()==0) {
         s.set(Status::NotFound, 
             std::string("Device index ")+std::to_string(index)+" out of bounds [0.."+std::to_string(descriptorCount-1)+"]."
         );
         return nullptr;
     }
-    return descriptors+index;
+    return descriptors[index];
 }
 
 OsdiDescriptor* OsdiFile::deviceDescriptor(Id name, Status& s) {
