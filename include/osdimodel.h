@@ -57,7 +57,6 @@ public:
 
 private:
     void* core_;
-    std::vector<bool> paramGiven;
 };
 
 }

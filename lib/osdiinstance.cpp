@@ -26,9 +26,6 @@ OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, 
         nodes_[i] = nullptr;
     }
 
-    // Create and initialize param given flags
-    paramGiven.resize(model->device()->instanceParameterGivenCount(), false);
-
     // Internal nodes are created after setup
 
     setFlags(Flags::IsValid);
@@ -36,7 +33,7 @@ OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, 
 
 OsdiInstance::~OsdiInstance() {
     // Free allocated values (strings and vectors)
-    model()->device()->freeValues(paramGiven, model()->core(), core_);
+    model()->device()->freeValues(model()->core(), core_);
     
     alignedFree(core_);
 }
@@ -132,18 +129,9 @@ std::tuple<bool,bool> OsdiInstance::setParameter(ParameterIndex ndx, const Value
     }
     auto osdiId = model()->device()->instanceOsdiParameterId(ndx);
     
-    // Check if it was given and needs to be freed (for allocated types like strings and vectors)
-    auto [givenIndex, found] = model()->device()->instanceParameterGivenIndex(osdiId);
-    bool free = found && paramGiven[givenIndex];
-    
     // Write
-    auto [ok, changed] = model()->device()->writeParameter(osdiId, model()->core(), core_, v, free, s);
+    auto [ok, changed] = model()->device()->writeParameter(osdiId, model()->core(), core_, v, s);
     
-    // Update given flag
-    if (ok && found) {
-        paramGiven[givenIndex] = true;
-    }
-
     // Mark instance for parameter propagation
     if (changed) {
         setFlags(Instance::Flags::ParamsChanged);

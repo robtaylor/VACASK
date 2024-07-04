@@ -133,8 +133,8 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     osdiIdSimInstIdLists.resize(descriptorCount);
     osdiIdSimModIdLists.resize(descriptorCount);
     instanceNodeStateCounts.resize(descriptorCount);
-    instParGivenIndex.resize(descriptorCount);
-    modParGivenIndex.resize(descriptorCount);
+    instParAllocatedOsdiId.resize(descriptorCount);
+    modParAllocatedOsdiId.resize(descriptorCount);
     osdiIdPrimaryParamName.resize(descriptorCount);
     noiseSourceNames.resize(descriptorCount);
     noiseSourceNameTranslators.resize(descriptorCount);
@@ -146,8 +146,6 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         osdiIdSimInstIdLists[i].resize(desc->num_params+desc->num_opvars);
         osdiIdSimModIdLists[i].resize(desc->num_params+desc->num_opvars);
         // osdiIdPrimaryParamName[i].resize(desc->num_params+desc->num_opvars);
-        OsdiParameterId instParGivenCount = 0;
-        OsdiParameterId modParGivenCount = 0;
         for(OsdiParameterId j=0; j<desc->num_params+desc->num_opvars; j++) {
             auto& paramInfo = desc->param_opvar[j];
             // Add lowercase name to list of primary parameter names
@@ -174,10 +172,8 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                 osdiIdSimModIdLists[i][j] = modelParamOsdiIdLists[i].size()-1;
                 // Param given flag index, only for strings and vectors
                 if ((paramInfo.flags & PARA_TY_MASK)==PARA_TY_STR || paramInfo.len>0) {
-                    instParGivenIndex[i].insert({j, instParGivenCount});
-                    modParGivenIndex[i].insert({j, modParGivenCount});
-                    instParGivenCount++;
-                    modParGivenCount++;
+                    instParAllocatedOsdiId[i].push_back(j);
+                    modParAllocatedOsdiId[i].push_back(j);
                 }
             } else if ((paramInfo.flags & PARA_KIND_MASK) == PARA_KIND_OPVAR) {
                 // Opvar
@@ -191,11 +187,9 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                 osdiIdSimModIdLists[i][j] = modelParamOsdiIdLists[i].size()-1;
                 // Param given flag index, only for strings and vectors
                 if ((paramInfo.flags & PARA_TY_MASK)==PARA_TY_STR || paramInfo.len>0) {
-                    modParGivenIndex[i].insert({j, modParGivenCount});
-                    modParGivenCount++;
+                    modParAllocatedOsdiId[i].push_back(j);
                 }
             }
-            
         }
         for(OsdiNoiseId j=0; j<desc->num_noise_src; j++) {
             std::string tmp = desc->noise_sources[j].name;

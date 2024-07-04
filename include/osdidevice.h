@@ -137,15 +137,6 @@ public:
         return osdiFile->opvarName(index_, osdiId);
     };
 
-    // Parameter given API
-    ParameterIndex instanceParameterGivenCount() const { return osdiFile->instanceParameterGivenCount(index_); };
-    // Number of param given entries of a model
-    ParameterIndex modelParameterGivenCount() const { return osdiFile->modelParameterGivenCount(index_); };
-    // Param given index for instance parameter
-    std::tuple<ParameterIndex,bool> instanceParameterGivenIndex(OsdiFile::OsdiParameterId osdiId) const { return osdiFile->instanceParameterGivenIndex(index_, osdiId); };
-    // Param given index for model parameter
-    std::tuple<ParameterIndex,bool> modelParameterGivenIndex(OsdiFile::OsdiParameterId osdiId) const { return osdiFile->modelParameterGivenIndex(index_, osdiId); };
-    
     // Terminal and node api
     TerminalIndex staticNodeCount() const { 
         return osdiFile->staticNodeCount(index_); 
@@ -178,11 +169,11 @@ public:
     };
 
     // Parameter cleanup (called in instance and model destructor)
-    bool freeValues(std::vector<bool>& paramGiven, void* coreMod, void* coreInst);
+    bool freeValues(void* coreMod, void* coreInst);
     
     // Parameter access
     bool readParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Value& v, Status& s=Status::ignore) const;
-    std::tuple<bool,bool> writeParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, const Value& v, bool free=false, Status& s=Status::ignore);
+    std::tuple<bool,bool> writeParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, const Value& v, Status& s=Status::ignore);
     template<typename T> const T* parameterPtr(OsdiFile::OsdiParameterId osdiId, const void* coreMod, const void* coreInst) const;
     // Return value: ok, parameter given
     std::tuple<bool, bool> parameterGiven(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Status& s=Status::ignore) const;

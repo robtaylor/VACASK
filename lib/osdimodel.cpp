@@ -13,15 +13,12 @@ OsdiModel::OsdiModel(OsdiDevice *device, Id name, Instance* parentInstance, cons
     core_ = alignedAlloc(sizeof(max_align_t), device->descriptor()->model_size);
     memset(core_, 0, device->descriptor()->model_size);
     
-    // Create and initialize param given flags
-    paramGiven.resize(device->modelParameterGivenCount(), false);
-
     setFlags(Flags::IsValid);
 }
 
 OsdiModel::~OsdiModel() {
     // Free allocated values (strings and vectors)
-    device()->freeValues(paramGiven, core_, nullptr);
+    device()->freeValues(core_, nullptr);
 
     alignedFree(core_);
 }
@@ -141,17 +138,8 @@ std::tuple<bool,bool> OsdiModel::setParameter(ParameterIndex ndx, const Value& v
     }
     auto osdiId = device()->modelOsdiParameterId(ndx);
 
-    // Check if it was given and needs to be freed (for allocated types like strings and vectors)
-    auto [givenIndex, found] = device()->modelParameterGivenIndex(osdiId); 
-    bool free = found && paramGiven[givenIndex];
-
     // Write
-    auto [ok, changed] = device()->writeParameter(osdiId, core_, nullptr, v, free, s);
-
-    // Update given flag
-    if (ok && found) {
-        paramGiven[givenIndex] = true;
-    }
+    auto [ok, changed] = device()->writeParameter(osdiId, core_, nullptr, v, s);
 
     // Mark model for setup
     if (changed) {

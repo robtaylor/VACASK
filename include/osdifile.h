@@ -178,35 +178,13 @@ public:
         }
     };
 
-    // Number of param given entries of an instance
-    ParameterIndex instanceParameterGivenCount(OsdiDeviceIndex deviceIndex) { return instParGivenIndex[deviceIndex].size(); };
-    // Number of param given entries of a model
-    ParameterIndex modelParameterGivenCount(OsdiDeviceIndex deviceIndex) { return modParGivenIndex[deviceIndex].size(); };
-    // Param given index for instance parameter
-    std::tuple<ParameterIndex,bool> instanceParameterGivenIndex(OsdiDeviceIndex deviceIndex, OsdiParameterId osdiId) {
-        auto it = instParGivenIndex[deviceIndex].find(osdiId);
-        if (it!=instParGivenIndex[deviceIndex].end()) {
-            return std::make_tuple(it->second, true);
-        } else {
-            return std::make_tuple(0, false);
-        }
+    // List of osdi ids of instance parameters that may need to be freed 
+    const std::vector<OsdiParameterId>& allocatedInstanceParameterIds(OsdiDeviceIndex deviceIndex) const {
+        return instParAllocatedOsdiId[deviceIndex];
     };
-    // Param given index for model parameter
-    std::tuple<ParameterIndex,bool> modelParameterGivenIndex(OsdiDeviceIndex deviceIndex, OsdiParameterId osdiId) {
-        auto it = modParGivenIndex[deviceIndex].find(osdiId);
-        if (it!=modParGivenIndex[deviceIndex].end()) {
-            return std::make_tuple(it->second, true);
-        } else {
-            return std::make_tuple(0, false);
-        }
-    };
-    // Param given map for instance parameters
-    const std::unordered_map<OsdiDeviceIndex,OsdiParameterId>& instanceParamemeterGivenMap(OsdiDeviceIndex deviceIndex) const {
-        return instParGivenIndex[deviceIndex];
-    };
-    // Param given map for model parameters
-    const std::unordered_map<OsdiDeviceIndex,OsdiParameterId>& modelParamemeterGivenMap(OsdiDeviceIndex deviceIndex) const {
-        return modParGivenIndex[deviceIndex];
+    // List of osdi ids of model parameters that may need to be freed 
+    const std::vector<OsdiParameterId>& allocatedModelParamemeterIds(OsdiDeviceIndex deviceIndex) const {
+        return modParAllocatedOsdiId[deviceIndex];
     };
 
     // Number of nodes
@@ -303,12 +281,10 @@ private:
     // Vector of maps from node name to node index
     std::vector<std::unordered_map<Id, OsdiNodeIndex>> nodeMaps;
 
-    // These are needed to bypas nonexistent driver function param_given()
-    // Flags are neccessary only for parameters that need to be allocated/freed (strings and vectors)
-    // Vector of parameter given flag indices for osdi parameter ids
-    // Missing entry means that the parameter has no given flag
-    std::vector<std::unordered_map<OsdiParameterId,ParameterIndex>> instParGivenIndex;
-    std::vector<std::unordered_map<OsdiParameterId,ParameterIndex>> modParGivenIndex;
+    // We need these to quickly free all parameters that are allocated (strings, vectors)
+    // These are lists of osdi ids of parameters that need to be freed if they were given
+    std::vector<std::vector<OsdiParameterId>> instParAllocatedOsdiId;
+    std::vector<std::vector<OsdiParameterId>> modParAllocatedOsdiId;
 
     // Limit functions
     static const OsdiLimitFunction limitFunctionTable[];

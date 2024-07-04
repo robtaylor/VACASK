@@ -111,7 +111,6 @@ private:
     std::vector<Node*> nodes_;
     TerminalIndex connectedTerminalCount;
     GlobalStorageIndex offsStates;
-    std::vector<bool> paramGiven;
 };
 
 }

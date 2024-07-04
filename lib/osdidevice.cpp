@@ -59,15 +59,16 @@ Model* OsdiDevice::createModel(Circuit& circuit, Instance* parentInstance, RpnEv
     return model;
 }
 
-bool OsdiDevice::freeValues(std::vector<bool>& paramGiven, void* coreMod, void* coreInst) {
+bool OsdiDevice::freeValues(void* coreMod, void* coreInst) {
     OsdiFile::OsdiFlags flags = ACCESS_FLAG_SET;
     if (coreInst) {
         flags |= ACCESS_FLAG_INSTANCE;
     }
     
     if (coreInst) {
-        for(auto [osdiId, givenIndex] : osdiFile->instanceParamemeterGivenMap(index_)) {
-            if (!paramGiven[givenIndex]) {
+        // Free allocated parameters in instance structure
+        for(auto osdiId : osdiFile->allocatedInstanceParameterIds(index_)) {
+            if (auto [ok, given] = parameterGiven(osdiId, coreMod, coreInst); !ok || !given) {
                 continue;
             }
             auto t = parameterType(osdiId);
@@ -80,8 +81,8 @@ bool OsdiDevice::freeValues(std::vector<bool>& paramGiven, void* coreMod, void* 
             }
         }
     } else {
-        for(auto [osdiId, givenIndex] : osdiFile->modelParamemeterGivenMap(index_)) {
-            if (!paramGiven[givenIndex]) {
+        for(auto osdiId : osdiFile->allocatedModelParamemeterIds(index_)) {
+            if (auto [ok, given] = parameterGiven(osdiId, coreMod, coreInst); !ok || !given) {
                 continue;
             }
             auto t = parameterType(osdiId);
@@ -97,7 +98,7 @@ bool OsdiDevice::freeValues(std::vector<bool>& paramGiven, void* coreMod, void* 
     return true;
 }
 
-std::tuple<bool,bool> OsdiDevice::writeParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, const Value& v, bool wasGiven, Status& s) {
+std::tuple<bool,bool> OsdiDevice::writeParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, const Value& v, Status& s) {
     // Check index
     if (osdiId>=osdiIdCount()) {
         s.set(Status::Range, std::string("OSDI parameter id=")+std::to_string(osdiId)+" out of range.");
@@ -164,6 +165,10 @@ std::tuple<bool,bool> OsdiDevice::writeParameter(OsdiFile::OsdiParameterId osdiI
             // Check for change
             changed = *ptr && (src != *ptr);
             // Free old value and allocate new
+            auto [ok, wasGiven] = parameterGiven(osdiId, coreMod, coreInst, s);
+            if (!ok) {
+                return std::make_tuple(false, false);
+            }
             if (wasGiven) {
                 free(*ptr);
             }
