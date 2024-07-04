@@ -1,7 +1,7 @@
 ![cask](./cask.png) 
 
 # About VACASK
-VACASK (Verilog-A Circuit Analysis Kernel) is an analog circuit simulator. VACASK uses the [OpenVAF Verilog-A compiler](https://github.com/pascalkuthe/OpenVAF) for building the device models as shared libraries. The compiled device models are loaded by the simulator on demand at runtime. The simulator communicates with the models via the [OSDI API](https://openvaf.semimod.de/docs/details/osdi/). Of course, you can also create device models using VACASK's APIs in C++ and link them statically with the simulator. 
+VACASK (Verilog-A Circuit Analysis Kernel) is an analog circuit simulator. VACASK uses the [OpenVAF-reloaded Verilog-A compiler](https://github.com/arpadbuermen/OpenVAF) for building the device models as shared libraries. The compiled device models are loaded by the simulator on demand at runtime. The simulator communicates with the models via the [OSDI API](https://openvaf.semimod.de/docs/details/osdi/). Currently OSDI API 0.4 is used which is supported only by OpenVAF-reloaded. Of course, you can also create device models using VACASK's APIs in C++ and link them statically with the simulator. 
 
 VACASK is not SPICE (although one could write a SPICE-compatible netlist parser for it with little effort). SPICE3 is more than 30 years old, written in C, and the code is hard to maintain. In some respect SPICE looks more like a proof of concept one writes before building the real thing. The way circuit equations are handled in SPICE makes it hard to extend the simulator with new algorithms. VACASK's goal is to be better than SPICE, not only in terms of what it offers, but also in terms of extensibility and ease of maintenance. 
 
@@ -36,7 +36,7 @@ VACASK offers several features:
 - circuit can be built programmatically or read by a custom parser
 - netlist parser with Spectre-like syntax
  
-Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF or even Verilog-A. 
+Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF-reloaded or even Verilog-A. 
 
 VACASK is being developed by Árpád Bűrmen at the EDA Laboratory, University of Ljubljana, Slovenia. It is written in C++20 and is free software released under the [GNU General Public License 3.0](LICENSE). 
 
@@ -67,7 +67,7 @@ The following device models are supplied with VACASK.
 Up to now VACASK development was not focused on assembling a library of device models. You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
 
 # Installation from pre-built packages
-[Pre-built packages](https://codeberg.org/arpadbuermen/VACASK/releases) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
+[Pre-built packages](https://codeberg.org/arpadbuermen/VACASK/releases) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF-reloaded compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
 
 A new verion of VACASK is released every now and then. Between releases [(not quite) nightly builds](https://fides.fe.uni-lj.si/vacask/download/) are released. These are great if you want try VACASK with latest bugfixes. 
 
@@ -94,19 +94,19 @@ When a file is included with the `include` netlist directive and the given path 
 
 Models are loaded with the `load` netlist directive. If the given path is absolute VACASK looks for the model only at the given path. If, however, it is relative VACASK first searches for the model in the directory where the netlist invoking the `load` directive is located, followed by the current working directory, and the modules search path. The modules search path is by default set to `<vacask library directory>/mod`. You can override it with the `SIM_MODULE_PATH` environmental variable (same syntax as for `SIM_INCLUDE_PATH`). 
 
-VACASK can compile Verilog-A files on the fly. For that purpose VACASK looks for the OpenVAF compiler in the directory where the VACASK binary is installed and in the system path. If a `load` directive specifies a raw Verilog-A file (ending in .va), VACASK will try to compile it. The compiled model is placed in the current working directory and then loaded. 
+VACASK can compile Verilog-A files on the fly. For that purpose VACASK looks for the OpenVAF-reloaded compiler in the directory where the VACASK binary is installed and in the system path. If a `load` directive specifies a raw Verilog-A file (ending in .va), VACASK will try to compile it. The compiled model is placed in the current working directory and then loaded. 
 
 # Building the simulator
-VACASK has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library, and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). 
+VACASK has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library, and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). You will also need a working Python3 installation (for the system tests). 
 
-You will also have to install the OpenVAF compiler. If you decide to build the compiler yourself, do not use the original OpenVAF repository. Git-clone the [improved version with several bug fixes](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found at the beginning of the `README.md` file in the OpenVAF repository. Of course, you can also take the OpenVAF binary from the binary packages (.deb and .tar.gz for Linux, .zip for Windows). 
+You will also have to install the OpenVAF-reloaded compiler. If you decide to build the compiler yourself, git-clone the [OpenVAF-reloaded repository](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found at the beginning of the `README.md` file. Of course, you can also take the OpenVAF-reloaded binary from the binary packages (.deb and .tar.gz for Linux, .zip for Windows). 
 
 ## Linux
 Install gcc, Boost, and KLU. You will also need CMake and GNU make or Ninja for building. 
 
 First, create a `build` directory and create the build system
 ```
-cmake -G Ninja  -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DOPENVAF_DIR=<path to OpenVAF compiler>
+cmake -G Ninja  -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler>
 ```
 
 To build with GNU make, replace `-G Ninja` with `-G "Unix Makefiles"`. The build process is started by typing
@@ -195,7 +195,7 @@ Replace the `e:\...` paths with your own, if needed. In the end OpenBAS will be 
 ### Building the simulator
 Unpack the sources, create a build directory, and type. 
 ```
-cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to OpenVAF compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
+cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
 cmake --build <build directory>
 ```
 Replace the `e:\...` paths with your own, if needed. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 
