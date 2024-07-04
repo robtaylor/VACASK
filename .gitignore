@@ -3,4 +3,7 @@
 #   settings-linux.json
 settings.json
 __pycache__
+benchmark
+bug
+devices/spice
 
