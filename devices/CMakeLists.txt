@@ -62,7 +62,7 @@ foreach(item IN ITEMS ${device_sources})
 endforeach()
 
 add_custom_target(
-    build_and_stage ALL 
+    build_and_stage_devices ALL 
     SOURCES "${device_sources}"
     DEPENDS "${osdi_staged_files}" "${osdi_built_files}"
 )

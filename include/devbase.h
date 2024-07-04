@@ -369,6 +369,7 @@ public:
     //   parameterType() .. from parameter index
     //   getParameter()  .. by parameter index
     //   setParameter()  .. by parameter index
+    //   parameterGiven(); .. by parameter index
     
     // Checks if a model parameter is not specified as an expression. 
     bool parameterIsFree(Id name); 
@@ -484,6 +485,7 @@ public:
     //   parameterType() .. from parameter index
     //   getParameter()  .. by parameter index
     //   setParameter()  .. by parameter index
+    //   parameterGiven(); .. by parameter index
     
     // Principal parameter is the parameter which is used when no parameter is specified in sweep
     // By default there is none. 

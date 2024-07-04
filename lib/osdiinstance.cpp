@@ -152,6 +152,15 @@ std::tuple<bool,bool> OsdiInstance::setParameter(ParameterIndex ndx, const Value
     return std::make_tuple(ok, changed);
 }
 
+std::tuple<bool,bool> OsdiInstance::parameterGiven(ParameterIndex ndx, Status& s) const {
+    if (ndx>=model()->device()->instanceParameterCount()) {
+        s.set(Status::Range, std::string("Parameter index id=")+std::to_string(ndx)+" out of range.");
+        return std::make_tuple(false, false);
+    }
+    auto osdiId = model()->device()->instanceOsdiParameterId(ndx);
+    return model()->device()->parameterGiven(osdiId, nullptr, core_, s);
+}
+
 ParameterIndex OsdiInstance::opvarCount() const {
     return model()->device()->opvarCount();
 }
@@ -411,7 +420,7 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     auto stateIndices = stateIndexTable();
 
     // Allocate entries for internal states
-    statesStartIndex = circuit.allocateStates(internalStateCount);
+    offsStates = circuit.allocateStates(internalStateCount);
     
     // Set internal state indices (local indices, uint32_t)
     // Because these indices are relative to the chunk allocated for the instance
@@ -492,8 +501,8 @@ bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalA
     };
 
     // Set beginning of state vector chunk belonging to this instance
-    simInfo.prev_state = els.oldStates + statesStartIndex;
-    simInfo.next_state = els.newStates + statesStartIndex;
+    simInfo.prev_state = els.oldStates + offsStates;
+    simInfo.next_state = els.newStates + offsStates;
     
     // Evaluation
     bool canAssumeLimitingNotAppliedToResistiveResidual = false;
@@ -664,7 +673,7 @@ bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalA
         ) && model()->device()->nodeStateCount()>0
     ) { 
         // Index of first node state in global states vector
-        auto nodeStateIndex = statesStartIndex + model()->device()->internalStateCount();
+        auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
         // Go through all nodes
         for(uint32_t i=0; i<descr->num_nodes; i++) {
             // Unknown index
@@ -785,7 +794,12 @@ void OsdiInstance::dump(int indent, const Circuit& circuit, std::ostream& os) co
         for(decltype(np) i=0; i<np; i++) {
             Value v;
             getParameter(i, v);
-            os << pfx << "    " << std::string(parameterName(i)) << " = " << v << " (" << v.typeName() << ")\n";
+            auto [ok, given] = parameterGiven(i);
+            os << pfx << "    " << std::string(parameterName(i)) << " = " << v << " (" << v.typeName() << ")";
+            if (!given) {
+                os << " (not given)";
+            }
+            os << "\n";
         }
     }
 }

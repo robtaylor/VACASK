@@ -202,7 +202,6 @@ protected:
 
     std::vector<Node*> nodes_;
     TerminalIndex connectedTerminalCount;
-    StateIndex statesStartIndex;
     IStruct<InstanceParams> params;
     IStruct<InstanceData> data;
 };

@@ -52,11 +52,25 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         descriptors = nullptr;
         return;
     } else {
-        if (*major!=0 || *minor!=3) {
-            s.set(Status::BadVersion, "Wrong OSDI interface version. Only v0.3 is supported.");
+        if (*major!=0 || *minor!=4) {
+            s.set(Status::BadVersion, "Wrong OSDI interface version. Only v0.4 is supported.");
             descriptors = nullptr;
             return;
         }
+    }
+
+    // Size of descriptor
+    auto descrsize = ((OsdiVersionType*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTOR_SIZE"));
+    if (!descrsize) {
+        s.set(Status::BadVersion, "Failed to retrieve OSDI descriptor size.");
+        descriptors = nullptr;
+        return;
+    }
+
+    if (*descrsize!=sizeof(OsdiDescriptor)) {
+        s.set(Status::BadVersion, "OSDI descriptor size does not match header declaration.");
+        descriptors = nullptr;
+        return;
     }
 
     // Limit function table

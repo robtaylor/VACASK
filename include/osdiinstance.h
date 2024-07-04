@@ -32,6 +32,7 @@ public:
     virtual std::tuple<Value::Type,bool> parameterType(ParameterIndex ndx, Status& s=Status::ignore) const;
     virtual bool getParameter(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const;
     virtual std::tuple<bool,bool> setParameter(ParameterIndex ndx, const Value& v, Status& s=Status::ignore);
+    virtual std::tuple<bool,bool> parameterGiven(ParameterIndex ndx, Status& s=Status::ignore) const;
     
     // First parameter is $mfactor, second is principal parameter (if it exists)
     virtual std::tuple<ParameterIndex, bool> principalParameterIndex() const { return std::make_tuple(1, parameterCount()>1); };
@@ -109,7 +110,7 @@ private:
     void* core_;
     std::vector<Node*> nodes_;
     TerminalIndex connectedTerminalCount;
-    StateIndex statesStartIndex;
+    GlobalStorageIndex offsStates;
     std::vector<bool> paramGiven;
 };
 

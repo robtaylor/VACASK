@@ -28,8 +28,8 @@ control
   print unknowns 
   print sparsity
   print ("Some values: ", 2*2, "abc", [1,2,3])
-  print instance("r2", "v1", "__topinst__")
-  print model("resistor", "vsource", "__topdef__")
+  print instance("r2", "v1", "d1", "__topinst__")
+  print model("resistor", "d", "vsource", "__topdef__")
   print device("__hierarchical__", "resistor", "vsource")
   
   options temp=40

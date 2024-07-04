@@ -210,7 +210,7 @@ struct DevMutualInstanceData {
     double res1;
     double res2;
 
-    StateIndex statesStartIndex;
+    GlobalStorageIndex offsStates;
     
     DevMutualInstanceData();
 };

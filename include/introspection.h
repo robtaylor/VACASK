@@ -51,6 +51,8 @@ public:
     static std::tuple<bool,bool> set(T& st, Id name, const Value& v, Status& s=Status::ignore);
     static bool get(const T& st, size_t ndx, Value& v, Status& s=Status::ignore);
     static bool get(const T& st, Id name, Value& v, Status& s=Status::ignore);
+    static std::tuple<bool,bool> given(const T& st, size_t ndx, Status& s=Status::ignore);
+    static std::tuple<bool,bool> given(const T& st, Id name, Status& s=Status::ignore);
     
     static void registerMember_(Id name, StructMember::Type t, size_t offset);
     static int setup();
@@ -288,6 +290,22 @@ template<typename T> bool Introspection<T>::get(const T& st, Id name, Value& v, 
     }
 
     return Introspection::get(st, ndx, v, s);
+}
+
+template<typename T> std::tuple<bool,bool> Introspection<T>::given(const T& st, size_t ndx, Status& s) {
+    // Assume all struct values are always given
+    return std::make_tuple(true, true);
+}
+
+template<typename T> std::tuple<bool,bool> Introspection<T>::given(const T& st, Id name, Status& s) {
+    auto [ndx, found] = Introspection<T>::index(name);
+    // Find
+    if (!found) {
+        s.set(Status::NotFound, std::string("Parameter '")+std::string(name)+"' not found.");
+        return std::make_tuple(false, false);;
+    }
+
+    return Introspection::given(st, ndx, s);
 }
 
 template<typename T> void Introspection<T>::registerMember_(Id name, StructMember::Type t, size_t offset) {

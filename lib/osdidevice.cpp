@@ -115,6 +115,11 @@ std::tuple<bool,bool> OsdiDevice::writeParameter(OsdiFile::OsdiParameterId osdiI
         return std::make_tuple(false, false);
     }
 
+    if (coreInst && isOpvar(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an opvar and cannot be written.");
+        return std::make_tuple(false, false);
+    }
+
     // Get type
     auto t = parameterType(osdiId);
     if (t!=Value::Type::Int && t!=Value::Type::Real && t!=Value::Type::String) {
@@ -230,6 +235,42 @@ bool OsdiDevice::readParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, 
     }
     
     return true;
+}
+
+std::tuple<bool, bool> OsdiDevice::parameterGiven(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Status& s) const {
+    // Check index
+    if (osdiId>=osdiIdCount()) {
+        s.set(Status::Range, std::string("OSDI parameter id=")+std::to_string(osdiId)+" out of range.");
+        return std::make_tuple(false, false);
+    }
+
+    // Check kind
+    if (!coreInst && !isModelParameter(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not a model parameter.");
+        return std::make_tuple(false, false);
+    }
+
+    if (coreInst && !isInstanceParameter(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not an instance parameter.");
+        return std::make_tuple(false, false);
+    }
+
+    if (coreInst && isOpvar(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an opvar and cannot be given.");
+        return std::make_tuple(false, false);
+    }
+
+    // Get given flag
+    bool flag;
+    if (coreInst) {
+        // Instance
+        flag = (bool)(descriptor_->given_flag_instance(coreInst, osdiId));
+    } else {
+        // Model
+        flag = (bool)(descriptor_->given_flag_model(coreMod, osdiId));
+    }
+
+    return std::make_tuple(false, flag);
 }
 
 std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Status& s) {

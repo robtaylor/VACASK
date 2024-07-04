@@ -45,12 +45,12 @@ typedef uint32_t ParameterIndex;
 // Index of a terminal
 typedef uint32_t TerminalIndex;
 
-// Index of a state within the states subvector belonging to a particular instance
-typedef uint32_t LocalStateIndex;
+// Relative index in a global storage vector for data corresponding to a single instance
+typedef uint32_t LocalStorageIndex;
 
 
-// Index of a state within the states vector (holding states of all instances)
-typedef size_t StateIndex;
+// Index in a global storage vector holding data of all instances (states, f, q, G, C)
+typedef size_t GlobalStorageIndex;
 
 // Index of history entry
 typedef uint32_t HistoryDepthIndex;

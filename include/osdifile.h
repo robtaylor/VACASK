@@ -252,7 +252,7 @@ public:
     };
 
     // Instance node state count
-    LocalStateIndex nodeStateCount(OsdiDeviceIndex deviceIndex) { return instanceNodeStateCounts[deviceIndex]; };
+    LocalStorageIndex nodeStateCount(OsdiDeviceIndex deviceIndex) { return instanceNodeStateCounts[deviceIndex]; };
 
 private:
     void* handle;
@@ -295,7 +295,7 @@ private:
     std::vector<std::unordered_map<Id, ParameterIndex>> noiseSourceNameTranslators;
 
     // Vector of instance node state counts
-    std::vector<LocalStateIndex> instanceNodeStateCounts;
+    std::vector<LocalStorageIndex> instanceNodeStateCounts;
 
     // Vector of vectors of node identifiers
     std::vector<std::vector<Id>> nodeNameLists;

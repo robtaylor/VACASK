@@ -885,7 +885,7 @@ template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, 
     }
 
     // States for M di1/dt and M di2/dt
-    data.core().statesStartIndex = circuit.allocateStates(2*2);
+    data.core().offsStates = circuit.allocateStates(2*2);
 
     return true;
 }
@@ -962,8 +962,8 @@ template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAnd
     ) { 
         // Store residual state
         if (els.storeTerminalReactiveResidualState) {
-            els.futureStates[d.statesStartIndex] = d.res1; 
-            els.futureStates[d.statesStartIndex+2] = d.res2; 
+            els.futureStates[d.offsStates] = d.res1; 
+            els.futureStates[d.offsStates+2] = d.res2; 
         }
         
         // Compute residual derivative
@@ -973,13 +973,13 @@ template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAnd
             els.maxReactiveResidualDerivativeContribution
         ) {
             // Differentiate (compute flow)
-            double res1dot = els.integCoeffs->differentiate(d.res1, d.statesStartIndex);
-            double res2dot = els.integCoeffs->differentiate(d.res2, d.statesStartIndex+2);
+            double res1dot = els.integCoeffs->differentiate(d.res1, d.offsStates);
+            double res2dot = els.integCoeffs->differentiate(d.res2, d.offsStates+2);
 
             // Store flow in states vector
             if (els.storeTerminalReactiveResidualDerivativeState) {
-                els.futureStates[d.statesStartIndex+1] = res1dot;
-                els.futureStates[d.statesStartIndex+3] = res2dot;
+                els.futureStates[d.offsStates+1] = res1dot;
+                els.futureStates[d.offsStates+3] = res2dot;
             }
 
             // Add flow to vector

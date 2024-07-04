@@ -161,6 +161,15 @@ std::tuple<bool,bool> OsdiModel::setParameter(ParameterIndex ndx, const Value& v
     return std::make_tuple(ok, changed);
 }
 
+std::tuple<bool,bool> OsdiModel::parameterGiven(ParameterIndex ndx, Status& s) const {
+    if (ndx>=device()->modelParameterCount()) {
+        s.set(Status::Range, std::string("Parameter index id=")+std::to_string(ndx)+" out of range.");
+        return std::make_tuple(false, false);
+    }
+    auto osdiId = device()->modelOsdiParameterId(ndx);
+    return device()->parameterGiven(osdiId, core_, nullptr, s);
+}
+
 // Set up this model (virtual method)
 std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, Status& s) {
     OsdiSimParas sp;
@@ -221,7 +230,12 @@ void OsdiModel::dump(int indent, std::ostream& os) const {
         for(decltype(np) i=0; i<np; i++) {
             Value v;
             getParameter(i, v);
-            os << pfx << "    " << std::string(parameterName(i)) << " = " << v << " (" << v.typeName() << ")\n";
+            auto [ok, given] = parameterGiven(i);
+            os << pfx << "    " << std::string(parameterName(i)) << " = " << v << " (" << v.typeName() << ")";
+            if (!given) {
+                os << " (not given)";
+            }
+            os << "\n";
         }
     }
 }

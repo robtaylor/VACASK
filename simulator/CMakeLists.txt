@@ -72,14 +72,14 @@ else()
 endif()
 
 # Stage openvaf compiler
-get_filename_component(openvaf_executable "${OPENVAF_COMPILER}" NAME)
+get_filename_component(openvaf_executable_name "${OPENVAF_COMPILER}" NAME)
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${openvaf_executable}"
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${openvaf_executable_name}"
     DEPENDS "${OPENVAF_COMPILER}"
-    COMMAND ${CMAKE_COMMAND} ARGS -E copy "${OPENVAF_COMPILER}" "${CMAKE_CURRENT_BINARY_DIR}"
-    COMMENT "Staging openvaf compiler."
+    COMMAND ${CMAKE_COMMAND} ARGS -E copy "${OPENVAF_COMPILER}" "${CMAKE_CURRENT_BINARY_DIR}/${openvaf_executable_name}"
+    COMMENT "Staging openvaf compiler as: ${openvaf_executable_name}"
 )
 add_custom_target(
     "stage_openvaf" ALL 
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/${openvaf_executable}"
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/${openvaf_executable_name}"
 )

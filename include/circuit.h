@@ -300,9 +300,9 @@ public:
     // Returns pointer to integer where matrix entry index will be found and whether function succeeded
     std::tuple<MatrixEntryIndex*, bool> createJacobianEntry(Node* ne, Node* nu, Status& s=Status::ignore);
     // Allocate n entries in state vector, return global state index of first allocated entry
-    StateIndex allocateStates(LocalStateIndex n);
+    GlobalStorageIndex allocateStates(LocalStorageIndex n);
 
-    StateIndex statesCount() const { return statesCount_; };
+    GlobalStorageIndex statesCount() const { return statesCount_; };
     
     // Drivers
     // Return value: ok, unknowns changed, sparsity changed
@@ -473,7 +473,7 @@ private:
     EquationIndex unknownCountExcludingGround;
 
     // States count
-    StateIndex statesCount_;
+    GlobalStorageIndex statesCount_;
 
     // Evaluator for hierarchy
     RpnEvaluator paramEvaluator_;

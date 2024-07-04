@@ -28,9 +28,9 @@ bool Platform::setup(
 
 const char* Platform::defaultOpenVafBinaryName() {
 #ifdef SIMWINDOWS
-    static const char binary[] = "openvaf.exe"; 
+    static const char binary[] = "openvaf-r.exe"; 
 #else
-    static const char binary[] = "openvaf"; 
+    static const char binary[] = "openvaf-r"; 
 #endif
     return binary;
 }

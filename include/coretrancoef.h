@@ -92,7 +92,7 @@ public:
     // - value history (state) and
     // - derivative history (state+1)
     // To be used with implicit integration algorithms
-    double differentiate(double futureValue, StateIndex state) {
+    double differentiate(double futureValue, GlobalStorageIndex state) {
         // Contribution of future value
         double deriv = leading_ * futureValue;
         // Contribution of past values

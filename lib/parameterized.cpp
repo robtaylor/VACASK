@@ -33,6 +33,20 @@ std::tuple<bool,bool> Parameterized::setParameter(Id name, const Value& v, Statu
     return setParameter(ndx, v, s);
 }
 
+std::tuple<bool,bool> Parameterized::parameterGiven(ParameterIndex ndx, Status& s) {
+    // By default parameter is always given (structure default value is used)
+    return std::make_tuple(true, true);
+}
+
+std::tuple<bool,bool> Parameterized::parameterGiven(Id name, Status& s) {
+    auto [ndx, found] = parameterIndex(name);
+    if (!found) {
+        s.set(Status::NotFound, std::string("Parameter '")+std::string(name)+"' not found.");
+        return std::make_tuple(false, false);
+    }
+    return parameterGiven(ndx, s);
+}
+
 std::tuple<bool,bool> Parameterized::setParameters(const std::vector<PTParameterValue>& params, Status& s) {
     bool changed = false;
     for(auto it=params.cbegin(); it!=params.cend(); ++it) {

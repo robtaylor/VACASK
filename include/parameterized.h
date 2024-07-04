@@ -35,6 +35,9 @@ public:
     
     virtual bool getParameter(Id name, Value& v, Status& s=Status::ignore) const;
     virtual std::tuple<bool,bool> setParameter(Id name, const Value& v, Status& s=Status::ignore); 
+
+    virtual std::tuple<bool,bool> parameterGiven(ParameterIndex ndx, Status& s=Status::ignore);
+    virtual std::tuple<bool,bool> parameterGiven(Id name, Status& s=Status::ignore);
     
     // Set parameters from parsed netlist
     std::tuple<bool,bool> setParameters(const std::vector<PTParameterValue>& params, Status& s=Status::ignore);
@@ -69,10 +72,12 @@ public:
 
     virtual bool getParameter(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const;
     virtual std::tuple<bool,bool> setParameter(ParameterIndex ndx, const Value& v, Status& s=Status::ignore);
+    virtual std::tuple<bool,bool> parameterGiven(ParameterIndex ndx, Status& s=Status::ignore);
 
     virtual bool getParameter(Id name, Value& v, Status& s=Status::ignore) const;
     virtual std::tuple<bool,bool> setParameter(Id name, const Value& v, Status& s=Status::ignore); 
-    
+    virtual std::tuple<bool,bool> parameterGiven(Id name, Status& s=Status::ignore);
+        
     const CoreT& core() const { return core_; };
     CoreT& core() { return core_; };
 
@@ -114,6 +119,10 @@ template<typename CoreT> std::tuple<bool,bool> IStruct<CoreT>::setParameter(Para
     return Introspection<CoreT>::set(core_, ndx, v, s);
 }
 
+template<typename CoreT> std::tuple<bool,bool> IStruct<CoreT>::parameterGiven(ParameterIndex ndx, Status& s) {
+    return Introspection<CoreT>::given(core_, ndx, s);
+}
+
 template<typename CoreT> bool IStruct<CoreT>::getParameter(Id name, Value& v, Status& s) const {
     return Introspection<CoreT>::get(core_, name, v, s);
 }
@@ -121,6 +130,11 @@ template<typename CoreT> bool IStruct<CoreT>::getParameter(Id name, Value& v, St
 template<typename CoreT> std::tuple<bool,bool> IStruct<CoreT>::setParameter(Id name, const Value& v, Status& s) {
     return Introspection<CoreT>::set(core_, name, v, s);
 }
+
+template<typename CoreT> std::tuple<bool,bool> IStruct<CoreT>::parameterGiven(Id name, Status& s) {
+    return Introspection<CoreT>::given(core_, name, s);
+}
+
 
 }
 

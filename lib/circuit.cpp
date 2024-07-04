@@ -1003,7 +1003,7 @@ std::tuple<MatrixEntryIndex*, bool> Circuit::createJacobianEntry(Node* ne, Node*
     return std::make_tuple(ptr, ok);
 }
 
-StateIndex Circuit::allocateStates(LocalStateIndex n) {
+GlobalStorageIndex Circuit::allocateStates(LocalStorageIndex n) {
     auto retval = statesCount_;
     statesCount_ += n;
     return retval;
