@@ -53,7 +53,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         return;
     } else {
         // 
-        if (!(*major>0 || *minor>=4)) {
+        if (!((*major==0 && *minor>=4) || (*major>=1))) {
             s.set(
                 Status::BadVersion, "Unsupported OSDI interface version ("+
                 std::to_string(*major)+"."+std::to_string(*minor)+
