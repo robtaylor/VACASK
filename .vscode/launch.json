@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             
-            // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
+            "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnodeset.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opstore.sim" ],
@@ -59,6 +59,7 @@
             // "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/builtin.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/custom.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/../xlat/test-spice-bjt.sim" ], 
             // "args": [ "-dp" ], 
             
             "stopAtEntry": false,

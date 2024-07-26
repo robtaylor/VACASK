@@ -247,8 +247,8 @@ std::tuple<EquationIndex, EquationIndex> OsdiInstance::noiseExcitation(Circuit& 
     return std::make_tuple(e1, e2);
 }
 
-bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity) { 
-    model()->device()->descriptor()->load_noise(core(), model()->core(), freq, noiseDensity, logNoiseDensity);
+bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity) { 
+    model()->device()->descriptor()->load_noise(core(), model()->core(), freq, noiseDensity);
     return true;
 }
 
@@ -478,6 +478,86 @@ bool OsdiInstance::bindCore(
     return true;
 }
 
+void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* instance, bool resist, bool react) {
+    auto nnz = descriptor->num_jacobian_entries;
+    auto nnzres = descriptor->num_resistive_jacobian_entries;
+    auto nnzreact = descriptor->num_reactive_jacobian_entries;
+    
+    // Temporary pointer storage
+    double* resPtrs[nnz];
+    double* reacPtrs[nnz];
+    
+    // Extracted Jacobian contributions via load() 
+    double resVals[nnz] = {0};
+    double reacVals[nnz] = {0};
+
+    // Extracted Jacobian values via write(), no initialization
+    double reswVals[nnzres];
+    double reacwVals[nnzreact];
+
+    // Store pointers, redirect to our structures
+    auto instResPtrs = getDataPtr<double**>(instance, descriptor->jacobian_ptr_resist_offset);
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        resPtrs[i] = instResPtrs[i];
+        instResPtrs[i] = resVals+i;
+        if (jac.react_ptr_off != UINT32_MAX) {
+            auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
+            reacPtrs[i] = *reactPtr;
+            *reactPtr = reacVals+i;
+        } else {
+            reacPtrs[i] = nullptr;
+        }
+    }
+
+    // Get Jacobian contributions
+    if (resist) {
+        descriptor->load_jacobian_resist(instance, model);
+        descriptor->write_jacobian_array_resist(instance, model, reswVals);
+    }
+    if (react) {
+        descriptor->load_jacobian_react(instance, model, 1.0);
+        descriptor->write_jacobian_array_react(instance, model, reacwVals);
+    }
+
+    // TODO: check tran load
+
+    // Check values
+    auto resPtr = reswVals;
+    auto reactPtr = reacwVals;
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        if (jac.flags & JACOBIAN_ENTRY_RESIST) {
+            // Have resistive entry
+            if (resist) {
+                if (resVals[i] != *resPtr) {
+                    throw std::logic_error("Jacobian mismatch, resistive i="+std::to_string(i));
+                }
+                resPtr++;
+            }
+        }
+        if (jac.flags & JACOBIAN_ENTRY_REACT) {
+            // Have reactive entry
+            if (react) {
+                if (reacVals[i] != *reactPtr) {
+                    throw std::logic_error("Jacobian mismatch, reactive i="+std::to_string(i));
+                }
+                reactPtr++;
+            }
+        }
+    }
+
+    // Restore pointers
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        instResPtrs[i] = resPtrs[i];
+        if (jac.react_ptr_off != UINT32_MAX) {
+            auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
+            *reactPtr = reacPtrs[i];
+        }
+    }
+}
+
 bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els) {
     // Get descriptor 
     auto descr = model()->device()->descriptor();
@@ -539,6 +619,15 @@ bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalA
     if (els.loadTransientJacobian) {
         descr->load_jacobian_tran(core(), model()->core(), els.integCoeffs->leadingCoeff());
     }
+
+    /*
+    // For development
+    jacobianWriteSanityCheck(
+        model()->device()->descriptor(), model()->core(), core(), 
+        els.loadResistiveJacobian || els.loadTransientJacobian, 
+        els.loadReactiveJacobian || els.loadTransientJacobian
+    );
+    */
 
     // Without limiting the residual is 
     //   g(x)
@@ -771,6 +860,8 @@ void OsdiInstance::dump(int indent, const Circuit& circuit, std::ostream& os) co
                 os << pfx << "    " << desc->nodes[n1].name;
                 if (n2!=UINT32_MAX) {
                     os << ", " << desc->nodes[n2].name;
+                } else {
+                    os << ", (ground)";
                 }
                 os << "\n";
             }

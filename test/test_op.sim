@@ -14,6 +14,7 @@ r2 (2 0) resistor r=9k
 control
   abort always
   print variables
+  print device("resistor")
 
   var dbglevel=0
   options rawfile="binary" op_debug=dbglevel // op_skiphomotopy=1 op_itl=5

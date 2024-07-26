@@ -69,7 +69,7 @@ Up to now VACASK development was not focused on assembling a library of device m
 # Installation from pre-built packages
 [Pre-built packages](https://codeberg.org/arpadbuermen/VACASK/releases) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF-reloaded compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
 
-A new verion of VACASK is released every now and then. Between releases [(not quite) nightly builds](https://fides.fe.uni-lj.si/vacask/download/) are released. These are great if you want try VACASK with latest bugfixes. 
+A new verion of VACASK is released every now and then. Between releases [(not quite) nightly builds](https://fides.fe.uni-lj.si/vacask/download/) are released. These are great if you want to try VACASK with latest bugfixes. 
 
 # Getting started
 There are some examples available in the [`demo`](demo) directory. You can try the simulation of a Miller OTA by running

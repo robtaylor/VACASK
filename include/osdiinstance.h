@@ -70,7 +70,7 @@ public:
     virtual Id noiseSourceName(ParameterIndex ndx) const { return model()->device()->noiseSourceName(ndx); };
     virtual std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return model()->device()->noiseSourceIndex(name); }
     virtual std::tuple<EquationIndex, EquationIndex> noiseExcitation(Circuit& cir, ParameterIndex ndx) const;
-    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity, double* logNoiseDensity);
+    virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity);
 
     // Helpers for inlining in device, model, and instance virtual functions
     std::tuple<bool, bool, bool> setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, Status& s=Status::ignore);

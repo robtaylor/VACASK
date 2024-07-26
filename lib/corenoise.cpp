@@ -509,8 +509,7 @@ bool NoiseCore::run(bool continuePrevious) {
         powerGain *= powerGain;
 
         Vector<double> noiseDensity;
-        Vector<double> logNoiseDensity;
-
+        
         // Set total output noise to 0
         outputNoise = 0.0;
 
@@ -540,8 +539,7 @@ bool NoiseCore::run(bool continuePrevious) {
 
                     // Collect noise excitations
                     noiseDensity.resize(nSources);
-                    logNoiseDensity.resize(nSources);
-                    if (!inst->loadNoise(circuit, freq, noiseDensity.data(), logNoiseDensity.data())) {
+                    if (!inst->loadNoise(circuit, freq, noiseDensity.data())) {
                         setError(NoiseError::PsdError);
                         if (debug>0) {
                             Simulator::dbg() << "Failed to compute noise.\n";

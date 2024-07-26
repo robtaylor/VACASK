@@ -558,18 +558,82 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
                 os << " (flow)";
             }
             os << ", units \"" << descriptor_->nodes[i].units << "\"";
-            os << ", residual units \"" << descriptor_->nodes[i].residual_units << "\"\n";
+            os << ", residual units \"" << descriptor_->nodes[i].residual_units << "\"";
+            
+            if (descriptor_->nodes[i].resist_residual_off != UINT32_MAX) {
+                os << ", resistive";
+            }
+            if (descriptor_->nodes[i].resist_limit_rhs_off != UINT32_MAX) {
+                os << "+limiting";
+            }
+            if (descriptor_->nodes[i].react_residual_off != UINT32_MAX) {
+                os << ", reactive";
+            }
+            if (descriptor_->nodes[i].react_limit_rhs_off != UINT32_MAX) {
+                os << "+limiting";
+            }
+            
+            os << "\n";
         }
     }
-    if (descriptor()->num_collapsible>0) {
+    if (descriptor_->num_collapsible>0) {
         os << pfx << "  Collapsible node pairs:\n";
-        for(ParameterIndex i=0; i<descriptor()->num_collapsible; i++) {
-            auto n1 = descriptor()->collapsible[i].node_1;
-            auto n2 = descriptor()->collapsible[i].node_2;
-            os << pfx << "    " << descriptor()->nodes[n1].name;
+        for(ParameterIndex i=0; i<descriptor_->num_collapsible; i++) {
+            auto n1 = descriptor_->collapsible[i].node_1;
+            auto n2 = descriptor_->collapsible[i].node_2;
+            os << pfx << "    " << descriptor_->nodes[n1].name;
             if (n2!=UINT32_MAX) {
-                os << ", " << descriptor()->nodes[n2].name;
+                os << ", " << descriptor_->nodes[n2].name;
             }
+            os << "\n";
+        }
+    }
+    if (descriptor_->num_inputs>0) {
+        os << pfx << "  Model inputs (nonlinear):\n";
+        for(ParameterIndex i=0; i<descriptor_->num_inputs; i++) {
+            auto n1 = descriptor_->inputs[i].node_1;
+            auto n2 = descriptor_->inputs[i].node_2;
+            os << pfx << "    ";
+            if (n1!=UINT32_MAX) {
+                os << nodeName(n1);
+            } else {
+                os << "(ground)";
+            }
+            if (n2!=UINT32_MAX) {
+                os << ", " << nodeName(n2);
+            } else {
+                os << ", (ground)";
+            }
+            os << "\n";
+        }
+    }
+    if (descriptor_->num_jacobian_entries>0) {
+        os << pfx << "  Jacobian entries (";
+        os << descriptor_->num_jacobian_entries << " nonzeros, ";
+        os << descriptor_->num_resistive_jacobian_entries << " resistive, ";
+        os << descriptor_->num_reactive_jacobian_entries << " reactive):\n";
+        for(ParameterIndex i=0; i<descriptor_->num_jacobian_entries; i++) {
+            auto& jac = descriptor_->jacobian_entries[i];
+            auto n1 = jac.nodes.node_1;
+            auto n2 = jac.nodes.node_2;
+            os << pfx << "    (" << nodeName(n1) << ", " << nodeName(n2) << "): ";
+            bool comma = false;
+            if (jac.flags & JACOBIAN_ENTRY_RESIST) {
+                comma = true;
+                os << "resistive";
+                if (jac.flags & JACOBIAN_ENTRY_RESIST_CONST) {
+                    os << " constant";
+                }
+            } 
+            if (jac.flags & JACOBIAN_ENTRY_REACT) {
+                if (comma) {
+                    os << ", ";
+                }
+                os << "reactive";
+                if (jac.flags & JACOBIAN_ENTRY_REACT_CONST) {
+                    os << " constant";
+                }
+            } 
             os << "\n";
         }
     }
