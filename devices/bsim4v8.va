@@ -33,7 +33,9 @@ HSPICE -- J-2014.09-SP2-1 for testing
  * Project Director: Prof. Chenming Hu.
  **********/
 //Indicate Xyce is the simulator used here, comment it out if runs with other simulator
-// `define __XYCE_VAMS__        
+// Without __XYCE_VAMS__ openvaf patched with 477e71c crashes because there is a 
+// voltage contribution to V(g,gm) and then later a I(gm,g) noise contribution. 
+`define __XYCE_VAMS__        
 `include "disciplines.vams" 
 `include "constants.vams"
 
