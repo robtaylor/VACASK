@@ -563,7 +563,7 @@ bool NoiseCore::run(bool continuePrevious) {
                         auto [e1, e2] = inst->noiseExcitation(circuit, ndx);
 
                         // Set RHS, load negated unity excitation to get the true value of response after solve()
-                        // Here this is not neccessary because we are working with teh absolute value of teh response. 
+                        // Here this is not neccessary because we are working with the absolute value of the response. 
                         acSolution[e1] += -1.0;
                         acSolution[e2] -= -1.0;
 
@@ -589,8 +589,9 @@ bool NoiseCore::run(bool continuePrevious) {
                         auto gain = std::abs(tf);
                         gain *= gain;
                         
-                        // Contribution
-                        sourceContribution = gain * noiseDensity[ndx];
+                        // Contribution - take absolute value of noise power spectral density (it may be negative). 2
+                        // See Coram et. al., Flicker Noise Formulations in Compact Models, IEEE TCAD, vol 39, 2020. 
+                        sourceContribution = gain * std::abs(noiseDensity[ndx]);
                         totalInstanceContribution += sourceContribution;
                         // Simulator::dbg() << "       src=" << sourceContribution << "  inst=" << totalInstanceContribution << "\n";
 
