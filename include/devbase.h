@@ -14,6 +14,7 @@
 #include "options.h"
 #include "flags.h"
 #include "coretrancoef.h"
+#include "elsetup.h"
 #include "value.h"
 #include "common.h"
 #include <cinttypes>
@@ -267,6 +268,12 @@ public:
     ) { return true; };
 
     // Evaluate instances and load results
+    virtual bool eval(Circuit& cir, EvalSetup& evalSetup) { return true; };
+    
+    // Load instance evaluation results into linear system
+    virtual bool load(Circuit& cir, LoadSetup& loadSetup) { return true; };
+    
+    // Evaluate instances and load results
     virtual bool evalAndLoad(Circuit& cir, EvalAndLoadSetup& els) { return true; };
     
     // A model created with this method is owned by the circuit. 
@@ -410,6 +417,12 @@ enum class InstanceFlags : uint8_t {
     HasSetupHistory = 4, 
     // Instance is valid
     IsValid = 8, 
+    // Limiting applied
+    LimitingApplied = 16, 
+    // Converged
+    Converged = 32, 
+    // Bypassed
+    Bypassed = 64, 
 };
 DEFINE_FLAG_OPERATORS(InstanceFlags);
 

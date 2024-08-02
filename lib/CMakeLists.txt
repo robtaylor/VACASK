@@ -9,6 +9,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/status.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/value.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/parameterized.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/elsetup.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/devbase.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/devbuiltin.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/devvisrc.h 

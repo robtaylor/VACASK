@@ -181,8 +181,9 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                 // Add to osdi id to simulator id translator list
                 osdiIdSimInstIdLists[i][j] = instanceParamOsdiIdLists[i].size()-1;
                 osdiIdSimModIdLists[i][j] = modelParamOsdiIdLists[i].size()-1;
-                // Param given flag index, only for strings and vectors
-                if ((paramInfo.flags & PARA_TY_MASK)==PARA_TY_STR || paramInfo.len>0) {
+                // Param given flag index, only for strings. Vectors are preallocated in instance/model. 
+                // if ((paramInfo.flags & PARA_TY_MASK)==PARA_TY_STR || paramInfo.len>0) {
+                if ((paramInfo.flags & PARA_TY_MASK)==PARA_TY_STR) {
                     instParAllocatedOsdiId[i].push_back(j);
                     modParAllocatedOsdiId[i].push_back(j);
                 }

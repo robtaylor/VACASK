@@ -72,8 +72,10 @@ bool OsdiDevice::freeValues(void* coreMod, void* coreInst) {
                 continue;
             }
             auto t = parameterType(osdiId);
+            // Only need to free strings, vectors are preallocated in instance core structure
             switch (t) {
                 case Value::Type::String: {
+                    // TODO: handle string vectors
                     auto ptr = (char**)(descriptor_->access(coreInst, coreMod, osdiId, flags));
                     free(*ptr);
                     break;
@@ -81,13 +83,16 @@ bool OsdiDevice::freeValues(void* coreMod, void* coreInst) {
             }
         }
     } else {
+        // Free allocated parameters in model structure
         for(auto osdiId : osdiFile->allocatedModelParamemeterIds(index_)) {
             if (auto [ok, given] = parameterGiven(osdiId, coreMod, coreInst); !ok || !given) {
                 continue;
             }
             auto t = parameterType(osdiId);
+            // Only need to free strings, vectors are preallocated in model core structure
             switch (t) {
                 case Value::Type::String: {
+                    // TODO: handle string vectors
                     auto ptr = (char**)(descriptor_->access(nullptr, coreMod, osdiId, flags));
                     free(*ptr);
                     break;

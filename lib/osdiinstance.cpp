@@ -11,6 +11,54 @@ namespace NAMESPACE {
 // TODO: check unconnected terminals handling, i.e. BJT with unconnected bulk
 //       how are unconnected terminals handled
 
+// Element bypass
+//
+// Index 1 is for latest value, 2 is for previous value
+//
+// Instance states: normal, converged, bypassed
+//
+// State graph: normal -> converged -> bypassed -> bypassed
+//                                  -> normal   -> normal
+//                      
+// 
+// First iteration of NR when not in continue mode, mark all instances normal. 
+// 
+// In NR iteration
+//   Converged instance, bypassed instance: check for bypass
+//   - nonlinear nodel inputs
+//     abs(input1-input2) must be within max(abstol, reltol*maxabs(input1, input2))
+//     abstol is max abstol of discipline->potential across input's nodes 
+//   Satisfied, mark as bypassed. 
+//   If not satisfied, mark as normal. 
+// 
+//   At this point all instances are either normal or bypassed.  
+//
+//   Evaluate normal instances. 
+//
+//   Check normal instances if they are converged
+//     - nonlinear nodel inputs
+//       abs(input1-input2) must be within max(abstol, reltol*maxabs(input1, input2))
+//       abstol is max abstol of discipline->potential across input's nodes 
+//     - resistive residuals
+//       abs(res1-res2) must be within max(abstol, reltol*maxabs(res1, res2))
+//       abstol is the abstol of discipline->flow
+//     - reactive residual (checked in transient analysis)
+//       abs(res1-res2) must be within max(abstol, reltol*maxabs(res1, res2))
+//       abstol is the abstol of node's discipline->flow->idt_nature
+//     - resistive Jacobian 
+//       abs((g1-g2)*input1) must be within max(abstol, reltol*maxabs(res_resist1, res_resist2))
+//       abstol is the abstol of node's discipline->flow
+//     - reactive Jacobian (checked in transient analysis)
+//       abs((c1-c2)*input1) must be within max(abstol, reltol*maxabs(res_react1, res_react2))
+//       abstol is the abstol of node's discipline->flow->idt_nature
+//     Copy residual and Jacobian in history. 
+//     If satisfied mark instance as converged. 
+//   
+//   Load system (all instances).
+//   or differential load (normal and converged instances)
+// 
+//   Linear solve, compute new solution. 
+
 OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, const PTInstance& parsedInstance, Status &s) 
     : Instance(model, name, parentInstance, parsedInstance), core_(nullptr), connectedTerminalCount(0) {
     core_ = alignedAlloc(sizeof(max_align_t), model->device()->descriptor()->instance_size);
@@ -557,6 +605,170 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
         }
     }
 }
+
+bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
+    // Get descriptor 
+    auto descr = model()->device()->descriptor();
+
+    // Prepare callback handle
+    OsdiCallbackHandle handle = OsdiCallbackHandle {
+        .kind = 3, 
+        .name = const_cast<char*>(name().c_str())
+    };
+
+    // Set beginning of state vector chunk belonging to this instance
+    simInfo.prev_state = evalSetup.oldStates + offsStates;
+    simInfo.next_state = evalSetup.newStates + offsStates;
+    
+    // Evaluation
+    if (!evalSetup.skipCoreEvaluation) {
+        // Enable limiting in OSDI
+        bool el = simInfo.flags & ENABLE_LIM;
+
+        // Core evaluation
+        auto evalFlags = descr->eval(&handle, core(), model()->core(), &simInfo);
+    
+        // Handle evalFlags
+        if (evalFlags & EVAL_RET_FLAG_LIM) {
+            // If some variable x is linearized to xl the Jacobian is computed at xl instead of x
+            // i.e. limiting takes place and EVAL_RET_FLAG_LIM is set
+            // We are may not stop the NR loop until this flag is gone for all instances. 
+            evalSetup.limitingApplied = true;
+            setFlags(Flags::LimitingApplied);
+        } else {
+            evalSetup.limitingApplied = false;
+            clearFlags(Flags::LimitingApplied);
+        }
+        if (evalFlags & EVAL_RET_FLAG_FATAL) {
+            // Fatal error occurred, must abort simulation. 
+            evalSetup.abortRequested = true;
+        } 
+        if (evalFlags & EVAL_RET_FLAG_FINISH) {
+            // $finish was called asking the simulator to finish simulation 
+            // (exit gracefully) if the current iteration converged. 
+            evalSetup.finishRequested = true;
+        } 
+        if (evalFlags & EVAL_RET_FLAG_STOP) {
+            // $stop was called asking the simulator to pause the simulation
+            // if the current iteration converged. 
+            evalSetup.abortRequested = true;
+        }
+    }
+
+    /*
+    // For development
+    jacobianWriteSanityCheck(
+        model()->device()->descriptor(), model()->core(), core(), 
+        els.loadResistiveJacobian || els.loadTransientJacobian, 
+        els.loadReactiveJacobian || els.loadTransientJacobian
+    );
+    */
+
+    // Update maximal residual contribution
+    if (evalSetup.maxResistiveResidualContribution) {
+        for(uint32_t i=0; i<descr->num_nodes; i++) {
+            auto u = nodes_[i]->unknownIndex();
+            auto resOffs = descr->nodes[i].resist_residual_off;
+            double contrib = 0.0;
+            if (resOffs!=UINT32_MAX) {
+                contrib = *getDataPtr<double*>(core(), resOffs);
+            }
+            if (checkFlags(Flags::LimitingApplied)) {
+                auto offsLim = descr->nodes[i].resist_limit_rhs_off;
+                if (offsLim!=UINT32_MAX) {
+                    // Subtract because this is an RHS contribution
+                    contrib -= *getDataPtr<double*>(core(), offsLim);
+                }
+            }
+            contrib = std::abs(contrib);
+            if (contrib > evalSetup.maxResistiveResidualContribution[u]) {
+                evalSetup.maxResistiveResidualContribution[u] = contrib;
+            }
+        }
+    }
+    // TODO: handle only nonzero reactive residual contribution
+    //       reserve states only for nonzero reactive residuals
+    auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
+    if (evalSetup.maxReactiveResidualContribution || evalSetup.integCoeffs) {
+        for(uint32_t i=0; i<descr->num_nodes; i++) {
+            auto u = nodes_[i]->unknownIndex();
+            auto resOff = descr->nodes[i].react_residual_off;
+            double contrib = 0.0;
+            if (resOff!=UINT32_MAX) {
+                contrib = *getDataPtr<double*>(core(), resOff);
+            }
+            if (checkFlags(Flags::LimitingApplied)) {
+                auto offsLim = descr->nodes[i].react_limit_rhs_off;
+                if (offsLim!=UINT32_MAX) {
+                    // Subtract because this is an RHS contribution
+                    contrib -= *getDataPtr<double*>(core(), offsLim);
+                }
+            }
+            contrib = std::abs(contrib);
+            if (evalSetup.maxReactiveResidualContribution) {
+                if (contrib > evalSetup.maxReactiveResidualContribution[u]) {
+                    evalSetup.maxReactiveResidualContribution[u] = contrib;
+                }
+            }
+            // Store reactive residual contribution in states vector
+            evalSetup.newStates[nodeStateIndex] = contrib;
+            // Differentiate if requested
+            if (evalSetup.integCoeffs) {
+                double flow = evalSetup.integCoeffs->differentiate(contrib, nodeStateIndex);
+                // Store in states vector
+                evalSetup.newStates[nodeStateIndex+1] = flow;
+                // Update maximal residual contribution
+                if (evalSetup.maxReactiveResidualDerivativeContribution) {
+                    auto contrib = std::abs(flow);
+                    if (contrib > evalSetup.maxReactiveResidualDerivativeContribution[u]) {
+                        evalSetup.maxReactiveResidualDerivativeContribution[u] = contrib;
+                    }
+                }
+            }
+            // Go to next node (skip two state vector entries - charge and flow)
+            nodeStateIndex += 2;
+        }
+    }
+
+    /*
+    // Residual debugging
+    Simulator::dbg() << "  Instance " << name() << "\n";
+    for(uint32_t i=0; i<descr->num_nodes; i++) {
+        auto resOff = descr->nodes[i].resist_residual_off;
+        auto resLimOff = descr->nodes[i].resist_limit_rhs_off;
+        auto reactOff = descr->nodes[i].react_residual_off;
+        auto reactLimOff = descr->nodes[i].react_limit_rhs_off;
+        
+        Simulator::dbg() << "    " << i << " " << descr->nodes[i].name << ": offsets " << "res " << resOff << " reslim " << resLimOff;
+        Simulator::dbg() << " react " << reactOff << " reactlim " << reactLimOff << " : ";
+        Simulator::dbg()  << "resistive=";
+        if (resOff!=UINT32_MAX) {
+            Simulator::dbg()  << *getDataPtr<double*>(core(), resOff);
+        }
+        if (resLimOff!=UINT32_MAX) {
+            Simulator::dbg()  << " - " << *getDataPtr<double*>(core(), resLimOff);
+        }
+        Simulator::dbg()  << ", reactive=";
+        if (reactOff!=UINT32_MAX) {
+            Simulator::dbg()  << *getDataPtr<double*>(core(), reactOff);
+        }
+        if (reactLimOff!=UINT32_MAX) {
+            Simulator::dbg()  << " - " << *getDataPtr<double*>(core(), reactLimOff);
+        }
+        Simulator::dbg() << "\n"; 
+    }
+    */
+    
+    if (evalSetup.computeBoundStep) {
+        auto bsOffs = descr->bound_step_offset;
+        if (bsOffs!=UINT32_MAX) {
+            evalSetup.setBoundStep(*getDataPtr<double*>(core(), bsOffs));
+        }
+    }
+    
+    return true;
+}
+
 
 bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els) {
     // Get descriptor 

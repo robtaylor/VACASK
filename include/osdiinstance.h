@@ -82,6 +82,8 @@ public:
         KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
+    bool evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
+    bool loadCore(Circuit& circuit, OsdiSimInfo& simInfo, LoadSetup& loadSetup);
     bool evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els);
     
 protected:
