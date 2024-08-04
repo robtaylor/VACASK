@@ -68,6 +68,9 @@ struct DevVSourceInstanceData {
     double* jacPFlow;
     double* jacNFlow;
 
+    double flowResidual;
+    double eqResidual;
+
     double v;  // Voltage across instance
     double i;  // Current of one parallel instances
 
@@ -79,6 +82,8 @@ struct DevISourceInstanceData {
 
     UnknownIndex uP;
     UnknownIndex uN;
+    
+    double flowResidual;
     
     double i;  // Current of one parallel instance
     double v;  // Voltage across instance
@@ -140,6 +145,11 @@ template<> bool BuiltinISourceInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+
+template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);    
+template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);    
+template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
+template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
 template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 

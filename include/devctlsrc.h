@@ -40,6 +40,8 @@ struct DevVccsInstanceData {
     double* jacPCn;
     double* jacNCp;
     double* jacNCn;
+
+    double flowResidual;
     
     double ctl; // Controlling value
     double v;   // Voltage across instance
@@ -62,6 +64,9 @@ struct DevVcvsInstanceData {
     double* jacFlowCp;
     double* jacFlowCn;
 
+    double flowResidual;
+    double eqResidual;
+
     double ctl; // Controlling value
     double v;   // Voltage across instance
     double i;   // Current of one parallel instances
@@ -76,6 +81,8 @@ struct DevCccsInstanceData {
     UnknownIndex uCtl;
     double* jacPCtl;
     double* jacNCtl;
+
+    double flowResidual;
 
     double ctl; // Controlling value
     double v;   // Voltage across instance
@@ -95,6 +102,9 @@ struct DevCcvsInstanceData {
     double* jacFlowP;
     double* jacFlowN;
     double* jacFlowCtl;
+
+    double flowResidual;
+    double eqResidual;
     
     double ctl; // Controlling value
     double v;   // Voltage across instance
@@ -136,6 +146,8 @@ template<> bool BuiltinVccsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
+template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
 template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // VCVS
@@ -152,6 +164,8 @@ template<> bool BuiltinVcvsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
+template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
 template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCCS
@@ -168,6 +182,8 @@ template<> bool BuiltinCccsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
+template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
 template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCVS
@@ -184,6 +200,8 @@ template<> bool BuiltinCcvsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
+template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
 template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 
@@ -207,8 +225,8 @@ struct DevMutualInstanceData {
     double mutual;
     double* jacReact12;
     double* jacReact21;
-    double res1;
-    double res2;
+    double reacRes1;
+    double reacRes2;
 
     GlobalStorageIndex offsStates;
     
@@ -233,8 +251,9 @@ template<> bool BuiltinMutualInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, 
     Status& s
 );
+template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);
+template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);
 template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
-
 
 }
 

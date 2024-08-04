@@ -56,22 +56,13 @@ typedef struct EvalSetup {
     bool computeNextBreakpoint {};
     bool computeMaxFreq {};
 
+    // Store reactive residual in states or dummyStates
+    bool storeReactiveState {};
+
     // Numerical differentiation of residual contributions after core evaluations
     // Results are written to states or dummyStates only if not nullptr
     IntegratorCoeffs* integCoeffs {};
     
-    // Maximal resistive residual contribution per node
-    // Updated only if not nullptr
-    double* maxResistiveResidualContribution {}; // with bucket
-
-    // Maximal reactive residual contribution per node
-    // Updated only if not nullptr
-    double* maxReactiveResidualContribution {}; // with bucket
-
-    // Maximal reactive residual derivative contribution per node
-    // Updated only if not nullptr and integCoeffs is not nullptr
-    double* maxReactiveResidualDerivativeContribution {}; // with bucket
-
     // Return information on what happened during evaluation
     // Verilog-A abort/finish/stop
     bool abortRequested {};
@@ -176,12 +167,19 @@ typedef struct EvalSetup {
 
 typedef struct LoadSetup {
     // {} for default initialization
+    // States - need them whenever
+    // - maxReactiveResidualContribution is not nullptr
+    // - maxReactiveResidualDerivativeContribution is not nullptr
+    // - reactiveResidualDerivative is not nullptr
+    // From states we retrieve reactive residual and its derivative wrt time. 
+    VectorRepository<double>* states {}; 
     
     // What part of Jacobian to load to bound locations
     bool loadResistiveJacobian {};
     bool loadReactiveJacobian {};
     double reactiveJacobianFactor {};
     bool loadTransientJacobian {}; // uses integCoeffs
+    IntegratorCoeffs* integCoeffs {};
     
     // Where to load resistive residual, skip if nullptr
     double* resistiveResidual {}; // with bucket
@@ -195,14 +193,47 @@ typedef struct LoadSetup {
     // Where to load linearized reactive residual, skip loading if nullptr
     double* linearizedReactiveRhsResidual {}; // with bucket
 
+    // Where to load reactive residual derivative, skip if nullptr
+    double* reactiveResidualDerivative {}; // with bucket
+
+    // Maximal resistive residual contribution per node
+    // Updated only if not nullptr
+    double* maxResistiveResidualContribution {}; // with bucket
+
+    // Maximal reactive residual contribution per node
+    // Updated only if not nullptr
+    double* maxReactiveResidualContribution {}; // with bucket
+
+    // Maximal reactive residual derivative contribution per node
+    // Updated only if not nullptr and integCoeffs is not nullptr
+    double* maxReactiveResidualDerivativeContribution {}; // with bucket
+
     // Where to load DC small-signal residual, skip if nullptr
     double* dcIncrementResidual {}; // with bucket
 
     // Where to load AC small-signal residual, skip if nullptr
     Complex* acResidual {}; // with bucket
     
-    // Where to load reactive residual derivative, skip if nullptr
-    double* reactiveResidualDerivative {}; // with bucket
+    // 
+    // Internals
+    // 
+
+    // Fast access pointers - do not set manually
+    double* oldStates; // states (current data)
+    double* newStates; // states (future data)
+    
+    // Methods
+    bool initialize() {
+        DBGCHECK(states && states->size()<2, "States history must have at least two slots.");
+        if (states) {
+            oldStates = states->data();
+            newStates = states->futureData();
+        } else {
+            oldStates = newStates = nullptr;
+        }
+        
+        return true;
+    };
 } LoadSetup;
 
 }

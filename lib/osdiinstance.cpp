@@ -663,33 +663,11 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         els.loadReactiveJacobian || els.loadTransientJacobian
     );
     */
-
-    // Update maximal residual contribution
-    if (evalSetup.maxResistiveResidualContribution) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            auto u = nodes_[i]->unknownIndex();
-            auto resOffs = descr->nodes[i].resist_residual_off;
-            double contrib = 0.0;
-            if (resOffs!=UINT32_MAX) {
-                contrib = *getDataPtr<double*>(core(), resOffs);
-            }
-            if (checkFlags(Flags::LimitingApplied)) {
-                auto offsLim = descr->nodes[i].resist_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    // Subtract because this is an RHS contribution
-                    contrib -= *getDataPtr<double*>(core(), offsLim);
-                }
-            }
-            contrib = std::abs(contrib);
-            if (contrib > evalSetup.maxResistiveResidualContribution[u]) {
-                evalSetup.maxResistiveResidualContribution[u] = contrib;
-            }
-        }
-    }
+    
     // TODO: handle only nonzero reactive residual contribution
     //       reserve states only for nonzero reactive residuals
     auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
-    if (evalSetup.maxReactiveResidualContribution || evalSetup.integCoeffs) {
+    if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
         for(uint32_t i=0; i<descr->num_nodes; i++) {
             auto u = nodes_[i]->unknownIndex();
             auto resOff = descr->nodes[i].react_residual_off;
@@ -704,12 +682,6 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
                     contrib -= *getDataPtr<double*>(core(), offsLim);
                 }
             }
-            contrib = std::abs(contrib);
-            if (evalSetup.maxReactiveResidualContribution) {
-                if (contrib > evalSetup.maxReactiveResidualContribution[u]) {
-                    evalSetup.maxReactiveResidualContribution[u] = contrib;
-                }
-            }
             // Store reactive residual contribution in states vector
             evalSetup.newStates[nodeStateIndex] = contrib;
             // Differentiate if requested
@@ -717,13 +689,6 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
                 double flow = evalSetup.integCoeffs->differentiate(contrib, nodeStateIndex);
                 // Store in states vector
                 evalSetup.newStates[nodeStateIndex+1] = flow;
-                // Update maximal residual contribution
-                if (evalSetup.maxReactiveResidualDerivativeContribution) {
-                    auto contrib = std::abs(flow);
-                    if (contrib > evalSetup.maxReactiveResidualDerivativeContribution[u]) {
-                        evalSetup.maxReactiveResidualDerivativeContribution[u] = contrib;
-                    }
-                }
             }
             // Go to next node (skip two state vector entries - charge and flow)
             nodeStateIndex += 2;
@@ -769,6 +734,117 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     return true;
 }
 
+bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+    // Get descriptor 
+    auto descr = model()->device()->descriptor();
+    
+    // Loading
+    
+    // Load Jacobian computed with limiting (if it was computed)
+    if (loadSetup.loadResistiveJacobian) {
+        descr->load_jacobian_resist(core(), model()->core());
+    }
+    if (loadSetup.loadReactiveJacobian) {
+        descr->load_jacobian_react(core(), model()->core(), loadSetup.reactiveJacobianFactor);
+    }
+    if (loadSetup.loadTransientJacobian) {
+        descr->load_jacobian_tran(core(), model()->core(), loadSetup.integCoeffs->leadingCoeff());
+    }
+
+    // Without limiting the residual is 
+    //   g(x)
+    // With limiting it is linearized above xl so it is actually
+    //   g(xl) + Jg(xl) (x-xl)
+    // g(xl) part is loaded by 
+    //   load_residual_resist()
+    // Jg(xl) (xl-x) = -Jg(xl) (x-xl) is the linearized rhs residual part and is loaded by 
+    //   load_lim_rhs_resist()
+    // The second one needs to be subtracted from the first one to get the 
+    // actual residual, i.e.
+    //   actual_residual_when_limiting = residual - linearized_rhs_residual
+    // Now this is stupid, but that's the way OSDI API is designed. 
+    // We load each of them separately and do the subtraction in the analysis
+    // (if limiting takes place). 
+    // To maintain cache locality load_residaul_*() and load_lim_rhs_*() must be 
+    // called close together for the same instance. 
+    
+    // Load residual
+    if (loadSetup.resistiveResidual) {
+        descr->load_residual_resist(core(), model()->core(), loadSetup.resistiveResidual);
+    }
+    if (loadSetup.reactiveResidual) {
+        descr->load_residual_react(core(), model()->core(), loadSetup.reactiveResidual);
+    }
+
+    // Load limited residual only if limiting was applied
+    if (checkFlags(Flags::LimitingApplied)) {
+        if (loadSetup.linearizedResistiveRhsResidual) {
+            descr->load_limit_rhs_resist(core(), model()->core(), loadSetup.linearizedResistiveRhsResidual);
+        }
+        if (loadSetup.linearizedReactiveRhsResidual) {
+            descr->load_limit_rhs_react(core(), model()->core(), loadSetup.linearizedReactiveRhsResidual); 
+        }
+    }
+
+    // Update maximal resistive residual contribution
+    if (loadSetup.maxResistiveResidualContribution) {
+        for(uint32_t i=0; i<descr->num_nodes; i++) {
+            auto u = nodes_[i]->unknownIndex();
+            // Need to compute it
+            auto resOffs = descr->nodes[i].resist_residual_off;
+            double contrib = 0.0;
+            if (resOffs!=UINT32_MAX) {
+                contrib = *getDataPtr<double*>(core(), resOffs);
+            }
+            if (checkFlags(Flags::LimitingApplied)) {
+                auto offsLim = descr->nodes[i].resist_limit_rhs_off;
+                if (offsLim!=UINT32_MAX) {
+                    // Subtract because this is an RHS contribution
+                    contrib -= *getDataPtr<double*>(core(), offsLim);
+                }
+            }
+            // Update
+            contrib = std::abs(contrib);
+            if (contrib > loadSetup.maxResistiveResidualContribution[u]) {
+                loadSetup.maxResistiveResidualContribution[u] = contrib;
+            }
+        }
+    }
+    
+    // Update maximal reactive residual contribution and its derivative
+    auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
+    if (
+        loadSetup.reactiveResidualDerivative || 
+        loadSetup.maxReactiveResidualContribution || 
+        loadSetup.maxReactiveResidualDerivativeContribution
+    ) {
+        for(uint32_t i=0; i<descr->num_nodes; i++) {
+            auto u = nodes_[i]->unknownIndex();
+            // No need to compute it, retrieve it from states
+            // Also retrieve derivative wrt time
+            auto contrib = loadSetup.newStates[nodeStateIndex];
+            auto flow = loadSetup.newStates[nodeStateIndex+1];
+            // Store in rhs
+            if (loadSetup.reactiveResidualDerivative) {
+                
+                loadSetup.reactiveResidualDerivative[u] += flow;
+            }
+            // Update max
+            contrib = std::abs(contrib);
+            if (contrib > loadSetup.maxReactiveResidualContribution[u]) {
+                loadSetup.maxReactiveResidualContribution[u] = contrib;
+            }
+            flow = std::abs(flow);
+            if (flow > loadSetup.maxReactiveResidualDerivativeContribution[u]) {
+                loadSetup.maxReactiveResidualDerivativeContribution[u] = flow;
+            }
+            // Go to next node
+            nodeStateIndex += 2;
+        }
+    }
+    
+    return true;
+}
 
 bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els) {
     // Get descriptor 

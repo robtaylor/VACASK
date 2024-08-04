@@ -188,8 +188,10 @@ public:
         KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
+    bool evalCore(Circuit& circuit, EvalSetup& evalSetup);
+    bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
     bool evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
-    
+        
 protected:
     // Get Jacobian entry pointer
     void jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluMatrixAccess* mat, Component comp);

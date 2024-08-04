@@ -526,6 +526,98 @@ template<> bool BuiltinISourceInstance::bindCore(
     return true;
 }
 
+template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+    auto& p = params.core();
+    auto& d = data.core();
+    auto& internals = circuit.simulatorInternals();
+    auto sourceFactor = internals.sourcescalefactor;
+    
+    // Evaluate
+    auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
+    if (!evalSetup.skipCoreEvaluation) {
+        if (evalSetup.evaluateResistiveResidual) {
+            if (evalSetup.evaluateResistiveResidual) {
+                d.flowResidual = p.mfactor*evalSetup.oldSolution[d.uFlow];
+                d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN] + sourceFactor*val;
+            }
+            // Opvars
+            d.v = sourceFactor*val; // mfactor does not affect voltage source value
+            d.i = evalSetup.oldSolution[d.uFlow]; // flow across one parallel instance
+        }
+    }
+
+    // Next breakpoint
+    if (evalSetup.computeNextBreakpoint) {
+        evalSetup.setBreakPoint(nextBreakpoint, internals); 
+    }
+
+    // Set maximal frequency
+    if (evalSetup.computeMaxFreq) {
+        if (d.typeCode==IndependentSourceType::Sine) {
+            evalSetup.setMaxFreq(p.freq);
+        }
+    }
+
+    return true;
+}
+
+template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+    auto& p = params.core();
+    auto& d = data.core();
+    auto& internals = circuit.simulatorInternals();
+    auto sourceFactor = internals.sourcescalefactor;
+    
+    // Load resistive Jacobian, transient load is identical because there is no reactive component
+    if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
+        // KCL
+        *(d.jacPFlow) += p.mfactor;
+        *(d.jacNFlow) += -p.mfactor;
+        // Extra equation
+        *(d.jacFlowP) += -1.0;
+        *(d.jacFlowN) += 1.0;
+    }
+
+    // Load resistive residual
+    if (loadSetup.resistiveResidual) {
+        loadSetup.resistiveResidual[d.uP] += d.flowResidual;
+        loadSetup.resistiveResidual[d.uN] += -d.flowResidual;
+        loadSetup.resistiveResidual[d.uFlow] += d.eqResidual;
+    }
+
+    // No limiting, so nothing to load for limited residual
+
+    // Maximal residual contribution
+    if (loadSetup.maxResistiveResidualContribution) {
+        auto flowContrib = std::abs(d.flowResidual);
+        auto eqContrib = std::abs(d.eqResidual);
+        if (loadSetup.maxResistiveResidualContribution[d.uP]<flowContrib) {
+            loadSetup.maxResistiveResidualContribution[d.uP] = flowContrib;
+        }
+        if (loadSetup.maxResistiveResidualContribution[d.uN]<flowContrib) {
+            loadSetup.maxResistiveResidualContribution[d.uN] = flowContrib;
+        }
+        if (loadSetup.maxResistiveResidualContribution[d.uFlow]<eqContrib) {
+            loadSetup.maxResistiveResidualContribution[d.uFlow] = eqContrib;
+        }
+    }
+
+    // No reactive component, reactive residual derivative wrt. time is zero
+
+    // DC increment residual
+    if (loadSetup.dcIncrementResidual) { 
+        loadSetup.dcIncrementResidual[d.uFlow] += p.mag;
+    }
+
+    // AC residual
+    if (loadSetup.acResidual) {
+        double re = p.mag*std::cos(p.phase*PI/180);
+        double im = p.mag*std::sin(p.phase*PI/180);
+        loadSetup.acResidual[d.uFlow] += Complex(re, im);
+    }
+
+    return true;
+}
+
 template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
     auto& d = data.core();
@@ -605,6 +697,89 @@ template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAn
 
     return true;
 }
+
+template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+    auto& p = params.core();
+    auto& d = data.core();
+    auto& internals = circuit.simulatorInternals();
+    auto sourceFactor = internals.sourcescalefactor;
+    
+    // Evaluate
+    auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
+    if (!evalSetup.skipCoreEvaluation) {
+        if (evalSetup.evaluateResistiveResidual) {
+            if (evalSetup.evaluateResistiveResidual) {
+                d.flowResidual = sourceFactor*p.mfactor*val;
+                // Opvars
+                d.i = sourceFactor*val; // current of one parallel instance
+                d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance
+            }  
+        } 
+    }
+
+    // Next breakjpoint
+    if (evalSetup.computeNextBreakpoint) {
+        evalSetup.setBreakPoint(nextBreakpoint, internals); 
+    }
+
+    // Set maximal frequency
+    if (evalSetup.computeMaxFreq) {
+        if (d.typeCode==IndependentSourceType::Sine) {
+            evalSetup.setMaxFreq(p.freq);
+        }
+    }
+
+    return true;
+}
+
+template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+    auto& p = params.core();
+    auto& d = data.core();
+    auto& internals = circuit.simulatorInternals();
+    auto sourceFactor = internals.sourcescalefactor;
+    
+    // Load resistive residual
+    if (loadSetup.resistiveResidual) {
+        loadSetup.resistiveResidual[d.uP] += d.flowResidual;
+        loadSetup.resistiveResidual[d.uN] += -d.flowResidual;
+    }
+
+    // No limiting, so nothing to load for limited residual
+
+    // Maximal residual contribution
+    if (loadSetup.maxResistiveResidualContribution) {
+        auto flowContrib = std::abs(d.flowResidual); 
+        if (loadSetup.maxResistiveResidualContribution[d.uP]<flowContrib) {
+            loadSetup.maxResistiveResidualContribution[d.uP] = flowContrib;
+        }
+        if (loadSetup.maxResistiveResidualContribution[d.uN]<flowContrib) {
+            loadSetup.maxResistiveResidualContribution[d.uN] = flowContrib;
+        }
+    }
+
+    // No reactive component, reactive residual derivative wrt. time is zero
+
+    // DC increment residual
+    if (loadSetup.dcIncrementResidual) { 
+        loadSetup.dcIncrementResidual[d.uP] += p.mfactor*p.mag;
+        loadSetup.dcIncrementResidual[d.uN] += -p.mfactor*p.mag;
+    }
+
+    // AC residual
+    if (loadSetup.acResidual) {
+        double re = p.mfactor*p.mag*std::cos(p.phase*PI/180);
+        double im = p.mfactor*p.mag*std::sin(p.phase*PI/180);
+        loadSetup.acResidual[d.uP] += Complex(re, im);
+        loadSetup.acResidual[d.uN] += -Complex(re, im);
+    }
+
+    return true;
+}
+
+
+
+
+
 
 template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
     auto& p = params.core();
