@@ -174,11 +174,20 @@ typedef struct LoadSetup {
     // From states we retrieve reactive residual and its derivative wrt time. 
     VectorRepository<double>* states {}; 
     
-    // What part of Jacobian to load to bound locations
+    // What part of Jacobian to bound locations
+    
+    // Add resistive Jacobian to bound locations
     bool loadResistiveJacobian {};
+    
+    // Add reactive Jacobian to bound locations
+    // Multiplies Jacobian entries with reactiveJacobianFactor before adding them. 
     bool loadReactiveJacobian {};
     double reactiveJacobianFactor {};
-    bool loadTransientJacobian {}; // uses integCoeffs
+
+    // Add to bound locations
+    // - resistive Jacobian 
+    // - reactive Jacobian scaled by integCoeffs->leadingCoeff()
+    bool loadTransientJacobian {}; 
     IntegratorCoeffs* integCoeffs {};
     
     // Where to load resistive residual, skip if nullptr
@@ -194,18 +203,21 @@ typedef struct LoadSetup {
     double* linearizedReactiveRhsResidual {}; // with bucket
 
     // Where to load reactive residual derivative, skip if nullptr
+    // Assumes reactive residual derivative was computed at evaluation time 
+    // and stored in the states vector (i.e. integCoeffs was not nullptr). 
     double* reactiveResidualDerivative {}; // with bucket
 
-    // Maximal resistive residual contribution per node
-    // Updated only if not nullptr
+    // Maximal resistive residual contribution per node, skip if nullptr
     double* maxResistiveResidualContribution {}; // with bucket
 
-    // Maximal reactive residual contribution per node
-    // Updated only if not nullptr
+    // Maximal reactive residual contribution per node, skip if nullptr
+    // Assumes reactive residual was stored at evaluation time in the states vector
+    // (i.e. storeReactiveState was set to true)
     double* maxReactiveResidualContribution {}; // with bucket
 
-    // Maximal reactive residual derivative contribution per node
-    // Updated only if not nullptr and integCoeffs is not nullptr
+    // Maximal reactive residual derivative contribution per node, skip if nullptr
+    // Assumes reactive residual derivative was computed at evaluation time 
+    // and stored in the states vector (i.e. integCoeffs was not nullptr). 
     double* maxReactiveResidualDerivativeContribution {}; // with bucket
 
     // Where to load DC small-signal residual, skip if nullptr
