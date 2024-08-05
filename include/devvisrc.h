@@ -150,8 +150,6 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
 template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);    
 template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
 template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
-template<> bool BuiltinVSourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
-template<> bool BuiltinISourceInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 }
 

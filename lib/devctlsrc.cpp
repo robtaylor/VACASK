@@ -283,51 +283,6 @@ template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     return true;
 }
 
-template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
-    auto& p = params.core();
-    auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    
-    // Evaluate
-    if (!els.skipEvaluation && els.evaluateResistiveResidual) {
-        d.ctl = els.oldSolution[d.uCp] - els.oldSolution[d.uCn]; // controlling voltage
-        d.i = p.gain*d.ctl;  // current of one parallel instance
-        d.v = els.oldSolution[d.uP] - els.oldSolution[d.uN]; // voltage across instance
-    }
-
-    // Load resistive Jacobian, transient load is identical because there is no reactive component
-    if (els.loadResistiveJacobian || els.loadTransientJacobian) {
-        // KCL
-        *(d.jacPCp) += p.mfactor*p.gain;
-        *(d.jacPCn) += -p.mfactor*p.gain;
-        *(d.jacNCp) += -p.mfactor*p.gain;
-        *(d.jacNCn) += p.mfactor*p.gain;
-    }
-
-    // Load resistive residual
-    if (els.resistiveResidual) {
-        els.resistiveResidual[d.uP] += p.mfactor*d.i;
-        els.resistiveResidual[d.uN] += -p.mfactor*d.i;
-    }
-
-    // No limiting, so nothing to load for limited residual
-
-    // Maximal residual contribution
-    if (els.maxResistiveResidualContribution) {
-        auto flowContrib = std::abs(p.mfactor*d.i);
-        if (els.maxResistiveResidualContribution[d.uP]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uP] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uN]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uN] = flowContrib;
-        }
-    }
-
-    // No reactive component, reactive residual derivative wrt. time is zero
-
-    return true;
-}
-
 
 template<> void BuiltinVcvs::defineInternals() {
     nodeIds = { "p", "n", "cp", "cn", "flow(br)" };
@@ -496,59 +451,6 @@ template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     return true;
 }
 
-template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
-    auto& p = params.core();
-    auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    
-    // Evaluate
-    if (!els.skipEvaluation && els.evaluateResistiveResidual) {
-        d.ctl = els.oldSolution[d.uCp] - els.oldSolution[d.uCn]; // controlling voltage
-        d.v = els.oldSolution[d.uP] - els.oldSolution[d.uN]; // coltage across instance
-        d.i = els.oldSolution[d.uFlow]; // current of one parallel instance
-    }
-
-    // Load resistive Jacobian, transient load is identical because there is no reactive component
-    if (els.loadResistiveJacobian || els.loadTransientJacobian) {
-        // KCL
-        *(d.jacPFlow) += p.mfactor;
-        *(d.jacNFlow) += -p.mfactor;
-        // Control
-        *(d.jacFlowP) += -1;
-        *(d.jacFlowN) += 1;
-        *(d.jacFlowCp) += p.gain;
-        *(d.jacFlowCn) += -p.gain;
-    }
-
-    // Load resistive residual
-    if (els.resistiveResidual) {
-        els.resistiveResidual[d.uP] += p.mfactor*d.i;
-        els.resistiveResidual[d.uN] += -p.mfactor*d.i;
-        els.resistiveResidual[d.uFlow] += -d.v + d.ctl*p.gain;
-    }
-
-    // No limiting, so nothing to load for limited residual
-
-    // Maximal residual contribution
-    if (els.maxResistiveResidualContribution) {
-        auto valueContrib = std::abs(-d.v + d.ctl*p.gain);
-        auto flowContrib = std::abs(p.mfactor*d.i);
-        if (els.maxResistiveResidualContribution[d.uP]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uP] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uN]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uN] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uFlow]<valueContrib) {
-            els.maxResistiveResidualContribution[d.uFlow] = valueContrib;
-        }
-    }
-
-    // No reactive component, reactive residual derivative wrt. time is zero
-
-    return true;
-}
-
 
 template<> void BuiltinCccs::defineInternals() {
     nodeIds = { "p", "n" };
@@ -671,49 +573,6 @@ template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
         }
         if (loadSetup.maxResistiveResidualContribution[d.uN]<flowContrib) {
             loadSetup.maxResistiveResidualContribution[d.uN] = flowContrib;
-        }
-    }
-
-    // No reactive component, reactive residual derivative wrt. time is zero
-
-    return true;
-}
-
-template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
-    auto& p = params.core();
-    auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    
-    // Evaluate
-    if (!els.skipEvaluation && els.evaluateResistiveResidual) {
-        d.ctl = els.oldSolution[d.uCtl]; // controlling current (unknown)
-        d.i = p.gain*d.ctl;  // current of one parallel instance
-        d.v = els.oldSolution[d.uP] - els.oldSolution[d.uN]; // voltage across instance
-    }
-
-    // Load resistive Jacobian, transient load is identical because there is no reactive component
-    if (els.loadResistiveJacobian || els.loadTransientJacobian) {
-        // KCL
-        *(d.jacPCtl) += p.mfactor*p.gain;
-        *(d.jacNCtl) += -p.mfactor*p.gain;
-    }
-
-    // Load resistive residual
-    if (els.resistiveResidual) {
-        els.resistiveResidual[d.uP] += p.mfactor*d.i;
-        els.resistiveResidual[d.uN] += -p.mfactor*d.i;
-    }
-
-    // No limiting, so nothing to load for limited residual
-
-    // Maximal residual contribution
-    if (els.maxResistiveResidualContribution) {
-        auto flowContrib = std::abs(p.mfactor*d.i);
-        if (els.maxResistiveResidualContribution[d.uP]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uP] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uN]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uN] = flowContrib;
         }
     }
 
@@ -883,58 +742,6 @@ template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
         }
         if (loadSetup.maxResistiveResidualContribution[d.uFlow]<eqContrib) {
             loadSetup.maxResistiveResidualContribution[d.uFlow] = eqContrib;
-        }
-    }
-
-    // No reactive component, reactive residual derivative wrt. time is zero
-
-    return true;
-}
-
-template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
-    auto& p = params.core();
-    auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    
-    // Evaluate
-    if (!els.skipEvaluation && els.evaluateResistiveResidual) {
-        d.ctl = els.oldSolution[d.uCtl]; // controlling current
-        d.v = els.oldSolution[d.uP] - els.oldSolution[d.uN]; // voltage across instance 
-        d.i = els.oldSolution[d.uFlow]; // current of one parallel instance
-    }
-
-    // Load resistive Jacobian, transient load is identical because there is no reactive component
-    if (els.loadResistiveJacobian || els.loadTransientJacobian) {
-        // KCL
-        *(d.jacPFlow) += p.mfactor;
-        *(d.jacNFlow) += -p.mfactor;
-        // Control
-        *(d.jacFlowP) += -1;
-        *(d.jacFlowN) += 1;
-        *(d.jacFlowCtl) += p.gain;
-    }
-
-    // Load resistive residual
-    if (els.resistiveResidual) {
-        els.resistiveResidual[d.uP] += p.mfactor*d.i;
-        els.resistiveResidual[d.uN] += -p.mfactor*d.i;
-        els.resistiveResidual[d.uFlow] += -d.v + d.ctl*p.gain;
-    }
-
-    // No limiting, so nothing to load for limited residual
-
-    // Maximal residual contribution
-    if (els.maxResistiveResidualContribution) {
-        auto valueContrib = std::abs(-d.v + d.ctl*p.gain);
-        auto flowContrib = std::abs(p.mfactor*d.i);
-        if (els.maxResistiveResidualContribution[d.uP]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uP] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uN]<flowContrib) {
-            els.maxResistiveResidualContribution[d.uN] = flowContrib;
-        }
-        if (els.maxResistiveResidualContribution[d.uFlow]<valueContrib) {
-            els.maxResistiveResidualContribution[d.uFlow] = valueContrib;
         }
     }
 
@@ -1262,103 +1069,5 @@ template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loa
 
     return true;
 }
-
-
-template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els) {
-    auto& p = params.core();
-    auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-
-    // Evaluate
-    if (!els.skipEvaluation && els.evaluateReactiveResidual) {
-        d.reacRes1 = d.mutual * els.oldSolution[d.uFlow2];
-        d.reacRes2 = d.mutual * els.oldSolution[d.uFlow1];
-    }
-
-    // Load reactive Jacobian, transient load is identical because there is no resistive component
-    if (els.loadReactiveJacobian) {
-        auto factor = els.reactiveJacobianFactor;
-        // Extra equations
-        *(d.jacReact12) += d.mutual*factor;
-        *(d.jacReact21) += d.mutual*factor;
-    }
-
-    if (els.loadTransientJacobian) {
-        auto factor = els.integCoeffs->leadingCoeff();
-        // Extra equations
-        *(d.jacReact12) += d.mutual*factor;
-        *(d.jacReact21) += d.mutual*factor;
-    }
-
-    // Load reactive residual
-    if (els.reactiveResidual) {
-        els.resistiveResidual[d.uFlow1] += d.reacRes1;
-        els.resistiveResidual[d.uFlow2] += d.reacRes2;
-    }
-
-    // No limiting, so nothing to load for limited residual
-
-    // Maximal residual contribution
-    if (els.maxReactiveResidualContribution) {
-        if (els.maxReactiveResidualContribution[d.uFlow1]<d.reacRes1) {
-            els.maxReactiveResidualContribution[d.uFlow1] = d.reacRes1;
-        }
-        if (els.maxReactiveResidualContribution[d.uFlow2]<d.reacRes2) {
-            els.maxReactiveResidualContribution[d.uFlow2] = d.reacRes2;
-        }
-    }
-
-    // Reactive residual derivative wrt. time
-    if (
-        els.storeTerminalReactiveResidualState ||
-        els.storeTerminalReactiveResidualDerivativeState ||
-        els.reactiveResidualDerivative ||
-        els.maxReactiveResidualDerivativeContribution
-    ) { 
-        // Store residual state
-        if (els.storeTerminalReactiveResidualState) {
-            els.futureStates[d.offsStates] = d.reacRes1; 
-            els.futureStates[d.offsStates+2] = d.reacRes2; 
-        }
-        
-        // Compute residual derivative
-        if (
-            els.storeTerminalReactiveResidualDerivativeState ||
-            els.reactiveResidualDerivative || 
-            els.maxReactiveResidualDerivativeContribution
-        ) {
-            // Differentiate (compute flow)
-            double res1dot = els.integCoeffs->differentiate(d.reacRes1, d.offsStates);
-            double res2dot = els.integCoeffs->differentiate(d.reacRes2, d.offsStates+2);
-
-            // Store flow in states vector
-            if (els.storeTerminalReactiveResidualDerivativeState) {
-                els.futureStates[d.offsStates+1] = res1dot;
-                els.futureStates[d.offsStates+3] = res2dot;
-            }
-
-            // Add flow to vector
-            if (els.reactiveResidualDerivative) {
-                els.reactiveResidualDerivative[d.uFlow1] += res1dot;
-                els.reactiveResidualDerivative[d.uFlow2] += res2dot;
-            }
-
-            // Update max residual contribution
-            if (els.maxReactiveResidualDerivativeContribution) {
-                auto contrib1 = std::abs(res1dot);
-                if (contrib1 > els.maxReactiveResidualDerivativeContribution[d.uFlow1]) {
-                    els.maxReactiveResidualDerivativeContribution[d.uFlow1] = contrib1;
-                }
-                auto contrib2 = std::abs(res2dot);
-                if (contrib2 > els.maxReactiveResidualDerivativeContribution[d.uFlow2]) {
-                    els.maxReactiveResidualDerivativeContribution[d.uFlow2] = contrib2;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
 
 }

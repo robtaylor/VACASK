@@ -283,32 +283,22 @@ bool NoiseCore::run(bool continuePrevious) {
     }
     
     // Evaluate resistive and reactive Jacobian, evaluate noise
-    EvalAndLoadSetup elsEval { 
+    EvalSetup esReactNoise { 
         // Inputs, can be set here (we do not rotate)
         .solution = &dcSolution, 
         .states = &dcStates, 
         
+        // Evaluation type reported to the model
+        .noiseAnalysis = true, 
+
         // Evaluation 
         .enableLimiting = false, 
         .evaluateResistiveJacobian = true, 
         .evaluateReactiveJacobian = true, 
         .evaluateNoise = true, 
-        
-        // Evaluation type reported to the model
-        .noiseAnalysis = true, 
-        
-        // Outputs - none
     };
 
-    EvalAndLoadSetup elsLoad { 
-        // Needs no inputs because we are not evaluating
-
-        // Skip evaluation
-        .skipEvaluation = true, 
-
-        // Evaluation type reported to the model
-        .noiseAnalysis = true, 
-        
+    LoadSetup lsReacNoise { 
         // Outputs
         .loadResistiveJacobian = false, 
         .loadReactiveJacobian = true, 
@@ -328,7 +318,7 @@ bool NoiseCore::run(bool continuePrevious) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(elsEval, nullptr)) {
+    if (!circuit.evalAndLoad(&esReactNoise, nullptr, nullptr)) {
         // Load error
         setError(NoiseError::EvalAndLoad);
         if (debug>0) {
@@ -338,7 +328,7 @@ bool NoiseCore::run(bool continuePrevious) {
     }
 
     // Handle Abort, Finish, Stop
-    circuit.updateEvalFlags(elsEval);
+    circuit.updateEvalFlags(esReactNoise);
     if (circuit.checkFlags(Circuit::Flags::Abort)) {
         if (debug>0) {
             Simulator::dbg() << "Abort requested during AC Jacobian / noise  evaluation. Exiting.\n";
@@ -398,8 +388,8 @@ bool NoiseCore::run(bool continuePrevious) {
 
         // Load AC matrix, we must update the imaginary part only
         acMatrix.zero(Component::ImagPart);
-        elsLoad.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(elsLoad, nullptr)) {
+        lsReacNoise.reactiveJacobianFactor = omega;
+        if (!circuit.evalAndLoad(nullptr, &lsReacNoise, nullptr)) {
             // Load error
             setError(NoiseError::EvalAndLoad);
             if (debug>0) {

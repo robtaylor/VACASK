@@ -664,17 +664,20 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     );
     */
     
-    // TODO: handle only nonzero reactive residual contribution
-    //       reserve states only for nonzero reactive residuals
+    // TODO: better way of skipping nodes without reactive residual
+    //       use a table instead of continue
     auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
     if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
         for(uint32_t i=0; i<descr->num_nodes; i++) {
+            // Skip nodes with no reactive contribution
+            auto offs = descr->nodes[i].react_residual_off;
+            if (offs==UINT32_MAX) { 
+                continue;
+            }
+            // Get unknown index
             auto u = nodes_[i]->unknownIndex();
             auto resOff = descr->nodes[i].react_residual_off;
-            double contrib = 0.0;
-            if (resOff!=UINT32_MAX) {
-                contrib = *getDataPtr<double*>(core(), resOff);
-            }
+            auto contrib = *getDataPtr<double*>(core(), resOff);
             if (checkFlags(Flags::LimitingApplied)) {
                 auto offsLim = descr->nodes[i].react_limit_rhs_off;
                 if (offsLim!=UINT32_MAX) {
@@ -789,13 +792,15 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     // Update maximal resistive residual contribution
     if (loadSetup.maxResistiveResidualContribution) {
         for(uint32_t i=0; i<descr->num_nodes; i++) {
+            // Skip nodes with no reactive contribution
+            auto offs = descr->nodes[i].resist_residual_off;
+            if (offs==UINT32_MAX) { 
+                continue;
+            }
+            // Get unknown index
             auto u = nodes_[i]->unknownIndex();
             // Need to compute it
-            auto resOffs = descr->nodes[i].resist_residual_off;
-            double contrib = 0.0;
-            if (resOffs!=UINT32_MAX) {
-                contrib = *getDataPtr<double*>(core(), resOffs);
-            }
+            double contrib = *getDataPtr<double*>(core(), offs);
             if (checkFlags(Flags::LimitingApplied)) {
                 auto offsLim = descr->nodes[i].resist_limit_rhs_off;
                 if (offsLim!=UINT32_MAX) {
@@ -819,6 +824,12 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
         loadSetup.maxReactiveResidualDerivativeContribution
     ) {
         for(uint32_t i=0; i<descr->num_nodes; i++) {
+            // Skip nodes with no reactive contribution
+            auto offs = descr->nodes[i].react_residual_off;
+            if (offs==UINT32_MAX) { 
+                continue;
+            }
+            // Get unknown index
             auto u = nodes_[i]->unknownIndex();
             // No need to compute it, retrieve it from states
             // Also retrieve derivative wrt time
@@ -826,289 +837,23 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
             auto flow = loadSetup.newStates[nodeStateIndex+1];
             // Store in rhs
             if (loadSetup.reactiveResidualDerivative) {
-                
                 loadSetup.reactiveResidualDerivative[u] += flow;
             }
             // Update max
-            contrib = std::abs(contrib);
-            if (contrib > loadSetup.maxReactiveResidualContribution[u]) {
-                loadSetup.maxReactiveResidualContribution[u] = contrib;
+            if (loadSetup.maxReactiveResidualContribution) {
+                contrib = std::abs(contrib);
+                if (contrib > loadSetup.maxReactiveResidualContribution[u]) {
+                    loadSetup.maxReactiveResidualContribution[u] = contrib;
+                }
             }
-            flow = std::abs(flow);
-            if (flow > loadSetup.maxReactiveResidualDerivativeContribution[u]) {
-                loadSetup.maxReactiveResidualDerivativeContribution[u] = flow;
+            if (loadSetup.maxReactiveResidualDerivativeContribution) {
+                flow = std::abs(flow);
+                if (flow > loadSetup.maxReactiveResidualDerivativeContribution[u]) {
+                    loadSetup.maxReactiveResidualDerivativeContribution[u] = flow;
+                }
             }
             // Go to next node
             nodeStateIndex += 2;
-        }
-    }
-    
-    return true;
-}
-
-bool OsdiInstance::evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els) {
-    // Get descriptor 
-    auto descr = model()->device()->descriptor();
-
-    // Prepare callback handle
-    OsdiCallbackHandle handle = OsdiCallbackHandle {
-        .kind = 3, 
-        .name = const_cast<char*>(name().c_str())
-    };
-
-    // Set beginning of state vector chunk belonging to this instance
-    simInfo.prev_state = els.oldStates + offsStates;
-    simInfo.next_state = els.newStates + offsStates;
-    
-    // Evaluation
-    bool canAssumeLimitingNotAppliedToResistiveResidual = false;
-    bool canAssumeLimitingNotAppliedToReactiveResidual = false;
-    if (!els.skipEvaluation) {
-        bool el = simInfo.flags & ENABLE_LIM;
-
-        auto evalFlags = descr->eval(&handle, core(), model()->core(), &simInfo);
-    
-        // Handle evalFlags
-        if (evalFlags & EVAL_RET_FLAG_LIM) {
-            // If some variable x is linearized to xl the Jacobian is computed at xl instead of x
-            // i.e. limiting takes place and EVAL_RET_FLAG_LIM is set
-            // We are may not stop the NR loop until this flag is gone for all instances. 
-            els.limitingApplied = true;
-        } else {
-            canAssumeLimitingNotAppliedToResistiveResidual = els.enableLimiting && els.evaluateLinearizedResistiveRhsResidual;
-            canAssumeLimitingNotAppliedToReactiveResidual = els.enableLimiting && els.evaluateLinearizedReactiveRhsResidual;
-        }
-        if (evalFlags & EVAL_RET_FLAG_FATAL) {
-            // Fatal error occurred, must abort simulation. 
-            els.abortRequested = true;
-        } 
-        if (evalFlags & EVAL_RET_FLAG_FINISH) {
-            // $finish was called asking the simulator to finish simulation 
-            // (exit gracefully) if the current iteration converged. 
-            els.finishRequested = true;
-        } 
-        if (evalFlags & EVAL_RET_FLAG_STOP) {
-            // $stop was called asking the simulator to pause the simulation
-            // if the current iteration converged. 
-            els.abortRequested = true;
-        }
-    }
-
-    // Loading
-    // TODO: do this with templates to avoid many ifs (should performance issues arise)
-
-    // Load Jacobian computed with limiting (if it was computed)
-    if (els.loadResistiveJacobian) {
-        descr->load_jacobian_resist(core(), model()->core());
-    }
-    if (els.loadReactiveJacobian) {
-        descr->load_jacobian_react(core(), model()->core(), els.reactiveJacobianFactor);
-    }
-    if (els.loadTransientJacobian) {
-        descr->load_jacobian_tran(core(), model()->core(), els.integCoeffs->leadingCoeff());
-    }
-
-    /*
-    // For development
-    jacobianWriteSanityCheck(
-        model()->device()->descriptor(), model()->core(), core(), 
-        els.loadResistiveJacobian || els.loadTransientJacobian, 
-        els.loadReactiveJacobian || els.loadTransientJacobian
-    );
-    */
-
-    // Without limiting the residual is 
-    //   g(x)
-    // With limiting it is linearized above xl so it is actually
-    //   g(xl) + Jg(xl) (x-xl)
-    // g(xl) part is loaded by 
-    //   load_residual_resist()
-    // Jg(xl) (xl-x) = -Jg(xl) (x-xl) is the linearized rhs residual part and is loaded by 
-    //   load_lim_rhs_resist()
-    // The second one needs to be subtracted from the first one to get the 
-    // actual residual, i.e.
-    //   actual_residual_when_limiting = residual - linearized_rhs_residual
-    // Now this is stupid, but that's the way OSDI API is designed. 
-    // We load each of them separately and do the subtraction in the analysis
-    // (if limiting takes place). 
-    // To maintain cache locality load_residaul_*() and load_lim_rhs_*() must be 
-    // called close together for the same instance. 
-    
-    // Load residual
-    if (els.resistiveResidual) {
-        descr->load_residual_resist(core(), model()->core(), els.resistiveResidual);
-    }
-    if (els.reactiveResidual) {
-        descr->load_residual_react(core(), model()->core(), els.reactiveResidual);
-    }
-
-    // Load limited residual
-    // Can we skip linearized residual loading
-    auto skipLinearizedResistiveResidualLoading = els.linearizedResidualLoadOnlyIfLimited && canAssumeLimitingNotAppliedToResistiveResidual; 
-    auto skipLinearizedReactiveResidualLoading = els.linearizedResidualLoadOnlyIfLimited && canAssumeLimitingNotAppliedToReactiveResidual; 
-    if (!els.linearizedResidualLoadOnlyIfLimited || els.limitingApplied) {
-        if (els.linearizedResistiveRhsResidual && !skipLinearizedResistiveResidualLoading) {
-            descr->load_limit_rhs_resist(core(), model()->core(), els.linearizedResistiveRhsResidual);
-        }
-        if (els.linearizedReactiveRhsResidual && !skipLinearizedReactiveResidualLoading) {
-            descr->load_limit_rhs_react(core(), model()->core(), els.linearizedReactiveRhsResidual); 
-        }
-    }
-
-    // Load maximal residual contribution
-    if (els.maxResistiveResidualContribution) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            auto u = nodes_[i]->unknownIndex();
-            auto resOffs = descr->nodes[i].resist_residual_off;
-            double contrib = 0.0;
-            if (resOffs!=UINT32_MAX) {
-                contrib = *getDataPtr<double*>(core(), resOffs);
-            }
-            if (!skipLinearizedResistiveResidualLoading) {
-                auto offsLim = descr->nodes[i].resist_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    // Subtract because this is an RHS contribution
-                    contrib -= *getDataPtr<double*>(core(), offsLim);
-                }
-            }
-            contrib = std::abs(contrib);
-            if (contrib > els.maxResistiveResidualContribution[u]) {
-                els.maxResistiveResidualContribution[u] = contrib;
-            }
-        }
-    }
-    if (els.maxReactiveResidualContribution) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            auto u = nodes_[i]->unknownIndex();
-            auto resOff = descr->nodes[i].react_residual_off;
-            double contrib = 0.0;
-            if (resOff!=UINT32_MAX) {
-                contrib = *getDataPtr<double*>(core(), resOff);
-            }
-            if (!skipLinearizedReactiveResidualLoading) {
-                auto offsLim = descr->nodes[i].react_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    // Subtract because this is an RHS contribution
-                    contrib -= *getDataPtr<double*>(core(), offsLim);
-                }
-            }
-            contrib = std::abs(contrib);
-            if (contrib > els.maxReactiveResidualContribution[u]) {
-                els.maxReactiveResidualContribution[u] = contrib;
-            }
-        }
-    }
-
-    /*
-    // Residual debugging
-    Simulator::dbg() << "  Instance " << name() << "\n";
-    for(uint32_t i=0; i<descr->num_nodes; i++) {
-        auto resOff = descr->nodes[i].resist_residual_off;
-        auto resLimOff = descr->nodes[i].resist_limit_rhs_off;
-        auto reactOff = descr->nodes[i].react_residual_off;
-        auto reactLimOff = descr->nodes[i].react_limit_rhs_off;
-        
-        Simulator::dbg() << "    " << i << " " << descr->nodes[i].name << ": offsets " << "res " << resOff << " reslim " << resLimOff;
-        Simulator::dbg() << " react " << reactOff << " reactlim " << reactLimOff << " : ";
-        Simulator::dbg()  << "resistive=";
-        if (resOff!=UINT32_MAX) {
-            Simulator::dbg()  << *getDataPtr<double*>(core(), resOff);
-        }
-        if (resLimOff!=UINT32_MAX) {
-            Simulator::dbg()  << " - " << *getDataPtr<double*>(core(), resLimOff);
-        }
-        Simulator::dbg()  << ", reactive=";
-        if (reactOff!=UINT32_MAX) {
-            Simulator::dbg()  << *getDataPtr<double*>(core(), reactOff);
-        }
-        if (reactLimOff!=UINT32_MAX) {
-            Simulator::dbg()  << " - " << *getDataPtr<double*>(core(), reactLimOff);
-        }
-        Simulator::dbg() << "\n"; 
-    }
-    */
-    
-    // Reactive residual derivative wrt. time
-    if (
-        ( 
-            els.storeTerminalReactiveResidualState ||
-            els.storeTerminalReactiveResidualDerivativeState ||
-            els.reactiveResidualDerivative ||
-            els.maxReactiveResidualDerivativeContribution
-        ) && model()->device()->nodeStateCount()>0
-    ) { 
-        // Index of first node state in global states vector
-        auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
-        // Go through all nodes
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            // Unknown index
-            auto u = nodes_[i]->unknownIndex();
-            // Handle only nodes with reactive residual
-            auto offs = descr->nodes[i].react_residual_off;
-            // Node state index (residual first, flow second)
-            if (offs!=UINT32_MAX) {
-                double residualReact = *getDataPtr<double*>(core(), offs);
-                // Linearized part of limited reactive residual
-                if (!skipLinearizedReactiveResidualLoading) {
-                    auto offsLim = descr->nodes[i].react_limit_rhs_off;
-                    if (offsLim!=UINT32_MAX) {
-                        // Subtract because this is an RHS contribution
-                        residualReact -= *getDataPtr<double*>(core(), offsLim);
-                    }
-                }
-
-                // Simulator::dbg() << "t=" << simInfo.abstime 
-                //     << " it=" << circuit.simulatorInternals().iteration
-                //     << " : " << name() << " node=" << i << " : "
-                //     << " residual react=" << residualReact 
-                //     << " " << (simInfo.flags & CALC_REACT_RESIDUAL)
-                //     << " u=" << u
-                //     << " " << simInfo.prev_solve[u]
-                //     << "\n";
-
-                // Store residual in states vector
-                if (els.storeTerminalReactiveResidualState) {
-                    els.futureStates[nodeStateIndex] = residualReact;
-                }
-
-                // Compute derivative of residual wrt. time
-                if (
-                    els.storeTerminalReactiveResidualDerivativeState ||
-                    els.reactiveResidualDerivative || 
-                    els.maxReactiveResidualDerivativeContribution
-                ) {
-                    // Differentiate (compute flow)
-                    double flow = els.integCoeffs->differentiate(residualReact, nodeStateIndex);
-                    
-                    // Store flow in states vector
-                    if (els.storeTerminalReactiveResidualDerivativeState) {
-                        els.futureStates[nodeStateIndex+1] = flow;
-                    }
-
-                    // Add flow to vector
-                    if (els.reactiveResidualDerivative) {
-                        els.reactiveResidualDerivative[u] += flow;
-                    }
-
-                    // Update max residual contribution
-                    if (els.maxReactiveResidualDerivativeContribution) {
-                        auto contrib = std::abs(flow);
-                        if (contrib > els.maxReactiveResidualDerivativeContribution[u]) {
-                            els.maxReactiveResidualDerivativeContribution[u] = contrib;
-                        }
-                    }
-                }
-
-                // Go to next node
-                nodeStateIndex += 2;
-            }
-        }
-    }
-
-    if (els.computeBoundStep) {
-        auto bsOffs = descr->bound_step_offset;
-        if (bsOffs!=UINT32_MAX) {
-            els.setBoundStep(*getDataPtr<double*>(core(), bsOffs));
         }
     }
     

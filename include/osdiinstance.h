@@ -84,7 +84,6 @@ public:
     );
     bool evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
-    bool evalAndLoadCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalAndLoadSetup& els);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };

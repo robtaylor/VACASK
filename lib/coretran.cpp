@@ -247,16 +247,16 @@ TranCore::TranCore(
     opCore_.solver().resizeForces(3);
 
     // Set analysis type for the initial operating point analysis
-    auto& elsSystem = opCore_.solver().evalSetupSystem();
-    auto& elsResidual = opCore_.solver().evalSetupResidual();
+    auto& esSystem = opCore_.solver().evalSetupSystem();
+    auto& esResidual = opCore_.solver().evalSetupResidual();
 
-    elsSystem.staticAnalysis = true;
-    elsSystem.dcAnalysis = false;
-    elsSystem.tranAnalysis = true;
+    esSystem.staticAnalysis = true;
+    esSystem.dcAnalysis = false;
+    esSystem.tranAnalysis = true;
 
-    elsResidual.staticAnalysis = true;
-    elsResidual.dcAnalysis = false;
-    elsResidual.tranAnalysis = true;
+    esResidual.staticAnalysis = true;
+    esResidual.dcAnalysis = false;
+    esResidual.tranAnalysis = true;
 }
 
 TranCore::~TranCore() {
@@ -504,9 +504,9 @@ bool TranCore::deleteOutputs(Id name) {
     return true;
 }
 
-bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+bool TranCore::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     clearError();
-    if (!circuit.evalAndLoad(els, nullptr)) {
+    if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
         // Load error
         setError(TranError::EvalAndLoad);
         if (circuit.simulatorOptions().core().tran_debug>1) {
@@ -516,7 +516,7 @@ bool TranCore::evalAndLoadWrapper(EvalAndLoadSetup& els) {
     }
     
     // Update circuit's flags (Abort, Finish, Stop)
-    circuit.updateEvalFlags(els);
+    circuit.updateEvalFlags(evalSetup);
 
     // Handle abort right now, finish and stop are handled outside NR loop
     if (circuit.checkFlags(Circuit::Flags::Abort)) {
@@ -675,11 +675,9 @@ bool TranCore::run(bool continuePrevious) {
     // Initialize reactive residual state of instances
     // Compute next breakpoint
     // Compute maximal frequency
-    EvalAndLoadSetup elsInit = {
+    EvalSetup esInit = {
         .solution = &solution, 
         .states = &states, 
-        .evaluateReactiveResidual = true, 
-        .evaluateLinearizedReactiveRhsResidual = true, 
 
         .staticAnalysis = false, 
         .dcAnalysis = false, 
@@ -687,19 +685,25 @@ bool TranCore::run(bool continuePrevious) {
         .nodesetEnabled = false, 
         .icEnabled = true, 
 
-        // .linearizedResidualLoadOnlyIfLimited = true, 
-        .storeTerminalReactiveResidualState = true, 
+        .evaluateReactiveResidual = true, 
+        .evaluateLinearizedReactiveRhsResidual = true, 
+
+        .storeReactiveState = true, 
         
         .computeBoundStep = true, 
         .computeNextBreakpoint = true, 
         .computeMaxFreq = true, 
     };
+    LoadSetup lsInit = {
+        .states = &states, 
+    };
+
     // States will be loaded into the future slot
     // Make a copy of states from OP analysis 
     // in the future slot (-1)
     states.futureVector() = states.vector();
     // Evaluate and load residual and residual derivative in future slot
-    if (!evalAndLoadWrapper(elsInit)) {
+    if (!evalAndLoadWrapper(esInit, lsInit)) {
         // Error was already set in the wrapper
         return false;
     }
@@ -713,7 +717,7 @@ bool TranCore::run(bool continuePrevious) {
 
     // Retrieve next breakpoint, take into account stop time and start time
     // Ignore breakpoints <=0
-    double nextBreakPoint = elsInit.nextBreakPoint;
+    double nextBreakPoint = esInit.nextBreakPoint;
     updateBreakPoint(nextBreakPoint, params.stop, 0.0);
     updateBreakPoint(nextBreakPoint, params.start, 0.0);
     // Due to stop time we definitely have a finite break point after 0.0
@@ -721,7 +725,7 @@ bool TranCore::run(bool continuePrevious) {
 
     // Need to store last accepted point's boundStep value
     // so that we can apply it when timepoint is rejected
-    acceptedBoundStep = elsInit.boundStep;
+    acceptedBoundStep = esInit.boundStep;
 
     // Initial timestep
     auto h0 = params.step;
@@ -731,8 +735,8 @@ bool TranCore::run(bool continuePrevious) {
     }
     // Limit by maxFreq (tran_ffmax*period/2)
     // Maybe get rid of this
-    if (options.tran_ffmax>0 && elsInit.maxFreq>0) { 
-        h0 = std::min(h0, options.tran_ffmax/(2*elsInit.maxFreq));
+    if (options.tran_ffmax>0 && esInit.maxFreq>0) { 
+        h0 = std::min(h0, options.tran_ffmax/(2*esInit.maxFreq));
     }
 
     // Need to store last accepted point's hmax value
@@ -745,8 +749,8 @@ bool TranCore::run(bool continuePrevious) {
         h0 = std::min(h0, options.tran_fbr*breakDelta);
     }
     // Limit by initial boundStep
-    if (elsInit.boundStep>0) {
-        h0 = std::min(h0, elsInit.boundStep);
+    if (esInit.boundStep>0) {
+        h0 = std::min(h0, esInit.boundStep);
     }
 
     // Scale by tran_fs
@@ -992,8 +996,9 @@ bool TranCore::run(bool continuePrevious) {
         }
         // Limit by maxFreq (tran_ffmax*period/2)
         // Maybe get rid of this
-        if (options.tran_ffmax>0 && elsInit.maxFreq>0) { 
-            hmax = std::min(hmax, options.tran_ffmax/(2*elsInit.maxFreq));
+        // Use esInit's computed maxFreq value
+        if (options.tran_ffmax>0 && esInit.maxFreq>0) { 
+            hmax = std::min(hmax, options.tran_ffmax/(2*esInit.maxFreq));
         }
 
         bool accept;

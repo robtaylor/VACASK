@@ -32,18 +32,23 @@ public:
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
     virtual std::tuple<bool, bool> computeResidual(bool continuePrevious);
 
-    EvalAndLoadSetup& evalSetupSystem() { return elsSystem; };
-    EvalAndLoadSetup& evalSetupResidual() { return elsResidual; };
-
+    EvalSetup& evalSetupSystem() { return esSystem; };
+    LoadSetup& loadSetupSystem() { return lsSystem; };
+    EvalSetup& evalSetupResidual() { return esResidual; };
+    LoadSetup& loadSetupResidual() { return lsResidual; };
+    
 protected:
     void loadShunts(double gshunt, bool loadJacobian=true);
-    bool evalAndLoadWrapper(EvalAndLoadSetup& els);
-
-    void setNodesetAndIcFlags(bool continuePrevious);
+    bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
     
-    EvalAndLoadSetup elsSystem;
-    EvalAndLoadSetup elsResidual; 
+    void setNodesetAndIcFlags(bool continuePrevious);
 
+    EvalSetup esSystem;
+    EvalSetup esResidual; 
+
+    LoadSetup lsSystem;
+    LoadSetup lsResidual; 
+    
     // Internal structures
     Vector<double> dummyStates;
 };

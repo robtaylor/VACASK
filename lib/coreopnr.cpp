@@ -56,10 +56,14 @@ OpNRSolver::OpNRSolver(
     resizeForces(forcesSize);
 
     // For constructing the linearized system in NR loop
-    elsSystem = EvalAndLoadSetup { 
+    esSystem = EvalSetup {
         // Inputs
         .solution = &solution, 
         .states = &states, 
+
+        // Signal this is static and DC analysis
+        .staticAnalysis = true, 
+        .dcAnalysis = true, 
 
         // Evaluation 
         .enableLimiting = true, 
@@ -67,18 +71,14 @@ OpNRSolver::OpNRSolver(
         .evaluateResistiveResidual = true, 
         .evaluateLinearizedResistiveRhsResidual = true, 
         .evaluateOpvars = true, 
-
-        // Signal this is static and DC analysis
-        .staticAnalysis = true, 
-        .dcAnalysis = true, 
-        
-        // Outputs (vectors need to be set in the loop)
-        .loadResistiveJacobian = true, 
-        // .linearizedResidualLoadOnlyIfLimited = true, 
     };
 
-    // For computing the residual in damped NR algorithm
-    elsResidual = EvalAndLoadSetup { 
+    lsSystem = LoadSetup {
+        .states = &states, 
+        .loadResistiveJacobian = true, 
+    };
+
+    esResidual = EvalSetup {
         // Inputs, set solution and states when residual is being computed
         .solution = &solution, 
         // Use future solution slot as basis for computing residual in damped NR
@@ -87,18 +87,18 @@ OpNRSolver::OpNRSolver(
         // New computed states will go to dummyStates to keep actual new states intact
         .dummyStates = &dummyStates,  
 
+        // Signal this is static and DC analysis
+        .staticAnalysis = true, 
+        .dcAnalysis = true, 
+
         // Evaluation
         .enableLimiting = true, 
         .initializeLimiting = false, 
         .evaluateResistiveResidual = true, 
         .evaluateLinearizedResistiveRhsResidual = true, 
+    };
 
-        // Signal this is static and DC analysis
-        .staticAnalysis = true, 
-        .dcAnalysis = true, 
-        
-        // Outputs (vectors need to be set in the loop)
-        // .linearizedResidualLoadOnlyIfLimited = true, 
+    lsResidual = LoadSetup {
     };
 }
 
@@ -123,10 +123,11 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     
     // Set vectors for building linear system
     bool computeMaxResidualContribution = settings.residualCheck || settings.dampingSteps>0;
-    elsSystem.resistiveResidual = delta.data();
-    elsSystem.linearizedResistiveRhsResidual = delta.data();
-    elsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
 
+    lsSystem.resistiveResidual = delta.data();
+    lsSystem.linearizedResistiveRhsResidual = delta.data();
+    lsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
+    
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
     if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
@@ -193,8 +194,8 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     }
     
     // Set vectors for computing residual (for damping)
-    elsResidual.resistiveResidual = delta.data(); 
-    elsResidual.linearizedResistiveRhsResidual = delta.data();
+    lsResidual.resistiveResidual = delta.data(); 
+    lsResidual.linearizedResistiveRhsResidual = delta.data();
 
     return true;
 }
@@ -218,9 +219,9 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
     }
 }
 
-bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
+bool OpNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     lastError = Error::OK;
-    if (!circuit.evalAndLoad(els, nullptr)) {
+    if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
         // Load error
         lastError = Error::EvalAndLoad;
         if (settings.debug>2) {
@@ -230,7 +231,7 @@ bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
     }
     
     // Update circuit's flags (Abort, Finish, Stop)
-    circuit.updateEvalFlags(els);
+    circuit.updateEvalFlags(evalSetup);
 
     // Handle abort right now, finish and stop are handled outside NR loop
     if (circuit.checkFlags(Circuit::Flags::Abort)) {
@@ -246,20 +247,20 @@ bool OpNRSolver::evalAndLoadWrapper(EvalAndLoadSetup& els) {
 void OpNRSolver::setNodesetAndIcFlags(bool continuePrevious) {
     auto nsiter = circuit.simulatorOptions().core().op_nsiter;
 
-    // Set nodesetEnabled flag in elsSystem
+    // Set nodesetEnabled flag in esSystem
     // Forces slot 0 (continuation nodesets) and 1 (user nodesets) 
     // are used in ordinary OP analysis
     // Nodesets are enabled in iterations 1..op_nsiter 
     // if continuePrevious is false. 
     // They are also enabled if slot 1 (user nodesets) is active. 
-    elsSystem.nodesetEnabled = (iteration<=nsiter) && (continuePrevious==false);
-
-    // Set icEnabled flag in elsSystem
+    esSystem.nodesetEnabled = (iteration<=nsiter) && (continuePrevious==false);
+    
+    // Set icEnabled flag in esSystem
     // Slot 2 holds permanent forces for computing initial conditions
     // when OP analysis is invoked from tran core. 
     // Whenever this slot is active transient forces are enables 
     // and we are applying initial conditions. 
-    elsSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
+    esSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
 }
 
 std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
@@ -294,15 +295,15 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     // Simulator::dbg() << "\n";
     
     // Init limits if not in continue mode and iteration is 1
-    elsSystem.initializeLimiting = !continuePrevious && (iteration==1);
+    esSystem.initializeLimiting = !continuePrevious && (iteration==1);
     // Write value to simulatorInternals
-    circuit.simulatorInternals().initalizeLimiting = elsSystem.initializeLimiting; 
+    circuit.simulatorInternals().initalizeLimiting = esSystem.initializeLimiting; 
 
     // Evaluate and load
-    if (!evalAndLoadWrapper(elsSystem)) {
+    if (!evalAndLoadWrapper(esSystem, lsSystem)) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;
-        return std::make_tuple(false, elsSystem.limitingApplied);
+        return std::make_tuple(false, esSystem.limitingApplied);
     }
     delta[0] = 0.0;
     
@@ -318,7 +319,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     }
 
     // Prevent convergence if limiting was applied
-    return std::make_tuple(true, elsSystem.limitingApplied); 
+    return std::make_tuple(true, esSystem.limitingApplied); 
 }
 
 std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
@@ -334,19 +335,19 @@ std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
     // Set nodeset and IC flags
     setNodesetAndIcFlags(continuePrevious); 
     
-    // Set nodesetEnabled flag in elsSystem
+    // Set nodesetEnabled flag in esSystem
     // Slots 0 and 1 are nodesets used in ordinary OP analysis
-    elsSystem.nodesetEnabled = forcesEnabled[0] || forcesEnabled[1];
+    esSystem.nodesetEnabled = forcesEnabled[0] || forcesEnabled[1];
     // Set icEnabled flag in elsSystem
     // Slot 2 holds permanent forces for computing initial conditions
     // when OP analysis is invoked from tran core. 
-    elsSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
+    esSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
     
     // This time do not initialize limiting, divert new state to dummy vector
-    if (!evalAndLoadWrapper(elsResidual)) {
+    if (!evalAndLoadWrapper(esResidual, lsResidual)) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;
-        return std::make_tuple(false, elsResidual.limitingApplied);
+        return std::make_tuple(false, esResidual.limitingApplied);
     }
     delta[0] = 0.0;
     
@@ -357,7 +358,7 @@ std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
         loadShunts(gshunt, false);
     }
 
-    return std::make_tuple(true, elsResidual.limitingApplied);
+    return std::make_tuple(true, esResidual.limitingApplied);
 }
 
 }

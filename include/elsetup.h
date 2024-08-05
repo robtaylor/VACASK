@@ -51,13 +51,13 @@ typedef struct EvalSetup {
     // Master switch for skipping core evaluations
     bool skipCoreEvaluation {}; 
 
+    // Store reactive residual in states or dummyStates
+    bool storeReactiveState {};
+
     // .. what to evaluate beside core 
     bool computeBoundStep {};
     bool computeNextBreakpoint {};
     bool computeMaxFreq {};
-
-    // Store reactive residual in states or dummyStates
-    bool storeReactiveState {};
 
     // Numerical differentiation of residual contributions after core evaluations
     // Results are written to states or dummyStates only if not nullptr

@@ -137,19 +137,10 @@ bool DcIncrementalCore::run(bool continuePrevious) {
         return false;
     }
 
-    EvalAndLoadSetup elsLoad { 
-        // Needs no inputs because we are not evaluating
-
-        // Skip evaluation
-        .skipEvaluation = true, 
-
-        // Evaluation type reported to the model
-        .acAnalysis = true, 
-        
+    LoadSetup lsRhs { 
         // Outputs
         .dcIncrementResidual = incrementalSolution.data()
     };
-
 
     auto& options = circuit.simulatorOptions().core();
     Int debug = options.smsig_debug;
@@ -163,7 +154,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
     // Prepare RHS (add excitations given by delta parameter)
     zero(incrementalSolution);
     auto filter = [](Device* device) { return device->checkFlags(Device::Flags::GeneratesDCIncremental); };
-    if (!circuit.evalAndLoad(elsLoad, filter)) {
+    if (!circuit.evalAndLoad(nullptr, &lsRhs, filter)) {
         // Load error
         setError(DcIncrError::EvalAndLoad);
         if (debug>0) {

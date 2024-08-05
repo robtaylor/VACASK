@@ -317,8 +317,8 @@ public:
     // Return value: ok, hierarchy changed
     std::tuple<bool, bool> propagateDownHierarchy(Status& s=Status::ignore);
     
-    bool evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*));
-    void updateEvalFlags(EvalAndLoadSetup& els, Flags mask=Flags::EvalFlags);
+    bool evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
+    void updateEvalFlags(EvalSetup& evalSetup, Flags mask=Flags::EvalFlags);
     
     // Simulator options (Parameterized class with simulator options core)
     // IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };

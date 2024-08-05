@@ -194,31 +194,21 @@ bool AcCore::run(bool continuePrevious) {
     }
     
     // Evaluate resistive and reactive Jacobian
-    EvalAndLoadSetup elsEval { 
+    EvalSetup esReactive { 
         // Inputs
         .solution = &dcSolution, 
         .states = &dcStates, 
+        
+        // Evaluation type reported to the model
+        .acAnalysis = true, 
         
         // Evaluation 
         .enableLimiting = false, 
         .evaluateResistiveJacobian = true, 
         .evaluateReactiveJacobian = true, 
-        
-        // Evaluation type reported to the model
-        .acAnalysis = true, 
-        
-        // Outputs - none
     };
 
-    EvalAndLoadSetup elsLoad { 
-        // Needs no inputs because we are not evaluating
-
-        // Skip evaluation
-        .skipEvaluation = true, 
-
-        // Evaluation type reported to the model
-        .acAnalysis = true, 
-        
+    LoadSetup lsReactive { 
         // Outputs
         .loadResistiveJacobian = false, 
         .loadReactiveJacobian = true, 
@@ -237,7 +227,7 @@ bool AcCore::run(bool continuePrevious) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(elsEval, nullptr)) {
+    if (!circuit.evalAndLoad(&esReactive, nullptr, nullptr)) {
         // Load error
         setError(AcError::EvalAndLoad);
         if (debug>0) {
@@ -247,7 +237,7 @@ bool AcCore::run(bool continuePrevious) {
     }
 
     // Handle Abort, Finish, Stop
-    circuit.updateEvalFlags(elsEval);
+    circuit.updateEvalFlags(esReactive);
     if (circuit.checkFlags(Circuit::Flags::Abort)) {
         if (debug>0) {
             Simulator::dbg() << "Abort requested during AC Jacobian evaluation. Exiting.\n";
@@ -314,8 +304,8 @@ bool AcCore::run(bool continuePrevious) {
         // Load imaginary part and AC residual. 
         acMatrix.zero(Component::ImagPart);
         zero(acSolution);
-        elsLoad.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(elsLoad, nullptr)) {
+        lsReactive.reactiveJacobianFactor = omega;
+        if (!circuit.evalAndLoad(nullptr, &lsReactive, nullptr)) {
             // Load error
             setError(AcError::EvalAndLoad);
             if (debug>0) {

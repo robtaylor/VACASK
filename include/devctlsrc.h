@@ -148,7 +148,6 @@ template<> bool BuiltinVccsInstance::bindCore(
 );
 template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
 template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
-template<> bool BuiltinVccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // VCVS
 template<> void BuiltinVcvs::defineInternals();
@@ -166,7 +165,6 @@ template<> bool BuiltinVcvsInstance::bindCore(
 );
 template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
 template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
-template<> bool BuiltinVcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCCS
 template<> void BuiltinCccs::defineInternals();
@@ -184,7 +182,6 @@ template<> bool BuiltinCccsInstance::bindCore(
 );
 template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
 template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
-template<> bool BuiltinCccsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 // CCVS
 template<> void BuiltinCcvs::defineInternals();
@@ -202,7 +199,6 @@ template<> bool BuiltinCcvsInstance::bindCore(
 );
 template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
 template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
-template<> bool BuiltinCcvsInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 
 struct DevMutualInstanceParams {
@@ -253,7 +249,6 @@ template<> bool BuiltinMutualInstance::bindCore(
 );
 template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);
 template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);
-template<> bool BuiltinMutualInstance::evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
 
 }
 

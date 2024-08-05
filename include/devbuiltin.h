@@ -29,7 +29,7 @@ public:
         KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
-    virtual bool evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els);
+    virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup);
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& ptModel, Status& s=Status::ignore);
     virtual bool isSource() const { return false; };
     virtual bool isVoltageSource() const { return false; };
@@ -190,7 +190,6 @@ public:
     );
     bool evalCore(Circuit& circuit, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
-    bool evalAndLoadCore(Circuit& circuit, EvalAndLoadSetup& els);
         
 protected:
     // Get Jacobian entry pointer
@@ -325,7 +324,7 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::bind(
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::evalAndLoad(
-    Circuit& circuit, EvalAndLoadSetup& els
+    Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup
 ) {
     using InstanceType = BuiltinInstance<ModelParams, InstanceParams, InstanceData>;
     for(auto model : models()) {
@@ -333,7 +332,10 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::evalAndLoad(
             continue;
         }
         for(auto instance : model->instances()) {
-            if (!static_cast<InstanceType*>(instance)->evalAndLoadCore(circuit, els)) {
+            if (evalSetup && !static_cast<InstanceType*>(instance)->evalCore(circuit, *evalSetup)) {
+                return false;
+            }
+            if (loadSetup && !static_cast<InstanceType*>(instance)->loadCore(circuit, *loadSetup)) {
                 return false;
             }
         }

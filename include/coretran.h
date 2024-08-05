@@ -120,8 +120,8 @@ protected:
     Forces uicForces;
     
 private:
-    bool evalAndLoadWrapper(EvalAndLoadSetup& els);
-
+    bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
+    
     // Update breakpoint, but only if it is after last
     void updateBreakPoint(double& bp, double candidate, double last) { if (candidate<bp && candidate>last) bp = candidate; };
 

@@ -351,68 +351,70 @@ bool OsdiDevice::bind(
     return true;
 }
 
-bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els) {
+bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup) {
     auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
     OsdiSimInfo simInfo;
 
-    populate(simInfo.paras, opt, internals);
-    simInfo.abstime = internals.time;
-    simInfo.prev_solve = els.oldSolution;
+    if (evalSetup) {
+        populate(simInfo.paras, opt, internals);
+        simInfo.abstime = internals.time;
+        simInfo.prev_solve = evalSetup->oldSolution;
 
-    simInfo.flags = 0;
-    if (els.evaluateResistiveJacobian) {
-        simInfo.flags |= CALC_RESIST_JACOBIAN;
-    }
-    if (els.evaluateReactiveJacobian) {
-        simInfo.flags |= CALC_REACT_JACOBIAN;
-    }
-    if (els.evaluateResistiveResidual) {
-        simInfo.flags |= CALC_RESIST_RESIDUAL; 
-    }
-    if (els.evaluateReactiveResidual) {
-        simInfo.flags |= CALC_REACT_RESIDUAL; 
-    }
-    if (els.evaluateLinearizedResistiveRhsResidual) {
-        simInfo.flags |= CALC_RESIST_LIM_RHS; 
-    }
-    if (els.evaluateLinearizedReactiveRhsResidual) {
-        simInfo.flags |= CALC_REACT_LIM_RHS; 
-    }
-    if (els.evaluateNoise) {
-        simInfo.flags |= CALC_NOISE; 
-    }
-    if (els.evaluateOpvars) {
-        simInfo.flags |= CALC_OP; 
-    }
-    
-    if (els.enableLimiting) {
-        simInfo.flags |= ENABLE_LIM; 
-    }
-    if (els.initializeLimiting) {
-        simInfo.flags |= INIT_LIM;
-    }
+        simInfo.flags = 0;
+        if (evalSetup->evaluateResistiveJacobian) {
+            simInfo.flags |= CALC_RESIST_JACOBIAN;
+        }
+        if (evalSetup->evaluateReactiveJacobian) {
+            simInfo.flags |= CALC_REACT_JACOBIAN;
+        }
+        if (evalSetup->evaluateResistiveResidual) {
+            simInfo.flags |= CALC_RESIST_RESIDUAL; 
+        }
+        if (evalSetup->evaluateReactiveResidual) {
+            simInfo.flags |= CALC_REACT_RESIDUAL; 
+        }
+        if (evalSetup->evaluateLinearizedResistiveRhsResidual) {
+            simInfo.flags |= CALC_RESIST_LIM_RHS; 
+        }
+        if (evalSetup->evaluateLinearizedReactiveRhsResidual) {
+            simInfo.flags |= CALC_REACT_LIM_RHS; 
+        }
+        if (evalSetup->evaluateNoise) {
+            simInfo.flags |= CALC_NOISE; 
+        }
+        if (evalSetup->evaluateOpvars) {
+            simInfo.flags |= CALC_OP; 
+        }
+        
+        if (evalSetup->enableLimiting) {
+            simInfo.flags |= ENABLE_LIM; 
+        }
+        if (evalSetup->initializeLimiting) {
+            simInfo.flags |= INIT_LIM;
+        }
 
-    if (els.staticAnalysis) {
-        simInfo.flags |= ANALYSIS_STATIC;
-    }
-    if (els.dcAnalysis) {
-        simInfo.flags |= ANALYSIS_DC;
-    }
-    if (els.acAnalysis) {
-        simInfo.flags |= ANALYSIS_AC;
-    }
-    if (els.tranAnalysis) {
-        simInfo.flags |= ANALYSIS_TRAN;
-    }
-    if (els.noiseAnalysis) {
-        simInfo.flags |= ANALYSIS_NOISE;
-    }
-    if (els.nodesetEnabled) {
-        simInfo.flags |= ANALYSIS_NODESET;
-    }
-    if (els.icEnabled) {
-        simInfo.flags |= ANALYSIS_IC;
+        if (evalSetup->staticAnalysis) {
+            simInfo.flags |= ANALYSIS_STATIC;
+        }
+        if (evalSetup->dcAnalysis) {
+            simInfo.flags |= ANALYSIS_DC;
+        }
+        if (evalSetup->acAnalysis) {
+            simInfo.flags |= ANALYSIS_AC;
+        }
+        if (evalSetup->tranAnalysis) {
+            simInfo.flags |= ANALYSIS_TRAN;
+        }
+        if (evalSetup->noiseAnalysis) {
+            simInfo.flags |= ANALYSIS_NOISE;
+        }
+        if (evalSetup->nodesetEnabled) {
+            simInfo.flags |= ANALYSIS_NODESET;
+        }
+        if (evalSetup->icEnabled) {
+            simInfo.flags |= ANALYSIS_IC;
+        }
     }
 
     for(auto model : models()) {
@@ -420,13 +422,18 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalAndLoadSetup& els) {
             continue;
         }
         for(auto instance : model->instances()) {
-            if (!static_cast<OsdiInstance*>(instance)->evalAndLoadCore(circuit, simInfo, els)) {
+            if (evalSetup && !static_cast<OsdiInstance*>(instance)->evalCore(circuit, simInfo, *evalSetup)) {
                 depopulate(simInfo.paras);
+                return false;
+            }
+            if (loadSetup && !static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup)) {
                 return false;
             }
         }
     }
-    depopulate(simInfo.paras);
+    if (evalSetup) {
+        depopulate(simInfo.paras);
+    }
 
     return true;
 }

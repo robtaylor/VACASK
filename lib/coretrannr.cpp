@@ -20,47 +20,41 @@ TranNRSolver::TranNRSolver(
 
     // For constructing the linearized system in NR loop
     // Add reactive evaluation
-    elsSystem.evaluateReactiveJacobian = true;
-    elsSystem.evaluateReactiveResidual = true;
-    elsSystem.evaluateLinearizedReactiveRhsResidual = true;
+    esSystem.evaluateReactiveJacobian = true;
+    esSystem.evaluateReactiveResidual = true;
+    esSystem.evaluateLinearizedReactiveRhsResidual = true;
 
     // Set analysis type
-    elsSystem.staticAnalysis = false;
-    elsSystem.dcAnalysis = false;
-    elsSystem.tranAnalysis = true;
+    esSystem.staticAnalysis = false;
+    esSystem.dcAnalysis = false;
+    esSystem.tranAnalysis = true;
     
     // Add reactive Jacobian loading
-    elsSystem.integCoeffs = &integCoeffs;
-    elsSystem.loadResistiveJacobian = false;
-    elsSystem.loadReactiveJacobian = false;
-    elsSystem.loadTransientJacobian = true;
+    esSystem.integCoeffs = &integCoeffs;
+    lsSystem.integCoeffs = &integCoeffs;
+    lsSystem.loadResistiveJacobian = false;
+    lsSystem.loadReactiveJacobian = false;
+    lsSystem.loadTransientJacobian = true;
     
     // Residual loading
     // elsSystem.linearizedResidualLoadOnlyIfLimited = true;
     
     // State storage
-    elsSystem.storeTerminalReactiveResidualState = true;
-    elsSystem.storeTerminalReactiveResidualDerivativeState = true;
+    esSystem.storeReactiveState = true;
     
     // Breakpoints, timestep limiting
-    elsSystem.computeNextBreakpoint = true;
-    elsSystem.computeBoundStep = true;
+    esSystem.computeNextBreakpoint = true;
+    esSystem.computeBoundStep = true;
     
     // For computing the residual (damping)
     // Add reactive evaluation
-    elsResidual.evaluateReactiveResidual = true;
-    elsResidual.evaluateLinearizedReactiveRhsResidual = true;
+    esResidual.evaluateReactiveResidual = true;
+    esResidual.evaluateLinearizedReactiveRhsResidual = true;
 
     // Set up analysis type
-    elsResidual.staticAnalysis = false;
-    elsResidual.dcAnalysis = false;
-    elsResidual.tranAnalysis = true;
-    
-    // Integrator
-    elsSystem.integCoeffs = &integCoeffs;
-    
-    // Residual loading
-    // elsResidual.linearizedResidualLoadOnlyIfLimited = true;
+    esResidual.staticAnalysis = false;
+    esResidual.dcAnalysis = false;
+    esResidual.tranAnalysis = true;
 }
 
 bool TranNRSolver::initialize(bool continuePrevious) {
@@ -74,7 +68,7 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     }
 
     // Set output vector for building linear system (reactive residual derivative)
-    elsSystem.reactiveResidualDerivative = delta.data();
+    lsSystem.reactiveResidualDerivative = delta.data();
 
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
@@ -142,12 +136,12 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     }
     
     // Set output vector for computing residual (reactive residual derivative)
-    elsResidual.reactiveResidualDerivative = delta.data();
+    lsResidual.reactiveResidualDerivative = delta.data();
     
     // Compute reactive residual derivative contribution to max residual contribution
     // if we are computing max resistive residual contribution to max residual contribution 
     // Update it in the same vector as max resistive residual contribution. 
-    elsSystem.maxReactiveResidualDerivativeContribution = elsSystem.maxResistiveResidualContribution; 
+    lsSystem.maxReactiveResidualDerivativeContribution = lsSystem.maxResistiveResidualContribution; 
     
     return true;
 }  

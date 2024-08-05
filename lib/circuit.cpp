@@ -1199,23 +1199,32 @@ bool Circuit::bind(
     return true;
 }
 
-bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)) {
+bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*)) {
     auto t0 = Accounting::wclk();
     tables_.accounting().acctNew.load++; 
     
-    if (!els.initialize()) {
-        tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
-        return false;
+    if (evalSetup) {
+        if (!evalSetup->initialize()) {
+            tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+            return false;
+        }
+        evalSetup->clearFlags();
+        evalSetup->clearBounds();
     }
-    els.clearFlags();
-    els.clearBounds();
+    if (loadSetup) {
+        if (!loadSetup->initialize()) {
+            tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+            return false;
+        }
+    }
+    
     for(auto& dev : devices) {
         auto* devPtr = dev.get();
         if (devPtr->instanceCount()==0)  {
             continue;
         }
         if ((!deviceSelector || deviceSelector(dev.get()))) {
-            if (!devPtr->evalAndLoad(*this, els)) {
+            if (!devPtr->evalAndLoad(*this, evalSetup, loadSetup)) {
                 tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
                 return false;
             }
@@ -1225,14 +1234,14 @@ bool Circuit::evalAndLoad(EvalAndLoadSetup& els, bool (*deviceSelector)(Device*)
     return true;
 }
 
-void Circuit::updateEvalFlags(EvalAndLoadSetup& els, Flags mask) {
-    if (els.abortRequested) {
+void Circuit::updateEvalFlags(EvalSetup& evalSetup, Flags mask) {
+    if (evalSetup.abortRequested) {
         setFlags(Flags::Abort & mask);
     }
-    if (els.finishRequested) {
+    if (evalSetup.finishRequested) {
         setFlags(Flags::Finish & mask);
     }
-    if (els.stopRequested) {
+    if (evalSetup.stopRequested) {
         setFlags(Flags::Stop & mask);
     }
 }
