@@ -96,10 +96,10 @@ Models are loaded with the `load` netlist directive. If the given path is absolu
 
 VACASK can compile Verilog-A files on the fly. For that purpose VACASK looks for the OpenVAF-reloaded compiler in the directory where the VACASK binary is installed and in the system path. If a `load` directive specifies a raw Verilog-A file (ending in .va), VACASK will try to compile it. The compiled model is placed in the current working directory and then loaded. 
 
-# Building the simulator
+# Building VACASK
 VACASK has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library, and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). You will also need a working Python3 installation (for the system tests). 
 
-You will also have to install the OpenVAF-reloaded compiler. If you decide to build the compiler yourself, git-clone the [OpenVAF-reloaded repository](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found at the beginning of the `README.md` file. Of course, you can also take the OpenVAF-reloaded binary from the binary packages (.deb and .tar.gz for Linux, .zip for Windows). 
+You will also have to install the OpenVAF-reloaded compiler. The latest development version of OpenVAF-reloaded can be found at [https://fides.fe.uni-lj.si/openvaf/download](https://fides.fe.uni-lj.si/openvaf/download/). Make sure you download the OSDI 0.4 version. Of course, you can also take the OpenVAF-reloaded binary from the VACASK binary packages (.deb and .tar.gz for Linux, .zip for Windows). Make sure the OpenVAF binary you pick up is named `openvaf-r` (this indicates the compiler produces models with the OSDI 0.4 interface). If you decide to build the compiler yourself, git-clone the [OpenVAF-reloaded repository](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found in the [README.md](https://github.com/arpadbuermen/OpenVAF/blob/master/README.md) file. 
 
 ## Linux
 Install gcc, Boost, and KLU. You will also need CMake and GNU make or Ninja for building. 
