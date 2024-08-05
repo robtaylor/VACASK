@@ -18,43 +18,50 @@ TranNRSolver::TranNRSolver(
     // Slots containing branch forces affect the circuti topology. 
     // They need to be set before rebuild() is called. 
 
-    // For constructing the linearized system in NR loop
-    // Add reactive evaluation
-    esSystem.evaluateReactiveJacobian = true;
-    esSystem.evaluateReactiveResidual = true;
-    esSystem.evaluateLinearizedReactiveRhsResidual = true;
-
     // Set analysis type
     esSystem.staticAnalysis = false;
     esSystem.dcAnalysis = false;
     esSystem.tranAnalysis = true;
     
-    // Add reactive Jacobian loading
-    esSystem.integCoeffs = &integCoeffs;
-    lsSystem.integCoeffs = &integCoeffs;
-    lsSystem.loadResistiveJacobian = false;
-    lsSystem.loadReactiveJacobian = false;
-    lsSystem.loadTransientJacobian = true;
-    
-    // Residual loading
-    // elsSystem.linearizedResidualLoadOnlyIfLimited = true;
-    
-    // State storage
+    // For constructing the linearized system in NR loop
+    // Add reactive Jacobian and residual evaluation
+    esSystem.evaluateReactiveJacobian = true;
+    esSystem.evaluateReactiveResidual = true;
+    esSystem.evaluateLinearizedReactiveRhsResidual = true;
+
+    // Make sure reactive residual is stored in the state vector at evaluation
     esSystem.storeReactiveState = true;
     
+    // Need this for evaluation of residual derivative
+    esSystem.integCoeffs = &integCoeffs;
+
     // Breakpoints, timestep limiting
     esSystem.computeNextBreakpoint = true;
     esSystem.computeBoundStep = true;
     
+    
+    // Set up Jacobian loading
+    lsSystem.loadResistiveJacobian = false;
+    lsSystem.loadReactiveJacobian = false;
+    lsSystem.loadTransientJacobian = true;
+    lsSystem.integCoeffs = &integCoeffs;
+    
+    
     // For computing the residual (damping)
-    // Add reactive evaluation
-    esResidual.evaluateReactiveResidual = true;
-    esResidual.evaluateLinearizedReactiveRhsResidual = true;
-
-    // Set up analysis type
+    // Set analysis type
     esResidual.staticAnalysis = false;
     esResidual.dcAnalysis = false;
     esResidual.tranAnalysis = true;
+
+    // Add reactive residual evaluation
+    esResidual.evaluateReactiveResidual = true;
+    esResidual.evaluateLinearizedReactiveRhsResidual = true;
+
+    // Make sure reactive residual is stored in the state vector at evaluation
+    esResidual.storeReactiveState = true;
+    
+    // Need this for evaluation of residual derivative
+    esResidual.integCoeffs = &integCoeffs;
 }
 
 bool TranNRSolver::initialize(bool continuePrevious) {
@@ -70,6 +77,10 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     // Set output vector for building linear system (reactive residual derivative)
     lsSystem.reactiveResidualDerivative = delta.data();
 
+    // Compute reactive residual derivative contribution
+    // Update it in the max resistive residual contribution vector 
+    lsSystem.maxReactiveResidualDerivativeContribution = lsSystem.maxResistiveResidualContribution; 
+    
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
     if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
@@ -135,13 +146,8 @@ bool TranNRSolver::initialize(bool continuePrevious) {
         return false;
     }
     
-    // Set output vector for computing residual (reactive residual derivative)
+    // Set output vector for reactive residual derivative
     lsResidual.reactiveResidualDerivative = delta.data();
-    
-    // Compute reactive residual derivative contribution to max residual contribution
-    // if we are computing max resistive residual contribution to max residual contribution 
-    // Update it in the same vector as max resistive residual contribution. 
-    lsSystem.maxReactiveResidualDerivativeContribution = lsSystem.maxResistiveResidualContribution; 
     
     return true;
 }  
