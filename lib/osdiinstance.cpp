@@ -304,10 +304,15 @@ std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, S
     OsdiSimParas sp;
     const auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
-    OsdiDevice::populate(sp, opt, internals);
+
+    // Allocate tables on stack
+    auto [ndbl, nchrptr ] = model()->device()->simParasSizes();
+    double dblArray[ndbl];
+    char* chrPtrArray[nchrptr];
+    
+    OsdiDevice::populate(sp, opt, internals, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
     auto retval = setupCore(circuit, sp, opt.temp+273.15, force, s);
-    OsdiDevice::depopulate(sp);
     return retval;
 }
 
@@ -466,7 +471,7 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     }
 
     // Reserve reactive residual node states
-    auto nodeStateCount = model()->device()->nodeStateCount();
+    auto nodeStateCount = model()->device()->nonzeroReactiveResiduals().size()*2;
     circuit.allocateStates(nodeStateCount);
 
     // Total state vector chunk allocated for the instance 
@@ -608,8 +613,10 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
 
 bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
     // Get descriptor 
-    auto descr = model()->device()->descriptor();
-
+    auto model_ = model();
+    auto device = model_->device();
+    auto descr = device->descriptor();
+    
     // Prepare callback handle
     OsdiCallbackHandle handle = OsdiCallbackHandle {
         .kind = 3, 
@@ -626,7 +633,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         bool el = simInfo.flags & ENABLE_LIM;
 
         // Core evaluation
-        auto evalFlags = descr->eval(&handle, core(), model()->core(), &simInfo);
+        auto evalFlags = descr->eval(&handle, core(), model_->core(), &simInfo);
     
         // Handle evalFlags
         if (evalFlags & EVAL_RET_FLAG_LIM) {
@@ -666,22 +673,19 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     
     // TODO: better way of skipping nodes without reactive residual
     //       use a table instead of continue
-    auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
+    auto nodeStateIndex = offsStates + device->internalStateCount();
     if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            // Skip nodes with no reactive contribution
-            auto offs = descr->nodes[i].react_residual_off;
-            if (offs==UINT32_MAX) { 
-                continue;
-            }
+        for(auto i : device->nonzeroReactiveResiduals()) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
+            // Get residual offset and residual
             auto resOff = descr->nodes[i].react_residual_off;
             auto contrib = *getDataPtr<double*>(core(), resOff);
+            // Add linearized residual 
+            // (note that the negative of the linearized residual is stored)
             if (checkFlags(Flags::LimitingApplied)) {
                 auto offsLim = descr->nodes[i].react_limit_rhs_off;
                 if (offsLim!=UINT32_MAX) {
-                    // Subtract because this is an RHS contribution
                     contrib -= *getDataPtr<double*>(core(), offsLim);
                 }
             }
@@ -738,20 +742,22 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
 }
 
 bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
-    // Get descriptor 
-    auto descr = model()->device()->descriptor();
+    // Get descriptor
+    auto model_ = model();
+    auto device = model_->device();
+    auto descr = device->descriptor();
     
     // Loading
     
     // Load Jacobian computed with limiting (if it was computed)
     if (loadSetup.loadResistiveJacobian) {
-        descr->load_jacobian_resist(core(), model()->core());
+        descr->load_jacobian_resist(core(), model_->core());
     }
     if (loadSetup.loadReactiveJacobian) {
-        descr->load_jacobian_react(core(), model()->core(), loadSetup.reactiveJacobianFactor);
+        descr->load_jacobian_react(core(), model_->core(), loadSetup.reactiveJacobianFactor);
     }
     if (loadSetup.loadTransientJacobian) {
-        descr->load_jacobian_tran(core(), model()->core(), loadSetup.integCoeffs->leadingCoeff());
+        descr->load_jacobian_tran(core(), model_->core(), loadSetup.integCoeffs->leadingCoeff());
     }
 
     // Without limiting the residual is 
@@ -773,38 +779,36 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     
     // Load residual
     if (loadSetup.resistiveResidual) {
-        descr->load_residual_resist(core(), model()->core(), loadSetup.resistiveResidual);
+        descr->load_residual_resist(core(), model_->core(), loadSetup.resistiveResidual);
     }
     if (loadSetup.reactiveResidual) {
-        descr->load_residual_react(core(), model()->core(), loadSetup.reactiveResidual);
+        descr->load_residual_react(core(), model_->core(), loadSetup.reactiveResidual);
     }
 
     // Load limited residual only if limiting was applied
     if (checkFlags(Flags::LimitingApplied)) {
         if (loadSetup.linearizedResistiveRhsResidual) {
-            descr->load_limit_rhs_resist(core(), model()->core(), loadSetup.linearizedResistiveRhsResidual);
+            descr->load_limit_rhs_resist(core(), model_->core(), loadSetup.linearizedResistiveRhsResidual);
         }
         if (loadSetup.linearizedReactiveRhsResidual) {
-            descr->load_limit_rhs_react(core(), model()->core(), loadSetup.linearizedReactiveRhsResidual); 
+            descr->load_limit_rhs_react(core(), model_->core(), loadSetup.linearizedReactiveRhsResidual); 
         }
     }
 
     // Update maximal resistive residual contribution
     if (loadSetup.maxResistiveResidualContribution) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            // Skip nodes with no reactive contribution
-            auto offs = descr->nodes[i].resist_residual_off;
-            if (offs==UINT32_MAX) { 
-                continue;
-            }
+        for(auto i : model()->device()->nonzeroResistiveResiduals()) {
+        // for(uint32_t i=0; i<descr->num_nodes; i++) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
-            // Need to compute it
+            // Get residual offset and residual
+            auto offs = descr->nodes[i].resist_residual_off;
             double contrib = *getDataPtr<double*>(core(), offs);
+            // Add linearized residual
+            // (note that the negative of the linearized residual is stored)
             if (checkFlags(Flags::LimitingApplied)) {
                 auto offsLim = descr->nodes[i].resist_limit_rhs_off;
                 if (offsLim!=UINT32_MAX) {
-                    // Subtract because this is an RHS contribution
                     contrib -= *getDataPtr<double*>(core(), offsLim);
                 }
             }
@@ -817,18 +821,13 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     }
     
     // Update maximal reactive residual contribution and its derivative
-    auto nodeStateIndex = offsStates + model()->device()->internalStateCount();
+    auto nodeStateIndex = offsStates + device->internalStateCount();
     if (
         loadSetup.reactiveResidualDerivative || 
         loadSetup.maxReactiveResidualContribution || 
         loadSetup.maxReactiveResidualDerivativeContribution
     ) {
-        for(uint32_t i=0; i<descr->num_nodes; i++) {
-            // Skip nodes with no reactive contribution
-            auto offs = descr->nodes[i].react_residual_off;
-            if (offs==UINT32_MAX) { 
-                continue;
-            }
+        for(auto i : device->nonzeroReactiveResiduals()) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
             // No need to compute it, retrieve it from states

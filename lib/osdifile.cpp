@@ -143,9 +143,12 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     opvarOsdiIdLists.resize(descriptorCount); 
     osdiIdSimInstIdLists.resize(descriptorCount);
     osdiIdSimModIdLists.resize(descriptorCount);
-    instanceNodeStateCounts.resize(descriptorCount);
     instParAllocatedOsdiId.resize(descriptorCount);
     modParAllocatedOsdiId.resize(descriptorCount);
+    nonzeroResistiveJacNdx.resize(descriptorCount);
+    nonzeroReactiveJacNdx.resize(descriptorCount);
+    nonzeroResistiveResNdx.resize(descriptorCount);
+    nonzeroReactiveResNdx.resize(descriptorCount);
     osdiIdPrimaryParamName.resize(descriptorCount);
     noiseSourceNames.resize(descriptorCount);
     noiseSourceNameTranslators.resize(descriptorCount);
@@ -219,12 +222,22 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
             nnList.push_back(id);
             nodeMap.insert({id, j});
         }
-        // Count the number of states to allocate for instance
-        instanceNodeStateCounts[i] = 0;
+        // Collect nonzero Jacobian indices
+        for (decltype(desc->num_jacobian_entries) ji = 0; ji < desc->num_jacobian_entries; ji++) {
+            if (desc->jacobian_entries[ji].flags & JACOBIAN_ENTRY_RESIST) {
+                nonzeroResistiveJacNdx[i].push_back(ji);
+            }
+            if (desc->jacobian_entries[ji].flags & JACOBIAN_ENTRY_REACT) {
+                nonzeroReactiveJacNdx[i].push_back(ji);
+            }
+        }
+        // Collect nonzero residual indices
         for (decltype(desc->num_nodes) ni = 0; ni < desc->num_nodes; ni++) {
-            // Two extra states (q=charge, c=current) per each node with reactive residual
+            if (desc->nodes[ni].resist_residual_off != UINT32_MAX) {
+                nonzeroResistiveResNdx[i].push_back(ni);
+            }
             if (desc->nodes[ni].react_residual_off != UINT32_MAX) {
-                instanceNodeStateCounts[i] += 2;
+                nonzeroReactiveResNdx[i].push_back(ni);
             }
         }
     }

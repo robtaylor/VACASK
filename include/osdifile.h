@@ -230,8 +230,11 @@ public:
         );
     };
 
-    // Instance node state count
-    LocalStorageIndex nodeStateCount(OsdiDeviceIndex deviceIndex) { return instanceNodeStateCounts[deviceIndex]; };
+    // Access to nonzero entry indices
+    auto& nonzeroResistiveResiduals(OsdiDeviceIndex deviceIndex) { return nonzeroResistiveResNdx[deviceIndex]; };
+    auto& nonzeroReactiveResiduals(OsdiDeviceIndex deviceIndex) { return nonzeroReactiveResNdx[deviceIndex]; };
+    auto& nonzeroResistiveJacobianEntries(OsdiDeviceIndex deviceIndex) { return nonzeroResistiveJacNdx[deviceIndex]; };
+    auto& nonzeroReactiveJacobianEntries(OsdiDeviceIndex deviceIndex) { return nonzeroReactiveJacNdx[deviceIndex]; };
 
 private:
     void* handle;
@@ -275,9 +278,6 @@ private:
     // Vector of maps from noise source name to noise source index
     std::vector<std::unordered_map<Id, ParameterIndex>> noiseSourceNameTranslators;
 
-    // Vector of instance node state counts
-    std::vector<LocalStorageIndex> instanceNodeStateCounts;
-
     // Vector of vectors of node identifiers
     std::vector<std::vector<Id>> nodeNameLists;
 
@@ -288,6 +288,21 @@ private:
     // These are lists of osdi ids of parameters that need to be freed if they were given
     std::vector<std::vector<OsdiParameterId>> instParAllocatedOsdiId;
     std::vector<std::vector<OsdiParameterId>> modParAllocatedOsdiId;
+
+    // These lists are used for allocating
+    // Vector of vectors of nonzero resistive Jacobian entry indices into jacobian_entries
+    std::vector<std::vector<OsdiNodeIndex>> nonzeroResistiveJacNdx;
+
+    // Vector of vectors of nonzero reactive Jacobian entry indices into jacobian_entries
+    std::vector<std::vector<OsdiNodeIndex>> nonzeroReactiveJacNdx;
+
+    // Vector of vectors of nonzero resistive residual entry indices into nodes
+    std::vector<std::vector<OsdiNodeIndex>> nonzeroResistiveResNdx;
+
+    // Vector of vectors of nonzero resistive residual entry indices into nodes
+    std::vector<std::vector<OsdiNodeIndex>> nonzeroReactiveResNdx;
+
+
 
     // Limit functions
     static const OsdiLimitFunction limitFunctionTable[];

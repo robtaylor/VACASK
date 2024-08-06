@@ -289,19 +289,23 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Sta
     const auto& opt = circuit.simulatorOptions().core();
     const auto& internals = circuit.simulatorInternals();
     OsdiSimParas sp;
-    populate(sp, opt, internals);
+    
+    // Allocate tables on stack
+    auto [ndbl, nchrptr ] = simParasSizes();
+    double dblArray[ndbl];
+    char* chrPtrArray[nchrptr];
+    
+    populate(sp, opt, internals, dblArray, chrPtrArray);
     for(auto model : models()) {
         // Verilog-A $temperature is in K, convert the value given by options (in C)
         auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
-            depopulate(sp);
             return std::make_tuple(false, unknownsChanged, sparsityChanged);
         }
         
     }
-    depopulate(sp);
     return std::tuple(true, unknownsChanged, sparsityChanged);
 }
 
@@ -357,7 +361,12 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
     OsdiSimInfo simInfo;
 
     if (evalSetup) {
-        populate(simInfo.paras, opt, internals);
+        // Allocate tables on stack
+        auto [ndbl, nchrptr ] = simParasSizes();
+        double dblArray[ndbl];
+        char* chrPtrArray[nchrptr];
+        
+        populate(simInfo.paras, opt, internals, dblArray, chrPtrArray);
         simInfo.abstime = internals.time;
         simInfo.prev_solve = evalSetup->oldSolution;
 
@@ -423,7 +432,6 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
         }
         for(auto instance : model->instances()) {
             if (evalSetup && !static_cast<OsdiInstance*>(instance)->evalCore(circuit, simInfo, *evalSetup)) {
-                depopulate(simInfo.paras);
                 return false;
             }
             if (loadSetup && !static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup)) {
@@ -431,10 +439,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
             }
         }
     }
-    if (evalSetup) {
-        depopulate(simInfo.paras);
-    }
-
+    
     return true;
 }
 
@@ -469,8 +474,19 @@ const char *OsdiDevice::simStrParamNames[] = {
     //   path
 };
 
- void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals) {
-    double* simParamValues = new double[sizeof(OsdiDevice::simParamNames)/sizeof(char*)];
+// Will allocate double and char* arrays on stack to make it faster
+// We need sizes for that
+std::tuple<size_t, size_t> OsdiDevice::simParasSizes() {
+    return std::make_tuple(
+        sizeof(OsdiDevice::simParamNames)/sizeof(char*), 
+        sizeof(OsdiDevice::simStrParamNames)/sizeof(char*)
+    );
+}
+
+void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray) {
+    // dblArray and chrPtrArray should be allocated on stack to save time
+    // simParasSizes() reports the reuired size of these two arrays
+    double* simParamValues = dblArray; 
     
     // Because most Verilog-A devices use only gmin, we set it to internals gmin+gdev
     // Those that implement this properly will actually use 2x gdev when gdev!=0
@@ -490,7 +506,7 @@ const char *OsdiDevice::simStrParamNames[] = {
     sp.names = const_cast<char**>(simParamNames); 
     sp.vals = simParamValues; 
     
-    char** simStrParamValues = new char*[sizeof(OsdiDevice::simStrParamNames)/sizeof(char*)];
+    char** simStrParamValues = chrPtrArray; 
     
     simStrParamValues[0] = const_cast<char*>(internals.analysis_name.c_str());
     simStrParamValues[1] = const_cast<char*>(internals.analysis_type.c_str());
@@ -498,14 +514,6 @@ const char *OsdiDevice::simStrParamNames[] = {
 
     sp.names_str = const_cast<char**>(simStrParamNames); 
     sp.vals_str = simStrParamValues;
-}
-
-void OsdiDevice::depopulate(OsdiSimParas& sp) {
-    delete [] sp.vals;
-    sp.vals = nullptr;
-    
-    delete [] sp.vals_str;
-    sp.vals_str = nullptr;
 }
 
 bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, Status& s) const {

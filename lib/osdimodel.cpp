@@ -163,11 +163,15 @@ std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, Stat
     OsdiSimParas sp;
     auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals(); 
+
+    // Allocate tables on stack
+    auto [ndbl, nchrptr ] = device()->simParasSizes();
+    double dblArray[ndbl];
+    char* chrPtrArray[nchrptr];
     
-    OsdiDevice::populate(sp, opt, internals);
+    OsdiDevice::populate(sp, opt, internals, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
     auto retval = setupCore(circuit, sp, opt.temp+273.15, force, s);
-    OsdiDevice::depopulate(sp);
     return retval;
 }
 

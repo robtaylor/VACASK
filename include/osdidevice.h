@@ -160,8 +160,11 @@ public:
     // Noise source index
     inline std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return osdiFile->noiseSourceIndex(index_, name); };
 
-    // Instance node state count
-    LocalStorageIndex nodeStateCount() const { return osdiFile->nodeStateCount(index_); };
+    // Access to nonzero entry indices
+    auto& nonzeroResistiveResiduals() { return osdiFile->nonzeroResistiveResiduals(index_); };
+    auto& nonzeroReactiveResiduals() { return osdiFile->nonzeroReactiveResiduals(index_); };
+    auto& nonzeroResistiveJacobianEntries() { return osdiFile->nonzeroResistiveJacobianEntries(index_); };
+    auto& nonzeroReactiveJacobianEntries() { return osdiFile->nonzeroReactiveJacobianEntries(index_); };
 
     // Noise source node indices
     inline std::tuple<OsdiFile::OsdiNodeIndex, OsdiFile::OsdiNodeIndex> noiseExcitation(ParameterIndex ndx) const {
@@ -178,9 +181,9 @@ public:
     // Return value: ok, parameter given
     std::tuple<bool, bool> parameterGiven(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Status& s=Status::ignore) const;
 
-    static void populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals);
-    static void depopulate(OsdiSimParas& sp);
-
+    static std::tuple<size_t, size_t> simParasSizes();
+    static void populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray);
+    
     bool processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, Status& s=Status::ignore) const;
 
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return descriptor_->num_collapsible; };
