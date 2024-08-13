@@ -7,29 +7,37 @@
 namespace NAMESPACE {
 
 typedef struct AcctData {
-    int parse {0};
+    size_t parse {0};
     double tparse {0};
 
-    int elab {0};
+    size_t elab {0};
     double telab {0};
 
-    int chgelab {0};
+    size_t chgelab {0};
     double tchgelab {0};
 
-    int load {0};
-    int resload {0};
-    int sysload {0};
-    int factor {0};
-    int refactor {0};
-    int solve {0};
-    int cxfactor {0};
-    int cxrefactor {0};
-    int cxsolve {0};
-    int nrcall {0};
-    int nriter {0};
-    int accepted {0};
-    int rejected {0};
-    int points {0};
+    size_t conv {0};
+    size_t evalload {0};
+    size_t resload {0};
+    size_t sysload {0};
+    size_t factor {0};
+    size_t refactor {0};
+    size_t solve {0};
+    size_t cxfactor {0};
+    size_t cxrefactor {0};
+    size_t cxsolve {0};
+    size_t nrcall {0};
+    size_t nriter {0};
+    size_t accepted {0};
+    size_t rejected {0};
+    size_t points {0};
+    size_t bpiicount {0};
+    size_t bpiiconv {0};
+    size_t bpiibypass {0};
+    size_t bpiibpfailed {0};
+    double tconv {0};
+    double tevalload {0};
+    double teval {0};
     double tload {0};
     double tresload {0};
     double tsysload {0};

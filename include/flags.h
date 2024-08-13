@@ -47,6 +47,8 @@ namespace NAMESPACE {
 template<typename EnumType> class FlagBase {
 public:
     using Flags = EnumType;
+
+    const static EnumType NoFlags = EnumType(0);
     
     FlagBase() : flags_(EnumType(0)) {};
     FlagBase(EnumType f) : flags_(f) {};

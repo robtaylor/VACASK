@@ -146,6 +146,14 @@ bool Analysis::run(Status& s) {
     // Output descriptors are created with analysis
     // Binding must be done here, just before the core analysis is run
 
+    // Clear instance flags: Converged, Bypassed, HasDeviceHistory
+    circuit.applyInstanceFlags(
+        Instance::Flags::HasDeviceHistory |
+        Instance::Flags::Converged |
+        Instance::Flags::Bypassed, 
+        Instance::NoFlags
+    );
+
     // Set simulator internals
     auto& options = circuit.simulatorOptions().core(); 
     SimulatorInternals internals;
@@ -154,6 +162,8 @@ bool Analysis::run(Status& s) {
     internals.analysis_type = std::string(ptAnalysis.typeName());
     internals.initalizeLimiting = false;
     circuit.simulatorInternals() = internals;
+    // By default high precision is not requested (bypass possible)
+    internals.highPrecision = false;
 
     // Clear Abort, Finish, and Stop flags
     // Responders 

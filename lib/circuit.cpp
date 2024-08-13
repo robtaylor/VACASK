@@ -491,7 +491,6 @@ bool Circuit::add(Device* dev, Status& s) {
 }
 
 bool Circuit::add(Model* mod, Status& s) {
-    // Failure to insert will delete model
     auto [it, inserted] = modelMap.insert({mod->name(), nullptr});
     if (!inserted) {
         s.set(Status::Redefinition, "A model with name '"+std::string(mod->name())+"' already exists.");
@@ -507,7 +506,6 @@ bool Circuit::add(Model* mod, Status& s) {
 }
 
 bool Circuit::add(Instance* inst, Status& s) {
-    // Failure to insert will delete instance
     auto [it, inserted] = instanceMap.insert({inst->name(), nullptr});
     if (!inserted) {
         s.set(Status::Redefinition, "An instance with name '"+std::string(inst->name())+"' already exists.");
@@ -520,6 +518,18 @@ bool Circuit::add(Instance* inst, Status& s) {
     }
     it->second.reset(inst);
     return true;
+}
+
+size_t Circuit::instanceCount() const {
+    return instanceMap.size();
+}
+
+size_t Circuit::subcircuitInstanceCount() const {
+    if (!hdev) {
+        return 0;
+    } else {
+        return hdev->instanceCount();
+    }
 }
 
 bool Circuit::remove(Node* node, Status& s) {
@@ -1009,6 +1019,12 @@ GlobalStorageIndex Circuit::allocateStates(LocalStorageIndex n) {
     return retval;
 }
 
+GlobalStorageIndex Circuit::allocateDeviceStates(LocalStorageIndex n) {
+    auto retval = deviceStatesCount_;
+    deviceStatesCount_ += n;
+    return retval;
+}
+
 bool Circuit::nodeOrdering(Status& s) {
     // Build node order vector
     nodeOrder.clear();
@@ -1153,6 +1169,7 @@ bool Circuit::buildSparsityAndStates(Status& s) {
 
     // Create Jacobian entries, allocate state vector slots
     statesCount_ = 0;
+    deviceStatesCount_ = 0;
     for(auto& dev : devices) {
         if (!dev.get()->populateStructures(*this, s)) {
             return false;
@@ -1199,13 +1216,25 @@ bool Circuit::bind(
     return true;
 }
 
+bool Circuit::applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet) {
+    for(auto& it : instanceMap) {
+        if (fClear!=Instance::NoFlags) {
+            it.second.get()->clearFlags(fClear);
+        }
+        if (fSet!=Instance::NoFlags) {
+            it.second.get()->setFlags(fClear);
+        }
+    }
+    return true;
+}
+
 bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*)) {
     auto t0 = Accounting::wclk();
-    tables_.accounting().acctNew.load++; 
+    tables_.accounting().acctNew.evalload++; 
     
     if (evalSetup) {
         if (!evalSetup->initialize()) {
-            tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
             return false;
         }
         evalSetup->clearFlags();
@@ -1213,7 +1242,7 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
     }
     if (loadSetup) {
         if (!loadSetup->initialize()) {
-            tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+            tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
             return false;
         }
     }
@@ -1225,13 +1254,35 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
         }
         if ((!deviceSelector || deviceSelector(dev.get()))) {
             if (!devPtr->evalAndLoad(*this, evalSetup, loadSetup)) {
-                tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+                tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
                 return false;
             }
         }
     }
-    tables_.accounting().acctNew.tload += Accounting::wclkDelta(t0);
+    tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
     return true;
+}
+
+bool Circuit::converged(ConvSetup& convSetup) {
+    auto t0 = Accounting::wclk();
+    tables_.accounting().acctNew.conv++; 
+    
+    if (!convSetup.initialize()) {
+        tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
+        return false;
+    }
+    for(auto& dev : devices) {
+        auto* devPtr = dev.get();
+        if (devPtr->instanceCount()==0)  {
+            continue;
+        }
+        if (!devPtr->converged(*this, convSetup)) {
+            tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
+            return false;
+        }
+    }
+    tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
+    return true; 
 }
 
 void Circuit::updateEvalFlags(EvalSetup& evalSetup, Flags mask) {

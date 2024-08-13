@@ -703,10 +703,21 @@ bool TranCore::run(bool continuePrevious) {
     // in the future slot (-1)
     states.futureVector() = states.vector();
     // Evaluate and load residual and residual derivative in future slot
+    // allowBypass is false by default so no bypass takes place
     if (!evalAndLoadWrapper(esInit, lsInit)) {
         // Error was already set in the wrapper
         return false;
     }
+    // Clear Converged, Bypassed, and HasDeviceHistory flags
+    // to make sure the device history will be initilialized 
+    // after the first timepoint is computed. 
+    circuit.applyInstanceFlags(
+        Instance::Flags::HasDeviceHistory |
+        Instance::Flags::Converged |
+        Instance::Flags::Bypassed, 
+        Instance::NoFlags
+    );
+    
     // Rotate states -1 and 0 so that future (-1) becomes current (0)
     states.rotate();
 

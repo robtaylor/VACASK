@@ -455,6 +455,9 @@ bool NRSolver::run(bool continuePrevious) {
 
     clearError();
 
+    // Allow lower precision
+    requestHighPrecision(false);
+
     // Initialize structures
     if (!initialize(continuePrevious)) {
         // Assume initialize() has set lastError
@@ -629,6 +632,14 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
 
+        // Post-solve tasks (instance convergence check)
+        if (!postSolve(continuePrevious)) {
+            if (settings.debug) {
+                Simulator::dbg() << "Post-solve step failed.\n";
+            }
+            break;
+        }
+
         circuit.tables().accounting().acctNew.nriter++;
 
         if (settings.solutionCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
@@ -672,6 +683,14 @@ bool NRSolver::run(bool continuePrevious) {
                 break;
             }
         }
+
+        // If delta is OK, but residual is not, request increased precision
+        if (deltaOk && !residualOk) { 
+            requestHighPrecision(true);
+        } else {
+            requestHighPrecision(false);
+        }
+
 
         // Check if this iteration converged
         iterationConverged = !preventConvergence && deltaOk && residualOk;
@@ -890,6 +909,10 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
             return false;
         case Error::EvalAndLoad:
             s.set(Status::NonlinearSolver, "Evaluation/load error.");
+            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
+            return false;
+        case Error::ConvergenceCheck:
+            s.set(Status::NonlinearSolver, "Instance convergence check error.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
         case Error::LinearSolver: 

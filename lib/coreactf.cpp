@@ -242,7 +242,7 @@ bool AcTfCore::run(bool continuePrevious) {
         Simulator::dbg() << "Starting AC small-signal transfer function analysis.\n";
     }
     
-    // Evaluate resistive and reactive Jacobian
+    // Evaluate resistive and reactive Jacobian, bypass is not allowed
     EvalSetup esReactive { 
         // Inputs, can be set here (we do not rotate)
         .solution = &dcSolution, 

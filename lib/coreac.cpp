@@ -193,7 +193,7 @@ bool AcCore::run(bool continuePrevious) {
         Simulator::dbg() << "Starting AC small-signal analysis.\n";
     }
     
-    // Evaluate resistive and reactive Jacobian
+    // Evaluate resistive and reactive Jacobian, bypass is not allowed
     EvalSetup esReactive { 
         // Inputs
         .solution = &dcSolution, 

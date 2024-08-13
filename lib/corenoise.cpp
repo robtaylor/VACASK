@@ -282,7 +282,7 @@ bool NoiseCore::run(bool continuePrevious) {
         Simulator::dbg() << "Starting small-signal noise analysis.\n";
     }
     
-    // Evaluate resistive and reactive Jacobian, evaluate noise
+    // Evaluate resistive and reactive Jacobian, evaluate noise, bypass is not allowed
     EvalSetup esReactNoise { 
         // Inputs, can be set here (we do not rotate)
         .solution = &dcSolution, 

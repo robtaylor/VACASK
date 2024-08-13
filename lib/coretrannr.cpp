@@ -38,6 +38,9 @@ TranNRSolver::TranNRSolver(
     // Breakpoints, timestep limiting
     esSystem.computeNextBreakpoint = true;
     esSystem.computeBoundStep = true;
+
+    // Also check reactive residual and Jacobian convergence
+    csSystem.checkReactiveConvergece = true;
     
     
     // Set up Jacobian loading

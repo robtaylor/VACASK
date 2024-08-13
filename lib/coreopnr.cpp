@@ -100,6 +100,15 @@ OpNRSolver::OpNRSolver(
 
     lsResidual = LoadSetup {
     };
+
+    csSystem = ConvSetup {
+        .solution = &solution, 
+        .states = &states
+    };
+}
+
+void OpNRSolver::requestHighPrecision(bool f) {
+    circuit.simulatorInternals().highPrecision = f;
 }
 
 bool OpNRSolver::rebuild() {
@@ -113,6 +122,11 @@ bool OpNRSolver::rebuild() {
     auto n = circuit.unknownCount();
     maxResidualContribution_.resize(n+1);
     dummyStates.resize(circuit.statesCount());
+
+    // If bypass is enabled, prepare space for previous device states
+    if (circuit.simulatorOptions().core().nr_bypass) {
+        deviceStates.resize(circuit.deviceStatesCount());
+    }
     
     return true;
 }
@@ -127,7 +141,7 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     lsSystem.resistiveResidual = delta.data();
     lsSystem.linearizedResistiveRhsResidual = delta.data();
     lsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
-    
+
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
     if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
@@ -197,6 +211,36 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     lsResidual.resistiveResidual = delta.data(); 
     lsResidual.linearizedResistiveRhsResidual = delta.data();
 
+    csSystem.inputDelta = delta.data();
+
+    return true;
+}
+
+bool OpNRSolver::postSolve(bool continuePrevious) {
+    // Check convergence if nr_bypass is enabled
+    if (circuit.simulatorOptions().core().nr_bypass) {
+        if (!circuit.converged(csSystem)) {
+            lastError = Error::ConvergenceCheck;
+            errorIteration = iteration;
+            if (settings.debug>2) {
+                Simulator::dbg() << "Instance convergence check error.\n";
+            }
+            return false;
+        }
+    }
+
+    if (circuit.simulatorOptions().core().nr_bypass) {
+        auto& acct = circuit.tables().accounting();
+        acct.acctNew.bpiicount += esSystem.bypassableInstances;
+        acct.acctNew.bpiiconv += esSystem.bypassableInstances-csSystem.nonConvergedInstances;
+        acct.acctNew.bpiibypass += esSystem.bypassedInstances;
+        acct.acctNew.bpiibpfailed += esSystem.failedBypassInstances;
+        // Simulator::dbg() << "iter " << iteration << ", bypassable: " << esSystem.bypassableInstances 
+        //     << ", unconverged " << csSystem.nonConvergedInstances 
+        //     << ", bypassed " << esSystem.bypassedInstances 
+        //     << ", bypass failed " << esSystem.failedBypassInstances << "\n";
+    }
+    
     return true;
 }
 
@@ -299,6 +343,21 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     // Write value to simulatorInternals
     circuit.simulatorInternals().initalizeLimiting = esSystem.initializeLimiting; 
 
+    // Bypass enabled, take it into account at evaluation time
+    if (circuit.simulatorOptions().core().nr_bypass) {
+        // In continue mode bypass is allowed in first iteration
+        // Otherwise we allow it starting with the second one 
+        if (continuePrevious || iteration>1) {
+            esSystem.allowBypass = true;
+        } else {
+            esSystem.allowBypass = false;
+        }
+        // For bypass check
+        esSystem.deviceStates = deviceStates.data();
+        // For convergence check
+        csSystem.deviceStates = deviceStates.data();
+    }
+
     // Evaluate and load
     if (!evalAndLoadWrapper(esSystem, lsSystem)) {
         lastError = Error::EvalAndLoad;
@@ -306,7 +365,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
         return std::make_tuple(false, esSystem.limitingApplied);
     }
     delta[0] = 0.0;
-    
+
     // Simulator::dbg() << "After loading:\n";
     // Simulator::dbg() << "  Residual:\n";
     // circuit.dumpSolution(std::cout, delta.data(), "    ");

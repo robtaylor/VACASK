@@ -82,8 +82,10 @@ public:
         KluMatrixAccess* matReact, Component compReact, 
         Status& s=Status::ignore
     );
+    bool bypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
     bool evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
+    bool convergedCore(Circuit& circuit, ConvSetup& convSetup);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };
@@ -112,6 +114,7 @@ private:
     std::vector<Node*> nodes_;
     TerminalIndex connectedTerminalCount;
     GlobalStorageIndex offsStates;
+    GlobalStorageIndex offsDeviceStates;
 };
 
 }

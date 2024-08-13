@@ -264,6 +264,10 @@ public:
     bool add(Model* mod, Status& s=Status::ignore);
     bool add(Instance* mod, Status& s=Status::ignore);
 
+    // Instance counts
+    size_t instanceCount() const;
+    size_t subcircuitInstanceCount() const;
+
     // Remove istance from map and delete it
     bool remove(Instance* instance, Status& s=Status::ignore);
     // Remove model from map and delete it
@@ -301,8 +305,10 @@ public:
     std::tuple<MatrixEntryIndex*, bool> createJacobianEntry(Node* ne, Node* nu, Status& s=Status::ignore);
     // Allocate n entries in state vector, return global state index of first allocated entry
     GlobalStorageIndex allocateStates(LocalStorageIndex n);
+    GlobalStorageIndex allocateDeviceStates(LocalStorageIndex n);
 
     GlobalStorageIndex statesCount() const { return statesCount_; };
+    GlobalStorageIndex deviceStatesCount() const { return deviceStatesCount_; };
     
     // Drivers
     // Return value: ok, unknowns changed, sparsity changed
@@ -317,7 +323,9 @@ public:
     // Return value: ok, hierarchy changed
     std::tuple<bool, bool> propagateDownHierarchy(Status& s=Status::ignore);
     
+    bool applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet);
     bool evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
+    bool converged(ConvSetup& convSetup);
     void updateEvalFlags(EvalSetup& evalSetup, Flags mask=Flags::EvalFlags);
     
     // Simulator options (Parameterized class with simulator options core)
@@ -474,6 +482,9 @@ private:
 
     // States count
     GlobalStorageIndex statesCount_;
+
+    // Device convergence check state count
+    GlobalStorageIndex deviceStatesCount_;
 
     // Evaluator for hierarchy
     RpnEvaluator paramEvaluator_;

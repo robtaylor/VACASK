@@ -19,6 +19,8 @@ typedef struct SimulatorOptions  {
     Real reltol; 
     Real abstol;
     Real vntol;
+    Real chgtol;
+    Real fluxtol;
     Id relrefsol;
     Id relrefres;
     Id relreflte;
@@ -28,7 +30,10 @@ typedef struct SimulatorOptions  {
     Int matrixcheck;
     Int rhscheck;
     Int solutioncheck;
-    Int sweep_debug; 
+    Int sweep_debug;
+    Int nr_bypass; 
+    Real nr_convtol;
+    Real nr_bypasstol;
     Int nr_conviter;
     Int nr_residualcheck;
     Real nr_damping;
@@ -123,6 +128,8 @@ typedef struct SimulatorInternals {
     String cwd;
 
     bool initalizeLimiting;
+
+    bool highPrecision;
 
     double frequency;
     double time;

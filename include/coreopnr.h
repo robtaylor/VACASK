@@ -26,8 +26,10 @@ public:
         NRSettings& settings, Int forcesSize=2
     ); 
 
+    virtual void requestHighPrecision(bool f);
     virtual bool rebuild();
     virtual bool initialize(bool continuePrevious);
+    virtual bool postSolve(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
     virtual std::tuple<bool, bool> computeResidual(bool continuePrevious);
@@ -48,9 +50,12 @@ protected:
 
     LoadSetup lsSystem;
     LoadSetup lsResidual; 
+
+    ConvSetup csSystem;
     
     // Internal structures
     Vector<double> dummyStates;
+    Vector<double> deviceStates;
 };
 
 }

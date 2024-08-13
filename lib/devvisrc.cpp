@@ -532,9 +532,9 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     auto& internals = circuit.simulatorInternals();
     auto sourceFactor = internals.sourcescalefactor;
     
-    // Evaluate
+    // Evaluate, placeholder for bypass implementation
     auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
-    if (!evalSetup.skipCoreEvaluation) {
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             if (evalSetup.evaluateResistiveResidual) {
                 d.flowResidual = p.mfactor*evalSetup.oldSolution[d.uFlow];
@@ -624,9 +624,9 @@ template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     auto& internals = circuit.simulatorInternals();
     auto sourceFactor = internals.sourcescalefactor;
     
-    // Evaluate
+    // Evaluate, placeholder for bypass implementation
     auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
-    if (!evalSetup.skipCoreEvaluation) {
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             if (evalSetup.evaluateResistiveResidual) {
                 d.flowResidual = sourceFactor*p.mfactor*val;

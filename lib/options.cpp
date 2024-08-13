@@ -29,14 +29,16 @@ SimulatorOptions::SimulatorOptions() {
     minr = 0.0; // >=0
     scale = 1.0; // >0
     reltol = 1e-3; // 0<x<1, Relative tolerance 
-    abstol = 1e-12; // >0, absolute current tolerance
-    vntol = 1e-6; // >0, absolute voltage tolerance
+    abstol = 1e-12; // >0, absolute current tolerance in A
+    vntol = 1e-6; // >0, absolute voltage tolerance in V
+    chgtol = 1e-15; // >0, charge tolerance in As, default is 1mV across 1pF
+    fluxtol = 1e-15; // >0, flux tolerance in Vs, default is 1uA across 1nH
     relrefsol = relrefRelref; // reference value for solution delta reltol
                              // pointlocal = separate for each unknown, each timepoint
                              // local = separate for each unknown, maximum over past timepoints
                              // pointglobal = maximum over all unknowns, separate for each timepoint
                              // global = maximum over all unknowns, maximum over past timepoints
-                             // relref = let relref option decide 
+                             // relref = let recoreopnrlref option decide 
     relrefres = relrefRelref; // reference value for residual reltol
     relreflte = relrefRelref; // reference value for lte reltol
     relref = relrefAlllocal;
@@ -55,6 +57,12 @@ SimulatorOptions::SimulatorOptions() {
                   // 102  = nrdebug=3, print solutions
                   // >102 = nrdebug>=4, print old solution before building system
 
+    nr_bypass = 0; // 1 = disable core evaluation for bypassed instances 
+                   // To be bypassed an instance must converge and 
+                   // the instance inputs change between iterations must be within tolerances. 
+                   // As soon as the inputs change is outside tolerances instance is no longer bypassed. 
+    nr_convtol = 0.1;   // Tolerance factor for instance convergence check. Should be <1.
+    nr_bypasstol = 0.1; // Tolerance factor for instance bypass check. Should be <1.
     nr_conviter = 1; // >0, number of consecutive convergent iterations before convergence is confirmed
     nr_residualcheck = 1; // check residual beside unknowns change to establish convergence 
     nr_damping = 1.0; // 0<x<=1, Newton-Raphson damping factor (<=1)
@@ -172,6 +180,7 @@ SimulatorInternals::SimulatorInternals() {
     analysis_type = "";
     cwd = Simulator::startupPath();
     initalizeLimiting = false;
+    highPrecision = false;
     frequency = 0.0;
     time = 0.0;
 }
@@ -196,6 +205,8 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(reltol);
     registerMember(abstol);
     registerMember(vntol);
+    registerMember(chgtol);
+    registerMember(fluxtol);
     registerMember(relrefsol);
     registerMember(relrefres);
     registerMember(relreflte);
@@ -209,6 +220,9 @@ template<> int Introspection<SimulatorOptions>::setup() {
     
     registerMember(sweep_debug);
     
+    registerMember(nr_bypass);
+    registerMember(nr_convtol);
+    registerMember(nr_bypasstol);
     registerMember(nr_conviter);
     registerMember(nr_residualcheck);
     registerMember(nr_damping);

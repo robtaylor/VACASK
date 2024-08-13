@@ -473,10 +473,17 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Reserve reactive residual node states
     auto nodeStateCount = model()->device()->nonzeroReactiveResiduals().size()*2;
     circuit.allocateStates(nodeStateCount);
-
     // Total state vector chunk allocated for the instance 
     // has internalStateCount+nodeStateCount entries
 
+    // Reserve storage for device convergence test
+    auto deviceStateCount = descr->num_inputs + 
+        model()->device()->nonzeroResistiveJacobianEntries().size() + 
+        model()->device()->nonzeroReactiveJacobianEntries().size() + 
+        model()->device()->nonzeroResistiveResiduals().size() + 
+        model()->device()->nonzeroReactiveResiduals().size();
+    offsDeviceStates = circuit.allocateDeviceStates(deviceStateCount);
+    
     return true;
 }
 
@@ -611,6 +618,85 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
     }
 }
 
+bool OsdiInstance::bypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) {
+    // Get descriptor 
+    auto model_ = model();
+    auto device = model_->device();
+    auto descr = device->descriptor();
+
+    // Get options
+    auto& options = circuit.simulatorOptions().core();
+    auto bypasstol = options.nr_bypasstol;
+
+    // Get stored inputs
+    auto input1 = evalSetup.deviceStates+offsDeviceStates;
+
+    // Get inputs table
+    auto tab = descr->inputs;
+    auto nInputs = descr->num_inputs;
+    bool bypass = true;
+    for(decltype(nInputs) i=0; i<nInputs; i++) {
+        // Get column indices within instance
+        auto col1 = tab[i].node_1;
+        auto col2 = tab[i].node_2;
+
+        // Get nodes
+        auto node1 = col1==UINT32_MAX ? nullptr : nodes_[col1];
+        auto node2 = col2==UINT32_MAX ? nullptr : nodes_[col2];
+
+        // Make sure first node is not nullptr
+        if (!node1 && !node2) {
+            continue;
+        } else if (!node1) {
+            node1 = node2;
+            node2 = nullptr;
+        }
+
+        // Get first unknown
+        auto u1 = node1->unknownIndex();
+        
+        // Get old input (at which we are evaluating) at node1
+        auto v1 = evalSetup.oldSolution[u1];
+        
+        // Compute abstol 
+        double abstol = node1->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
+        
+        if (node2) {
+            // Get second unknown
+            auto u2 = node2->unknownIndex();
+            // Update old input with node2
+            v1 -= evalSetup.oldSolution[u2];
+            
+            // Update abstol
+            // This should not happen (mixing potential and flow nodes, but anyway...)
+            auto tol2 = node2->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
+            if (tol2<abstol) {
+                abstol = tol2;
+            }
+        }
+
+        // Get stored input
+        auto v0 = input1[i];
+
+        // Get delta
+        auto delta = v1-v0;
+
+        // Compute reference value and tolerance
+        auto ref = std::abs(v0);
+        auto tol = std::max(ref*options.reltol, abstol);
+
+        // Check
+        if (std::abs(delta)>tol*bypasstol) {
+            // Outside tolerances, no bypass
+            bypass = false;
+            // Can stop checking 
+            break;
+        }
+    }
+
+    return bypass;
+}
+
 bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
     // Get descriptor 
     auto model_ = model();
@@ -626,15 +712,44 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     // Set beginning of state vector chunk belonging to this instance
     simInfo.prev_state = evalSetup.oldStates + offsStates;
     simInfo.next_state = evalSetup.newStates + offsStates;
-    
-    // Evaluation
-    if (!evalSetup.skipCoreEvaluation) {
-        // Enable limiting in OSDI
-        bool el = simInfo.flags & ENABLE_LIM;
 
-        // Core evaluation
-        auto evalFlags = descr->eval(&handle, core(), model_->core(), &simInfo);
+    // Get bound step offset
+    auto bsOffs = descr->bound_step_offset;
+
+    // Check if bypass is allowed and high precision is not requested
+    bool bypass = false;
+    if (evalSetup.allowBypass && !circuit.simulatorInternals().highPrecision) {
+        // Count bypassable instances
+        evalSetup.bypassableInstances++;
+        if (checkFlags(Flags::Converged)) {
+            // Converged, check if we can bypass
+            if (bypass = bypassCheckCore(circuit, evalSetup)) {
+                // Bypassing
+                setFlags(Flags::Bypassed);
+            } else {
+                // Not bypassing, leave converged mode
+                clearFlags(Flags::Bypassed);
+                clearFlags(Flags::Converged);
+                evalSetup.failedBypassInstances++;
+            }
+        } else {
+            // Not converged, not bypassing 
+            // Clear Bypassed flag
+            clearFlags(Flags::Bypassed);
+        }
+    } else {
+        // Bypass not allowed, clear converged flag
+        clearFlags(Flags::Bypassed);
+        clearFlags(Flags::Converged);
+    }
     
+    // Evaluation, skip it if bypass is true
+    if (bypass) {
+        evalSetup.bypassedInstances++;
+    } else {
+        // Core evaluation, need to call it always to compute bound step
+        auto evalFlags = descr->eval(&handle, core(), model_->core(), &simInfo);
+        
         // Handle evalFlags
         if (evalFlags & EVAL_RET_FLAG_LIM) {
             // If some variable x is linearized to xl the Jacobian is computed at xl instead of x
@@ -646,6 +761,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             evalSetup.limitingApplied = false;
             clearFlags(Flags::LimitingApplied);
         }
+
         if (evalFlags & EVAL_RET_FLAG_FATAL) {
             // Fatal error occurred, must abort simulation. 
             evalSetup.abortRequested = true;
@@ -661,7 +777,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             evalSetup.abortRequested = true;
         }
     }
-
+    
     /*
     // For development
     jacobianWriteSanityCheck(
@@ -671,8 +787,6 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     );
     */
     
-    // TODO: better way of skipping nodes without reactive residual
-    //       use a table instead of continue
     auto nodeStateIndex = offsStates + device->internalStateCount();
     if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
         for(auto i : device->nonzeroReactiveResiduals()) {
@@ -732,7 +846,6 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     */
     
     if (evalSetup.computeBoundStep) {
-        auto bsOffs = descr->bound_step_offset;
         if (bsOffs!=UINT32_MAX) {
             evalSetup.setBoundStep(*getDataPtr<double*>(core(), bsOffs));
         }
@@ -856,6 +969,356 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
         }
     }
     
+    return true;
+}
+
+bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
+    // If deviceStates is nullptr, we are done
+    if (!convSetup.deviceStates) {
+        return true;
+    }
+
+    // Assume converged if high precision is not requested
+    // When high precision is requested the device states are stored but 
+    // convergence checks are skipped. 
+    bool converged = !circuit.simulatorInternals().highPrecision;
+
+    // Not converged if limiting applied
+    if (checkFlags(Flags::LimitingApplied)) {
+        converged = false;
+    }
+
+    // Not converged if no device history available
+    if (!checkFlags(Flags::HasDeviceHistory)) {
+        converged = false;
+    }
+
+    // As soon as converged becomes false, convergence checks are skipped, 
+    // history is updated regardless of what the value of converged is. 
+    
+    // Get descriptor 
+    auto model_ = model();
+    auto device = model_->device();
+    auto descr = device->descriptor();
+
+    // Get options
+    auto& options = circuit.simulatorOptions().core();
+    auto convtol = options.nr_convtol;
+
+    //
+    // Check if input delta 
+    //
+    
+    // Previous input values
+    auto input1 = convSetup.deviceStates+offsDeviceStates;
+
+    // Get inputs table
+    auto tab = descr->inputs;
+    auto nInputs = descr->num_inputs;
+    for(decltype(nInputs) i=0; i<nInputs; i++) {
+        // Get column indices within instance
+        auto col1 = tab[i].node_1;
+        auto col2 = tab[i].node_2;
+
+        // Get nodes
+        auto node1 = col1==UINT32_MAX ? nullptr : nodes_[col1];
+        auto node2 = col2==UINT32_MAX ? nullptr : nodes_[col2];
+
+        // Make sure first node is not nullptr
+        if (!node1 && !node2) {
+            // Set old device state (input) to 0
+            input1[i] = 0;
+            continue;
+        } else if (!node1) {
+            node1 = node2;
+            node2 = nullptr;
+        }
+
+        // Get first unknown
+        auto u1 = node1->unknownIndex();
+        
+        // Get old input at node1
+        auto v1 = convSetup.oldSolution[u1];
+        
+        // Compute abstol and reference value
+        // Do this only if we need to check convergence
+        double abstol, dv;
+        if (converged) {
+            // Get input delta computed in this NR iteration at node1
+            dv = convSetup.inputDelta[u1];
+            // Get abstol based on node1
+            abstol = node1->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
+        }
+        
+        if (node2) {
+            // Get second unknown
+            auto u2 = node2->unknownIndex();
+            // Update old input with node2
+            v1 -= convSetup.oldSolution[u2];
+            
+            // Do this only if we need to check convergence
+            if (converged) { 
+                // Update input delta computed in this NR iteration with node2
+                dv -= convSetup.inputDelta[u2];
+                // Update abstol
+                // This should not happen (mixing potential and flow nodes, but anyway...)
+                auto tol2 = node2->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
+                if (tol2<abstol) {
+                    abstol = tol2;
+                }
+            }
+        }
+
+        // Store old input
+        input1[i] = v1; 
+
+        // Do this only if we need to check convergence
+        if (converged) { 
+            // Compute reference value and tolerance
+            auto ref = std::abs(v1);
+            auto tol = std::max(ref*options.reltol, abstol);
+        
+            // Check
+            if (std::abs(dv)>tol*convtol) {
+                // Outside tolerances
+                converged = false;
+            }
+        }
+    }
+
+    //
+    // Check resistive residual and Jacobian
+    // 
+
+    // Allocate arrays with new values (on stack)
+    // (Jacobian only because we need to read those from core instance)
+    auto nn = nodes_.size();
+    
+    // Old solution
+    auto x1 = convSetup.oldSolution;
+
+    // Nonzero Jacobian and residual indices
+    auto& Jrnz = device->nonzeroResistiveJacobianEntries();
+    auto& fnz = device->nonzeroResistiveResiduals();
+
+    // Previous values of Jacobian and residual
+    auto Jr1 = input1 + descr->num_inputs;
+    auto f1 = Jr1 + Jrnz.size();
+    
+    // Index of entry in deviceStates subvectors
+    size_t i;
+
+    // Loop through resistive residuals, check convergence, write to array of previous values
+    double rres[nn];
+    i = 0;
+    for(auto resNdx : fnz) {
+        // Get node
+        auto node = nodes_[resNdx];
+        // Get unknown index
+        auto u = node->unknownIndex();
+        
+        // Get new residual
+        auto resOff = descr->nodes[resNdx].resist_residual_off;
+        auto res = *getDataPtr<double*>(core(), resOff);
+        if (checkFlags(Flags::LimitingApplied)) {
+            auto offsLim = descr->nodes[resNdx].resist_limit_rhs_off;
+            if (offsLim!=UINT32_MAX) {
+                res -= *getDataPtr<double*>(core(), offsLim);
+            }
+        }
+        rres[resNdx] = res;
+
+        // Skip this if we already know instance is not converged
+        // Also skip if this residual contributes to ground node
+        if (converged && u!=0) {    
+            // Get tolerance
+            auto tol = circuit.residualTolerance(node, x1[u]);
+            // Compare
+            if (std::abs(f1[i]-res) > tol*convtol) {
+                // Simulator::dbg() << name() << " : f tol violated @ " << node->name() << 
+                //    " " << res << " " << (f1[i]-res) << " " << tol << "\n";
+                converged = false;
+            }
+        }
+
+        // Store in previous values array
+        f1[i] = res;
+        i++; 
+    }
+
+    // Read resistive Jacobian entries
+    double Jr2[Jrnz.size()];
+    descr->write_jacobian_array_resist(core(), model_->core(), Jr2);
+    
+    // Loop through resistive Jacobian entries, check convergence, write to array of previous values
+    i = 0;
+    for(auto jacNdx : Jrnz) {
+        // Skip this if we already know instance is not converged
+        if (converged) {
+            // Get Jacobian entry
+            auto& jacEnt = descr->jacobian_entries[jacNdx];
+
+            // Get row and column index within instance
+            auto row = jacEnt.nodes.node_1;
+            auto col = jacEnt.nodes.node_2;
+
+            auto rowNode = nodes_[row];
+            auto colNode = nodes_[col];
+
+            // Get equation number and unknown index
+            auto eq = rowNode->unknownIndex();
+            auto u = colNode->unknownIndex();
+
+            // Skip check if row or column correspond to ground node
+            if (eq!=0 && u!=0) {
+                // Get absolute tolerance (resistive residual tolerance of equation)
+                auto abstol = rowNode->checkFlags(Node::Flags::FlowNode) ? options.vntol : options.abstol;
+
+                // Reference value is the residual, we already computed it
+                auto res = rres[row];
+
+                // Compute tolerance
+                auto tol = std::max(std::abs(res)*options.reltol, abstol);
+
+                // Compare
+                if (std::abs((Jr2[i]-Jr1[i])*x1[u])>tol*convtol) {
+                    // Simulator::dbg() << name() << " : Jr tol violated @ " << 
+                    //    "(" << nodes_[row]->name() << ", " << nodes_[col]->name() << ")\n";
+                    converged = false;
+                }
+            }
+        }
+
+        // Store in previous values array
+        Jr1[i] = Jr2[i];
+        i++; 
+    }
+
+    // 
+    // Check reactive residual and Jacobian
+    //
+
+    // Loop through reactive residuals, check convergence, write to array of previous values
+    if (convSetup.checkReactiveConvergece) {
+        // Nonzero Jacobian and residual indices
+        auto& Jcnz = device->nonzeroReactiveJacobianEntries();
+        auto& qnz = device->nonzeroReactiveResiduals();
+
+        // Previous values of Jacobian and residual
+        auto Jc1 = f1 + fnz.size();
+        auto q1 = Jc1 + Jcnz.size();
+
+        double rreac[nn];
+
+        i = 0;
+        for(auto resNdx : qnz) {
+            // Get node
+            auto node = nodes_[resNdx];
+            // Get unknown index
+            auto u = node->unknownIndex();
+            
+            // Get new residual
+            auto resOff = descr->nodes[resNdx].react_residual_off;
+            auto res = *getDataPtr<double*>(core(), resOff);
+            if (checkFlags(Flags::LimitingApplied)) {
+                auto offsLim = descr->nodes[resNdx].react_limit_rhs_off;
+                if (offsLim!=UINT32_MAX) {
+                    res -= *getDataPtr<double*>(core(), offsLim);
+                }
+            }
+            rreac[resNdx] = res;
+
+            // Skip this if we already know instance is not converged
+            // Also skip if this residual contributes to ground node
+            if (converged && u!=0) {
+                // Get absolute tolerance (idt residual tolerance)
+                // potential nodes -> charge
+                // flow nodes -> flux
+                auto abstol = node->checkFlags(Node::Flags::FlowNode) ? options.fluxtol : options.chgtol;
+                // Compute tolerance
+                auto tol = std::max(std::abs(q1[i])*options.reltol, abstol);
+                // Compare
+                if (std::abs(q1[i]-res) > tol*convtol) {
+                    converged = false;
+                }
+            }
+
+            // Store in previous values array
+            q1[i] = res;
+            i++;
+        }
+
+        // Read reactive Jacobian entries
+        double Jc2[Jcnz.size()];
+        descr->write_jacobian_array_react(core(), model_->core(), Jc2);
+        
+        // Loop through resistive Jacobian entries, check convergence, write to array of previous values
+        i = 0;
+        for(auto jacNdx : Jcnz) {
+            // Skip this if we already know instance is not converged
+            if (converged) {
+                // Get Jacobian entry
+                auto& jacEnt = descr->jacobian_entries[jacNdx];
+
+                // Get row and column index within instance
+                auto row = jacEnt.nodes.node_1;
+                auto col = jacEnt.nodes.node_2;
+
+                auto rowNode = nodes_[row];
+                auto colNode = nodes_[col];
+
+                // Get equation number and unknown index
+                auto eq = rowNode->unknownIndex();
+                auto u = colNode->unknownIndex();
+                
+                // Skip check if row or column correspond to ground node
+                if (eq!=0 && u!=0) {
+                    // Get absolute tolerance (resistive residual idt tolerance of equation)
+                    auto abstol = rowNode->checkFlags(Node::Flags::FlowNode) ? options.fluxtol : options.chgtol;
+
+                    // Reference value is the residual, we already computed it
+                    auto res = rreac[row];
+
+                    // Compute tolerance
+                    auto tol = std::max(std::abs(res)*options.reltol, abstol);
+
+                    // Compare
+                    if (std::abs((Jc2[i]-Jc1[i])*x1[u])>tol*convtol) {
+                        converged = false;
+                    }
+                }
+            }
+
+            // Store in previous values array
+            Jc1[i] = Jc2[i];
+            i++;
+        }
+    }
+    
+    
+    // Count converged instances
+    if (!converged) {
+        convSetup.nonConvergedInstances++; 
+    }
+
+    // Device has history now
+    setFlags(Flags::HasDeviceHistory);
+
+    if (!checkFlags(Flags::Converged)) {
+        // Device not converged
+        if (converged) {
+            // Enter converged mode
+            setFlags(Flags::Converged);
+        }    
+    } else {
+        // Device converged
+        if (!converged) {
+            // Leave converged mode, leave bypass mode
+            clearFlags(Flags::Converged);
+            clearFlags(Flags::Bypassed);
+        }
+    }
+
     return true;
 }
 

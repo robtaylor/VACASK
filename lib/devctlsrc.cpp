@@ -231,8 +231,8 @@ template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
     
-    // Evaluate
-    if (!evalSetup.skipCoreEvaluation) {
+    // Evaluate, placeholder for bypass implementation
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*p.gain*(evalSetup.oldSolution[d.uCp] - evalSetup.oldSolution[d.uCn]);
         }
@@ -389,8 +389,8 @@ template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
     
-    // Evaluate
-    if (!evalSetup.skipCoreEvaluation) {
+    // Evaluate, placeholder for bypass implementation
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*evalSetup.oldSolution[d.uFlow];
             d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN] + 
@@ -531,8 +531,8 @@ template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
     
-    // Evaluate
-    if (!evalSetup.skipCoreEvaluation) {
+    // Evaluate, placeholder for bypass implementation
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*p.gain*evalSetup.oldSolution[d.uCtl];
         }
@@ -689,8 +689,8 @@ template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
     
-    // Evaluate
-    if (!evalSetup.skipCoreEvaluation) {
+    // Evaluate, placeholder for bypass implementation
+    if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*evalSetup.oldSolution[d.uFlow];
             d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN]
@@ -970,8 +970,8 @@ template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& eva
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
 
-    // Evaluate
-    if (!evalSetup.skipCoreEvaluation) {
+    // Evaluate, placeholder for bypass implementation
+    if (true) {
         if (evalSetup.evaluateReactiveResidual) {
             d.reacRes1 = d.mutual * evalSetup.oldSolution[d.uFlow2];
             d.reacRes2 = d.mutual * evalSetup.oldSolution[d.uFlow1];

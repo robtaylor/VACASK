@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             
-            "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
+            // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnodeset.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opstore.sim" ],
@@ -49,7 +49,7 @@
             // "args": [ "-df", "${workspaceFolder}/test/test_inductor.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_mutual.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_inverter.sim" ],
-            // "args": [ "-df", "-dt", "${workspaceFolder}/test/test_diode.sim" ],
+             "args": [ "-df", "-dt", "${workspaceFolder}/test/test_diode.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/timestep.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/resonator.sim" ],
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/characteristic.sim" ], 
@@ -61,6 +61,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/custom.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/../xlat/test-spice-bjt.sim" ], 
             // "args": [ "-dp" ], 
+            // "args": [ "-df", "${workspaceFolder}/../benchmark/c6288/vc.cir" ], 
             
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/test/manual_run",

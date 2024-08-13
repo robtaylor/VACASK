@@ -654,9 +654,11 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
             auto nnz = circuit.sparsityMap().size();
             
             Simulator::out() << "System stats:\n";
-            Simulator::out() << "  Number of unknonws:           " << n << "\n";
-            Simulator::out() << "  Initial number of nonzeros:   " << nnz << "\n";
-            Simulator::out() << "  Initial sparsity:             " << (1.0*nnz/n/n) << "\n";
+            Simulator::out() << "  Low-level instances:             " << (circuit.instanceCount()-circuit.subcircuitInstanceCount()) << "\n";
+            Simulator::out() << "  Subcircuit instances:            " << circuit.subcircuitInstanceCount() << "\n";
+            Simulator::out() << "  Number of unknonws:              " << n << "\n";
+            Simulator::out() << "  Initial number of nonzeros:      " << nnz << "\n";
+            Simulator::out() << "  Initial sparsity:                " << (1.0*nnz/n/n) << "\n";
 
             Simulator::out() << "\n";
 

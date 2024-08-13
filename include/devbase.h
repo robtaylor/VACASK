@@ -111,10 +111,18 @@ public:
     ) { return true; };
 
     // Evaluate instances and load results
-    virtual bool eval(Circuit& cir, EvalSetup& evalSetup) { return true; };
+    virtual bool eval(Circuit& circuit, EvalSetup& evalSetup) { return true; };
     
     // Load instance evaluation results into linear system
-    virtual bool load(Circuit& cir, LoadSetup& loadSetup) { return true; };
+    virtual bool load(Circuit& circuit, LoadSetup& loadSetup) { return true; };
+
+    // Check instance convergence 
+    virtual bool converged(Circuit& circuit, ConvSetup& convSetup) { return true; };
+
+    // Inputs delta check
+    // If change is too large clears the Converged and Bypassed flags of affected instances. 
+    // Returns false by default (change too large)
+    virtual bool deltaCheck(Circuit& circuit, double* xprev, double* delta) { return false; };
     
     // Evaluate instances and load results
     virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup) { return true; };
@@ -262,10 +270,12 @@ enum class InstanceFlags : uint8_t {
     IsValid = 8, 
     // Limiting applied
     LimitingApplied = 16, 
+    // Has device history, we can check for convergence
+    HasDeviceHistory = 32, 
     // Converged
-    Converged = 32, 
+    Converged = 64, 
     // Bypassed
-    Bypassed = 64, 
+    Bypassed = 128, 
 };
 DEFINE_FLAG_OPERATORS(InstanceFlags);
 

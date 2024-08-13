@@ -434,13 +434,51 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
             if (evalSetup && !static_cast<OsdiInstance*>(instance)->evalCore(circuit, simInfo, *evalSetup)) {
                 return false;
             }
-            if (loadSetup && !static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup)) {
-                return false;
+            if (loadSetup) {
+                // auto t0 = Accounting::wclk();
+                auto lst = static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup);
+                // circuit.tables().accounting().acctNew.tload += Accounting::wclkDelta(t0); 
+                if (!lst) {
+                    return false;
+                }
             }
         }
     }
     
     return true;
+}
+
+// Check instance convergence 
+// Sets Converged and Bypassed flags
+bool OsdiDevice::converged(Circuit& circuit, ConvSetup& convSetup) { 
+    // Skip this step if the device 
+    // - uses $bound_step
+    // - sets breakpoints (TODO)
+    // - uses $abstime (TODO)
+    // - uses $discontinuity with an argument >=0 (TODO)
+    // This prevents bypassing of such devices because core evaluation 
+    // needs to be called always. The easiest way to achieve this is to 
+    // make sure instances of the device never converge. 
+    if (descriptor_->bound_step_offset!=UINT32_MAX) {
+        return true;
+    }
+    for(auto model : models()) {
+        if (model->instanceCount()==0) {
+            continue;
+        }
+        for(auto instance : model->instances()) {
+            auto inst = static_cast<OsdiInstance*>(instance);
+            // Skip converged instances
+            if (inst->checkFlags(Instance::Flags::Converged)) {
+                continue;
+            }
+            if (!inst->convergedCore(circuit, convSetup)) {
+                return false;
+            }
+        }
+    }
+
+    return true; 
 }
 
 const char* OsdiDevice::simParamNames[] = {

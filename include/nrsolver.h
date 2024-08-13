@@ -39,6 +39,7 @@ public:
         OK, 
         ForcesIndex, 
         EvalAndLoad, 
+        ConvergenceCheck, 
         LinearSolver, 
         SolutionError, 
         Convergence, 
@@ -99,9 +100,15 @@ public:
     // Rebuild internal structures that depend on topology
     virtual bool rebuild();
 
+    // Request high precision
+    virtual void requestHighPrecision(bool f) {};
+
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
     virtual bool initialize(bool continuePrevious) = 0;
+
+    // Post-solve tasks
+    virtual bool postSolve(bool continuePrevious) { return true; };
 
     double* maxResidualContribution() { return maxResidualContribution_.data(); }; 
 

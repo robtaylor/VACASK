@@ -24,6 +24,9 @@ typedef struct EvalSetup {
     VectorRepository<double>* states {}; 
     // For diverting new state output to a bucket (when not nullptr)
     Vector<double>* dummyStates {};
+
+    // Data for instance bypass check (previous values)
+    double* deviceStates {};
     
     // What mode are we running in - information for evaluator
     bool staticAnalysis {};
@@ -48,9 +51,9 @@ typedef struct EvalSetup {
     bool evaluateNoise {};
     bool evaluateOpvars {};
 
-    // Master switch for skipping core evaluations
-    bool skipCoreEvaluation {}; 
-
+    // Allow bypassing core evaluation
+    bool allowBypass {}; 
+    
     // Store reactive residual in states or dummyStates
     bool storeReactiveState {};
 
@@ -92,6 +95,11 @@ typedef struct EvalSetup {
     // For setting maximal source frequency
     // Zero initially, increased by instances that generate a signal. 
     double maxFreq {};
+
+    // Counter of instaces that are not converged, is reset by initialize()
+    size_t bypassableInstances;
+    size_t bypassedInstances;
+    size_t failedBypassInstances;
 
     // 
     // Internals
@@ -135,6 +143,11 @@ typedef struct EvalSetup {
         nextBreakPoint = -1.0;
         boundStep = -1.0;
         maxFreq = 0.0;
+
+        bypassableInstances = 0;
+        bypassedInstances = 0;
+        failedBypassInstances = 0;
+
         return true;
     };
 
@@ -247,6 +260,48 @@ typedef struct LoadSetup {
         return true;
     };
 } LoadSetup;
+
+
+typedef struct ConvSetup {
+    // {} for default initialization
+    // State and solution repository
+    VectorRepository<double>* solution {};
+    VectorRepository<double>::DepthIndexDelta oldSolutionSlot {0};
+    VectorRepository<double>* states {}; 
+
+    // Data for instance convergence check (previous values)
+    double* deviceStates {};
+
+    // Delta vector for inputs convergence test
+    double* inputDelta {};
+
+    // Check reactive residual and Jacobian for convergence
+    bool checkReactiveConvergece {};
+
+    // Counter of instaces that are not converged, is reset by initialize()
+    size_t nonConvergedInstances;
+
+    // 
+    // Internals
+    // 
+
+    // Fast access pointers - do not set manually
+    double* oldSolution; // with bucket
+    double* oldStates; // states (current data)
+    double* newStates; // can be either from states (future data) or dummyStates (current data)
+    
+    // Methods
+    bool initialize() {
+        nonConvergedInstances = 0;
+
+        oldSolution = solution->data(oldSolutionSlot);
+        
+        oldStates = states->data();
+        newStates = states->futureData();
+        
+        return true;
+    };
+} ConvSetup;
 
 }
 
