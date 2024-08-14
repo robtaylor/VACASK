@@ -66,8 +66,6 @@ SimulatorOptions::SimulatorOptions() {
     nr_conviter = 1; // >0, number of consecutive convergent iterations before convergence is confirmed
     nr_residualcheck = 1; // check residual beside unknowns change to establish convergence 
     nr_damping = 1.0; // 0<x<=1, Newton-Raphson damping factor (<=1)
-    nr_dampingsteps = 0; // maximal number of dynamic NR damping steps, 0= static damping with op_nrdamping
-    nr_dampingstep = 0.5; // 0<x<1, damping change factor for dynamic NR damping
     nr_force = 1e5; // x>0, forcing factor for nodesets and initial conditions
     
     op_itl = 100;  // >0, maximal number of iterations in non-continuation mode
@@ -226,8 +224,6 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(nr_conviter);
     registerMember(nr_residualcheck);
     registerMember(nr_damping);
-    registerMember(nr_dampingsteps);
-    registerMember(nr_dampingstep);
     registerMember(nr_force);
     
     registerMember(op_debug);

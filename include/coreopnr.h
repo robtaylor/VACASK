@@ -32,12 +32,9 @@ public:
     virtual bool postSolve(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
-    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious);
-
+    
     EvalSetup& evalSetupSystem() { return esSystem; };
     LoadSetup& loadSetupSystem() { return lsSystem; };
-    EvalSetup& evalSetupResidual() { return esResidual; };
-    LoadSetup& loadSetupResidual() { return lsResidual; };
     
 protected:
     void loadShunts(double gshunt, bool loadJacobian=true);
@@ -46,11 +43,7 @@ protected:
     void setNodesetAndIcFlags(bool continuePrevious);
 
     EvalSetup esSystem;
-    EvalSetup esResidual; 
-
     LoadSetup lsSystem;
-    LoadSetup lsResidual; 
-
     ConvSetup csSystem;
     
     // Internal structures

@@ -48,15 +48,9 @@ NoiseCore::NoiseCore(
     
     // Set analysis type for the initial operating point analysis
     auto& elsSystem = opCore_.solver().evalSetupSystem();
-    auto& elsResidual = opCore_.solver().evalSetupResidual();
-
     elsSystem.staticAnalysis = true;
     elsSystem.dcAnalysis = false;
     elsSystem.noiseAnalysis = true;
-
-    elsResidual.staticAnalysis = true;
-    elsResidual.dcAnalysis = false;
-    elsResidual.noiseAnalysis = true;
 }
 
 NoiseCore::~NoiseCore() {

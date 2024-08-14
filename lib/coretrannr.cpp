@@ -48,23 +48,6 @@ TranNRSolver::TranNRSolver(
     lsSystem.loadReactiveJacobian = false;
     lsSystem.loadTransientJacobian = true;
     lsSystem.integCoeffs = &integCoeffs;
-    
-    
-    // For computing the residual (damping)
-    // Set analysis type
-    esResidual.staticAnalysis = false;
-    esResidual.dcAnalysis = false;
-    esResidual.tranAnalysis = true;
-
-    // Add reactive residual evaluation
-    esResidual.evaluateReactiveResidual = true;
-    esResidual.evaluateLinearizedReactiveRhsResidual = true;
-
-    // Make sure reactive residual is stored in the state vector at evaluation
-    esResidual.storeReactiveState = true;
-    
-    // Need this for evaluation of residual derivative
-    esResidual.integCoeffs = &integCoeffs;
 }
 
 bool TranNRSolver::initialize(bool continuePrevious) {
@@ -148,9 +131,6 @@ bool TranNRSolver::initialize(bool continuePrevious) {
         lastError = Error::BadResReference;
         return false;
     }
-    
-    // Set output vector for reactive residual derivative
-    lsResidual.reactiveResidualDerivative = delta.data();
     
     return true;
 }  

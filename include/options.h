@@ -37,8 +37,6 @@ typedef struct SimulatorOptions  {
     Int nr_conviter;
     Int nr_residualcheck;
     Real nr_damping;
-    Int nr_dampingsteps;
-    Real nr_dampingstep;
     Real nr_force;
     Int op_debug; 
     Int op_itl;

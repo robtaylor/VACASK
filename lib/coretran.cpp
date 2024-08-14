@@ -248,15 +248,9 @@ TranCore::TranCore(
 
     // Set analysis type for the initial operating point analysis
     auto& esSystem = opCore_.solver().evalSetupSystem();
-    auto& esResidual = opCore_.solver().evalSetupResidual();
-
     esSystem.staticAnalysis = true;
     esSystem.dcAnalysis = false;
     esSystem.tranAnalysis = true;
-
-    esResidual.staticAnalysis = true;
-    esResidual.dcAnalysis = false;
-    esResidual.tranAnalysis = true;
 }
 
 TranCore::~TranCore() {
@@ -385,8 +379,6 @@ bool TranCore::rebuild(Status& s) {
         .convIter = options.nr_conviter, 
         .residualCheck = bool(options.nr_residualcheck),  
         .dampingFactor = options.nr_damping, 
-        .dampingStep = options.nr_dampingstep, 
-        .dampingSteps = options.nr_dampingsteps, 
         .matrixCheck = bool(options.matrixcheck), 
         .rhsCheck = bool(options.rhscheck), 
         .solutionCheck = bool(options.solutioncheck), 

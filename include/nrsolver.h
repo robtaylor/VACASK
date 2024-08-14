@@ -20,8 +20,6 @@ typedef struct NRSettings {
     Int convIter {1};
     bool residualCheck {true};
     Real dampingFactor {0.8};
-    Real dampingStep {1.0};
-    Int dampingSteps {0};
     bool matrixCheck {};
     bool rhsCheck {};
     bool solutionCheck {};
@@ -93,9 +91,6 @@ public:
     //                maximal relative magnitude of component, corresponding node
     // Relative magnitude is computed wrt. tolerance. 
     std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms);
-
-    // Return values: ok, prevent convergence
-    virtual std::tuple<bool, bool> computeResidual(bool continuePrevious) = 0;
 
     // Rebuild internal structures that depend on topology
     virtual bool rebuild();

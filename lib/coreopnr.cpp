@@ -78,29 +78,6 @@ OpNRSolver::OpNRSolver(
         .loadResistiveJacobian = true, 
     };
 
-    esResidual = EvalSetup {
-        // Inputs, set solution and states when residual is being computed
-        .solution = &solution, 
-        // Use future solution slot as basis for computing residual in damped NR
-        .oldSolutionSlot = -1,
-        .states = &states, 
-        // New computed states will go to dummyStates to keep actual new states intact
-        .dummyStates = &dummyStates,  
-
-        // Signal this is static and DC analysis
-        .staticAnalysis = true, 
-        .dcAnalysis = true, 
-
-        // Evaluation
-        .enableLimiting = true, 
-        .initializeLimiting = false, 
-        .evaluateResistiveResidual = true, 
-        .evaluateLinearizedResistiveRhsResidual = true, 
-    };
-
-    lsResidual = LoadSetup {
-    };
-
     csSystem = ConvSetup {
         .solution = &solution, 
         .states = &states
@@ -136,7 +113,7 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     // This is the right place to set up vectors
     
     // Set vectors for building linear system
-    bool computeMaxResidualContribution = settings.residualCheck || settings.dampingSteps>0;
+    bool computeMaxResidualContribution = settings.residualCheck;
 
     lsSystem.resistiveResidual = delta.data();
     lsSystem.linearizedResistiveRhsResidual = delta.data();
@@ -207,10 +184,6 @@ bool OpNRSolver::initialize(bool continuePrevious) {
         return false;
     }
     
-    // Set vectors for computing residual (for damping)
-    lsResidual.resistiveResidual = delta.data(); 
-    lsResidual.linearizedResistiveRhsResidual = delta.data();
-
     csSystem.inputDelta = delta.data();
 
     return true;
@@ -379,45 +352,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
 
     // Prevent convergence if limiting was applied
     return std::make_tuple(true, esSystem.limitingApplied); 
-}
-
-std::tuple<bool, bool> OpNRSolver::computeResidual(bool continuePrevious) {
-    lastError = Error::OK;
-    
-    // Number of unknowns (vector length includes a bucket at index 0)
-    auto n = circuit.unknownCount();
-
-    // Zero dummy state and residual
-    zero(dummyStates);
-    zero(delta);
-    
-    // Set nodeset and IC flags
-    setNodesetAndIcFlags(continuePrevious); 
-    
-    // Set nodesetEnabled flag in esSystem
-    // Slots 0 and 1 are nodesets used in ordinary OP analysis
-    esSystem.nodesetEnabled = forcesEnabled[0] || forcesEnabled[1];
-    // Set icEnabled flag in elsSystem
-    // Slot 2 holds permanent forces for computing initial conditions
-    // when OP analysis is invoked from tran core. 
-    esSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
-    
-    // This time do not initialize limiting, divert new state to dummy vector
-    if (!evalAndLoadWrapper(esResidual, lsResidual)) {
-        lastError = Error::EvalAndLoad;
-        errorIteration = iteration;
-        return std::make_tuple(false, esResidual.limitingApplied);
-    }
-    delta[0] = 0.0;
-    
-    // Now load gshunt if it is greater than 0.0
-    // Do not load Jacobian
-    auto gshunt = circuit.simulatorInternals().gshunt;
-    if (gshunt>0) {
-        loadShunts(gshunt, false);
-    }
-
-    return std::make_tuple(true, esResidual.limitingApplied);
 }
 
 }

@@ -226,8 +226,6 @@ bool OperatingPointCore::rebuild(Status& s) {
         .convIter = options.nr_conviter, 
         .residualCheck = bool(options.nr_residualcheck),  
         .dampingFactor = options.nr_damping, 
-        .dampingStep = options.nr_dampingstep, 
-        .dampingSteps = options.nr_dampingsteps, 
         .matrixCheck = bool(options.matrixcheck), 
         .rhsCheck = bool(options.rhscheck), 
         .solutionCheck = bool(options.solutioncheck), 

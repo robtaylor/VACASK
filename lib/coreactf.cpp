@@ -44,15 +44,9 @@ AcTfCore::AcTfCore(
     
     // Set analysis type for the initial operating point analysis
     auto& elsSystem = opCore_.solver().evalSetupSystem();
-    auto& elsResidual = opCore_.solver().evalSetupResidual();
-
     elsSystem.staticAnalysis = true;
     elsSystem.dcAnalysis = false;
     elsSystem.acAnalysis = true;
-
-    elsResidual.staticAnalysis = true;
-    elsResidual.dcAnalysis = false;
-    elsResidual.acAnalysis = true;
 }
 
 AcTfCore::~AcTfCore() {

@@ -465,9 +465,6 @@ bool NRSolver::run(bool continuePrevious) {
         return false;
     }
 
-    // Minimal damping factor, needed for adjusting the iteration limit
-    double minimalDampingFactor = 1.0;
-
     bool exitNrLoop = false;
     do {
         // Simulator::dbg() << "NR it=" << iteration << " : at=" << solution.position() << "/" << solution.size()
@@ -547,7 +544,7 @@ bool NRSolver::run(bool continuePrevious) {
         // std::cout << "\n";
 
         // Residual norms are needed if we have dynamic damping or debug is set
-        bool computeResidualNorms = settings.dampingSteps>0 || settings.debug;
+        bool computeResidualNorms = settings.debug;
         // Assume residual is OK
         bool residualOk = true;
         // Call residualCheck() if 
@@ -752,119 +749,18 @@ bool NRSolver::run(bool continuePrevious) {
         // std::cout << "\n";
         
         // Not converged yet, compute new solution 
-        if (settings.dampingSteps<=0) {
-            // Static damping
-            // Update pointMaxSolution_
-            pointMaxSolution_ = 0;
-            for(decltype(n) i=1; i<=n; i++) {
-                xnew[i] = xprev[i] - xdelta[i]*settings.dampingFactor;
-                double c = std::fabs(xnew[i]);
-                if (c>pointMaxSolution_) {
-                    pointMaxSolution_ = c;
-                }
+        
+        // Static damping
+        // Update pointMaxSolution_
+        pointMaxSolution_ = 0;
+        for(decltype(n) i=1; i<=n; i++) {
+            xnew[i] = xprev[i] - xdelta[i]*settings.dampingFactor;
+            double c = std::fabs(xnew[i]);
+            if (c>pointMaxSolution_) {
+                pointMaxSolution_ = c;
             }
-        } else {
-            // Dynamic damping, note that maxResidualContribVec and l2normResidual2 are available
-            // Start at op_nrdamping
-            double dampedMaxNormResidual;
-            double dampedL2normResidual2;
-            Int cnt=0;
-            bool dampingResidualOk = false;
-            Int dampingSteps = 0;
-            double dampingFactor = settings.dampingFactor;
-            do {
-                // Compute new solution
-                // Update pointMaxSolution_
-                pointMaxSolution_ = 0;
-                for(decltype(n) i=1; i<=n; i++) {
-                    xnew[i] = xprev[i] - xdelta[i]*dampingFactor;
-                    double c = std::fabs(xnew[i]);
-                    if (c>pointMaxSolution_) {
-                        pointMaxSolution_ = c;
-                    }
-                }
-
-                // Zero residual/delta
-                zero(delta);
-
-                // Compute residual
-                auto [residualComputationOk, dummy_] = computeResidual(continuePrevious);
-                if (!residualComputationOk) {
-                    // Residual computation error or abort
-                    exitNrLoop = true;
-                    break;
-                }
-
-                // Add forced values
-                if (haveForces() && !loadForces(false)) {
-                    if (settings.debug) {
-                        Simulator::dbg() << "Failed to load forced values in iteration " << iteration << ", damping step " << (dampingSteps+1) << "\n";
-                    }
-                    break;
-                }
-
-                dampingSteps++;
-                
-                auto [residualCheckOk, dampedMaxResidual, dampedMaxNormResidual, dampedL2normResidual2, dummyNode] = 
-                    checkResidual(nullptr, true);
-                if (!residualCheckOk) {
-                    if (settings.debug) {
-                        Simulator::dbg() << "Residual norm computation failed.\n";
-                    }
-                    exitNrLoop = true;
-                    break;
-                }
-                
-                // Damping is successful if 
-                // - max norm residual is below 1 (all components below tol) or
-                // - squared L2 norm residual is not greater than squared L2 norm residual at old solution
-                if (settings.debug) {
-                    std::stringstream ss;
-                    ss << std::scientific << std::setprecision(2);
-                    ss.str(""); ss << dampingFactor;
-                    Simulator::dbg() << "NR damping step " << dampingSteps << ", damping=" << ss.str();
-                    if (dampedMaxNormResidual<1) { 
-                        Simulator::dbg() << ", residual within tolerance.\n"; 
-                    } else {
-                        ss.str(""); ss << std::sqrt(dampedL2normResidual2);
-                        Simulator::dbg() << ", L2 normalized residual " << ss.str();
-                        ss.str(""); ss << std::sqrt(l2normResidual2);
-                        if (dampedL2normResidual2<=l2normResidual2) {
-                            Simulator::dbg() << " <= " << ss.str() << " (ok).\n"; 
-                        } else {
-                            Simulator::dbg() << " > " << ss.str() << " (too big).\n"; 
-                        }
-                    }
-                }
-                // Damped point residual is below tolerance or L2 norm is smaller than at old point
-                dampingResidualOk = dampedMaxNormResidual<1 || dampedL2normResidual2<=l2normResidual2;
-                if (dampingResidualOk) {
-                    // Damping successfull, exit loop
-                    break;
-                }
-                dampingFactor *= settings.dampingStep;
-            } while (dampingSteps<settings.dampingSteps); // Damping loop
-
-            // Update minimal damping factor
-            if (dampingFactor<minimalDampingFactor) {
-                minimalDampingFactor = dampingFactor;
-                if (settings.debug) {
-                   Simulator::dbg() << "Minimal damping decreased, adjusting NR iteration limit to " << size_t(itlim/minimalDampingFactor) << ".\n";  
-                }
-            }
-
-            // What to do if damping fails to reduce residual?
-            // This happens when 
-            // - damping loop is exited due to abort or residual evaluation error
-            // - avalable damping iterations are exhausted without finding a sufficiently small residual
-            // At the moment just keep the shortened step. 
-            if (!dampingResidualOk) {
-                if (settings.debug) {
-                    Simulator::dbg() << "Damping failed, keeping shortened step.\n";
-                }
-            }
-        } 
-
+        }
+    
         // std::cout << "Old solution after update at iteration " << iteration << "\n";
         // circuit.dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
@@ -886,7 +782,7 @@ bool NRSolver::run(bool continuePrevious) {
         // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
 
-    } while (iteration<(itlim/minimalDampingFactor) && !exitNrLoop); // NR loop
+    } while (iteration<itlim && !exitNrLoop); // NR loop
 
     if (settings.debug) {
         Simulator::dbg() << "NR algorithm " << (converged ? "converged in " : "failed to converge in ") << iteration << " iteration(s).\n";
