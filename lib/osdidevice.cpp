@@ -642,12 +642,14 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
             os << pfx << "    " << descriptor_->nodes[n1].name;
             if (n2!=UINT32_MAX) {
                 os << ", " << descriptor_->nodes[n2].name;
+            } else {
+                os << ", (ground)";
             }
             os << "\n";
         }
     }
     if (descriptor_->num_inputs>0) {
-        os << pfx << "  Model inputs (nonlinear):\n";
+        os << pfx << "  Model inputs:\n";
         for(ParameterIndex i=0; i<descriptor_->num_inputs; i++) {
             auto n1 = descriptor_->inputs[i].node_1;
             auto n2 = descriptor_->inputs[i].node_2;
