@@ -478,8 +478,8 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
 
     // Reserve storage for device convergence test
     auto deviceStateCount = descr->num_inputs + 
-        model()->device()->nonzeroResistiveJacobianEntries().size() + 
-        model()->device()->nonzeroReactiveJacobianEntries().size() + 
+        // model()->device()->nonzeroResistiveJacobianEntries().size() + 
+        // model()->device()->nonzeroReactiveJacobianEntries().size() + 
         model()->device()->nonzeroResistiveResiduals().size() + 
         model()->device()->nonzeroReactiveResiduals().size();
     offsDeviceStates = circuit.allocateDeviceStates(deviceStateCount);
@@ -978,16 +978,21 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         return true;
     }
 
+    // Not converged if limiting applied
+    if (checkFlags(Flags::LimitingApplied)) {
+        // CLear HasDeviceHistory flag, not converged, not bypassed
+        clearFlags(Flags::HasDeviceHistory);
+        clearFlags(Flags::Converged);
+        clearFlags(Flags::Bypassed);
+        return true;
+    }
+    
     // Assume converged if high precision is not requested
     // When high precision is requested the device states are stored but 
     // convergence checks are skipped. 
     bool converged = !circuit.simulatorInternals().highPrecision;
 
-    // Not converged if limiting applied
-    if (checkFlags(Flags::LimitingApplied)) {
-        converged = false;
-    }
-
+    
     // Not converged if no device history available
     if (!checkFlags(Flags::HasDeviceHistory)) {
         converged = false;
@@ -1009,9 +1014,23 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     // Check if input delta 
     //
     
+    // Nonzero Jacobian and residual indices
+    // auto& Jrnz = device->nonzeroResistiveJacobianEntries();
+    auto& fnz = device->nonzeroResistiveResiduals();
+
+    // Nonzero Jacobian and residual indices
+    // auto& Jcnz = device->nonzeroReactiveJacobianEntries();
+    auto& qnz = device->nonzeroReactiveResiduals();
+
     // Previous input values
     auto input1 = convSetup.deviceStates+offsDeviceStates;
-
+    
+    // Previous values
+    // auto Jr1 = input1 + descr->num_inputs;
+    // auto Jc1 = Jr1 + Jrnz.size();
+    auto f1 = input1 + descr->num_inputs; // Jr1 + Jrnz.size();
+    auto q1 = f1 + fnz.size(); // Jc1 + Jcnz.size();
+    
     // Get inputs table
     auto tab = descr->inputs;
     auto nInputs = descr->num_inputs;
@@ -1097,14 +1116,6 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     // Old solution
     auto x1 = convSetup.oldSolution;
 
-    // Nonzero Jacobian and residual indices
-    auto& Jrnz = device->nonzeroResistiveJacobianEntries();
-    auto& fnz = device->nonzeroResistiveResiduals();
-
-    // Previous values of Jacobian and residual
-    auto Jr1 = input1 + descr->num_inputs;
-    auto f1 = Jr1 + Jrnz.size();
-    
     // Index of entry in deviceStates subvectors
     size_t i;
 
@@ -1118,14 +1129,9 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         auto u = node->unknownIndex();
         
         // Get new residual
+        // If we arrive here limiting was not applied, no need to add linearized residual
         auto resOff = descr->nodes[resNdx].resist_residual_off;
         auto res = *getDataPtr<double*>(core(), resOff);
-        if (checkFlags(Flags::LimitingApplied)) {
-            auto offsLim = descr->nodes[resNdx].resist_limit_rhs_off;
-            if (offsLim!=UINT32_MAX) {
-                res -= *getDataPtr<double*>(core(), offsLim);
-            }
-        }
         rres[resNdx] = res;
 
         // Skip this if we already know instance is not converged
@@ -1146,6 +1152,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         i++; 
     }
 
+    /*
     // Read resistive Jacobian entries
     double Jr2[Jrnz.size()];
     descr->write_jacobian_array_resist(core(), model_->core(), Jr2);
@@ -1193,6 +1200,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         Jr1[i] = Jr2[i];
         i++; 
     }
+    */
 
     // 
     // Check reactive residual and Jacobian
@@ -1200,14 +1208,6 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
 
     // Loop through reactive residuals, check convergence, write to array of previous values
     if (convSetup.checkReactiveConvergece) {
-        // Nonzero Jacobian and residual indices
-        auto& Jcnz = device->nonzeroReactiveJacobianEntries();
-        auto& qnz = device->nonzeroReactiveResiduals();
-
-        // Previous values of Jacobian and residual
-        auto Jc1 = f1 + fnz.size();
-        auto q1 = Jc1 + Jcnz.size();
-
         double rreac[nn];
 
         i = 0;
@@ -1218,14 +1218,9 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             auto u = node->unknownIndex();
             
             // Get new residual
+            // If we arrive here limiting was not applied, no need to add linearized residual
             auto resOff = descr->nodes[resNdx].react_residual_off;
             auto res = *getDataPtr<double*>(core(), resOff);
-            if (checkFlags(Flags::LimitingApplied)) {
-                auto offsLim = descr->nodes[resNdx].react_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    res -= *getDataPtr<double*>(core(), offsLim);
-                }
-            }
             rreac[resNdx] = res;
 
             // Skip this if we already know instance is not converged
@@ -1247,7 +1242,8 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             q1[i] = res;
             i++;
         }
-
+        
+        /*
         // Read reactive Jacobian entries
         double Jc2[Jcnz.size()];
         descr->write_jacobian_array_react(core(), model_->core(), Jc2);
@@ -1293,6 +1289,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             Jc1[i] = Jc2[i];
             i++;
         }
+        */
     }
     
     
