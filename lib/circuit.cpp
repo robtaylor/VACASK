@@ -1266,7 +1266,7 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
 bool Circuit::converged(ConvSetup& convSetup) {
     auto t0 = Accounting::wclk();
     tables_.accounting().acctNew.conv++; 
-    
+
     if (!convSetup.initialize()) {
         tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
         return false;

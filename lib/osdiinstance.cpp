@@ -11,54 +11,6 @@ namespace NAMESPACE {
 // TODO: check unconnected terminals handling, i.e. BJT with unconnected bulk
 //       how are unconnected terminals handled
 
-// Element bypass
-//
-// Index 1 is for latest value, 2 is for previous value
-//
-// Instance states: normal, converged, bypassed
-//
-// State graph: normal -> converged -> bypassed -> bypassed
-//                                  -> normal   -> normal
-//                      
-// 
-// First iteration of NR when not in continue mode, mark all instances normal. 
-// 
-// In NR iteration
-//   Converged instance, bypassed instance: check for bypass
-//   - nonlinear nodel inputs
-//     abs(input1-input2) must be within max(abstol, reltol*maxabs(input1, input2))
-//     abstol is max abstol of discipline->potential across input's nodes 
-//   Satisfied, mark as bypassed. 
-//   If not satisfied, mark as normal. 
-// 
-//   At this point all instances are either normal or bypassed.  
-//
-//   Evaluate normal instances. 
-//
-//   Check normal instances if they are converged
-//     - nonlinear nodel inputs
-//       abs(input1-input2) must be within max(abstol, reltol*maxabs(input1, input2))
-//       abstol is max abstol of discipline->potential across input's nodes 
-//     - resistive residuals
-//       abs(res1-res2) must be within max(abstol, reltol*maxabs(res1, res2))
-//       abstol is the abstol of discipline->flow
-//     - reactive residual (checked in transient analysis)
-//       abs(res1-res2) must be within max(abstol, reltol*maxabs(res1, res2))
-//       abstol is the abstol of node's discipline->flow->idt_nature
-//     - resistive Jacobian 
-//       abs((g1-g2)*input1) must be within max(abstol, reltol*maxabs(res_resist1, res_resist2))
-//       abstol is the abstol of node's discipline->flow
-//     - reactive Jacobian (checked in transient analysis)
-//       abs((c1-c2)*input1) must be within max(abstol, reltol*maxabs(res_react1, res_react2))
-//       abstol is the abstol of node's discipline->flow->idt_nature
-//     Copy residual and Jacobian in history. 
-//     If satisfied mark instance as converged. 
-//   
-//   Load system (all instances).
-//   or differential load (normal and converged instances)
-// 
-//   Linear solve, compute new solution. 
-
 OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, const PTInstance& parsedInstance, Status &s) 
     : Instance(model, name, parentInstance, parsedInstance), core_(nullptr), connectedTerminalCount(0) {
     core_ = alignedAlloc(sizeof(max_align_t), model->device()->descriptor()->instance_size);
@@ -580,8 +532,6 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
         descriptor->write_jacobian_array_react(instance, model, reacwVals);
     }
 
-    // TODO: check tran load
-
     // Check values
     auto resPtr = reswVals;
     auto reactPtr = reacwVals;
@@ -992,10 +942,10 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     
     // Assume converged if high precision is not requested
     // When high precision is requested the device states are stored but 
-    // convergence checks are skipped. 
+    // convergence checks are skipped. This makes sure devices cannot 
+    // enter converged mode. 
     bool converged = !circuit.simulatorInternals().highPrecision;
 
-    
     // Not converged if no device history available
     if (!checkFlags(Flags::HasDeviceHistory)) {
         converged = false;

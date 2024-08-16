@@ -100,17 +100,20 @@ bool OpNRSolver::rebuild() {
     maxResidualContribution_.resize(n+1);
     dummyStates.resize(circuit.statesCount());
 
-    // If bypass is enabled, prepare space for previous device states
-    if (circuit.simulatorOptions().core().nr_bypass) {
-        deviceStates.resize(circuit.deviceStatesCount());
-    }
-    
     return true;
 }
 
 bool OpNRSolver::initialize(bool continuePrevious) {
     // This method is called once on entering run()
     // This is the right place to set up vectors
+
+    // If bypass is enabled, prepare space for previous device states
+    // Need to do this here because the user might sweep nr_bypass, but
+    // the minimum requirement for calling rebuild() is that mapping 
+    // changes. But nr_bypass does not affect mapping. 
+    if (circuit.simulatorOptions().core().nr_bypass) {
+        deviceStates.resize(circuit.deviceStatesCount());
+    }
     
     // Set vectors for building linear system
     bool computeMaxResidualContribution = settings.residualCheck;
@@ -191,7 +194,7 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 
 bool OpNRSolver::postSolve(bool continuePrevious) {
     // Check convergence if nr_bypass is enabled
-    if (circuit.simulatorOptions().core().nr_bypass) {
+    if (circuit.simulatorOptions().core().nr_bypass && !skipConvergenceCheck) {
         if (!circuit.converged(csSystem)) {
             lastError = Error::ConvergenceCheck;
             errorIteration = iteration;
@@ -333,8 +336,18 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
 
     // Evaluate and load
     auto evalSt = evalAndLoadWrapper(esSystem, lsSystem);
-    // If bypass was forced for one iteration, turn it off after the system is built
-    circuit.simulatorInternals().forceBypass = false;
+    // If bypass was forced for one iteration
+    if (circuit.simulatorInternals().forceBypass) {
+        // Turn forced bypass off after the system is built
+        // (we are allowed to do it for one iteration only)
+        // Skip device convergence checks for one iteration
+        circuit.simulatorInternals().forceBypass = false;
+        skipConvergenceCheck = true;
+    } else {
+        // This makes sure that the device convergence check is 
+        // skipped only if bypass was forced. 
+        skipConvergenceCheck = false;
+    }
     if (!evalSt) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;
