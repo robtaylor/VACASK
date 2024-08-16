@@ -49,6 +49,9 @@ protected:
     // Internal structures
     Vector<double> dummyStates;
     Vector<double> deviceStates;
+
+    // Flag that forces skipping of device convergence check
+    bool skipConvergenceCheck;
 };
 
 }

@@ -61,8 +61,10 @@ SimulatorOptions::SimulatorOptions() {
                    // To be bypassed an instance must converge and 
                    // the instance inputs change between iterations must be within tolerances. 
                    // As soon as the inputs change is outside tolerances instance is no longer bypassed. 
-    nr_convtol = 0.1;   // Tolerance factor for instance convergence check. Should be <1.
-    nr_bypasstol = 0.1; // Tolerance factor for instance bypass check. Should be <1.
+    nr_convtol = 1.0;   // Tolerance factor applied to residuals for instance convergence check. Should be <1.
+                        // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
+    nr_bypasstol = 1.0; // Tolerance factor applied to instance inputs for instance bypass check. Should be <1.
+                        // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
     nr_conviter = 1; // >0, number of consecutive convergent iterations before convergence is confirmed
     nr_residualcheck = 1; // check residual beside unknowns change to establish convergence 
     nr_damping = 1.0; // 0<x<=1, Newton-Raphson damping factor (<=1)
@@ -288,7 +290,7 @@ bool SimulatorOptions::staticInitialize() {
         Id::createStatic("tnom"),
         Id::createStatic("temp"),
         Id::createStatic("scale"),
-        Id::createStatic("minr")
+        Id::createStatic("minr"), 
     } ) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         mappingAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
