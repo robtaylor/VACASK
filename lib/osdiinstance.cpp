@@ -721,7 +721,11 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     if (evalSetup.allowBypass && !circuit.simulatorInternals().highPrecision) {
         // Count bypassable instances
         evalSetup.bypassableInstances++;
-        if (checkFlags(Flags::Converged)) {
+        // Check if bypass is forced
+        if (circuit.simulatorInternals().forceBypass) {
+            bypass = true;
+            setFlags(Flags::Bypassed);
+        } else if (checkFlags(Flags::Converged)) {
             // Converged, check if we can bypass
             if (bypass = bypassCheckCore(circuit, evalSetup)) {
                 // Bypassing
@@ -980,10 +984,9 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
 
     // Not converged if limiting applied
     if (checkFlags(Flags::LimitingApplied)) {
-        // CLear HasDeviceHistory flag, not converged, not bypassed
+        // Clear HasDeviceHistory flag, not converged
         clearFlags(Flags::HasDeviceHistory);
         clearFlags(Flags::Converged);
-        clearFlags(Flags::Bypassed);
         return true;
     }
     
@@ -1301,19 +1304,12 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     // Device has history now
     setFlags(Flags::HasDeviceHistory);
 
-    if (!checkFlags(Flags::Converged)) {
-        // Device not converged
-        if (converged) {
-            // Enter converged mode
-            setFlags(Flags::Converged);
-        }    
+    if (converged) {
+        // Enter converged mode
+        setFlags(Flags::Converged);
     } else {
-        // Device converged
-        if (!converged) {
-            // Leave converged mode, leave bypass mode
-            clearFlags(Flags::Converged);
-            clearFlags(Flags::Bypassed);
-        }
+        // Leave converged mode
+        clearFlags(Flags::Converged);
     }
 
     return true;

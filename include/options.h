@@ -128,6 +128,7 @@ typedef struct SimulatorInternals {
     bool initalizeLimiting;
 
     bool highPrecision;
+    bool forceBypass;
 
     double frequency;
     double time;

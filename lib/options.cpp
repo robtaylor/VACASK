@@ -178,7 +178,9 @@ SimulatorInternals::SimulatorInternals() {
     analysis_type = "";
     cwd = Simulator::startupPath();
     initalizeLimiting = false;
-    highPrecision = false;
+    highPrecision = false; // request high precision from simulator (prevents bypass for all bypassable devices)
+    forceBypass = false;   // force bypass in next NR iteration for all bypassable devices regardless of their 
+                           // converged state, has lower precedence than highPrecision
     frequency = 0.0;
     time = 0.0;
 }

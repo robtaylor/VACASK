@@ -332,7 +332,10 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     }
 
     // Evaluate and load
-    if (!evalAndLoadWrapper(esSystem, lsSystem)) {
+    auto evalSt = evalAndLoadWrapper(esSystem, lsSystem);
+    // If bypass was forced for one iteration, turn it off after the system is built
+    circuit.simulatorInternals().forceBypass = false;
+    if (!evalSt) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;
         return std::make_tuple(false, esSystem.limitingApplied);

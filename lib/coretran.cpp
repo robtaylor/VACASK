@@ -1394,6 +1394,13 @@ bool TranCore::run(bool continuePrevious) {
             setError(TranError::TimestepTooSmall);
             return false;
         }
+
+        // If we just accepted a timepoint and we still have points to compute
+        // Request full bypass in next NR iteration because 
+        // all instance cores are already evaluated at the inputs corresponding to the last NR iteration. 
+        if (accept) {
+            internals.forceBypass = true; 
+        }
     } // while
 
     if (debug) {
