@@ -291,6 +291,14 @@ bool Analysis::run(Status& s) {
                 outputsBound = true;
                 coreRebuilt = true;
 
+                // After core rebuild device history is invalidated
+                circuit.applyInstanceFlags(
+                    Instance::Flags::HasDeviceHistory |
+                    Instance::Flags::Converged |
+                    Instance::Flags::Bypassed, 
+                    Instance::NoFlags
+                );
+
                 // Core rebuild makes all stored states incoherent with current topology
                 for(decltype(sweepCount()) i=0; i<sweepCount(); i++) {
                     makeStateIncoherent(i);
@@ -463,7 +471,14 @@ bool Analysis::run(Status& s) {
             if (!ok) {
                 s.extend("Failed to rebuild analysis structures.");
                 runOk = false;
-            }    
+            }
+            // After core rebuild device history is invalidated
+            circuit.applyInstanceFlags(
+                Instance::Flags::HasDeviceHistory |
+                Instance::Flags::Converged |
+                Instance::Flags::Bypassed, 
+                Instance::NoFlags
+            );
         }
 
         // Initialize outputs
