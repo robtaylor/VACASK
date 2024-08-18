@@ -187,7 +187,6 @@ std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas
     bool forceAllInstances = false;
     if (force || checkFlags(Flags::NeedsSetup)) {
         device()->descriptor()->setup_model((void*)&handle, core(), &sp, &initInfo);
-        
         if (!device()->processInitInfo(circuit, initInfo, "Model", name(), s)) {
             // The problem is big enough to abort simulation
             return std::make_tuple(false, false, false);

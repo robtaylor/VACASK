@@ -1064,7 +1064,12 @@ bool Circuit::nodeOrdering(Status& s) {
         return false;
     }
 
-    // Enumerate unknowns, ground nodes are 0, the rest are enumerated starting with 1
+    return true;
+}
+
+bool Circuit::mapUnknowns(Status& s) {
+    // Assign unknown numbers to nodes, ground nodes are 0, the rest are enumerated starting with 1. 
+    // This enumeration is temporary because node collapsing will change it. 
     UnknownIndex nodeNumber = 1;
     for(auto it=nodeOrder.begin(); it!=nodeOrder.end(); ++it) {
         if ((*it)->checkFlags(Node::Flags::Ground)) {
@@ -1074,11 +1079,7 @@ bool Circuit::nodeOrdering(Status& s) {
             nodeNumber++;
         }
     }
-
-    return true;
-}
-
-bool Circuit::mapUnknowns(Status& s) {
+    
     // Reset internal structures
     auto nNodes = nodeOrder.size(); 
     unknownToNodes.clear();
@@ -1098,7 +1099,6 @@ bool Circuit::mapUnknowns(Status& s) {
         if (!dev.get()->collapseNodes(*this, s)) {
             return false;
         }
-        
     }
 
     // Create a vector of booleans indicating that an unknown number is present. 

@@ -275,56 +275,72 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
     };
     OsdiInitInfo initInfo;
 
-    // If instance has setup history, remember old node collapse pattern. 
-    // If node collapse pattern change was detected before during setup, skip this step. 
-    bool checkUnknownsChanged = checkFlags(Instance::Flags::HasSetupHistory);
-    OsdiFile::OsdiCollapsedNodesIndex cpSize;
-    if (checkUnknownsChanged) {
-        cpSize = collapsedNodesPatternSize();
-    } else {
-        // We don't want to allocate stack memory for nothing
-        cpSize=1;
-    }
-    std::unique_ptr<bool[]> cpOldPtr;
-    if (checkUnknownsChanged) {
-        cpOldPtr = std::make_unique<bool[]>(cpSize);
-        auto cpOld = cpOldPtr.get();
-        auto cp = collapsedNodesPattern();
-        for(decltype(cpSize) i=0; i<cpSize; i++) 
-            cpOld[i] = cp[i];
-    }
+    // Assume node collapsing changed
+    bool unknownsChanged = true;
     
     if (force || checkFlags(Flags::NeedsSetup)) {
+        // setup_instance() API functionm writes only true values to collapsed nodes pattern
+        // Therefore we must clear the pattern before calling setup_instance(). 
+        // As we go, we store the old patern for comparison. 
+
+        // If instance has setup history, remember old node collapse pattern. 
+        bool checkUnknownsChanged = checkFlags(Instance::Flags::HasSetupHistory);
+        OsdiFile::OsdiCollapsedNodesIndex cpSize;
+        if (checkUnknownsChanged) {
+            cpSize = collapsedNodesPatternSize();
+        } else {
+            // We don't want to allocate stack memory for nothing
+            cpSize=1;
+        }
+        
+        // Get collapsed nodes pattern array
+        auto cpat = collapsedNodesPattern();
+
+        // Allocate storage for old pattern on stack
+        bool cpOldArray[cpSize];
+
+        // Copy pattern to storage so we can check for changes. 
+        // Clear it as we go so that setup_instance() can rewrite it
+        if (checkUnknownsChanged) {
+            for(decltype(cpSize) i=0; i<cpSize; i++) {
+                cpOldArray[i] = cpat[i];
+                cpat[i] = false;
+            }
+        }
+        
+        // Call setup_instance(), interpret status
         model()->device()->descriptor()->setup_instance((void*)&handle, core(), model()->core(), temp, connectedTerminalCount, &sp, &initInfo);
-        if (!model()->device()->processInitInfo(circuit, initInfo, "Instance", name(), s)) {
+        auto setupOk = model()->device()->processInitInfo(circuit, initInfo, "Instance", name(), s);
+        if (!setupOk) {
             // The problem is big enough to abort simulation
+            // Restore collapsed nodes pattern first
+            for(decltype(cpSize) i=0; i<cpSize; i++) {
+                cpat[i] = cpOldArray[i];
+            }
             return std::make_tuple(false, false, false);
         }
 
+        // Setup succeeded 
         clearFlags(Flags::NeedsSetup);
-    }
-
-    // If instance has setup history, compare new node collapse pattern to old collapse pattern. 
-    // If node collapse pattern change was detected before during setup, skip this step. 
-    // Assume node collapsing changed
-    bool unknownsChanged = true;
-    if (checkUnknownsChanged) {
-        auto cpOld = cpOldPtr.get();
-        auto cp = collapsedNodesPattern();
-        for(decltype(cpSize) i=0; i<cpSize; i++) {
-            if (cpOld[i] != cp[i]) {
-                // Pattern changed
-                break;
+        
+        // If instance has setup history, compare new node collapse pattern to old pattern. 
+        if (checkUnknownsChanged) {
+            // Assume pattern did not change
+            unknownsChanged = false;
+            for(decltype(cpSize) i=0; i<cpSize; i++) {
+                if (cpOldArray[i] != cpat[i]) {
+                    // Pattern changed
+                    unknownsChanged = true;
+                    break;
+                }
             }
         }
-        // Pattern did not change
-        unknownsChanged = false;
-    }
-    
-    // After successful setup instance has setup history
-    setFlags(Instance::Flags::HasSetupHistory);
 
-    // OSDI instances cannot change sparsity without changing unknowns
+        // After successful setup instance has setup history
+        setFlags(Instance::Flags::HasSetupHistory);
+    }
+
+    // OSDI instances cannot change sparsity pattern
     return std::make_tuple(true, unknownsChanged, false);
 }
 

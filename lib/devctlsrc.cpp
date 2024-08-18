@@ -828,16 +828,23 @@ template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circu
         return std::make_tuple(false, false, false); 
     }
 
-    // Check if controlling unknowns changed, store indices
+    // Check if controlling nodes changed, store indices
     bool sparsityChanged;
     if (!d.ctlNode1 || !d.ctlNode2) {
-        // No control nodes yet
+        // No controlling nodes yet
         sparsityChanged = true;
     } else {
-        // Check if unknown indices changed
+        // At this point unknowns are not yet assigned to nodes so we cannot 
+        // compare unknown numbers. 
+        // We can compare only nodes by their names (identifiers). 
+        // This is OK because
+        // - if the node was rebuilt with the same name we had a topology change and 
+        //   it will induce a new unknown mapping anyway, 
+        // - if the node will be assigned a different unknown this will be 
+        //   a mapping change anyway. 
         sparsityChanged = (
-            ctlNode1->unknownIndex() != d.ctlNode1->unknownIndex() || 
-            ctlNode2->unknownIndex() != d.ctlNode2->unknownIndex()
+            ctlNode1->name() != d.ctlNode1->name() || 
+            ctlNode2->name() != d.ctlNode2->name()
         );
     }
 
@@ -845,10 +852,6 @@ template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circu
     d.ctlNode1 = ctlNode1;
     d.ctlNode2 = ctlNode2;
 
-    // Store controlling unknowns
-    d.uFlow1 = ctlNode1->unknownIndex();
-    d.uFlow2 = ctlNode2->unknownIndex();
-    
     // No change in unknowns, possible change in sparsity
     return std::make_tuple(true, false, sparsityChanged);
 }
@@ -951,6 +954,10 @@ template<> bool BuiltinMutualInstance::bindCore(
     Status& s
 ) {
     auto& d = data.core();
+
+    // Unknowns are now assigned to nodes so we can store controlling unknowns
+    d.uFlow1 = d.ctlNode1->unknownIndex();
+    d.uFlow2 = d.ctlNode2->unknownIndex();
     
     // No resistive Jacobian entries
     

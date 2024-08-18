@@ -89,7 +89,7 @@ public:
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };
-    const bool* collapsedNodesPattern() const { return getDataPtr<bool*>(core_, model()->device()->descriptor()->collapsed_offset); };
+    bool* collapsedNodesPattern() const { return getDataPtr<bool*>(core_, model()->device()->descriptor()->collapsed_offset); };
     OsdiFile::OsdiNodeIndex* nodeMappingArray() { 
         return getDataPtr<OsdiFile::OsdiNodeIndex*>(core_, model()->device()->descriptor()->node_mapping_offset);
     };

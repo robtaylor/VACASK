@@ -90,7 +90,7 @@ public:
 
     // Sets up this particular model
     // Define specialization in cpp file for each builtin device type
-    std::tuple<bool, bool, bool> setupWorker(Circuit& circuit, Status& s=Status::ignore) { return std::make_tuple(true, false, false); }
+    bool setupWorker(Circuit& circuit, Status& s=Status::ignore) { return true; }
 
     // Sets up this particular model
     // Define specialization in cpp file for each builtin device type
@@ -411,9 +411,7 @@ std::tuple<bool, bool, bool> BuiltinModel<ModelParams, InstanceParams, InstanceD
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     if (force || checkFlags(Flags::NeedsSetup)) {
-        auto [ok, tmpUnknowns, tmpSparsity] = setupWorker(circuit, s);
-        unknownsChanged |= tmpUnknowns;
-        sparsityChanged |= tmpSparsity;
+        auto ok = setupWorker(circuit, s);
         if (!ok) {
             // The problem is big enough to abort simulation
             return std::make_tuple(false, unknownsChanged, sparsityChanged);
