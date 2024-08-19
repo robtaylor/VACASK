@@ -7,6 +7,7 @@
 #include "parseroutput.h"
 #include "output.h"
 #include "answeep.h"
+#include "generator.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -16,6 +17,11 @@ class Analysis {
 public:
     typedef Analysis* (*AnalysisFactory)(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s);
 
+    // Aborted .. run() -> do nothing, return Aborted
+    // Finished .. run() -> do nothing, return Finished
+    // Stopped .. run() -> continue, return status
+    enum class State { Uninitilized, Ready, Aborted, Stopped, Finished };
+    
     Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
     virtual ~Analysis();
 
@@ -23,6 +29,8 @@ public:
     Analysis           (      Analysis&&) = delete;
     Analysis& operator=(const Analysis&)  = delete;
     Analysis& operator=(      Analysis&&) = delete;
+
+    State state() const { return state_; };
 
     Id name() const { return name_; };
     IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
@@ -41,7 +49,7 @@ public:
     void setParametrization(const PTParameterMap* optionsMap);
 
     // Interface method, does sweeping if needed
-    bool run(Status& s=Status::ignore);
+    Generator<Analysis::State> run(Status& s=Status::ignore);
 
     static bool registerFactory(Id name, AnalysisFactory factory);
 
@@ -74,8 +82,6 @@ public:
     virtual void dump(std::ostream& os) const;
 
 protected:
-    // std::vector<SweepSettings> sweeps_;
-    
     Id name_;
     Circuit& circuit;
     ParameterSweeper sweeper;
@@ -182,8 +188,16 @@ protected:
     virtual void makeStateIncoherent(size_t ndx) = 0;
 
     PTParameterMap parameterizedOptions;
+
+    // Generator that runs all involved cores, replaces run
+    // Analysis::runCoresEngine(Status& s=Status::ignore) 
+    
+    // Generator that runs a core
+    // Core::run(Status& s=Status::ignore)
+
     
 private:
+    State state_;
     static std::unordered_map<Id,AnalysisFactory>& getRegistry() {
         static std::unordered_map<Id,AnalysisFactory> factoryMap;
         return factoryMap;

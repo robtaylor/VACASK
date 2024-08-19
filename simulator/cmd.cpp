@@ -141,12 +141,18 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                 }
             }
             tmps.clear();
-            auto retval = an->run(tmps);
+            auto runAnalysis = an->run(tmps);
+            while (true) {
+                auto state = runAnalysis();
+                if (state==Analysis::State::Finished || state==Analysis::State::Aborted) {
+                    break;
+                }
+            }
             std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
             if (printProgress_) {
                 Simulator::dbg() << "  Elapsed time: "<< duration << "\n";
             }
-            if (!retval) {
+            if (an->state()==Analysis::State::Aborted) {
                 delete an;
                 if (!mustAbort(idAnalysis)) {
                     Simulator::err() << tmps.message() << "\n";

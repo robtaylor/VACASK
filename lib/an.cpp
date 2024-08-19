@@ -6,7 +6,7 @@ namespace NAMESPACE {
 
 Analysis::Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : name_(name), circuit(circuit), sweeper(circuit, ptAnalysis.sweeps()), 
-      ptAnalysis(ptAnalysis), commonSaves(nullptr) {
+      ptAnalysis(ptAnalysis), commonSaves(nullptr), state_(State::Uninitilized) {
 }
 
 Analysis::~Analysis() {
@@ -142,7 +142,26 @@ bool Analysis::updateSweeper(Status& s) {
     return sweeper.update(advancedSweepIndex, s);
 }
 
-bool Analysis::run(Status& s) {
+/*
+auto runner = an->runner(s);
+do {
+    // Status is set only on Aborted
+    auto outcome = runner();
+} while (outcome!=Finished && outcome!=Aborted);
+*/
+
+Generator<Analysis::State> Analysis::run(Status& s) {
+    // Is it already started? 
+    if (state_!=Analysis::State::Uninitilized) {
+        s.set(Status::AbortRequested, "Analysis is already running. There can be only one runner.");
+        state_ = Analysis::State::Aborted;
+        co_yield state_;
+    }
+
+    // Mark as started
+    state_ = Analysis::State::Ready;
+    co_yield state_;
+
     // Output descriptors are created with analysis
     // Binding must be done here, just before the core analysis is run
 
@@ -193,19 +212,22 @@ bool Analysis::run(Status& s) {
         // Setup sweeper
         if (!sweeper.setup(s)) {
             s.extend("Failed to set up sweep for analysis '"+std::string(name_)+"'.");
-            return false;
+            state_ = Analysis::State::Aborted;
+            co_yield state_;
         }
         
         // Bind sweeper to actual parameters and options
         if (!sweeper.bind(circuit, simOptions, s)) {
             s.extend("Failed to bind sweep parameters.");
-            return false;
+            state_ = Analysis::State::Aborted;
+            co_yield state_;
         }
 
         // Collect current values so we can restore them later
         if (!sweeper.storeState(s)) {
             s.extend("Failed to store initial circuit state.");
-            return false;
+            state_ = Analysis::State::Aborted;
+            co_yield state_;
         }
 
         // Reset sweeper
@@ -551,7 +573,13 @@ bool Analysis::run(Status& s) {
         }
     }
 
-    return runOk;
+    if (runOk) {
+        state_ = Analysis::State::Finished;
+        co_yield state_;
+    } else {
+        state_ = Analysis::State::Aborted;
+        co_yield state_;
+    }
 }
 
 std::tuple<bool, bool> Analysis::updateParameterExpressions(Status& s) {

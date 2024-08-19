@@ -39,7 +39,7 @@ struct Generator {
             return {}; 
         }
         
-        // At the end of teh coroutine is an implicit co_await
+        // At the end of the coroutine is an implicit co_await
         // The return value tells what it should do
         std::suspend_always final_suspend() noexcept { 
             return {}; 
@@ -71,15 +71,41 @@ struct Generator {
     // Promise handle
     handle_type h_;
 
+    // Default constructor
+    Generator() : h_(nullptr) {}; 
+
     // Constructor
     Generator(handle_type h) : h_(h) {}
 
     // Copy constructor is disabled
-    Generator(const Generator &) = delete;
+    Generator(const Generator&) = delete;
+
+    // Move constructor
+    Generator(Generator&& other) {
+        if (h_!=nullptr) {
+            h_.destroy();
+        }
+        h_ = std::exchange(other.h_, nullptr);
+    };
+
+    // Copy assignment is disabled
+    Generator& operator=(const Generator&)  = delete;
+    
+    // Move assignment
+    Generator& operator=(Generator&& other) {
+        if (h_!=nullptr) {
+            h_.destroy();
+        }
+        h_ = std::exchange(other.h_, nullptr);
+        return *this;
+    }
     
     // Cleanup - destroy coroutine
     ~Generator() { 
-        h_.destroy(); 
+        if (h_!=nullptr) {
+            h_.destroy(); 
+            h_ = nullptr;
+        }
     }
     
     // Convert generator to bool for checking if the coroutine is not finished yet

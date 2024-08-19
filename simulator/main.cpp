@@ -28,9 +28,31 @@ char helpText[] =
     "                      turn off progress messages\n"
     ; 
 
+#include "generator.h"
+
+Generator<int> counter(int from, int to) {
+    for(int i=from; i<to; i++) {
+        co_yield i;
+    }
+}
+
+
 int main(int argc, char**argv) {
     // Workaround for boost crash
     // setenv("LC_ALL", "C", 1);
+
+    /*
+    // Create a generator, run it until initial suspend
+    Generator<int> gen;
+    gen = std::move(counter(0, 10));
+    gen = std::move(counter(0, 5));
+    
+    while (gen) {
+        std::cout << gen() << "\n";
+    }
+
+    return 0;
+    */
 
     Status status;
 
@@ -247,6 +269,6 @@ int main(int argc, char**argv) {
             return 1;
         }
     }
-
+    
     return 0;
 }
