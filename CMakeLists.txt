@@ -56,7 +56,7 @@ if (DEFINED MSVC_VERSION)
 else()
 	# GCC/MINGW
 	message(STATUS "Using GCC/MINGW toolchain")
-	add_compile_options("-fno-signaling-nans" "-fno-trapping-math")
+	add_compile_options("-fno-signaling-nans" "-fno-trapping-math" "-fcoroutines")
 endif()
 
 set(STAGED_LIBRARY_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${PROGRAM_LIB_DIR}")

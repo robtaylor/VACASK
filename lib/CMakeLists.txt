@@ -1,5 +1,6 @@
 add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/common.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/generator.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/acct.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/libplatform.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/flags.h 
