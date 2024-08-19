@@ -122,7 +122,7 @@ def rawread(fname):
 					# Get variable description, split it at spaces
 					txt = fp.readline(BSIZE_SP).strip().decode('ascii')
 					varDesc = txt.split(maxsplit=3)
-					if (len(varDesc)>3 and b'dims' in varDesc[3]):
+					if (len(varDesc)>3 and 'dims' in varDesc[3]):
 						raise NotImplementedError("Raw files with different length vectors are not supported.")
 					# Check variable numbering
 					assert(ii == int(varDesc[0]))
