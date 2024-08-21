@@ -275,18 +275,25 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
     };
     OsdiInitInfo initInfo;
 
-    // Assume node collapsing changed
-    bool unknownsChanged = true;
-    
+    // Assume unknwons did not change
+    bool unknownsChanged = false;
+
+    // If there is no setup history, assume unknowns changed
+    if (!checkFlags(Instance::Flags::HasSetupHistory)) {
+        unknownsChanged = true;
+    }
+
     if (force || checkFlags(Flags::NeedsSetup)) {
         // setup_instance() API functionm writes only true values to collapsed nodes pattern
         // Therefore we must clear the pattern before calling setup_instance(). 
         // As we go, we store the old patern for comparison. 
 
-        // If instance has setup history, remember old node collapse pattern. 
-        bool checkUnknownsChanged = checkFlags(Instance::Flags::HasSetupHistory);
+        // Can we check for change in unknowns
+        bool canCheckUnknownsChange = checkFlags(Instance::Flags::HasSetupHistory);
+        
+        // If we are not going to check, set cpSize to 1 so that we do not allocate unneccessary space
         OsdiFile::OsdiCollapsedNodesIndex cpSize;
-        if (checkUnknownsChanged) {
+        if (canCheckUnknownsChange) {
             cpSize = collapsedNodesPatternSize();
         } else {
             // We don't want to allocate stack memory for nothing
@@ -301,7 +308,7 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
 
         // Copy pattern to storage so we can check for changes. 
         // Clear it as we go so that setup_instance() can rewrite it
-        if (checkUnknownsChanged) {
+        if (canCheckUnknownsChange) {
             for(decltype(cpSize) i=0; i<cpSize; i++) {
                 cpOldArray[i] = cpat[i];
                 cpat[i] = false;
@@ -314,8 +321,10 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
         if (!setupOk) {
             // The problem is big enough to abort simulation
             // Restore collapsed nodes pattern first
-            for(decltype(cpSize) i=0; i<cpSize; i++) {
-                cpat[i] = cpOldArray[i];
+            if (canCheckUnknownsChange) {
+                for(decltype(cpSize) i=0; i<cpSize; i++) {
+                    cpat[i] = cpOldArray[i];
+                }
             }
             return std::make_tuple(false, false, false);
         }
@@ -324,7 +333,7 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
         clearFlags(Flags::NeedsSetup);
         
         // If instance has setup history, compare new node collapse pattern to old pattern. 
-        if (checkUnknownsChanged) {
+        if (canCheckUnknownsChange) {
             // Assume pattern did not change
             unknownsChanged = false;
             for(decltype(cpSize) i=0; i<cpSize; i++) {
