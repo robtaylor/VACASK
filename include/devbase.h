@@ -88,7 +88,7 @@ public:
 
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
-    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
     
     // Collapses nodes
     // Return value: ok, changed
@@ -234,7 +234,7 @@ public:
     
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
-    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
 
     // An instance created with this method is owned by the circuit. 
     // No need to delete it manually, it will get deleted when the circuit is deleted. 

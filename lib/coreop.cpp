@@ -26,7 +26,7 @@ OperatingPointCore::OperatingPointCore(
 ) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), 
       nrSolver(circuit, jac, states, solution, nrSettings), 
       jac(jacobian), solution(solution), states(states), 
-      converged(false), continueState(nullptr) {
+      converged_(false), continueState(nullptr) {
 }
 
 OperatingPointCore::~OperatingPointCore() {
@@ -100,7 +100,7 @@ bool OperatingPointCore::finalizeOutputs(Status &s) {
     outfile = nullptr;
 
     // Write DC solution to repository if analysis is OK
-    if (converged && params.store.length()>0) {
+    if (converged_ && params.store.length()>0) {
         Id label = params.store;
         circuit.storeDcSolution(params.store, solution.vector());
     }
@@ -391,12 +391,12 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
 //   - source stepping
 //   - spice3 source stepping
 // Each message starts with a nrSolver error message
-bool OperatingPointCore::run(bool continuePrevious, Status& s) {
+CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     clearError();
 
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
-    converged = false;
+    converged_ = false;
     runType = RunType::OrdinaryOp;
     auto debug = options.op_debug;
     bool leave = false;
@@ -414,13 +414,13 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
     auto skipinitial = options.op_skipinitial;
     if (!skipinitial) {    
         tried = true;
-        converged = runSolver(continuePrevious);
-        if (!converged) {
+        converged_ = runSolver(continuePrevious);
+        if (!converged_) {
             setError(OpError::InitialOp);
         }
-        leave = circuit.checkFlags(Circuit::Flags::Abort);
+        leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
         if (debug>0) {
-            if (converged) {
+            if (converged_) {
                 Simulator::dbg() << "OP core algorithm converged in " << std::to_string(nrSolver.iterations()) << " NR iteration(s).\n";
             } else {
                 Simulator::dbg() << "OP core algorithm failed to converge in " << std::to_string(nrSolver.iterations()) << " NR iteration(s).\n";
@@ -434,30 +434,30 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
     auto skipgmin = options.op_skipgmin;
     auto gminsteps = options.op_gminsteps;
     auto spice3gmin = options.op_spice3gmin;
-    if (!converged && !leave && !skipgmin && !skiphomotopy && gminsteps>1) {
+    if (!converged_ && !leave && !skipgmin && !skiphomotopy && gminsteps>1) {
         tried = true;
         if (!spice3gmin) {
             // New algorithms
             // Device gmin first
-            converged = gminStepping(RunType::GminStepping);
-            leave = circuit.checkFlags(Circuit::Flags::Abort);
+            converged_ = gminStepping(RunType::GminStepping);
+            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << "Gmin stepping " << (converged ? "succeeded" : "failed") << ".\n";
+                Simulator::dbg() << "Gmin stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
             }
-            if (!converged && !leave && options.op_gshuntalg) {
+            if (!converged_ && !leave && options.op_gshuntalg) {
                 // Diagonal gshunt second
-                converged = gminStepping(RunType::GshuntStepping);
-                leave = circuit.checkFlags(Circuit::Flags::Abort);
+                converged_ = gminStepping(RunType::GshuntStepping);
+                leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
                 if (debug>0) {
-                    Simulator::dbg() << "Gshunt stepping " << (converged ? "succeeded" : "failed") << ".\n";
+                    Simulator::dbg() << "Gshunt stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
                 }
             }
         } else {
             // Spice3 gmin stepping
-            converged = spice3GminStepping();
-            leave = circuit.checkFlags(Circuit::Flags::Abort);
+            converged_ = spice3GminStepping();
+            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << "Spice3 Gmin stepping " << (converged ? "succeeded" : "failed") << ".\n";
+                Simulator::dbg() << "Spice3 Gmin stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
             }
         }
     }
@@ -466,19 +466,19 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
     auto skipsrc = options.op_skipsrc;
     auto srcsteps = options.op_srcsteps;
     auto spice3src = options.op_spice3src;
-    if (!converged && !leave && !skipsrc && !skiphomotopy && srcsteps>1) { 
+    if (!converged_ && !leave && !skipsrc && !skiphomotopy && srcsteps>1) { 
         tried = true;
         if (!spice3src) {
-            converged = sourceStepping();
-            leave = circuit.checkFlags(Circuit::Flags::Abort);
+            converged_ = sourceStepping();
+            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << "Source stepping " << (converged ? "succeeded" : "failed") << ".\n";
+                Simulator::dbg() << "Source stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
             }
         } else {
-            converged = spice3SourceStepping();
-            leave = circuit.checkFlags(Circuit::Flags::Abort);
+            converged_ = spice3SourceStepping();
+            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << "Spice3 source stepping " << (converged ? "succeeded" : "failed") << ".\n";
+                Simulator::dbg() << "Spice3 source stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
             }
         }
     }
@@ -488,7 +488,7 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
         if (!tried) {
             // No algorithm tried
             setError(OpError::NoAlgorithm);
-        } else if (converged) {
+        } else if (converged_) {
             // Tried and converged, write results
             if (outfile && params.writeOutput) {
                 outfile->addPoint();
@@ -497,10 +497,27 @@ bool OperatingPointCore::run(bool continuePrevious, Status& s) {
     } else {
         // Leaving early, did not converge
         // Add a status message one level higher
-        converged = false;
+        converged_ = false;
     }
 
-    return converged;
+    // OP analysis can only Abort or Finish
+    if (converged_) {
+        co_yield CoreState::Finished;
+    } else {
+        co_yield CoreState::Aborted;
+    }
+}
+
+bool OperatingPointCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool OperatingPointCore::formatError(Status& s) const {
@@ -564,7 +581,7 @@ bool OperatingPointCore::formatError(Status& s) const {
 void OperatingPointCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     os << "  Solver ";
-    if (converged) {
+    if (converged_) {
         os << "converged";
     } else {
         os << "not converged";

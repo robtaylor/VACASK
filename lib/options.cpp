@@ -49,6 +49,11 @@ SimulatorOptions::SimulatorOptions() {
     rhscheck = 1; // check rhs vector for inf and nan
     solutioncheck = 1; // check solution vector for inf and nan
     
+    sweep_pointmarker=0; // 1 = yelds analysis execution in stepped mode before each sweep point
+                         // Should be enabled in cosimulation when the analog simulator is the slave. 
+                         // Before each sweep point Analysis::resume() will stop and return 
+                         // AnalysisState::SweepPoint. At that point the digital simulator should reset
+                         // its state to the initial state at t=0. 
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
 
     op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
@@ -220,6 +225,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(rhscheck);
     registerMember(solutioncheck);
     
+    registerMember(sweep_pointmarker);
     registerMember(sweep_debug);
     
     registerMember(nr_bypass);

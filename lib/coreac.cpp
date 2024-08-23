@@ -164,7 +164,7 @@ bool AcCore::rebuild(Status& s) {
 
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
-bool AcCore::run(bool continuePrevious) {
+CoreCoroutine AcCore::coroutine(bool continuePrevious) {
     acMatrix.setAccounting(circuit.tables().accounting());
     
     clearError();
@@ -177,7 +177,7 @@ bool AcCore::run(bool continuePrevious) {
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(AcError::OpError);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     auto& options = circuit.simulatorOptions().core();
@@ -227,35 +227,34 @@ bool AcCore::run(bool continuePrevious) {
         if (debug>0) {
             Simulator::dbg() << "Error in AC Jacobian evaluation.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Handle Abort, Finish, Stop
-    circuit.updateEvalFlags(esReactive);
-    if (circuit.checkFlags(Circuit::Flags::Abort)) {
+    if (esReactive.requests.abort) {
         if (debug>0) {
             Simulator::dbg() << "Abort requested during AC Jacobian evaluation. Exiting.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
-    if (circuit.checkFlags(Circuit::Flags::Finish)) {
+    if (esReactive.requests.finish) {
         if (debug>0) {
             Simulator::dbg() << "Finish requested during AC Jacobian evaluation. Exiting.\n";
         }
-        return true;
+        co_yield CoreState::Finished;
     }
-    if (circuit.checkFlags(Circuit::Flags::Stop)) {
+    if (esReactive.requests.stop) {
         if (debug>0) {
             Simulator::dbg() << "Stop requested during AC Jacobian evaluation. Exiting.\n";
         }
-        return true;
+        co_yield CoreState::Stopped;
     }
 
     // Create sweeper
     ScalarSweep sweeper;
     if (!sweeper.setup(params, errorStatus)) {
         setError(AcError::Sweeper);
-        return false;
+        co_yield CoreState::Aborted;
     }
     
     // Frequency sweep
@@ -307,12 +306,6 @@ bool AcCore::run(bool continuePrevious) {
             }
             error = true;
             break;
-        }
-        if (circuit.checkFlags(Circuit::Flags::Abort)) {
-            if (debug>0) {
-                Simulator::dbg() << "Abort requested during AC frequency sweep.\n";
-            }
-            return false;
         }
         acSolution[0] = 0.0;
 
@@ -404,20 +397,6 @@ bool AcCore::run(bool continuePrevious) {
             outfile->addPoint();
         }
 
-        // Handle Finish and Stop
-        if (circuit.checkFlags(Circuit::Flags::Finish)) {
-            if (debug>0) {
-                Simulator::dbg() << "Finish requested during AC frequency sweep.\n";
-            }
-            break;
-        }
-        if (circuit.checkFlags(Circuit::Flags::Stop)) {
-            if (debug>0) {
-                Simulator::dbg() << "Stop requested during AC frequency sweep.\n";
-            }
-            break;
-        }
-        
         finished = sweeper.advance();
     } while (!finished && !error);
     
@@ -433,7 +412,23 @@ bool AcCore::run(bool continuePrevious) {
     // OP analysis will still work fine, even in sweep. 
     // We only changed the bindings of the reactive Jacobian entries. 
     
-    return finished;
+    if (finished) {
+        co_yield CoreState::Finished;
+    } else {
+        co_yield CoreState::Aborted;
+    }
+}
+
+bool AcCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool AcCore::formatError(Status& s) const {

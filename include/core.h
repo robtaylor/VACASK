@@ -5,9 +5,17 @@
 #include "circuit.h"
 #include "output.h"
 #include "hash.h"
+#include "generator.h"
 #include "common.h"
 
 namespace NAMESPACE {
+
+// Default value is Uninitialized
+enum class CoreState { Uninitilized=0, Aborted, Stopped, Finished };
+
+// Core coroutine type
+typedef Generator<CoreState> CoreCoroutine;
+
 
 typedef struct IdPairHash {
     size_t operator()(const std::pair<Id,Id> &x) const {
@@ -58,7 +66,7 @@ public:
     
     // Resolve all output descriptors into output sources
     // Delegate resolving of unknown decriptors to analysis
-    bool resolveOutputDescriptors(bool strict) { return true; };
+    bool resolveOutputDescriptors(bool strict, Status& s=Status::ignore) { return true; };
 
     // Core functionality
 
@@ -81,7 +89,7 @@ public:
     bool initializeOutputs(Id name, Status& s=Status::ignore) { return true; };
 
     // Runs the core
-    bool run(bool continuePrevious, Status& s=Status::ignore) { return true; };
+    bool run(bool continuePrevious) { return true; };
 
     // Called after core is run (and once per sweep) to finalieze and close output files
     bool finalizeOutputs(Status& s=Status::ignore) { return true; };

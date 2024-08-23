@@ -706,6 +706,7 @@ bool Circuit::elaborate(
     const std::vector<Id>& toplevelDefinitions, 
     const std::string& topDefName, const std::string& topInstName, 
     SimulatorOptions* opt, 
+    DeviceRequests* devReq, 
     Status& s
 ) { 
     auto t0 = Accounting::wclk();
@@ -841,7 +842,7 @@ bool Circuit::elaborate(
     }
 
     // We do a full setup
-    auto [ok, unknownsChanged, sparsityChanged] = setup(true, s);
+    auto [ok, unknownsChanged, sparsityChanged] = setup(true, devReq, s);
     if (!ok) {
         s.extend("Initial circuit setup failed.");
         tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
@@ -907,12 +908,12 @@ bool Circuit::elaborate(
     return true;
 }
 
-std::tuple<bool, bool, bool> Circuit::setup(bool forceFull, Status& s) {
+std::tuple<bool, bool, bool> Circuit::setup(bool forceFull, DeviceRequests* devReq, Status& s) {
     // Do setup
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     for(auto& dev : devices) {
-        auto [ok, tmpUnknowns, tmpSparsity] = dev->setup(*this, forceFull, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = dev->setup(*this, forceFull, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -1222,7 +1223,7 @@ bool Circuit::applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet) {
             it.second.get()->clearFlags(fClear);
         }
         if (fSet!=Instance::NoFlags) {
-            it.second.get()->setFlags(fClear);
+            it.second.get()->setFlags(fSet);
         }
     }
     return true;
@@ -1283,18 +1284,6 @@ bool Circuit::converged(ConvSetup& convSetup) {
     }
     tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
     return true; 
-}
-
-void Circuit::updateEvalFlags(EvalSetup& evalSetup, Flags mask) {
-    if (evalSetup.abortRequested) {
-        setFlags(Flags::Abort & mask);
-    }
-    if (evalSetup.finishRequested) {
-        setFlags(Flags::Finish & mask);
-    }
-    if (evalSetup.stopRequested) {
-        setFlags(Flags::Stop & mask);
-    }
 }
 
 bool Circuit::storeDcSolution(Id name, Vector<double>& solution, Status& s) {

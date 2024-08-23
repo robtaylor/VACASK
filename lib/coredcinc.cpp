@@ -117,7 +117,7 @@ bool DcIncrementalCore::rebuild(Status& s) {
 
 // System of equations is 
 //   G(x) dx = dJ
-bool DcIncrementalCore::run(bool continuePrevious) {
+CoreCoroutine DcIncrementalCore::coroutine(bool continuePrevious) {
     jacobian.setAccounting(circuit.tables().accounting());
 
     clearError();
@@ -128,7 +128,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(DcIncrError::OpError);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     LoadSetup lsRhs { 
@@ -154,7 +154,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
         if (debug>0) {
             Simulator::dbg() << "Error in DC incremental excitation load.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Change sign of residual because it is on the RHS 
@@ -174,7 +174,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
     // Solve 
     if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
         setError(DcIncrError::MatrixError);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Set solution bucket to 0
@@ -185,7 +185,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
         if (options.smsig_debug) {
             Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
     
     if (debug>0) {
@@ -197,7 +197,19 @@ bool DcIncrementalCore::run(bool continuePrevious) {
         outfile->addPoint();
     }
     
-    return opOk;
+    co_yield CoreState::Finished;
+}
+
+bool DcIncrementalCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool DcIncrementalCore::formatError(Status& s) const {

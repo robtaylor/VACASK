@@ -160,19 +160,9 @@ enum class CircuitFlags : uint8_t {
     HierarchyParametersChanged = 8,  
 
     Elaborated = 16,  
-
-    Abort = 32,  // Exit analysis immediately, even in the middle of computing a point
-    Finish = 64, // Wait until current point is computed to the end, then exit simulation
-                 // i.e. for multipoint analyses (sweep, frequency sweep, time sweep) 
-                 // wait until current point is computed, then exit
-                 // Do not exit sweep. 
-    Stop = 128,   // Stop analysis to possibly continue it later
-                 // Exit sweep. 
-    EvalFlags = Abort|Finish|Stop, // All eval flags
 };
 DEFINE_FLAG_OPERATORS(CircuitFlags);
 
-// TODO: handle states count change after setup() is called
 class Circuit : public FlagBase<CircuitFlags> {
 public:
     Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s=Status::ignore);
@@ -225,10 +215,12 @@ public:
 
     // Build circuit from parsed description
     // Prefix is used for prefixing the definition name to obtain the toplevel instance name
+    // opt and devReq can be nullptr
     bool elaborate(
         const std::vector<Id>& toplevelDefinitions={}, 
         const std::string& topDefName="__topdef__", const std::string& topInstName="__topinst__", 
         SimulatorOptions* opt=nullptr, 
+        DeviceRequests* devReq=nullptr, 
         Status& s=Status::ignore
     );
 
@@ -312,7 +304,7 @@ public:
     
     // Drivers
     // Return value: ok, unknowns changed, sparsity changed
-    std::tuple<bool, bool, bool> setup(bool forceFull, Status& s=Status::ignore);
+    std::tuple<bool, bool, bool> setup(bool forceFull, DeviceRequests* devReq, Status& s=Status::ignore);
     bool preAnalysis(Status& s=Status::ignore);
     bool nodeOrdering(Status& s=Status::ignore);
     bool bind(
@@ -326,7 +318,6 @@ public:
     bool applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet);
     bool evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
     bool converged(ConvSetup& convSetup);
-    void updateEvalFlags(EvalSetup& evalSetup, Flags mask=Flags::EvalFlags);
     
     // Simulator options (Parameterized class with simulator options core)
     // IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
@@ -398,10 +389,12 @@ public:
     // Rebuilds system (if needed)
     // Adds sparsity map entries and state vector slots requested by analysis (if needed)
     // Return value: ok, hierarchy changed, analysis binding needed
+    // devReq can be nullptr
     std::tuple<bool, bool, bool> elaborateChanges(
         ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
         Analysis* an, IStruct<SimulatorOptions>* opt, 
         PTParameterMap* optionsMap, 
+        DeviceRequests* devReq, 
         Status& s=Status::ignore
     );
 

@@ -54,7 +54,7 @@ public:
     virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const;
     virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const; 
     virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const;
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
 
     // Model access (as OsdiModel)
@@ -73,7 +73,7 @@ public:
     virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity);
 
     // Helpers for inlining in device, model, and instance virtual functions
-    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, Status& s=Status::ignore);
+    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     bool collapseNodesCore(Circuit& circuit, Status& s);
     bool populateStructuresCore(Circuit& circuit, Status& s=Status::ignore);
     bool bindCore(

@@ -91,8 +91,10 @@ bool CommandInterpreter::elaborateChanges(Status& s) {
     PTParameterMap optionsExpressions; 
     auto [ok, hierarchyChanged, mappingChanged] = circuit_.elaborateChanges(
         nullptr, ParameterSweeper::WriteValues::Sweep, 
-        nullptr, &opt, 
+        nullptr, &opt,  
         // No need to specify options expressions - they were processed when opt was built
+        nullptr, 
+        // TODO: for now ignore devReq and Abort, Finish, Stop
         nullptr, 
         s
     );
@@ -115,7 +117,8 @@ bool CommandInterpreter::elaborate(const std::vector<Id>& names, const std::stri
     if (auto [ok, changed] = opt.setParameters(userOptions_, variableEvaluator(), s); !ok) {
         return false;
     }
-    return circuit_.elaborate(names, topDefName, topInstName, &opt.core(), s); 
+    // TODO: for now ignore devReq and Abort, Finish, Stop
+    return circuit_.elaborate(names, topDefName, topInstName, &opt.core(), nullptr, s); 
 }
 
 bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s) {
@@ -141,18 +144,12 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                 }
             }
             tmps.clear();
-            auto runAnalysis = an->run(tmps);
-            while (true) {
-                auto state = runAnalysis();
-                if (state==Analysis::State::Finished || state==Analysis::State::Aborted) {
-                    break;
-                }
-            }
+            auto ret = an->run(tmps);
             std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
             if (printProgress_) {
                 Simulator::dbg() << "  Elapsed time: "<< duration << "\n";
             }
-            if (an->state()==Analysis::State::Aborted) {
+            if (!ret) {
                 delete an;
                 if (!mustAbort(idAnalysis)) {
                     Simulator::err() << tmps.message() << "\n";

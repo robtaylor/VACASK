@@ -786,7 +786,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalPara
     return std::make_tuple(principalMutual, true); // gain
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) {
     auto& p = params.core();
     auto& d = data.core();
 

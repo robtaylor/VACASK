@@ -233,6 +233,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
     Analysis* an, IStruct<SimulatorOptions>* options, 
     PTParameterMap* optionsMap, 
+    DeviceRequests* devReq, 
     Status& s
 ) {
     auto t0 = Accounting::wclk();
@@ -366,7 +367,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     bool sparsityChanged = false;
     if (hierarchyChanged || variablesChanged || hierarchyParametersChanged || mappingAffectingOptionsChanged) {
         bool ok;
-        std::tie(ok, unknownsChanged, sparsityChanged) = setup(mappingAffectingOptionsChanged, s);
+        std::tie(ok, unknownsChanged, sparsityChanged) = setup(mappingAffectingOptionsChanged, devReq, s);
         if (!ok) {
             s.extend("Circuit setup failed.");
             tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);

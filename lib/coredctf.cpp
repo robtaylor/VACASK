@@ -166,7 +166,7 @@ bool DcTfCore::rebuild(Status& s) {
 
 // System of equations is 
 //   G(x) dx  = dJ
-bool DcTfCore::run(bool continuePrevious) {
+CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
     jacobian.setAccounting(circuit.tables().accounting());
 
     clearError();
@@ -179,14 +179,14 @@ bool DcTfCore::run(bool continuePrevious) {
     // Get output unknowns
     auto [ok, up, un] = getOutput(params.out);
     if (!ok) {
-        return false;
+        co_yield CoreState::Aborted;
     }
     
     // Compute operating point
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(DcTfError::OpError);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     auto& options = circuit.simulatorOptions().core();
@@ -288,7 +288,19 @@ bool DcTfCore::run(bool continuePrevious) {
         outfile->addPoint();
     }
     
-    return true;
+    co_yield CoreState::Finished;
+}
+
+bool DcTfCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool DcTfCore::formatError(Status& s) const {

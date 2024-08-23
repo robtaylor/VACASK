@@ -74,9 +74,6 @@ struct Generator {
     // Default constructor
     Generator() : h_(nullptr) {}; 
 
-    // Constructor
-    Generator(handle_type h) : h_(h) {}
-
     // Copy constructor is disabled
     Generator(const Generator&) = delete;
 
@@ -107,18 +104,26 @@ struct Generator {
             h_ = nullptr;
         }
     }
-    
-    // Convert generator to bool for checking if the coroutine is not finished yet
-    explicit operator bool() {
+
+    bool isValid() const { return h_!=nullptr; };
+
+    // Check if the coroutine is not finished yet, must be a valid coroutine
+    bool done() {
         // Fill with new value if needed
         fill();
         // Check if the coroutine is done
         // done() returns true if the coroutine is suspended at its final suspend point
-        return !h_.done();
+        return h_.done();
+    } 
+
+    // Convert generator to bool for checking if the coroutine is not finished yet
+    // Same as done()
+    explicit operator bool() {
+        return !done();
     }
     
     // Generator call, proceed with coroutine if no value available, return yielded value
-    T operator()() {
+    T resume() {
         // Fill promise with value, if one is not already there
         fill();
         // Remove the value and return it
@@ -126,7 +131,15 @@ struct Generator {
         return std::move(h_.promise().value_);
     }
 
+    // Same as operator()
+    T operator()() {
+        return std::move(resume());
+    };
+    
 private:
+    // Constructor
+    Generator(handle_type h) : h_(h) {}
+
     // Do we have a value in the promise? 
     bool full_ = false;
 
@@ -135,14 +148,14 @@ private:
         // Value already there? 
         if (!full_) {
             // No, resume coroutine
-            h_();
+            h_.resume();
             // In case of exception rethrow
             if (h_.promise().exception_)
                 std::rethrow_exception(h_.promise().exception_);
             // We have a value now
             full_ = true;
         }
-    }
+    };
 };
 
 /*

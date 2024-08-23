@@ -283,7 +283,7 @@ std::tuple<bool, bool> OsdiDevice::parameterGiven(OsdiFile::OsdiParameterId osdi
     return std::make_tuple(false, flag);
 }
 
-std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Status& s) {
+std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     const auto& opt = circuit.simulatorOptions().core();
@@ -298,7 +298,7 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Sta
     populate(sp, opt, internals, dblArray, chrPtrArray);
     for(auto model : models()) {
         // Verilog-A $temperature is in K, convert the value given by options (in C)
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -554,7 +554,7 @@ void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const S
     sp.vals_str = simStrParamValues;
 }
 
-bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, Status& s) const {
+bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s) const {
     // If no flags that cause the simulation to abort are set and no error is recorded, we are done
     if (!(initInfo.flags & EVAL_RET_FLAG_FATAL) && initInfo.num_errors==0) {
         return true; 
@@ -569,14 +569,17 @@ bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const
         switch (err->code) {
             case INIT_ERR_OUT_OF_BOUNDS: {
                 char *param = descriptor_->param_opvar[err->payload.parameter_id].name[0];
-                circuit.setFlags(Circuit::Flags::Abort);
                 s.extend(pfx+": parameter '"+std::string(param)+"' is out of bounds.");
                 break;
+            }
+            default:
+                s.extend(pfx+": unknown OSDI error code "+std::to_string(err->code)+".");
+                break;
         }
-        default:
-            circuit.setFlags(Circuit::Flags::Abort);
-            s.extend(pfx+": unknown OSDI error code "+std::to_string(err->code)+".");
-            break;
+    }
+    if (devReq && initInfo.num_errors>0) {
+        if (devReq) {
+            devReq->abort = true;
         }
     }
 
@@ -586,18 +589,24 @@ bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const
         free(initInfo.errors);
 
     // Handle flags
-    if (initInfo.flags & EVAL_RET_FLAG_FINISH) {
-        circuit.setFlags(Circuit::Flags::Finish);
+    if (devReq) {
+        if (initInfo.flags & EVAL_RET_FLAG_FINISH) {
+            devReq->finish = true;
+        }
+        if (initInfo.flags & EVAL_RET_FLAG_STOP) {
+            devReq->stop = true;
+        }
+        if (initInfo.flags & EVAL_RET_FLAG_FATAL) {
+            devReq->abort = true;
+        }
     }
-    if (initInfo.flags & EVAL_RET_FLAG_STOP) {
-        circuit.setFlags(Circuit::Flags::Stop);
-    }
+    bool error = initInfo.num_errors>0 || (initInfo.flags & EVAL_RET_FLAG_FATAL);
+
     if (initInfo.flags & EVAL_RET_FLAG_FATAL) {
-        circuit.setFlags(Circuit::Flags::Abort);
         s.extend(pfx+": Fatal error during setup. Aborting simulation.");
     }
 
-    if (initInfo.num_errors>0 || circuit.checkFlags(Circuit::Flags::Abort)) {
+    if (error) {
         return false;
     } else {
         return true;

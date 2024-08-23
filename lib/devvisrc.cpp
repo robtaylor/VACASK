@@ -449,12 +449,12 @@ template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSou
     }
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) {
     clearFlags(Flags::NeedsSetup); 
     return sourceSetup(params, data, location(), circuit, s);
 }; 
 
-template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, Status& s) { 
+template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) { 
     clearFlags(Flags::NeedsSetup);
     return sourceSetup(params, data, location(), circuit, s);
 }; 

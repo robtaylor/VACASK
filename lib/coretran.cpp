@@ -507,11 +507,8 @@ bool TranCore::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
         return false;
     }
     
-    // Update circuit's flags (Abort, Finish, Stop)
-    circuit.updateEvalFlags(evalSetup);
-
     // Handle abort right now, finish and stop are handled outside NR loop
-    if (circuit.checkFlags(Circuit::Flags::Abort)) {
+    if (evalSetup.requests.abort) {
         if (circuit.simulatorOptions().core().tran_debug>1) {
             Simulator::dbg() << "  Abort requested during evaluation.\n";
         }
@@ -532,7 +529,7 @@ Id TranCore::methodTrapezoidal = Id::createStatic("trap");
 Id TranCore::methodBDF2 = Id::createStatic("bdf2");
 Id TranCore::methodGear2 = Id::createStatic("gear2");
 
-bool TranCore::run(bool continuePrevious) {
+CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     clearError();
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals(); 
@@ -551,17 +548,17 @@ bool TranCore::run(bool continuePrevious) {
     // Check parameters
     if (params.step<=0) {
         setError(TranError::Tstep);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     if (params.stop<=0) {
         setError(TranError::Tstop);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     if (params.start>=params.stop) {
         setError(TranError::Tstart);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Set up integration method
@@ -583,7 +580,7 @@ bool TranCore::run(bool continuePrevious) {
     } else {
         setError(TranError::Method);
         errorId = options.tran_method;
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Set up predictor
@@ -633,7 +630,7 @@ bool TranCore::run(bool continuePrevious) {
         // Run op analysis
         if (!opCore_.run(continuePrevious)) {
             setError(TranError::OpError);
-            return false;
+            co_yield CoreState::Aborted;
         }
     } else if (params.icMode==icModeUic) {
         if (debug>0) {
@@ -647,14 +644,14 @@ bool TranCore::run(bool continuePrevious) {
             // Abort on error if strictforce is set
             if (strictforce) {
                 setError(TranError::UicForces);
-                return false;
+                co_yield CoreState::Aborted;
             }
         }
         // Copy values to RHS
         solution.vector() = uicForces.unknownValue();
     } else {
         setError(TranError::IcMode);
-        return false;
+        co_yield CoreState::Aborted;
     }
     // opCore_.dump(Simulator::dbg()); Simulator::dbg() << "\n";
     nPoints++; 
@@ -663,7 +660,7 @@ bool TranCore::run(bool continuePrevious) {
     if (params.start<=0) {
         outfile->addPoint();
     }
-    
+
     // Initialize reactive residual state of instances
     // Compute next breakpoint
     // Compute maximal frequency
@@ -698,8 +695,26 @@ bool TranCore::run(bool continuePrevious) {
     // allowBypass is false by default so no bypass takes place
     if (!evalAndLoadWrapper(esInit, lsInit)) {
         // Error was already set in the wrapper
-        return false;
+        co_yield CoreState::Aborted;
     }
+
+    // Check for Stop/Finish at t=0 
+    // In OP IC mode check opCore_ and esInit
+    // In UIC IC mode check only esInit
+    bool stopFlag = false;
+    bool finishFlag = false;
+    if (params.icMode==icModeOp) {
+        finishFlag |= opCore_.solver().evalSetupSystem().requests.finish;
+        stopFlag |= opCore_.solver().evalSetupSystem().requests.stop;
+    }
+    finishFlag |= esInit.requests.finish;
+    stopFlag |= esInit.requests.stop;
+    if (finishFlag) {
+        co_yield CoreState::Finished;
+    } else if (stopFlag) {
+        co_yield CoreState::Stopped;
+    }
+
     // Clear Converged, Bypassed, and HasDeviceHistory flags
     // to make sure the device history will be initilialized 
     // after the first timepoint is computed. 
@@ -833,12 +848,12 @@ bool TranCore::run(bool continuePrevious) {
         bool havePredictor = pointsSinceLastDiscontinuity>=predictorCoeffs.minimalPredictorHistory(); // ???
         if (havePredictor && !(predictorCoeffs.compute(pastTimesteps, hk) && predictorCoeffs.scalePredictor(hk))) {
             setError(TranError::Predictor);
-            return false;
+            co_yield CoreState::Aborted;
         }
         // Integrator coeffs must be scaled
         if (!(integCoeffs.compute(pastTimesteps, hk) && integCoeffs.scaleDifferentiator(hk))) {
             setError(TranError::Corrector);
-            return false;
+            co_yield CoreState::Aborted;
         }
 
         // Compute predictor, use it to start NR solver
@@ -888,8 +903,8 @@ bool TranCore::run(bool continuePrevious) {
         // Simulator::out() << "  Solver iterations: " << nrSolver.iterations() << "\n";
         if (!solutionOk) {
             // Solver failed. Did we have an Abort request? 
-            if (circuit.checkFlags(Circuit::Flags::Abort)) {
-                return false;
+            if (nrSolver.checkFlags(TranNRSolver::Flags::Abort)) {
+                co_yield CoreState::Aborted;
             }
             // No Abort, solver failed
         }
@@ -956,7 +971,7 @@ bool TranCore::run(bool continuePrevious) {
         }
 
         // Handle Finish and Stop
-        if (circuit.checkFlags(Circuit::Flags::Finish)) {
+        if (nrSolver.checkFlags(TranNRSolver::Flags::Finish)) {
             if (debug>0) {
                 Simulator::dbg() << "Finish requested during transient analysis.\n";
             }
@@ -964,7 +979,7 @@ bool TranCore::run(bool continuePrevious) {
             finished = true;
             break;
         }
-        if (circuit.checkFlags(Circuit::Flags::Stop)) {
+        if (nrSolver.checkFlags(TranNRSolver::Flags::Stop)) {
             if (debug>0) {
                 Simulator::dbg() << "Stop requested during transient analysis.\n";
             }
@@ -1118,11 +1133,11 @@ bool TranCore::run(bool continuePrevious) {
                         tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
                     } else {
                         setError(TranError::BadLteReference);
-                        return false;
+                        co_yield CoreState::Aborted;
                     }
                 } else {
                     setError(TranError::BadLteReference);
-                    return false;
+                    co_yield CoreState::Aborted;
                 }
 
                 // std::cout << i << " predicted=" << predictedSolution[i] 
@@ -1238,7 +1253,7 @@ bool TranCore::run(bool continuePrevious) {
             if (tk<breakPoints.at(1) || tk>breakPoints.at(0)) {
                 DBGCHECK(true, "Internal breakpoint handling error at rejection, t="+std::to_string(tk)+".");
                 setError(TranError::BreakPointPanic);
-                return false;
+                co_yield CoreState::Aborted;
             }
             // Is next break point after tk
             if (nextBreakPoint>tk) {
@@ -1348,8 +1363,8 @@ bool TranCore::run(bool continuePrevious) {
                 Simulator::dbg() << ", order=" << newOrder << ".\n";
             }
             
-            // Write results
-            if (params.start-timeRelativeTolerance*tk<=tSolve) {
+            // Write results, starting at tSolve=params.start
+            if (tSolve>=params.start-timeRelativeTolerance*tk) {
                 outfile->addPoint();
             }
 
@@ -1366,6 +1381,15 @@ bool TranCore::run(bool continuePrevious) {
             // Advance time
             tk = tSolve; 
 
+            // Check Finish and Stop
+            // Verilog-AMS LRM states that Finish and Stop should be taken into account
+            // at converged iterations (we assume that this means accepted timepoints in transient analysis). 
+            if (nrSolver.evalSetupSystem().requests.finish) {
+                co_yield CoreState::Finished;
+            } else if (nrSolver.evalSetupSystem().requests.stop) {
+                co_yield CoreState::Stopped;
+            }
+            
             // Advance history so that t_{k+1} (slot 0) becomes t_k (slot 1)
             solution.advance();
             states.advance();
@@ -1383,7 +1407,7 @@ bool TranCore::run(bool continuePrevious) {
             
             // Nothing to do, t_k slot (1) remains at the same place
         }
-        
+
         // Set new hk, tSolve, and order
         hk = hkNew;
         tSolve = tSolveNew;
@@ -1392,7 +1416,7 @@ bool TranCore::run(bool continuePrevious) {
         // Check for timestep too small
         if (hk<tSolve*timeRelativeTolerance) {
             setError(TranError::TimestepTooSmall);
-            return false;
+            co_yield CoreState::Aborted;
         }
 
         // If we just accepted a timepoint and we still have points to compute
@@ -1407,7 +1431,19 @@ bool TranCore::run(bool continuePrevious) {
         Simulator::dbg() << "Transient analysis completed.\n";
     }
     
-    return true; 
+    co_yield CoreState::Finished;
+}
+
+bool TranCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool TranCore::formatError(Status& s) const {

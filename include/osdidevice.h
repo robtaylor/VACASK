@@ -46,7 +46,7 @@ public:
 
     virtual bool operator==(const Device& other) const; 
     Id name() const { return name_; };
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual bool collapseNodes(Circuit& circuit, Status& s=Status::ignore);
     virtual bool populateStructures(Circuit& circuit, Status& s=Status::ignore);
     virtual bool bind(
@@ -185,7 +185,7 @@ public:
     static std::tuple<size_t, size_t> simParasSizes();
     static void populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray);
     
-    bool processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, Status& s=Status::ignore) const;
+    bool processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s=Status::ignore) const;
 
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return descriptor_->num_collapsible; };
     OsdiFile::JacobianEntryIndex jacobianEntriesCount() const { return descriptor_->num_jacobian_entries; }; 

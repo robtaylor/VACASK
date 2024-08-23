@@ -221,15 +221,6 @@ bool Tran::populateStructures(Status& s) {
     return tranCore.populateStructures(s);
 }
 
-bool Tran::runCores(bool continuePrevious, Status& s) {
-    // Tran core will run op core
-    if (!tranCore.run(continuePrevious)) {
-        tranCore.formatError(s);
-        return false;
-    }
-    return true;
-}
-
 void Tran::dump(std::ostream& os) const {
     Analysis::dump(os);
     os << "Analysis type: transient analysis"<< std::endl;

@@ -107,6 +107,9 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     // This method is called once on entering run()
     // This is the right place to set up vectors
 
+    // Clear flags
+    clearFlags();
+
     // If bypass is enabled, prepare space for previous device states
     // Need to do this here because the user might sweep nr_bypass, but
     // the minimum requirement for calling rebuild() is that mapping 
@@ -249,12 +252,20 @@ bool OpNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) 
         }
         return false;
     }
-    
-    // Update circuit's flags (Abort, Finish, Stop)
-    circuit.updateEvalFlags(evalSetup);
 
+    // Store Abort, Finish, and Stop flag
+    if (evalSetup.requests.abort) {
+        setFlags(Flags::Abort);
+    }
+    if (evalSetup.requests.finish) {
+        setFlags(Flags::Finish);
+    }
+    if (evalSetup.requests.stop) {
+        setFlags(Flags::Stop);
+    }
+    
     // Handle abort right now, finish and stop are handled outside NR loop
-    if (circuit.checkFlags(Circuit::Flags::Abort)) {
+    if (checkFlags(Flags::Abort)) {
         if (settings.debug>2) {
             Simulator::dbg() << "Abort requested during evaluation.\n";
         }

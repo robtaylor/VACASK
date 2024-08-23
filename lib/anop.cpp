@@ -138,10 +138,6 @@ bool OperatingPoint::populateStructures(Status& s) {
     return core.populateStructures(s);
 }
 
-bool OperatingPoint::runCores(bool continuePrevious, Status& s) {
-    return core.run(continuePrevious, s);
-}
-
 void OperatingPoint::dump(std::ostream& os) const {
     Analysis::dump(os);
     os << "Analysis type: operating point"<< std::endl;

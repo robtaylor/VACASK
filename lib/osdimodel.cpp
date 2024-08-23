@@ -159,7 +159,7 @@ std::tuple<bool,bool> OsdiModel::parameterGiven(ParameterIndex ndx, Status& s) c
 }
 
 // Set up this model (virtual method)
-std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, Status& s) {
+std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
     OsdiSimParas sp;
     auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals(); 
@@ -171,12 +171,12 @@ std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, Stat
     
     OsdiDevice::populate(sp, opt, internals, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
-    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, s);
+    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
 }
 
 // Set up this model (method used by friends for inlining)
-std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp,  bool force, Status& s) {
+std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
     auto handle = OsdiCallbackHandle {
         .kind = 1, 
         .name = const_cast<char*>(name().c_str())
@@ -187,7 +187,7 @@ std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas
     bool forceAllInstances = false;
     if (force || checkFlags(Flags::NeedsSetup)) {
         device()->descriptor()->setup_model((void*)&handle, core(), &sp, &initInfo);
-        if (!device()->processInitInfo(circuit, initInfo, "Model", name(), s)) {
+        if (!device()->processInitInfo(circuit, initInfo, "Model", name(), devReq, s)) {
             // The problem is big enough to abort simulation
             return std::make_tuple(false, false, false);
         }
@@ -201,7 +201,7 @@ std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     for(auto it : instances()) {
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiInstance*>(it)->setupCore(circuit, sp, temp, forceAllInstances, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiInstance*>(it)->setupCore(circuit, sp, temp, forceAllInstances, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {

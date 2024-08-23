@@ -2,6 +2,7 @@
 #define __ANALYSIS_DEFINED
 
 #include <unordered_map>
+#include "core.h"
 #include "circuit.h"
 #include "parameterized.h"
 #include "parseroutput.h"
@@ -12,16 +13,17 @@
 
 namespace NAMESPACE {
 
+// Default value is Uninitialized
+enum class AnalysisState { Uninitilized=0, Aborted, Stopped, Finished, SweepPoint };
+
+// Analysis coroutine type
+typedef Generator<AnalysisState> AnalysisCoroutine;
+
 // Generic analysis
 class Analysis {
 public:
     typedef Analysis* (*AnalysisFactory)(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s);
 
-    // Aborted .. run() -> do nothing, return Aborted
-    // Finished .. run() -> do nothing, return Finished
-    // Stopped .. run() -> continue, return status
-    enum class State { Uninitilized, Ready, Aborted, Stopped, Finished };
-    
     Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
     virtual ~Analysis();
 
@@ -29,8 +31,6 @@ public:
     Analysis           (      Analysis&&) = delete;
     Analysis& operator=(const Analysis&)  = delete;
     Analysis& operator=(      Analysis&&) = delete;
-
-    State state() const { return state_; };
 
     Id name() const { return name_; };
     IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
@@ -48,8 +48,23 @@ public:
     void setSaves(PTSavesVector* commonSaves);
     void setParametrization(const PTParameterMap* optionsMap);
 
-    // Interface method, does sweeping if needed
-    Generator<Analysis::State> run(Status& s=Status::ignore);
+    // Analysis coroutine
+    AnalysisCoroutine coroutine(Status& s=Status::ignore);
+
+    // Create coroutine
+    bool start(Status& s=Status::ignore);
+
+    // Is it running
+    bool isRunning() { return coroutine_.isValid() && !coroutine_.done(); }; 
+
+    // Resume coroutine, status is returned in the variable passed to start()
+    AnalysisState resume();
+
+    // Finish coroutine
+    bool finish(Status& s=Status::ignore);
+
+    // Create coroutine, run it until it returns, aborts, or finishes
+    bool run(Status& s=Status::ignore);
 
     static bool registerFactory(Id name, AnalysisFactory factory);
 
@@ -151,10 +166,13 @@ protected:
 
     // Call Sweeper::restoreState() after initializeOutputs() if a sweep wraparound happened
     
-    // Core analysis method
-    virtual bool runCores(bool continuePrevious, Status& s=Status::ignore) = 0;
+    // Create coroutine
+    virtual CoreCoroutine coreCoroutine(bool continuePrevious) = 0;
 
-    // Call Sweeper::advance() after runCores()
+    // Format core error
+    virtual bool formatCoreError(Status& s=Status::ignore) = 0;
+    
+    // Call Sweeper::advance() after core coroutine finishes
 
     // Call Sweeper::storeState()
 
@@ -189,15 +207,16 @@ protected:
 
     PTParameterMap parameterizedOptions;
 
-    // Generator that runs all involved cores, replaces run
-    // Analysis::runCoresEngine(Status& s=Status::ignore) 
-    
-    // Generator that runs a core
-    // Core::run(Status& s=Status::ignore)
-
-    
 private:
-    State state_;
+    AnalysisCoroutine coroutine_;
+    AnalysisState lastCoroutineState;
+    
+    // Variable indicating that parameter values before sweep were stored
+    bool preSweepValuesStored;
+
+    // Varible indicating that the output is initialized
+    bool outputInitialized;
+
     static std::unordered_map<Id,AnalysisFactory>& getRegistry() {
         static std::unordered_map<Id,AnalysisFactory> factoryMap;
         return factoryMap;

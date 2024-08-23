@@ -238,7 +238,7 @@ using BuiltinMutualInstance = BuiltinInstance<DevCtlSourceModelParams, DevMutual
 
 template<> void BuiltinMutual::defineInternals();
 template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalParameterIndex() const; 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s);
 template<> bool BuiltinMutualInstance::preAnalysisWorker(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::bindCore(

@@ -10,6 +10,7 @@
 #include "flags.h"
 #include "coreopnr.h"
 #include "ansolution.h"
+#include "generator.h"
 #include "common.h"
 
 
@@ -91,7 +92,8 @@ public:
 
     bool rebuild(Status& s=Status::ignore); 
     bool initializeOutputs(Id name, Status& s=Status::ignore);
-    bool run(bool continuePrevious, Status& s=Status::ignore);
+    bool run(bool continuePrevious);
+    CoreCoroutine coroutine(bool continuePrevious);
     bool finalizeOutputs(Status& s=Status::ignore);
     bool deleteOutputs(Id name, Status& s=Status::ignore);
 
@@ -126,7 +128,8 @@ protected:
 
     Forces stateNodesets;
     
-    bool converged;
+    bool continuePrevious;
+    bool converged_;
 
     OutputRawfile* outfile;
     std::vector<OperatingPointState> analysisStateRepository;

@@ -252,7 +252,7 @@ bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity
     return true;
 }
 
-std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, Status& s) {
+std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
     OsdiSimParas sp;
     const auto& opt = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
@@ -264,11 +264,11 @@ std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, S
     
     OsdiDevice::populate(sp, opt, internals, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
-    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, s);
+    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
 }
 
-std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, Status& s) {
+std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
     auto handle = OsdiCallbackHandle {
         .kind = 1, 
         .name = const_cast<char*>(name().c_str())
@@ -317,7 +317,7 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
         
         // Call setup_instance(), interpret status
         model()->device()->descriptor()->setup_instance((void*)&handle, core(), model()->core(), temp, connectedTerminalCount, &sp, &initInfo);
-        auto setupOk = model()->device()->processInitInfo(circuit, initInfo, "Instance", name(), s);
+        auto setupOk = model()->device()->processInitInfo(circuit, initInfo, "Instance", name(), devReq, s);
         if (!setupOk) {
             // The problem is big enough to abort simulation
             // Restore collapsed nodes pattern first
@@ -743,17 +743,17 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
 
         if (evalFlags & EVAL_RET_FLAG_FATAL) {
             // Fatal error occurred, must abort simulation. 
-            evalSetup.abortRequested = true;
+            evalSetup.requests.abort = true;
         } 
         if (evalFlags & EVAL_RET_FLAG_FINISH) {
             // $finish was called asking the simulator to finish simulation 
             // (exit gracefully) if the current iteration converged. 
-            evalSetup.finishRequested = true;
+            evalSetup.requests.finish = true;
         } 
         if (evalFlags & EVAL_RET_FLAG_STOP) {
             // $stop was called asking the simulator to pause the simulation
             // if the current iteration converged. 
-            evalSetup.abortRequested = true;
+            evalSetup.requests.stop = true;
         }
     }
     

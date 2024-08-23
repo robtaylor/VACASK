@@ -73,9 +73,16 @@ protected:
     // Initialize outputs
     virtual bool initializeOutputs(Status& s=Status::ignore);
 
-    // Run cores
-    virtual bool runCores(bool continuePrevious, Status& s=Status::ignore);
+    // Create core coroutine
+    virtual CoreCoroutine coreCoroutine(bool continuePrevious) {
+        return std::move(smsigCore.coroutine(continuePrevious));
+    };
     
+    // Format core error
+    virtual bool formatCoreError(Status& s=Status::ignore) {
+        return smsigCore.formatError(s);
+    };
+
     // Finalize outputs
     virtual bool finalizeOutputs(Status& s=Status::ignore);
 
@@ -279,17 +286,6 @@ bool SmallSignal<CoreClass, DataMixin>::deleteOutputs(Status& s) {
         smsigCore.formatError(s);
     }
     return ok1 && ok2;
-}
-
-template<typename CoreClass, typename DataMixin> 
-bool SmallSignal<CoreClass, DataMixin>::runCores(bool continuePrevious, Status& s) {
-    // By default the small signal core is run
-    // The small signal core runs the op core
-    if (!smsigCore.run(continuePrevious)) {
-        smsigCore.formatError(s);
-        return false;
-    }
-    return true;
 }
 
 template<typename CoreClass, typename DataMixin> 

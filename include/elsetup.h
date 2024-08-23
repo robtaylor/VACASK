@@ -15,6 +15,20 @@ class Circuit;
 class Model;
 class Instance;
 
+typedef struct DeviceRequests {
+    // Return information on what happened during evaluation
+    // Verilog-A abort/finish/stop
+    bool abort {};
+    bool finish {};
+    bool stop {};
+
+    // Methods
+    void clear() {
+        abort = false;
+        finish = false;
+        stop = false;
+    };
+} Requests;
 
 typedef struct EvalSetup {
     // {} for default initialization
@@ -68,10 +82,8 @@ typedef struct EvalSetup {
     
     // Return information on what happened during evaluation
     // Verilog-A abort/finish/stop
-    bool abortRequested {};
-    bool finishRequested {};
-    bool stopRequested {};
-
+    struct DeviceRequests requests;
+    
     // Limiting applied (i.e. $discontinuity(-1))
     bool limitingApplied {};
     
@@ -112,11 +124,9 @@ typedef struct EvalSetup {
     
     // Methods
     void clearFlags() {
+        requests.clear();
         discontinuity = -1;
         limitingApplied = false;
-        abortRequested = false;
-        finishRequested = false;
-        stopRequested = false;
     };
 
     bool initialize() {

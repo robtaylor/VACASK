@@ -62,6 +62,7 @@ public:
 
     bool rebuild(Status& s=Status::ignore); 
     bool initializeOutputs(Id name);
+    CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
     bool finalizeOutputs();
     bool deleteOutputs(Id name);

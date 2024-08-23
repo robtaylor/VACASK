@@ -240,7 +240,7 @@ bool NoiseCore::rebuild(Status& s) {
 
 // System of equations is 
 //   (G(x) + i C(x)) dx = dJ
-bool NoiseCore::run(bool continuePrevious) {
+CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
     acMatrix.setAccounting(circuit.tables().accounting());
     
     clearError();
@@ -253,20 +253,20 @@ bool NoiseCore::run(bool continuePrevious) {
     // Get output unknowns
     auto [outOk, up, un] = getOutput(params.out);
     if (!outOk) {
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Get input source
     auto [inOk, inputSource] = getInput(params.in);
     if (!inOk) {
-        return false;
+        co_yield CoreState::Aborted;
     }
     
     // Compute operating point
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(NoiseError::OpError);
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     auto& options = circuit.simulatorOptions().core();
@@ -318,35 +318,34 @@ bool NoiseCore::run(bool continuePrevious) {
         if (debug>0) {
             Simulator::dbg() << "Error in AC Jacobian / noise evaluation.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
 
     // Handle Abort, Finish, Stop
-    circuit.updateEvalFlags(esReactNoise);
-    if (circuit.checkFlags(Circuit::Flags::Abort)) {
+    if (esReactNoise.requests.abort) {
         if (debug>0) {
             Simulator::dbg() << "Abort requested during AC Jacobian / noise  evaluation. Exiting.\n";
         }
-        return false;
+        co_yield CoreState::Aborted;
     }
-    if (circuit.checkFlags(Circuit::Flags::Finish)) {
+    if (esReactNoise.requests.finish) {
         if (debug>0) {
             Simulator::dbg() << "Finish requested during AC Jacobian / noise evaluation. Exiting.\n";
         }
-        return true;
+        co_yield CoreState::Finished;
     }
-    if (circuit.checkFlags(Circuit::Flags::Stop)) {
+    if (esReactNoise.requests.stop) {
         if (debug>0) {
             Simulator::dbg() << "Stop requested during AC Jacobian / noise evaluation. Exiting.\n";
         }
-        return true;
+        co_yield CoreState::Stopped;
     }
 
     // Create sweeper, put it in unique ptr to free it when method returns
     ScalarSweep sweeper;
     if (!sweeper.setup(params, errorStatus)) {
         setError(NoiseError::Sweeper);
-        return false;
+        co_yield CoreState::Aborted;
     }
     
     // Frequency sweep
@@ -391,12 +390,6 @@ bool NoiseCore::run(bool continuePrevious) {
             }
             error = true;
             break;
-        }
-        if (circuit.checkFlags(Circuit::Flags::Abort)) {
-            if (debug>0) {
-                Simulator::dbg() << "Abort requested during noise frequency sweep.\n";
-            }
-            return false;
         }
         
         // Check if matrix entries are finite, no need to check RHS 
@@ -632,20 +625,6 @@ bool NoiseCore::run(bool continuePrevious) {
             outfile->addPoint();
         }
 
-        // Handle Finish and Stop
-        if (circuit.checkFlags(Circuit::Flags::Finish)) {
-            if (debug>0) {
-                Simulator::dbg() << "Finish requested during noise frequency sweep.\n";
-            }
-            break;
-        }
-        if (circuit.checkFlags(Circuit::Flags::Stop)) {
-            if (debug>0) {
-                Simulator::dbg() << "Stop requested during noise frequency sweep.\n";
-            }
-            break;
-        }
-        
         finished = sweeper.advance();
     } while (!finished && !error);
 
@@ -661,7 +640,23 @@ bool NoiseCore::run(bool continuePrevious) {
     // OP analysis will still work fine, even in sweep. 
     // We only changed the bindings of the reactive Jacobian entries. 
     
-    return finished;
+    if (finished) {
+        co_yield CoreState::Finished;
+    } else {
+        co_yield CoreState::Aborted;
+    }
+}
+
+bool NoiseCore::run(bool continuePrevious) {
+    auto c = coroutine(continuePrevious);
+    bool ok = true;
+    while (!c.done()) {
+        if (c.resume()==CoreState::Aborted) {
+            ok = false;
+            break;
+        };
+    }
+    return ok;
 }
 
 bool NoiseCore::formatError(Status& s) const {

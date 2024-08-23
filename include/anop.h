@@ -49,7 +49,12 @@ protected:
 
     virtual bool rebuildCores(Status& s=Status::ignore); 
     virtual bool initializeOutputs(Status& s=Status::ignore);
-    virtual bool runCores(bool continuePrevious, Status& s=Status::ignore);
+    virtual CoreCoroutine coreCoroutine(bool continuePrevious) {
+        return std::move(core.coroutine(continuePrevious));
+    };
+    virtual bool formatCoreError(Status& s=Status::ignore) {
+        return core.formatError(s);
+    };
     virtual bool finalizeOutputs(Status& s=Status::ignore);
     virtual bool deleteOutputs(Status& s=Status::ignore);
     
