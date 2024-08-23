@@ -45,6 +45,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/output.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/outrawfile.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/nrsolver.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/progress.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/core.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreop.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreopnr.h 
@@ -108,6 +109,7 @@ add_library(simlib STATIC
     output.cpp
     outrawfile.cpp
     nrsolver.cpp 
+    progress.cpp
     core.cpp 
     coreop.cpp 
     coreopnr.cpp 
