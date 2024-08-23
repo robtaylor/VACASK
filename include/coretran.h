@@ -81,6 +81,7 @@ public:
 
     bool rebuild(Status& s=Status::ignore); 
     bool initializeOutputs(Id name);
+    void install(ProgressReporter* p);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
     bool finalizeOutputs();

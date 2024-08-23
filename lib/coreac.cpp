@@ -256,6 +256,11 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         setError(AcError::Sweeper);
         co_yield CoreState::Aborted;
     }
+    if (progressReporter) {
+        progressReporter->setValueFormat(ProgressReporter::ValueFormat::Scientific, 6);
+        progressReporter->setValueDecoration("", "Hz");    
+    }
+    initProgress(sweeper.count(), 0);
     
     // Frequency sweep
     sweeper.reset();
@@ -396,8 +401,10 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         if (params.writeOutput && outfile) {
             outfile->addPoint();
         }
-
+        
         finished = sweeper.advance();
+        
+        setProgress(sweeper.at(), freq);
     } while (!finished && !error);
     
     if (debug>0) {

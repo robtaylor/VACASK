@@ -7,6 +7,7 @@
 #include "options.h"
 #include "parseroutput.h"
 #include "status.h"
+#include "progress.h"
 #include "common.h"
 #include <memory>
 
@@ -151,7 +152,7 @@ typedef struct SweepSettings  {
 
 class Circuit;
 
-class ParameterSweeper {
+class ParameterSweeper : public ProgressTracker {
 public:
     enum class WriteValues { StoredState, Sweep };
     enum class ParameterFamily { Instance=1<<0, Model=1<<1, Option=1<<2, Variable=1<<3 };
@@ -210,6 +211,7 @@ private:
     std::vector<Value> storedValues;
     Int incrementedSweepIndex;
     Circuit* circuit_;
+    size_t sweepPos;
 };
 DEFINE_FLAG_OPERATORS(ParameterSweeper::ParameterFamily);
 

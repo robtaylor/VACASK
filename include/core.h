@@ -6,6 +6,7 @@
 #include "output.h"
 #include "hash.h"
 #include "generator.h"
+#include "progress.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -26,7 +27,7 @@ typedef struct IdPairHash {
 class Analysis;
 
 // Analysis core, one analysis can have multiple analysis cores (i.e. op, tran, ...)
-class AnalysisCore {
+class AnalysisCore : public ProgressTracker {
 public: 
     enum class Error {
         OK, 
@@ -91,6 +92,7 @@ public:
     // Runs the core
     bool run(bool continuePrevious) { return true; };
 
+
     // Called after core is run (and once per sweep) to finalieze and close output files
     bool finalizeOutputs(Status& s=Status::ignore) { return true; };
 
@@ -127,7 +129,7 @@ public:
     bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution);
     bool addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution);
     bool addOpvarOutputSource(bool strict, Id instance, Id opvar);
-
+    
 protected:
     // Clear error
     void clearError() { lastError = Error::OK; }; 
@@ -147,7 +149,6 @@ protected:
     // Number of save directives that produced at least one output descriptor
     size_t savesCount; 
 };
-
 
 }
 

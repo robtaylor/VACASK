@@ -583,6 +583,12 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         co_yield CoreState::Aborted;
     }
 
+    if (progressReporter) {
+        progressReporter->setValueFormat(ProgressReporter::ValueFormat::Scientific, 6);
+        progressReporter->setValueDecoration("", "s");    
+    }
+    initProgress(params.stop, 0);
+    
     // Set up predictor
     predictorCoeffs.setMethod(IntegratorCoeffs::Method::PolynomialExtrapolation, maxOrder, options.tran_xmu);
 
@@ -660,6 +666,8 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     if (params.start<=0) {
         outfile->addPoint();
     }
+
+    setProgress(0, 0);
 
     // Initialize reactive residual state of instances
     // Compute next breakpoint
@@ -1367,6 +1375,8 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             if (tSolve>=params.start-timeRelativeTolerance*tk) {
                 outfile->addPoint();
             }
+
+            setProgress(tSolve, tSolve);
 
             // Check if we are done
             if (tSolve>=params.stop) {

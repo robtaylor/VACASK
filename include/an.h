@@ -9,6 +9,7 @@
 #include "output.h"
 #include "answeep.h"
 #include "generator.h"
+#include "progress.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -47,6 +48,12 @@ public:
     // Setup api
     void setSaves(PTSavesVector* commonSaves);
     void setParametrization(const PTParameterMap* optionsMap);
+
+    // Install progress reporter
+    void install(ProgressReporter* p) { progressReporter = p; }
+
+    // Analysis core
+    virtual AnalysisCore& analysisCore() = 0;
 
     // Analysis coroutine
     AnalysisCoroutine coroutine(Status& s=Status::ignore);
@@ -223,6 +230,8 @@ private:
     };
     const PTSavesVector* commonSaves;
     Int advancedSweepIndex;
+
+    ProgressReporter* progressReporter;
 };
 
 }

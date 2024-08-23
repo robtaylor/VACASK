@@ -73,6 +73,9 @@ protected:
     // Initialize outputs
     virtual bool initializeOutputs(Status& s=Status::ignore);
 
+    // Analysis core
+    virtual AnalysisCore& analysisCore() { return smsigCore; };
+
     // Create core coroutine
     virtual CoreCoroutine coreCoroutine(bool continuePrevious) {
         return std::move(smsigCore.coroutine(continuePrevious));

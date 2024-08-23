@@ -3,6 +3,7 @@
 #include "simulator.h"
 #include "an.h"
 #include "platform.h"
+#include "progressbar.h"
 #include "common.h"
 #include <type_traits>
 #include <chrono>
@@ -127,7 +128,8 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
             if (!minimalElaboration(s)) {
                 return false;
             }
-            auto start = std::chrono::high_resolution_clock::now();
+            
+            // Create analysis
             auto& ptAn = std::get<PTAnalysis>(entry);
             if (printProgress_) {
                 Simulator::dbg() << "Running analysis '"+std::string(ptAn.name())+"'.\n";
@@ -143,12 +145,36 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                     return false;
                 }
             }
+
+            // Analysis status message
             tmps.clear();
-            auto ret = an->run(tmps);
-            std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
-            if (printProgress_) {
-                Simulator::dbg() << "  Elapsed time: "<< duration << "\n";
+            // Progress reporter
+            AnalysisProgress progress(2, Simulator::dbg(), 0.1);
+            // Mark start
+            progress.begin();
+            // Install progress reporter
+            if (printProgress_ && progress.enabled()) {
+                // Install progress reporter
+                an->install(&progress);
             }
+            // Run analysis
+            auto ret = an->run(tmps);
+            // Mark end time
+            progress.end();
+            // Print final report
+            if (printProgress_) {
+                if (progress.enabled()) {
+                    // Progress reporter enabled
+                    // Report for one final time, force it
+                    progress.report(true);
+                    Simulator::dbg() << "\n" << std::flush;
+                } else {
+                    // Progress reporter disabled
+                    Simulator::dbg() << "  Elapsed time: "<< progress.time() << "\n";
+                }
+            }
+            
+            // Error reporting
             if (!ret) {
                 delete an;
                 if (!mustAbort(idAnalysis)) {

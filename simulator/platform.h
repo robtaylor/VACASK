@@ -20,6 +20,9 @@ public:
     static const std::string& pythonExecutable();
     static const std::string& pythonPath();
 
+    static bool isTty(std::ostream& os);
+    static int ttyColumns(std::ostream& os);
+
     // Program info
     static const std::string programName; 
     static const std::string programVersion; 

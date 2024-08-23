@@ -5,6 +5,12 @@
 #include "common.h"
 #include <tuple>
 
+#ifdef SIMWINDOWS
+#else
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <unistd.h>
+#endif
 
 namespace NAMESPACE {
 
@@ -87,6 +93,40 @@ const std::filesystem::path& Platform::libraryPath() {
 #endif
     return libPath;
 }
+
+int Platform::ttyColumns(std::ostream& os) {
+#ifdef SIMWINDOWS
+    ERROR
+#else
+    struct winsize w;
+    if (&os == &std::cout) {
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    } else if (&os == &std::cerr || &os == &std::clog) {
+        ioctl(STDERR_FILENO, TIOCGWINSZ, &w);
+    } else {
+        return 0;
+    }
+    if (w.ws_col>0) {
+        return w.ws_col;
+    } else {
+        return 0;
+    }
+#endif
+}
+
+#ifdef SIMWINDOWS
+ERROR
+#else
+bool Platform::isTty(std::ostream& os) {
+    if (&os == &std::cout) {
+        return isatty(1);
+    } else if (&os == &std::cerr || &os == &std::clog) {
+        return isatty(2);
+    } else {
+        return false;
+    }
+}
+#endif
 
 #define str_expand(s) #s
 #define to_str(s) str_expand(s)

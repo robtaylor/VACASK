@@ -216,7 +216,7 @@ template<> int Introspection<SweepSettings>::setup() {
 instantiateIntrospection(SweepSettings);
 
 ParameterSweeper::ParameterSweeper(Circuit& circuit, const PTSweeps& ptSweeps) 
-    : circuit(circuit), ptSweeps(ptSweeps) {
+    : circuit(circuit), ptSweeps(ptSweeps), sweepPos(0) {
 }
 
 bool ParameterSweeper::setup(Status& s) {
@@ -239,6 +239,7 @@ bool ParameterSweeper::setup(Status& s) {
     // Sweep settings can depend on circuit variables. 
     // If during sweep a variable changes the change is applied to all inner sweeps 
     // relative to the sweep causing the variable change. 
+    double extent = 1;
     for(decltype(n) i=0; i<n; i++) {
         auto& ptcomp = ptSweeps.data()[i];
         auto& comp = settings[i];
@@ -301,7 +302,9 @@ bool ParameterSweeper::setup(Status& s) {
             s.extend(comp.location); 
             return false;
         }
+        extent *= scalarSweeps[i].count();
     }
+    initProgress(extent, 0);
     return true;
 }
 
@@ -465,6 +468,8 @@ void ParameterSweeper::reset() {
     for(auto& it : scalarSweeps) {
         it.reset();
     }
+    sweepPos = 0;
+    setProgress(sweepPos, sweepPos);
 }
 
 std::tuple<bool, Int> ParameterSweeper::advance() {
@@ -481,9 +486,15 @@ std::tuple<bool, Int> ParameterSweeper::advance() {
         } else {
             // No need to reset, done
             incrementedSweepIndex = ndx;
+            // Increase counter for progress monitoring
+            sweepPos++;
+            setProgress(sweepPos, sweepPos);
             return std::make_tuple(false, ndx);
         }
     }
+    // Increase counter for progress monitoring
+    sweepPos++;
+    setProgress(sweepPos, sweepPos);
     // If we reach this point, we have just reset the outermost sweep so we are done
     return std::make_tuple(true, 0);
 }

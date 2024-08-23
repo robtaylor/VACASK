@@ -4,9 +4,9 @@
 
 namespace NAMESPACE {
 
-ProgressReporter::ProgressReporter(ParameterSweeper* s, AnalysisCore* c) 
-    : sweeper(s), core(c) {
-    tLast = Accounting::wclk();
-};
+ProgressReporter::ProgressReporter(double dt) 
+    : enabled_(true), extent_(1), pos_(0), dt(dt), prefix_(""), postfix_(""), 
+      valueFormat_(ValueFormat::Default), precision_(6) {
+}
 
 }

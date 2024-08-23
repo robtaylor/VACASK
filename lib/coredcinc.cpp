@@ -118,6 +118,8 @@ bool DcIncrementalCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx = dJ
 CoreCoroutine DcIncrementalCore::coroutine(bool continuePrevious) {
+    initProgress(1, 0);
+
     jacobian.setAccounting(circuit.tables().accounting());
 
     clearError();
@@ -197,6 +199,8 @@ CoreCoroutine DcIncrementalCore::coroutine(bool continuePrevious) {
         outfile->addPoint();
     }
     
+    setProgress(1);
+
     co_yield CoreState::Finished;
 }
 

@@ -347,6 +347,11 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         setError(NoiseError::Sweeper);
         co_yield CoreState::Aborted;
     }
+    if (progressReporter) {
+        progressReporter->setValueFormat(ProgressReporter::ValueFormat::Scientific, 6);
+        progressReporter->setValueDecoration("", "Hz");    
+    }
+    initProgress(sweeper.count(), 0);
     
     // Frequency sweep
     sweeper.reset();
@@ -626,6 +631,8 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         }
 
         finished = sweeper.advance();
+
+        setProgress(sweeper.at(), freq);
     } while (!finished && !error);
 
     if (debug>0) {

@@ -44,6 +44,7 @@ protected:
 
     virtual bool rebuildCores(Status& s=Status::ignore); 
     virtual bool initializeOutputs(Status& s=Status::ignore);
+    virtual AnalysisCore& analysisCore() { return tranCore; };
     virtual CoreCoroutine coreCoroutine(bool continuePrevious) {
         return std::move(tranCore.coroutine(continuePrevious));
     };

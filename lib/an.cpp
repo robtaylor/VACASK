@@ -6,7 +6,7 @@ namespace NAMESPACE {
 
 Analysis::Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : name_(name), circuit(circuit), sweeper(circuit, ptAnalysis.sweeps()), 
-      ptAnalysis(ptAnalysis), commonSaves(nullptr) {
+      ptAnalysis(ptAnalysis), commonSaves(nullptr), progressReporter(nullptr) {
 }
 
 Analysis::~Analysis() {
@@ -165,6 +165,12 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     // By default high precision is not requested (bypass possible)
     internals.highPrecision = false;
 
+    // Are we in debug mode
+    auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || options.tran_debug;
+    if (debugMode && progressReporter) {
+        progressReporter->disable();
+    }
+
     // Stop and Finish do not interrupt the NR solver, 
     // nor do they interrupt the OP homotopy algorithms. 
     // They are left to be handled at a higher level (transient analysis). 
@@ -179,6 +185,13 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     // Do we have sweep(s)
     if (ptAnalysis.sweeps().data().size()>0) {
         // Sweep required
+
+        if (progressReporter && !debugMode) {
+            progressReporter->setValueFormat(ProgressReporter::ValueFormat::Fixed, 0);
+            progressReporter->setValueDecoration("point# ", "");
+            sweeper.install(progressReporter);
+        }
+        
         if (sweepDebug>0) {
             Simulator::dbg() << "Starting sweep, analysis '" << std::string(name_) << "'.\n";
         }
@@ -221,7 +234,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             if (options.sweep_pointmarker) {
                 co_yield AnalysisState::SweepPoint;
             }
-            
+
             // Set current sweep point
             auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
                 &sweeper, ParameterSweeper::WriteValues::Sweep, 
@@ -385,6 +398,10 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         // No sweep
         advancedSweepIndex = 0;
 
+        if (progressReporter && !debugMode) {
+            analysisCore().install(progressReporter);
+        }
+        
         // Indicate we have a new sweep point
         if (options.sweep_pointmarker) {
             co_yield AnalysisState::SweepPoint;

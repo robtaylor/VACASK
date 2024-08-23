@@ -167,6 +167,8 @@ bool DcTfCore::rebuild(Status& s) {
 // System of equations is 
 //   G(x) dx  = dJ
 CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
+    initProgress(1, 0);
+
     jacobian.setAccounting(circuit.tables().accounting());
 
     clearError();
@@ -288,6 +290,8 @@ CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
         outfile->addPoint();
     }
     
+    setProgress(1);
+
     co_yield CoreState::Finished;
 }
 

@@ -392,6 +392,8 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
 //   - spice3 source stepping
 // Each message starts with a nrSolver error message
 CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
+    initProgress(1, 0);
+
     clearError();
 
     auto& options = circuit.simulatorOptions().core();
@@ -499,6 +501,8 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
         // Add a status message one level higher
         converged_ = false;
     }
+
+    setProgress(1);
 
     // OP analysis can only Abort or Finish
     if (converged_) {

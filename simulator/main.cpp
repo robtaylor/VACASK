@@ -34,6 +34,10 @@ int main(int argc, char**argv) {
 
     Status status;
 
+    // std::cout << "abc" << '\r' << "   def" << std::flush;
+    // return 0;
+
+
     // Setup platform
     //   openVafName, openVafArgs
     Platform::setup("", {});
