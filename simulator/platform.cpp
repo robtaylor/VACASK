@@ -6,6 +6,7 @@
 #include <tuple>
 
 #ifdef SIMWINDOWS
+#include <windows.h>
 #else
 #include <sys/ioctl.h>
 #include <stdio.h>
@@ -96,7 +97,9 @@ const std::filesystem::path& Platform::libraryPath() {
 
 int Platform::ttyColumns(std::ostream& os) {
 #ifdef SIMWINDOWS
-    ERROR
+    CONSOLE_SCREEN_BUFFER_INFO sbInfo;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &sbInfo);
+    return sbInfo.dwSize.X;
 #else
     struct winsize w;
     if (&os == &std::cout) {
@@ -114,19 +117,27 @@ int Platform::ttyColumns(std::ostream& os) {
 #endif
 }
 
-#ifdef SIMWINDOWS
-ERROR
-#else
 bool Platform::isTty(std::ostream& os) {
+#ifdef SIMWINDOWS
+    DWORD temp;
     if (&os == &std::cout) {
-        return isatty(1);
+        return GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &temp);
     } else if (&os == &std::cerr || &os == &std::clog) {
-        return isatty(2);
+        return GetConsoleMode(GetStdHandle(STD_ERROR_HANDLE), &temp);
     } else {
         return false;
     }
-}
+#else
+    if (&os == &std::cout) {
+        return isatty(fileno(stdout));
+    } else if (&os == &std::cerr || &os == &std::clog) {
+        return isatty(fileno(stderr));
+    } else {
+        return false;
+    }
 #endif
+}
+
 
 #define str_expand(s) #s
 #define to_str(s) str_expand(s)
