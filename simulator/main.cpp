@@ -65,6 +65,8 @@ int main(int argc, char**argv) {
 
     Simulator::out() << 
         "This is "+Platform::programName+" "+Platform::programVersion+".\n"+Platform::programCopyright+"\n";
+    Simulator::out() << 
+        Platform::programHomepage+"\n";
 #ifdef SIMDEBUG
     Simulator::out() << "\n" << "Warning! This is a debug build. Simulator will be slow.\n";
 #endif

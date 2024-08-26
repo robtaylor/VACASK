@@ -10,6 +10,7 @@ message(STATUS "CMake version ${CMAKE_VERSION}")
 set(PROGRAM_NAME "vacask")
 set(PROGRAM_COPYRIGHT "2023-2024")
 set(PROGRAM_VENDOR "EDA Lab FE Uni-Lj")
+set(PROGRAM_HOMEPAGE "https://codeberg.org/arpadbuermen/VACASK")
 
 # Get version (versions in git are marked with tags of the form _<version number>)
 # set(PROGRAM_VERSION "0.2")

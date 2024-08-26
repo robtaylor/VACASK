@@ -27,6 +27,7 @@ public:
     static const std::string programName; 
     static const std::string programVersion; 
     static const std::string programCopyright; 
+    static const std::string programHomepage; 
 
 private:
     static const char* defaultOpenVafBinaryName();

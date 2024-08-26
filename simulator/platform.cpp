@@ -144,6 +144,7 @@ bool Platform::isTty(std::ostream& os) {
 const std::string Platform::programName = to_str(PROGRAM_NAME);
 const std::string Platform::programVersion = to_str(PROGRAM_VERSION);
 const std::string Platform::programCopyright = "(c)" to_str(PROGRAM_COPYRIGHT) " EDA Lab FE Uni-Lj, Arpad Buermen";
+const std::string Platform::programHomepage= PROGRAM_HOMEPAGE;
 #undef str_expand
 #undef to_str
 } 

@@ -38,6 +38,7 @@ target_include_directories(sim PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CU
 target_compile_definitions(sim PUBLIC PROGRAM_NAME=${PROGRAM_NAME})
 target_compile_definitions(sim PUBLIC PROGRAM_VERSION=${PROGRAM_VERSION})
 target_compile_definitions(sim PUBLIC PROGRAM_COPYRIGHT=${PROGRAM_COPYRIGHT})
+target_compile_definitions(sim PUBLIC PROGRAM_HOMEPAGE="${PROGRAM_HOMEPAGE}")
 
 add_dependencies(sim simlib)
 
