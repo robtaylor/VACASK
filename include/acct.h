@@ -61,13 +61,15 @@ typedef struct Accounting {
     // High resolution wall clock
     typedef decltype(std::chrono::high_resolution_clock::now()) Timepoint; 
     static Timepoint wclk() { return std::chrono::high_resolution_clock::now(); }; 
+    static double timeDelta(Timepoint& begin, Timepoint& end) { 
+        return std::chrono::duration_cast<std::chrono::duration<double>>(end-begin).count(); 
+    };
     static double wclkDelta(Timepoint& t0, bool update=false) { 
         auto now = std::chrono::high_resolution_clock::now();
-        auto interval = now - t0;
         if (update) {
             t0 = now;
         }
-        return std::chrono::duration_cast<std::chrono::duration<double>>(interval).count();
+        return timeDelta(t0, now);
     }; 
 
     void dumpTotal(int indent, std::ostream& os) const;

@@ -178,7 +178,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
 
     auto sweepDebug = circuit.simulatorOptions().core().sweep_debug;
 
-    // Skip this step toavoid wasting time
+    // Skip this step to avoid wasting time
     // Mark as started
     // co_yield AnalysisState::Ready;
 

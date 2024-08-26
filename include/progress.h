@@ -59,7 +59,7 @@ public:
     
     // Time between last update and begin()
     double time() { 
-        return std::chrono::duration_cast<std::chrono::duration<double>>(tLast-tBegin).count(); 
+        return Accounting::timeDelta(tBegin, tLast);
     };
 
 protected:
