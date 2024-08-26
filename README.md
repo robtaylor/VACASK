@@ -191,12 +191,12 @@ cmake --build . -j 8
 cmake --install . --prefix e:/build/installation
 ```
 
-Replace the `e:\...` paths with your own, if needed. In the end OpenBAS will be installed in `e:\build\installation`. 
+Replace the `e:\...` paths with your own, if needed. In the end OpenBLAS will be installed in `e:\build\installation`. 
 
 ### Building the simulator
 Unpack the sources, create a build directory, and type. 
 ```
-cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
+cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
 cmake --build <build directory>
 ```
 Replace the `e:\...` paths with your own, if needed. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 
