@@ -27,8 +27,8 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
 
     os << "\n";
 
-    os << pfx << "Instance convergence checks:     " << acctNew.conv << "\n";
-    os << pfx << "Instance convergence check time: " << acctNew.tconv << "\n";
+    os << pfx << "Convergence check calls:         " << acctNew.conv << "\n";
+    os << pfx << "Convergence check time:          " << acctNew.tconv << "\n";
 
     os << "\n";
 
@@ -39,10 +39,13 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
     os << "\n";
 
     if (acctNew.bpiicount>0) {
-        os << pfx << "Bypassable instance iterations:  " << acctNew.bpiicount << "\n";
-        os << pfx << "Converged:                       " << acctNew.bpiiconv << "\n";
-        os << pfx << "Bypassed:                        " << acctNew.bpiibypass << "\n";
-        os << pfx << "Bypasses failed:                 " << acctNew.bpiibpfailed << "\n";
+        os << pfx << "Bypassable instance evaluations: " << acctNew.bpiicount << "\n";
+        os << pfx << "Bypassed evaluations:            " << acctNew.bpiibypass << "\n";
+        os << "\n";
+    } 
+    if (acctNew.bpiiconvcheck>0) {
+        os << pfx << "Instance convergence checks:     " << acctNew.bpiiconvcheck << "\n";
+        os << pfx << "Convergence checks passed:       " << acctNew.bpiiconverged << "\n";
         os << "\n";
     }
 

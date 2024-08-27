@@ -78,6 +78,7 @@ typedef struct SimulatorOptions  {
     Int tran_spicelte;
     Real tran_xmu;
     Int tran_trapltefilter;
+    Int tran_acctbypass;
     Id rawfile;
     Int strictoutput;
     Int strictsave;

@@ -691,33 +691,61 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     // Get bound step offset
     auto bsOffs = descr->bound_step_offset;
 
+    // TODO: when timestep is very small elements are bypassed when they should not be bypassed. 
+    //       This is probably because changes between two consecutive timepoints are 
+    //       small and are mistakenly identified as small enough for instance convergence. 
+    //       A similar problem happens in bypassCheckCore(), but this time with 
+    //       the components of the circuit's solution. 
+    //       Must do something about this. 
+    //       This bug does not affect nr_acctbypass where the actual change between two 
+    //       consecutive circuit solutions is 0. 
+
     // Check if bypass is allowed and high precision is not requested
     bool bypass = false;
-    if (evalSetup.allowBypass && !circuit.simulatorInternals().highPrecision) {
-        // Count bypassable instances
+    if (circuit.simulatorInternals().highPrecision) {
+        // If high presision is required, bypass is out of question
+        bypass = false;
+        // If device is converged, this is a bypass opportunity that was not taken
+        if (checkFlags(Flags::Converged)) {
+            evalSetup.bypassableInstances++;
+        }
+        // Not bypassed, no longer converged
+        clearFlags(Flags::Bypassed);
+        clearFlags(Flags::Converged);
+    } else if (circuit.simulatorInternals().forceBypass) {
+        // Forcing a bypass, e.g. 
+        // - first iteration of a timepoint with NR continuation in transient analysis 
+        //   has identical evaluation rhsOld as the last iteration of the previous point
+        bypass = true;
+        // This is a bypass opportunity that was taken
         evalSetup.bypassableInstances++;
-        // Check if bypass is forced
-        if (circuit.simulatorInternals().forceBypass) {
-            bypass = true;
-            setFlags(Flags::Bypassed);
-        } else if (checkFlags(Flags::Converged)) {
+        // Bypass regardless of converged flag, do not change converged flag
+        setFlags(Flags::Bypassed);
+    } else if (evalSetup.allowBypass) {
+        if (checkFlags(Flags::Converged)) {
+            // This is a bypass opportunity
+            evalSetup.bypassableInstances++;
             // Converged, check if we can bypass
             if (bypass = bypassCheckCore(circuit, evalSetup)) {
                 // Bypassing
+                bypass = true;
                 setFlags(Flags::Bypassed);
             } else {
                 // Not bypassing, leave converged mode
+                bypass = false;
                 clearFlags(Flags::Bypassed);
                 clearFlags(Flags::Converged);
-                evalSetup.failedBypassInstances++;
             }
         } else {
             // Not converged, not bypassing 
+            bypass = false;
+            // This is not a bypass opportunity
             // Clear Bypassed flag
             clearFlags(Flags::Bypassed);
         }
     } else {
         // Bypass not allowed, clear converged flag
+        bypass = false;
         clearFlags(Flags::Bypassed);
         clearFlags(Flags::Converged);
     }
@@ -725,6 +753,18 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     // Evaluation, skip it if bypass is true
     if (bypass) {
         evalSetup.bypassedInstances++;
+        // The reactive residuals will be stored in the states even if instance is bypassed. 
+        // The stored value will be taken from the last instance evaluation. 
+        // But we must make sure we copy the states of the limiting functions to new states.  
+        // These values are normally written by the device evaluation function which we now bypass. 
+        auto isCount = device->internalStateCount();
+        if (isCount>0) {
+            auto nodeStateIndex = offsStates;
+            for(decltype(isCount) i=0; i<isCount; i++) {
+                evalSetup.newStates[nodeStateIndex] = evalSetup.oldStates[nodeStateIndex];
+                nodeStateIndex++;
+            }
+        }
     } else {
         // Core evaluation, need to call it always to compute bound step
         auto evalFlags = descr->eval(&handle, core(), model_->core(), &simInfo);
@@ -964,7 +1004,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         clearFlags(Flags::Converged);
         return true;
     }
-    
+
     // Assume converged if high precision is not requested
     // When high precision is requested the device states are stored but 
     // convergence checks are skipped. This makes sure devices cannot 
@@ -1272,8 +1312,9 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     
     
     // Count converged instances
-    if (!converged) {
-        convSetup.nonConvergedInstances++; 
+    convSetup.instancesConvergenceChecks++;
+    if (converged) {
+        convSetup.convergedInstances++; 
     }
 
     // Device has history now

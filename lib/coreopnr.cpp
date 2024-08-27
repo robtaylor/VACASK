@@ -208,17 +208,11 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
         }
     }
 
-    if (circuit.simulatorOptions().core().nr_bypass) {
-        auto& acct = circuit.tables().accounting();
-        acct.acctNew.bpiicount += esSystem.bypassableInstances;
-        acct.acctNew.bpiiconv += esSystem.bypassableInstances-csSystem.nonConvergedInstances;
-        acct.acctNew.bpiibypass += esSystem.bypassedInstances;
-        acct.acctNew.bpiibpfailed += esSystem.failedBypassInstances;
-        // Simulator::dbg() << "iter " << iteration << ", bypassable: " << esSystem.bypassableInstances 
-        //     << ", unconverged " << csSystem.nonConvergedInstances 
-        //     << ", bypassed " << esSystem.bypassedInstances 
-        //     << ", bypass failed " << esSystem.failedBypassInstances << "\n";
-    }
+    auto& acct = circuit.tables().accounting();
+    acct.acctNew.bpiicount += esSystem.bypassableInstances;
+    acct.acctNew.bpiibypass += esSystem.bypassedInstances;
+    acct.acctNew.bpiiconvcheck += csSystem.instancesConvergenceChecks;
+    acct.acctNew.bpiiconverged += csSystem.convergedInstances;
     
     return true;
 }

@@ -159,7 +159,11 @@ SimulatorOptions::SimulatorOptions() {
                     // 0 = pure Euler, 0.5 = pure trapezoidal
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
-
+    tran_acctbypass = 1; // Enable bypass of instance evaluation in the first iteration of NR solver  
+                         // after a point is accepted (in continuation mode the first NR iteration 
+                         // of the new timepoint is evaluated at the same old solution as 
+                         // the last NR iteration of the previous timepoint). 
+                         // This bypass does not depend on the nr_bypass setting. 
     rawfile = "binary"; // ascii or binary
     strictoutput = 2; // 0 = leave output files in place after error, 
                       // 1 = delete output files on error
@@ -277,6 +281,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_spicelte);
     registerMember(tran_xmu);
     registerMember(tran_trapltefilter);
+    registerMember(tran_acctbypass);
 
     registerMember(rawfile);
     registerMember(strictoutput);

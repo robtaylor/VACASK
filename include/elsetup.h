@@ -111,7 +111,6 @@ typedef struct EvalSetup {
     // Counter of instaces that are not converged, is reset by initialize()
     size_t bypassableInstances;
     size_t bypassedInstances;
-    size_t failedBypassInstances;
 
     // 
     // Internals
@@ -156,7 +155,6 @@ typedef struct EvalSetup {
 
         bypassableInstances = 0;
         bypassedInstances = 0;
-        failedBypassInstances = 0;
 
         return true;
     };
@@ -289,7 +287,8 @@ typedef struct ConvSetup {
     bool checkReactiveConvergece {};
 
     // Counter of instaces that are not converged, is reset by initialize()
-    size_t nonConvergedInstances;
+    size_t instancesConvergenceChecks;
+    size_t convergedInstances;
 
     // 
     // Internals
@@ -302,7 +301,8 @@ typedef struct ConvSetup {
     
     // Methods
     bool initialize() {
-        nonConvergedInstances = 0;
+        instancesConvergenceChecks = 0;
+        convergedInstances = 0;
 
         oldSolution = solution->data(oldSolutionSlot);
         
