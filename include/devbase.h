@@ -38,6 +38,8 @@ enum class DeviceFlags : uint16_t {
     GeneratesDCIncremental = 4, 
     // Device generates AC small-signal excitation
     GeneratesAC = 8, 
+    // Allows bypass
+    Bypassable = 16, 
 };
 DEFINE_FLAG_OPERATORS(DeviceFlags);
 

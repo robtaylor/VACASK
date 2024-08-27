@@ -154,8 +154,19 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     noiseSourceNameTranslators.resize(descriptorCount);
     nodeNameLists.resize(descriptorCount);
     nodeMaps.resize(descriptorCount);
+    allowsBypass_.resize(descriptorCount);
     for(int i=0; i<descriptorCount; i++) {
         OsdiDescriptor* desc = descriptors[i];
+
+        // Check if device allows bypass. Bypass is not allowed if
+        // - device uses $bound_step
+        // - device uses $abstime (TODO)
+        // - uses $discontinuity with an argument >=0 (not supported by OpenVAF)
+        // - device sets breakpoints (not supported by OpenVAF)
+        allowsBypass_[i] = (
+            desc->bound_step_offset==UINT32_MAX
+        );
+
         auto& translator = paramOsdiIdTranslators[i];
         osdiIdSimInstIdLists[i].resize(desc->num_params+desc->num_opvars);
         osdiIdSimModIdLists[i].resize(desc->num_params+desc->num_opvars);

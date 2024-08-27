@@ -15,7 +15,9 @@ OsdiDevice::OsdiDevice(OsdiFile* of, int descriptorIndex, Id asName, Loc locatio
     : Device(asName ? asName : Id(of->deviceDescriptor(descriptorIndex)->name), location), osdiFile(of), index_(descriptorIndex) {
     descriptor_ = of->deviceDescriptor(descriptorIndex);
     setFlags(Flags::IsValid);
-}
+    if (osdiFile->allowsBypass(index_)) {
+        setFlags(Flags::Bypassable);
+    }}
 
 OsdiDevice::~OsdiDevice() {
 }
@@ -451,15 +453,8 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
 // Check instance convergence 
 // Sets Converged and Bypassed flags
 bool OsdiDevice::converged(Circuit& circuit, ConvSetup& convSetup) { 
-    // Skip this step if the device 
-    // - uses $bound_step
-    // - sets breakpoints (TODO)
-    // - uses $abstime (TODO)
-    // - uses $discontinuity with an argument >=0 (TODO)
-    // This prevents bypassing of such devices because core evaluation 
-    // needs to be called always. The easiest way to achieve this is to 
-    // make sure instances of the device never converge. 
-    if (descriptor_->bound_step_offset!=UINT32_MAX) {
+    // Skip this step if the device cannot be bypassed
+    if (!checkFlags(Flags::Bypassable)) {
         return true;
     }
     for(auto model : models()) {

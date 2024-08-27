@@ -436,6 +436,9 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             co_yield AnalysisState::Aborted;
         }
 
+        // Do not allow analysis to use forced bypass
+        circuit.simulatorInternals().allowForcedBypass = false;
+
         // Create list of output descriptors
         ok = addOutputDescriptors(s);
         if (!ok) {

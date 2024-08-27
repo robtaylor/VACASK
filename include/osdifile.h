@@ -230,6 +230,9 @@ public:
         );
     };
 
+    // Does the device allow bypass
+    bool allowsBypass(OsdiDeviceIndex deviceIndex) const { return allowsBypass_[deviceIndex]; };
+
     // Access to nonzero entry indices
     auto& nonzeroResistiveResiduals(OsdiDeviceIndex deviceIndex) { return nonzeroResistiveResNdx[deviceIndex]; };
     auto& nonzeroReactiveResiduals(OsdiDeviceIndex deviceIndex) { return nonzeroReactiveResNdx[deviceIndex]; };
@@ -302,7 +305,8 @@ private:
     // Vector of vectors of nonzero resistive residual entry indices into nodes
     std::vector<std::vector<OsdiNodeIndex>> nonzeroReactiveResNdx;
 
-
+    // Vector of allows bypass flags
+    std::vector<bool> allowsBypass_;
 
     // Limit functions
     static const OsdiLimitFunction limitFunctionTable[];

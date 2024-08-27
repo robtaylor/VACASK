@@ -15,7 +15,7 @@ OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, 
     : Instance(model, name, parentInstance, parsedInstance), core_(nullptr), connectedTerminalCount(0) {
     core_ = alignedAlloc(sizeof(max_align_t), model->device()->descriptor()->instance_size);
     memset(core_, 0, model->device()->descriptor()->instance_size);
-    
+
     // Create nodes (terminals+internal nodes) list
     // Resize nodes vector
     nodes_.resize(staticNodeCount());
@@ -697,12 +697,15 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     //       A similar problem happens in bypassCheckCore(), but this time with 
     //       the components of the circuit's solution. 
     //       Must do something about this. 
-    //       This bug does not affect nr_acctbypass where the actual change between two 
-    //       consecutive circuit solutions is 0. 
+    //       This bug does not affect nr_acctbypass and sweep_innerbypass where the 
+    //       change between two consecutive circuit solutions is 0. 
 
-    // Check if bypass is allowed and high precision is not requested
+    // Check if device is bypassable and high precision is not requested
     bool bypass = false;
-    if (circuit.simulatorInternals().highPrecision) {
+    if (!device->checkFlags(Device::Flags::Bypassable)) {
+        // Device does not allow bypassing
+        // This is not a bypass opportunity
+    } else if (circuit.simulatorInternals().highPrecision) {
         // If high presision is required, bypass is out of question
         bypass = false;
         // If device is converged, this is a bypass opportunity that was not taken
