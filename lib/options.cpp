@@ -55,6 +55,8 @@ SimulatorOptions::SimulatorOptions() {
                          // AnalysisState::SweepPoint. At that point the digital simulator should reset
                          // its state to the initial state at t=0. 
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
+    sweep_innerbypass = 1; // allow forced bypass in first NR iteration of second and later 
+                           // innermost sweep points if innermost sweep allows continuation
 
     op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
                   // 100  = nrdebug=1, print NRSolver internals (progress)
@@ -192,6 +194,8 @@ SimulatorInternals::SimulatorInternals() {
     highPrecision = false; // request high precision from simulator (prevents bypass for all bypassable devices)
     forceBypass = false;   // force bypass in next NR iteration for all bypassable devices regardless of their 
                            // converged state, has lower precedence than highPrecision
+    allowForcedBypass = false; // allow the analysis rto force bypass in the first NR iteration 
+                               // due to innermost sweep continuation
     frequency = 0.0;
     time = 0.0;
 }
@@ -231,6 +235,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     
     registerMember(sweep_pointmarker);
     registerMember(sweep_debug);
+    registerMember(sweep_innerbypass);
     
     registerMember(nr_bypass);
     registerMember(nr_convtol);

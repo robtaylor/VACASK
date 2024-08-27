@@ -32,6 +32,7 @@ typedef struct SimulatorOptions  {
     Int solutioncheck;
     Int sweep_pointmarker;
     Int sweep_debug;
+    Int sweep_innerbypass;
     Int nr_bypass; 
     Real nr_convtol;
     Real nr_bypasstol;
@@ -130,7 +131,8 @@ typedef struct SimulatorInternals {
     bool initalizeLimiting;
 
     bool highPrecision;
-    bool forceBypass;
+    bool forceBypass; // Forces bypass in the next NR iteration
+    bool allowForcedBypass;
 
     double frequency;
     double time;

@@ -183,6 +183,9 @@ public:
     // Advance, return value: sweep done, index of sweep that was incremented (resets do not count)
     std::tuple<bool, Int> advance();
 
+    // Position of the innermost sweep
+    Int innermostSweepPosition() const { return scalarSweeps.back().at(); }; 
+
     // Format progress
     std::string progress() const;
 

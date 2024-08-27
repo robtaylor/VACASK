@@ -257,6 +257,9 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 }
             }
 
+            // Do not allow analysis to use forced bypass by default
+            circuit.simulatorInternals().allowForcedBypass = false;
+
             // If outputs not bound yet or core needs rebuilding, bind them to actual quantities
             bool coreRebuilt = false;
             if (!outputsBound || needsCoreRebuild) {
@@ -299,6 +302,18 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 // Core rebuild makes all stored states incoherent with current topology
                 for(decltype(sweepCount()) i=0; i<sweepCount(); i++) {
                     makeStateIncoherent(i);
+                }
+            } else {
+                // If there was no topology change or core rebuild
+                // and this is not the first point of the innermost sweep 
+                // we allow the analysis to force the bypass of the first NR iteration
+                // because the circuti state is the same as after the last computed 
+                // NR iteration. The analysis decides on its own 
+                // if it is going to force the bypass or not. Operating point 
+                // analysis and all small-signal analyses allow the bypass
+                // if ordinary continue mode is used. 
+                if (sweeper.innermostSweepPosition()>0 && sweeper.continuation(sweeper.count()-1)) {
+                    circuit.simulatorInternals().allowForcedBypass = (options.sweep_innerbypass!=0);
                 }
             }
             
