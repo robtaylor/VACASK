@@ -702,6 +702,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
 
     // Check if device is bypassable and high precision is not requested
     bool bypass = false;
+    evalSetup.bypassableInstances++;
     if (!device->checkFlags(Device::Flags::Bypassable)) {
         // Device does not allow bypassing
         // This is not a bypass opportunity
@@ -710,7 +711,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         bypass = false;
         // If device is converged, this is a bypass opportunity that was not taken
         if (checkFlags(Flags::Converged)) {
-            evalSetup.bypassableInstances++;
+            evalSetup.bypassOpportunuties++;
         }
         // Not bypassed, no longer converged
         clearFlags(Flags::Bypassed);
@@ -721,13 +722,13 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         //   has identical evaluation rhsOld as the last iteration of the previous point
         bypass = true;
         // This is a bypass opportunity that was taken
-        evalSetup.bypassableInstances++;
+        evalSetup.bypassOpportunuties++;
         // Bypass regardless of converged flag, do not change converged flag
         setFlags(Flags::Bypassed);
     } else if (evalSetup.allowBypass) {
         if (checkFlags(Flags::Converged)) {
             // This is a bypass opportunity
-            evalSetup.bypassableInstances++;
+            evalSetup.bypassOpportunuties++;
             // Converged, check if we can bypass
             if (bypass = bypassCheckCore(circuit, evalSetup)) {
                 // Bypassing

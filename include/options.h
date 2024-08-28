@@ -32,7 +32,6 @@ typedef struct SimulatorOptions  {
     Int solutioncheck;
     Int sweep_pointmarker;
     Int sweep_debug;
-    Int sweep_innerbypass;
     Int nr_bypass; 
     Real nr_convtol;
     Real nr_bypasstol;
@@ -40,6 +39,7 @@ typedef struct SimulatorOptions  {
     Int nr_residualcheck;
     Real nr_damping;
     Real nr_force;
+    Int nr_contbypass;
     Int op_debug; 
     Int op_itl;
     Int op_itlcont;
@@ -79,7 +79,6 @@ typedef struct SimulatorOptions  {
     Int tran_spicelte;
     Real tran_xmu;
     Int tran_trapltefilter;
-    Int tran_acctbypass;
     Id rawfile;
     Int strictoutput;
     Int strictsave;
@@ -132,7 +131,7 @@ typedef struct SimulatorInternals {
 
     bool highPrecision;
     bool forceBypass; // Forces bypass in the next NR iteration
-    bool allowForcedBypass;
+    bool allowContinueStateBypass;
 
     double frequency;
     double time;

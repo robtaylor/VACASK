@@ -21,7 +21,8 @@ VACASK offers several features:
 - automatic partial circuit elaboration when circuit topology changes due to a change in parameters, options, or variables
 - a different topology can be elaborated without restarting the simulator (circuits with multiple testbenches can be simulated without restarting the simulator)
 - residual-based convergence test (improved accuracy of the nonlinear solver)
-- inactive instances bypass in nonlinear solver (disabled by default, see the `nr_bypass` option)
+- inactive instances bypass in nonlinear solver (disabled by default, see the `nr_bypass`, `nr_convtol`, and `nr_bypasstol` options)
+- instance evaluation bypass in the first iteration of nonlinear solver running in continuation mode (enabled by default, see the `nr_contbypass` option)
 - several homotopy algorithms (SPICE3/adaptive gmin stepping and source stepping) for finding the operating point of problematic circuits
 - nodesets for improving convergence speed and selecting the operating point
 - analysis results can be used as nodesets for subsequent analyses (combined with circuit variable sweeps this feature can be used for implementing custom arc length homotopy algorithms at the netlist level)

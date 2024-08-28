@@ -455,9 +455,6 @@ bool NRSolver::run(bool continuePrevious) {
 
     clearError();
 
-    // Allow lower precision
-    requestHighPrecision(false);
-
     // Initialize structures
     if (!initialize(continuePrevious)) {
         // Assume initialize() has set lastError
@@ -465,6 +462,9 @@ bool NRSolver::run(bool continuePrevious) {
         return false;
     }
 
+    // Allow lower precision
+    requestHighPrecision(false);
+    
     bool exitNrLoop = false;
     do {
         // Simulator::dbg() << "NR it=" << iteration << " : at=" << solution.position() << "/" << solution.size()

@@ -8,6 +8,10 @@
 
 namespace NAMESPACE {
 
+// TODO: Bypass can cause problems with homotopy because small steps taken by homotopy
+//       can be mistaken for instances converging and consequently being bypassed. 
+//       This can lead to homotopy failure. 
+
 // Each homotopy algorithm returns the error message of last failed nrSolver run. 
 // The message reporting which homotopy algorithm failed is added one level higher
 
@@ -36,7 +40,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
     auto factor = options.op_gminfactor;
     auto atGmin = options.op_startgmin;
     auto maxGmin = options.op_maxgmin;
-    bool converged;
+    bool converged = false;
 
     // Target gmin value
     double targetGmin;
@@ -60,6 +64,9 @@ bool OperatingPointCore::gminStepping(RunType type) {
         } else {
             circuit.simulatorInternals().gdev = atGmin;
         }
+        // If previous runSolver() converged we can force bypass in first NR iteration
+        // If not, we do not force it. 
+        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
             setError(OpError::SteppingSolver);
@@ -160,7 +167,10 @@ bool OperatingPointCore::gminStepping(RunType type) {
     if (!leave) {
         // Did not leave early
         if (converged) {
-            // Converged, try with original gmin, but this time with continuation
+            // Converged, we can force bypass in first NR iteration
+            circuit.simulatorInternals().forceBypass = true;
+
+            // Try with original gmin, but this time with continuation
             converged = runSolver(continuation);
             if (!converged) {
                 setError(OpError::SteppingSolver);
@@ -195,6 +205,7 @@ bool OperatingPointCore::spice3GminStepping() {
     auto& options = circuit.simulatorOptions().core();
     auto debug = options.op_debug;
     runType = runType | RunType::Spice3GminStepping;
+    bool converged = false;
 
     // End value
     auto gshuntMin = circuit.simulatorInternals().gshunt;
@@ -227,8 +238,11 @@ bool OperatingPointCore::spice3GminStepping() {
         // Set gshunt
         circuit.simulatorInternals().gshunt = gshuntMax / std::exp(logFactor*i);
 
-        converged_ = runSolver(continuation);
-        if (!converged_) {
+        // If previous runSolver() converged we can force bypass in first NR iteration
+        // If not, we do not force it. 
+        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+        converged = runSolver(continuation);
+        if (!converged) {
             setError(OpError::SteppingSolver);
             errorRunType = runType;
             errorHomotopyIterations = itCount;
@@ -237,12 +251,12 @@ bool OperatingPointCore::spice3GminStepping() {
         itCount++;
         if (debug>1) {
             Simulator::dbg() << homotopyProgress() << ", step " << itCount << " " 
-                << (converged_ ? "converged" : "failed to converge") << ", " 
+                << (converged ? "converged" : "failed to converge") << ", " 
                  << nrSolver.iterations() << " NR iteration(s)" << ".\n";
         }
-        if (leave || !converged_) {
+        if (leave || !converged) {
             // Give up
-            converged_ = false;
+            converged = false;
             break;
         }
 
@@ -254,10 +268,13 @@ bool OperatingPointCore::spice3GminStepping() {
 
     // One final try with original gshunt, but this time with continuation
     if (!leave) {
-        if (converged_) {
-            // Converged, try with original gmin, but this time with continuation
-            converged_ = runSolver(continuation);
-            if (!converged_) {
+        if (converged) {
+            // Converged, we can force bypass in first NR iteration
+            circuit.simulatorInternals().forceBypass = true;
+
+            // Try with original gmin, but this time with continuation
+            converged = runSolver(continuation);
+            if (!converged) {
                 setError(OpError::SteppingSolver);
                 errorRunType = runType;
                 errorHomotopyIterations = itCount;
@@ -266,7 +283,7 @@ bool OperatingPointCore::spice3GminStepping() {
             itCount++;
             if (debug>1) {
                 Simulator::dbg() << homotopyProgress() << ", final step  " 
-                    << (converged_ ? "converged" : "failed to converge")  << ", " 
+                    << (converged ? "converged" : "failed to converge")  << ", " 
                     << nrSolver.iterations() << " NR iteration(s)" << ".\n";
             }
         } else {
@@ -278,11 +295,11 @@ bool OperatingPointCore::spice3GminStepping() {
     } else {
         // Leaving early, did not converge
         // Add a status message at a higher level
-        converged_ = false;
+        converged = false;
     }
     
     runType = runType & ~RunType::Spice3GminStepping;
-    return converged_;
+    return converged;
 }
 
 // Based on Ngspice gillespie_src()
@@ -294,6 +311,7 @@ bool OperatingPointCore::sourceStepping() {
     bool continuation = false;
     bool leave = false;
     double raise = options.op_srcstep;
+    bool converged = false;
     
     // Set source factor to 0
     circuit.simulatorInternals().sourcescalefactor = goodFactor;
@@ -302,8 +320,8 @@ bool OperatingPointCore::sourceStepping() {
     decltype(srcsteps) itCount=0;
     
     // Try solving without gmin stepping at source scale factor = 0.0
-    converged_ = runSolver(continuation);
-    if (!converged_) {
+    converged = runSolver(continuation);
+    if (!converged) {
         setError(OpError::SteppingSolver);
         errorRunType = runType;
         errorHomotopyIterations = itCount;
@@ -311,41 +329,40 @@ bool OperatingPointCore::sourceStepping() {
     leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
     if (debug>1) {
         Simulator::dbg() << homotopyProgress() << ", initial OP " 
-            << (converged_ ? "converged" : "failed to converge") << ", " 
+            << (converged ? "converged" : "failed to converge") << ", " 
             << nrSolver.iterations() << " NR iteration(s)" << ".\n";
     }
 
     // Do gmin stepping even if op_skipgmin is 1
-    if (!leave && !converged_ && options.op_gminsteps>1) {
-        // Failed, now try with gmin stepping, accumulate gmin stepping messages
+    if (!leave && !converged && options.op_gminsteps>1) {
+        // Failed, now try with gmin stepping
         if (!options.op_spice3gmin) {
             // New algorithms
             // Device gmin first
-            converged_ = gminStepping(RunType::GminStepping);
+            converged = gminStepping(RunType::GminStepping);
             leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << homotopyProgress() << ", initial gmin stepping " << (converged_ ? "converged" : "failed to converge") << ".\n";
+                Simulator::dbg() << homotopyProgress() << ", initial gmin stepping " << (converged ? "converged" : "failed to converge") << ".\n";
             }
-            if (!converged_ && !leave && circuit.simulatorOptions().core().op_gshuntalg) {
+            if (!converged && !leave && circuit.simulatorOptions().core().op_gshuntalg) {
                 // Diagonal gshunt second
-                converged_ = gminStepping(RunType::GshuntStepping);
+                converged = gminStepping(RunType::GshuntStepping);
                 leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
                 if (debug>0) {
-                    Simulator::dbg() << homotopyProgress() << ", initial gshunt stepping " << (converged_ ? "converged" : "failed to converge") << ".\n";
+                    Simulator::dbg() << homotopyProgress() << ", initial gshunt stepping " << (converged ? "converged" : "failed to converge") << ".\n";
                 }
             } 
         } else {
             // Spice3 gmin stepping
-            converged_ = spice3GminStepping();
+            converged = spice3GminStepping();
             leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
             if (debug>0) {
-                Simulator::dbg() << homotopyProgress() << ", initial spice3 gmin stepping " << (converged_ ? "converged" : "failed to converge") << ".\n";
+                Simulator::dbg() << homotopyProgress() << ", initial spice3 gmin stepping " << (converged ? "converged" : "failed to converge") << ".\n";
             }
         }
     } 
 
-    // Store only last step message    
-    if (!leave && converged_) {
+    if (!leave && converged) {
         // Now try source stepping
         
         // Set continuation mode
@@ -367,9 +384,11 @@ bool OperatingPointCore::sourceStepping() {
             }
             circuit.simulatorInternals().sourcescalefactor = srcfactor*options.op_sourcefactor;
 
-            // Remember only messages from last step
-            converged_ = runSolver(continuation);
-            if (!converged_) {
+            // If previous runSolver() converged we can force bypass in first NR iteration
+            // If not, we do not force it. 
+            circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+            converged = runSolver(continuation);
+            if (!converged) {
                 setError(OpError::SteppingSolver);
                 errorRunType = runType;
                 errorHomotopyIterations = itCount;
@@ -378,16 +397,16 @@ bool OperatingPointCore::sourceStepping() {
             itCount++;
             if (debug>1) {
                 Simulator::dbg() << homotopyProgress() << ", step " << itCount << " " 
-                    << (converged_ ? "converged" : "failed to converge") << ", " 
+                    << (converged ? "converged" : "failed to converge") << ", " 
                     << nrSolver.iterations() << " NR iteration(s)" << ".\n";
             }
 
             if (leave) {
-                converged_ = false;
+                converged = false;
                 break;
             }
 
-            if (converged_) {
+            if (converged) {
                 // Converged
                 // Store point
                 goodFactor = srcfactor;
@@ -432,7 +451,7 @@ bool OperatingPointCore::sourceStepping() {
         }
     }
 
-    converged_ = goodFactor>=1.0;
+    converged = goodFactor>=1.0;
 
     if (!leave) {
         if (itCount>=srcsteps) {
@@ -444,14 +463,14 @@ bool OperatingPointCore::sourceStepping() {
     } else {
         // Leaving early, did not converge
         // Add a status message at a higher level
-        converged_ = false;
+        converged = false;
     }
 
     // Restore source scale factor (in case we exited the loop early)
     circuit.simulatorInternals().sourcescalefactor = 1.0*options.op_sourcefactor;
 
     runType = runType & ~RunType::SourceStepping;
-    return converged_;
+    return converged;
 }
 
 // Based on Ngspice spice3_src()
@@ -459,6 +478,7 @@ bool OperatingPointCore::spice3SourceStepping() {
     auto& options = circuit.simulatorOptions().core();
     auto debug = options.op_debug;
     runType = runType | RunType::Spice3SourceStepping;
+    bool converged = false;
 
     auto srcsteps = options.op_srcsteps;
 
@@ -466,8 +486,6 @@ bool OperatingPointCore::spice3SourceStepping() {
     bool continuation = false;
 
     bool leave = false;
-
-    Status tmps;
 
     decltype(srcsteps) itCount = 0;
     decltype(srcsteps) i;
@@ -480,9 +498,11 @@ bool OperatingPointCore::spice3SourceStepping() {
             circuit.simulatorInternals().sourcescalefactor = 1.0*options.op_sourcefactor; 
         }
 
-        tmps.clear();
-        converged_ = runSolver(continuation);
-        if (!converged_) {
+        // If previous runSolver() converged we can force bypass in first NR iteration
+        // If not, we do not force it. 
+        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+        converged = runSolver(continuation);
+        if (!converged) {
             setError(OpError::SteppingSolver);
             errorRunType = runType;
             errorHomotopyIterations = itCount;
@@ -491,12 +511,12 @@ bool OperatingPointCore::spice3SourceStepping() {
         itCount++;
         if (debug>1) {
             Simulator::dbg() << homotopyProgress() << ", step " << itCount << " " 
-                << (converged_ ? "converged" : "failed to converge") << ", " 
+                << (converged ? "converged" : "failed to converge") << ", " 
                 << nrSolver.iterations() << " NR iteration(s)" << ".\n";
         }
-        if (leave || !converged_) {
+        if (leave || !converged) {
             // Leave
-            converged_ = false;
+            converged = false;
             break;
         }
 
@@ -513,14 +533,14 @@ bool OperatingPointCore::spice3SourceStepping() {
     } else {
         // Leaving early, did not converge
         // Add a status message at a higher level
-        converged_ = false;
+        converged = false;
     }
 
     // Restore source scale factor (in case we exited the loop early)
     circuit.simulatorInternals().sourcescalefactor = 1.0;
 
     runType = runType & ~RunType::Spice3SourceStepping;
-    return converged_;
+    return converged;
 }
 
 std::string OperatingPointCore::homotopyProgress() const {

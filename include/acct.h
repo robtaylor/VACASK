@@ -31,9 +31,9 @@ typedef struct AcctData {
     size_t accepted {0};
     size_t rejected {0};
     size_t points {0};
-    size_t bpiicount {0};
-    size_t bpiibypass {0};
-    size_t bpiibpfailed {0};
+    size_t bpinst {0};
+    size_t bpopport {0};
+    size_t bpbypassed {0};
     size_t bpiiconvcheck {0};
     size_t bpiiconverged {0};
     double tconv {0};

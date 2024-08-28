@@ -161,6 +161,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     internals.analysis_name = std::string(name_);
     internals.analysis_type = std::string(ptAnalysis.typeName());
     internals.initalizeLimiting = false;
+    internals.forceBypass = false;
     circuit.simulatorInternals() = internals;
     // By default high precision is not requested (bypass possible)
     internals.highPrecision = false;
@@ -258,7 +259,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             }
 
             // Do not allow analysis to use forced bypass by default
-            circuit.simulatorInternals().allowForcedBypass = false;
+            circuit.simulatorInternals().allowContinueStateBypass = false;
 
             // If outputs not bound yet or core needs rebuilding, bind them to actual quantities
             bool coreRebuilt = false;
@@ -313,7 +314,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 // analysis and all small-signal analyses allow the bypass
                 // if ordinary continue mode is used. 
                 if (sweeper.innermostSweepPosition()>0 && sweeper.continuation(sweeper.count()-1)) {
-                    circuit.simulatorInternals().allowForcedBypass = (options.sweep_innerbypass!=0);
+                    circuit.simulatorInternals().allowContinueStateBypass = (options.nr_contbypass!=0);
                 }
             }
             
@@ -437,7 +438,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         }
 
         // Do not allow analysis to use forced bypass
-        circuit.simulatorInternals().allowForcedBypass = false;
+        circuit.simulatorInternals().allowContinueStateBypass = false;
 
         // Create list of output descriptors
         ok = addOutputDescriptors(s);

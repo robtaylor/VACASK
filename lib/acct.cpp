@@ -38,9 +38,10 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
 
     os << "\n";
 
-    if (acctNew.bpiicount>0) {
-        os << pfx << "Bypassable instance evaluations: " << acctNew.bpiicount << "\n";
-        os << pfx << "Bypassed evaluations:            " << acctNew.bpiibypass << "\n";
+    if (acctNew.bpinst>0) {
+        os << pfx << "Bypassable instance evaluations: " << acctNew.bpinst << "\n";
+        os << pfx << "Bypass opportunities:            " << acctNew.bpopport << "\n";
+        os << pfx << "Bypassed evaluations:            " << acctNew.bpbypassed << "\n";
         os << "\n";
     } 
     if (acctNew.bpiiconvcheck>0) {

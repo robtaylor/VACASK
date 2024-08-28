@@ -209,8 +209,9 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
     }
 
     auto& acct = circuit.tables().accounting();
-    acct.acctNew.bpiicount += esSystem.bypassableInstances;
-    acct.acctNew.bpiibypass += esSystem.bypassedInstances;
+    acct.acctNew.bpinst += esSystem.bypassableInstances;
+    acct.acctNew.bpopport += esSystem.bypassOpportunuties;
+    acct.acctNew.bpbypassed += esSystem.bypassedInstances;
     acct.acctNew.bpiiconvcheck += csSystem.instancesConvergenceChecks;
     acct.acctNew.bpiiconverged += csSystem.convergedInstances;
     

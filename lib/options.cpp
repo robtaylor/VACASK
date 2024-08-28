@@ -55,9 +55,7 @@ SimulatorOptions::SimulatorOptions() {
                          // AnalysisState::SweepPoint. At that point the digital simulator should reset
                          // its state to the initial state at t=0. 
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
-    sweep_innerbypass = 1; // allow forced bypass in first NR iteration of second and later 
-                           // innermost sweep points if innermost sweep allows continuation
-
+    
     op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
                   // 100  = nrdebug=1, print NRSolver internals (progress)
                   // 101  = nrdebug=2, print linear system
@@ -68,15 +66,17 @@ SimulatorOptions::SimulatorOptions() {
                    // To be bypassed an instance must converge and 
                    // the instance inputs change between iterations must be within tolerances. 
                    // As soon as the inputs change is outside tolerances instance is no longer bypassed. 
-    nr_convtol = 1.0;   // Tolerance factor applied to residuals for instance convergence check. Should be <1.
-                        // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
-    nr_bypasstol = 1.0; // Tolerance factor applied to instance inputs for instance bypass check. Should be <1.
-                        // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
+    nr_convtol = 0.01;   // Tolerance factor applied to residuals for instance convergence check. Should be <1.
+                         // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
+    nr_bypasstol = 0.01; // Tolerance factor applied to instance inputs for instance bypass check. Should be <1.
+                         // 1.0 corresponds to set tolerances (abstol, vntol, ...), <1.0 makes them more strict. 
     nr_conviter = 1; // >0, number of consecutive convergent iterations before convergence is confirmed
     nr_residualcheck = 1; // check residual beside unknowns change to establish convergence 
     nr_damping = 1.0; // 0<x<=1, Newton-Raphson damping factor (<=1)
     nr_force = 1e5; // x>0, forcing factor for nodesets and initial conditions
-    
+    nr_contbypass = 1; // allow forced bypass of instance evaluation 
+                       // in the first NR iteration when continuation mode is enabled
+
     op_itl = 100;  // >0, maximal number of iterations in non-continuation mode
     op_itlcont = 50; // >0, maximal number of iterations in continuation mode
 
@@ -161,11 +161,6 @@ SimulatorOptions::SimulatorOptions() {
                     // 0 = pure Euler, 0.5 = pure trapezoidal
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
-    tran_acctbypass = 1; // Enable bypass of instance evaluation in the first iteration of NR solver  
-                         // after a point is accepted (in continuation mode the first NR iteration 
-                         // of the new timepoint is evaluated at the same old solution as 
-                         // the last NR iteration of the previous timepoint). 
-                         // This bypass does not depend on the nr_bypass setting. 
     rawfile = "binary"; // ascii or binary
     strictoutput = 2; // 0 = leave output files in place after error, 
                       // 1 = delete output files on error
@@ -194,8 +189,8 @@ SimulatorInternals::SimulatorInternals() {
     highPrecision = false; // request high precision from simulator (prevents bypass for all bypassable devices)
     forceBypass = false;   // force bypass in next NR iteration for all bypassable devices regardless of their 
                            // converged state, has lower precedence than highPrecision
-    allowForcedBypass = false; // allow the analysis rto force bypass in the first NR iteration 
-                               // due to innermost sweep continuation
+    allowContinueStateBypass = false; // allow the analysis to force bypass in the first iteration of NR
+                                      // after NR start with continuation when continueState is used
     frequency = 0.0;
     time = 0.0;
 }
@@ -235,7 +230,6 @@ template<> int Introspection<SimulatorOptions>::setup() {
     
     registerMember(sweep_pointmarker);
     registerMember(sweep_debug);
-    registerMember(sweep_innerbypass);
     
     registerMember(nr_bypass);
     registerMember(nr_convtol);
@@ -244,6 +238,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(nr_residualcheck);
     registerMember(nr_damping);
     registerMember(nr_force);
+    registerMember(nr_contbypass);
     
     registerMember(op_debug);
     registerMember(op_itl);
@@ -286,8 +281,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_spicelte);
     registerMember(tran_xmu);
     registerMember(tran_trapltefilter);
-    registerMember(tran_acctbypass);
-
+    
     registerMember(rawfile);
     registerMember(strictoutput);
     registerMember(strictsave);

@@ -1432,7 +1432,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         // If we just accepted a timepoint, we still have points to compute, and tran_contbypass=1
         // request full bypass in next NR iteration because 
         // all instance cores are already evaluated at the inputs corresponding to the last NR iteration. 
-        if (accept && options.tran_acctbypass) {
+        if (accept && options.nr_contbypass) {
             internals.forceBypass = true; 
         }
     } // while

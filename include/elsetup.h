@@ -110,6 +110,7 @@ typedef struct EvalSetup {
 
     // Counter of instaces that are not converged, is reset by initialize()
     size_t bypassableInstances;
+    size_t bypassOpportunuties;
     size_t bypassedInstances;
 
     // 
@@ -154,6 +155,7 @@ typedef struct EvalSetup {
         maxFreq = 0.0;
 
         bypassableInstances = 0;
+        bypassOpportunuties = 0;
         bypassedInstances = 0;
 
         return true;
