@@ -463,7 +463,7 @@ bool NRSolver::run(bool continuePrevious) {
     }
 
     // Allow lower precision
-    requestHighPrecision(false);
+    highPrecision = false;
     
     bool exitNrLoop = false;
     do {
@@ -683,9 +683,9 @@ bool NRSolver::run(bool continuePrevious) {
 
         // If delta is OK, but residual is not, request increased precision
         if (deltaOk && !residualOk) { 
-            requestHighPrecision(true);
+            highPrecision = true;
         } else {
-            requestHighPrecision(false);
+            highPrecision = false;
         }
 
 

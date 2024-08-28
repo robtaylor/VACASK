@@ -12,9 +12,6 @@ namespace NAMESPACE {
 //       can be mistaken for instances converging and consequently being bypassed. 
 //       This can lead to homotopy failure. 
 
-// Each homotopy algorithm returns the error message of last failed nrSolver run. 
-// The message reporting which homotopy algorithm failed is added one level higher
-
 // Based on Ngspice dynamic_gmin() and new_gmin()
 bool OperatingPointCore::gminStepping(RunType type) {
     auto debug = circuit.simulatorOptions().core().op_debug;

@@ -67,6 +67,9 @@ typedef struct EvalSetup {
 
     // Allow bypassing core evaluation
     bool allowBypass {}; 
+
+    // Request high precision (usually this means that bypass is not possible)
+    bool requestHighPrecision;
     
     // Store reactive residual in states or dummyStates
     bool storeReactiveState {};
@@ -108,7 +111,7 @@ typedef struct EvalSetup {
     // Zero initially, increased by instances that generate a signal. 
     double maxFreq {};
 
-    // Counter of instaces that are not converged, is reset by initialize()
+    // Counter of instances that are not converged, is reset by initialize()
     size_t bypassableInstances;
     size_t bypassOpportunuties;
     size_t bypassedInstances;
@@ -278,6 +281,10 @@ typedef struct ConvSetup {
     VectorRepository<double>* solution {};
     VectorRepository<double>::DepthIndexDelta oldSolutionSlot {0};
     VectorRepository<double>* states {}; 
+
+    // Skip convergence test and store only device state. 
+    // If set to true the instance state will be stored, but convergence checks will be skipped. 
+    bool storeStateOnly;
 
     // Data for instance convergence check (previous values)
     double* deviceStates {};

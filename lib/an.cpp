@@ -163,9 +163,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     internals.initalizeLimiting = false;
     internals.forceBypass = false;
     circuit.simulatorInternals() = internals;
-    // By default high precision is not requested (bypass possible)
-    internals.highPrecision = false;
-
+    
     // Are we in debug mode
     auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || options.tran_debug;
     if (debugMode && progressReporter) {

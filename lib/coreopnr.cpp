@@ -84,10 +84,6 @@ OpNRSolver::OpNRSolver(
     };
 }
 
-void OpNRSolver::requestHighPrecision(bool f) {
-    circuit.simulatorInternals().highPrecision = f;
-}
-
 bool OpNRSolver::rebuild() {
     // Call parent's rebuild
     if (!NRSolver::rebuild()) {
@@ -196,8 +192,13 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 }
 
 bool OpNRSolver::postSolve(bool continuePrevious) {
-    // Check convergence if nr_bypass is enabled
+    // Check convergence if nr_bypass is enabled and convergence check is not to be skipped. 
+    // The test and state storing is skipped if evaluation bypass was forced. 
     if (circuit.simulatorOptions().core().nr_bypass && !skipConvergenceCheck) {
+        // When high precision is requested we only store instance state 
+        // and assume instance is not converged. 
+        csSystem.storeStateOnly = highPrecision;
+            
         if (!circuit.converged(csSystem)) {
             lastError = Error::ConvergenceCheck;
             errorIteration = iteration;
@@ -239,6 +240,7 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
 
 bool OpNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     lastError = Error::OK;
+    evalSetup.requestHighPrecision = highPrecision;
     if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
         // Load error
         lastError = Error::EvalAndLoad;

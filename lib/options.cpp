@@ -186,11 +186,12 @@ SimulatorInternals::SimulatorInternals() {
     analysis_type = "";
     cwd = Simulator::startupPath();
     initalizeLimiting = false;
-    highPrecision = false; // request high precision from simulator (prevents bypass for all bypassable devices)
-    forceBypass = false;   // force bypass in next NR iteration for all bypassable devices regardless of their 
-                           // converged state, has lower precedence than highPrecision
-    allowContinueStateBypass = false; // allow the analysis to force bypass in the first iteration of NR
-                                      // after NR start with continuation when continueState is used
+    allowContinueStateBypass = false; // Allow the analysis to force bypass in the first iteration of NR
+                                      // with continuation when continueState is used without forcing it. 
+                                      // This is set to true for all but the first point of the innermost sweep
+                                      // if nr_contbypass is enabled and the innermost sweep allows continuation.  
+    forceBypass = false;   // Force bypass in next NR iteration for all bypassable devices 
+                           // regardless of their converged state. 
     frequency = 0.0;
     time = 0.0;
 }

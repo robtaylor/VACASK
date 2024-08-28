@@ -129,10 +129,9 @@ typedef struct SimulatorInternals {
 
     bool initalizeLimiting;
 
-    bool highPrecision;
-    bool forceBypass; // Forces bypass in the next NR iteration
     bool allowContinueStateBypass;
-
+    bool forceBypass; 
+    
     double frequency;
     double time;
     double timestep;

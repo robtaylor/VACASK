@@ -95,9 +95,6 @@ public:
     // Rebuild internal structures that depend on topology
     virtual bool rebuild();
 
-    // Request high precision
-    virtual void requestHighPrecision(bool f) {};
-
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
     virtual bool initialize(bool continuePrevious) = 0;
@@ -146,6 +143,9 @@ public:
 protected:
     // Load forces
     bool loadForces(bool loadJacobian=true); 
+    
+    // High precision requested
+    bool highPrecision;
 
     // Passed from outside
     Circuit& circuit;

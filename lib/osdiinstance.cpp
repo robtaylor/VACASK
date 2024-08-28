@@ -706,7 +706,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     if (!device->checkFlags(Device::Flags::Bypassable)) {
         // Device does not allow bypassing
         // This is not a bypass opportunity
-    } else if (circuit.simulatorInternals().highPrecision) {
+    } else if (evalSetup.requestHighPrecision) {
         // If high presision is required, bypass is out of question
         bypass = false;
         // If device is converged, this is a bypass opportunity that was not taken
@@ -1009,11 +1009,11 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         return true;
     }
 
-    // Assume converged if high precision is not requested
-    // When high precision is requested the device states are stored but 
-    // convergence checks are skipped. This makes sure devices cannot 
-    // enter converged mode. 
-    bool converged = !circuit.simulatorInternals().highPrecision;
+    // Assume converged if storeStateOnly is false. 
+    // storeStateOnly is set to true when high precision is requested by NR algorithm, 
+    // In that case the device states are stored but convergence checks are skipped. 
+    // This makes sure devices cannot enter converged mode. 
+    bool converged = !convSetup.storeStateOnly;
 
     // Not converged if no device history available
     if (!checkFlags(Flags::HasDeviceHistory)) {
