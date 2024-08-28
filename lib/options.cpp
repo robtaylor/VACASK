@@ -190,8 +190,8 @@ SimulatorInternals::SimulatorInternals() {
                                       // with continuation when continueState is used without forcing it. 
                                       // This is set to true for all but the first point of the innermost sweep
                                       // if nr_contbypass is enabled and the innermost sweep allows continuation.  
-    forceBypass = false;   // Force bypass in next NR iteration for all bypassable devices 
-                           // regardless of their converged state. 
+    requestForcedBypass = false;      // Request forced bypass in next NR iteration for all bypassable devices 
+                                      // regardless of their converged state. 
     frequency = 0.0;
     time = 0.0;
 }

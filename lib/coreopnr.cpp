@@ -198,7 +198,7 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
         // When high precision is requested we only store instance state 
         // and assume instance is not converged. 
         csSystem.storeStateOnly = highPrecision;
-            
+
         if (!circuit.converged(csSystem)) {
             lastError = Error::ConvergenceCheck;
             errorIteration = iteration;
@@ -342,14 +342,17 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
         csSystem.deviceStates = deviceStates.data();
     }
 
+    
+    // Force instance evaluation bypass if requested
+    esSystem.forceBypass = circuit.simulatorInternals().requestForcedBypass;
+    
     // Evaluate and load
     auto evalSt = evalAndLoadWrapper(esSystem, lsSystem);
-    // If bypass was forced for one iteration
-    if (circuit.simulatorInternals().forceBypass) {
-        // Turn forced bypass off after the system is built
-        // (we are allowed to do it for one iteration only)
+    // If bypass forcing was requested clear that request. 
+    // It is allowed for one iteration only. 
+    if (circuit.simulatorInternals().requestForcedBypass) {
+        circuit.simulatorInternals().requestForcedBypass = false;
         // Skip device convergence checks for one iteration
-        circuit.simulatorInternals().forceBypass = false;
         skipConvergenceCheck = true;
     } else {
         // This makes sure that the device convergence check is 

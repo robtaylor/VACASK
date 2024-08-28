@@ -716,7 +716,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         // Not bypassed, no longer converged
         clearFlags(Flags::Bypassed);
         clearFlags(Flags::Converged);
-    } else if (circuit.simulatorInternals().forceBypass) {
+    } else if (evalSetup.forceBypass) {
         // Forcing a bypass, e.g. 
         // - first iteration of a timepoint with NR continuation in transient analysis 
         //   has identical evaluation rhsOld as the last iteration of the previous point

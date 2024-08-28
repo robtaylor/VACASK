@@ -1433,7 +1433,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         // request full bypass in next NR iteration because 
         // all instance cores are already evaluated at the inputs corresponding to the last NR iteration. 
         if (accept && options.nr_contbypass) {
-            internals.forceBypass = true; 
+            internals.requestForcedBypass = true; 
         }
     } // while
 

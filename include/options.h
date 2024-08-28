@@ -130,7 +130,7 @@ typedef struct SimulatorInternals {
     bool initalizeLimiting;
 
     bool allowContinueStateBypass;
-    bool forceBypass; 
+    bool requestForcedBypass; 
     
     double frequency;
     double time;

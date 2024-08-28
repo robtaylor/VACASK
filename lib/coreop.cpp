@@ -311,7 +311,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "OP using ordinary continue mode with stored state.\n";
             }
             // Use forced bypass if allowed
-            circuit.simulatorInternals().forceBypass = circuit.simulatorInternals().allowContinueStateBypass;
+            circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
         } else if (continueState && continueState->valid) {
             // Stored analysis state is not coherent with current circuit, 
             // its lengths may not match those of the solver vectors, 
@@ -327,7 +327,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "OP using nodeset continue mode with stored state.\n";
             }
             // Forced bypass is not allowed
-            circuit.simulatorInternals().forceBypass = false;
+            circuit.simulatorInternals().requestForcedBypass = false;
         } else {
             // No valid state, continue with whatever is in solution and states vector
             hasInitialStates = true;

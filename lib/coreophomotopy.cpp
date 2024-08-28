@@ -63,7 +63,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
         }
         // If previous runSolver() converged we can force bypass in first NR iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
             setError(OpError::SteppingSolver);
@@ -165,7 +165,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
         // Did not leave early
         if (converged) {
             // Converged, we can force bypass in first NR iteration
-            circuit.simulatorInternals().forceBypass = true;
+            circuit.simulatorInternals().requestForcedBypass = true;
 
             // Try with original gmin, but this time with continuation
             converged = runSolver(continuation);
@@ -237,7 +237,7 @@ bool OperatingPointCore::spice3GminStepping() {
 
         // If previous runSolver() converged we can force bypass in first NR iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
             setError(OpError::SteppingSolver);
@@ -267,7 +267,7 @@ bool OperatingPointCore::spice3GminStepping() {
     if (!leave) {
         if (converged) {
             // Converged, we can force bypass in first NR iteration
-            circuit.simulatorInternals().forceBypass = true;
+            circuit.simulatorInternals().requestForcedBypass = true;
 
             // Try with original gmin, but this time with continuation
             converged = runSolver(continuation);
@@ -383,7 +383,7 @@ bool OperatingPointCore::sourceStepping() {
 
             // If previous runSolver() converged we can force bypass in first NR iteration
             // If not, we do not force it. 
-            circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+            circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
             converged = runSolver(continuation);
             if (!converged) {
                 setError(OpError::SteppingSolver);
@@ -497,7 +497,7 @@ bool OperatingPointCore::spice3SourceStepping() {
 
         // If previous runSolver() converged we can force bypass in first NR iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().forceBypass = converged && options.nr_contbypass;
+        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
             setError(OpError::SteppingSolver);

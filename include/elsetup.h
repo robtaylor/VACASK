@@ -65,6 +65,9 @@ typedef struct EvalSetup {
     bool evaluateNoise {};
     bool evaluateOpvars {};
 
+    // Force bypass
+    bool forceBypass {};
+    
     // Allow bypassing core evaluation
     bool allowBypass {}; 
 
