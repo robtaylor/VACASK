@@ -15,11 +15,33 @@
 
 namespace NAMESPACE {
 
+// Circuit equations
+//              d
+//   f(x(t)) + ---- q(x(t)) = 0 
+//              dt
+// 
+//   x(t) .. unknowns
+//   f(x) .. resistive residual
+//   q(x) .. reactive residual
+
+// DC incremental small-signal analysis
+// Assuming t=0 first solves for operating point (x0)
+//   f(x0) = 0
+// Then it linearizes the circuit by computing the resistive Jacobian Jr
+// (Jacobian of f(x)) at x=x0 and solves
+//   Jr dx = du
+// where du comprises incremental excitations specified by the mag parameters 
+// of independent sources: mag can also be negative. 
+// 
+// See coreop.h on how to specify nodesets. 
+
 typedef struct DcIncrParameters {
     OpParameters opParams;
     
-    Int dumpop {0};   // // 1 = dump operating point to <analysisname>.op.raw;
-    
+    Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
+    // Nodeset and store parameters of the operating point core 
+    // are also exposed. 
+
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
 

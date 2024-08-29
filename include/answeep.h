@@ -14,6 +14,36 @@
 
 namespace NAMESPACE {
 
+// Sweep settings
+typedef struct SweepSettings  {
+    Id name {Id()};          // Name of sweep, will appear as a vector 
+                             // holding the swept values in the raw file
+    Loc location;            // Not exposed 
+    Id instance {Id()};      // Name of the instance if sweeping an instance parameter
+    Id model {Id()};         // Name of the model if sweeping a model parameter
+    Id parameter {Id()};     // Name of the parameter to sweep
+                             // if instance/model are not given, sweeps a toplevel
+                             // instance parameter
+    Id option {Id()};        // Name of simulator option to sweep
+    Id variable {Id()};      // Name of circuit variable to sweep
+    Int component {-1};      // Not supported yet. 
+    Real from {0};           // Starting point
+    Real to {0};             // End point
+    Real step {0};           // Step size for linear stepped sweep (when mode not given)
+    Id mode {Id()};          // Sweep with given number of points 
+                             // can be lin (linear), dec (points per decade), 
+                             // or oct (points per octave)
+    Int points {0};          // Number of sweep points when mode is given
+    Value values {0};        // Sweep given values (must be a vector or a list), 
+                             // used when from, to, step, mode, and points are not given
+    Int continuation {1};    // Use continuation mode for speeding up the sweep 
+                             // (1=enabled, 0=disabled), enabled by default
+    
+    SweepSettings();
+    
+} SweepSettings;
+
+
 // TODO: sweeping of vector parameters, should work only with values= which should be a list
 class ScalarSweep {
 public:
@@ -114,30 +144,6 @@ template<typename A> bool ScalarSweep::setup(const A& settings, Status& s) {
     s.set(Status::NotFound, "Sweep needs to specify values, mode, or step.");
     return false;
 }
-
-
-
-// Sweep settings
-typedef struct SweepSettings  {
-    Id name;
-    Loc location;
-    Id instance;
-    Id model;
-    Id parameter;
-    Id option;
-    Id variable;
-    Int component;
-    Real from;
-    Real to;
-    Real step;
-    Id mode;
-    Int points;
-    Value values;
-    Int continuation;
-    
-    SweepSettings();
-    
-} SweepSettings;
 
 
 // Order method invocation:

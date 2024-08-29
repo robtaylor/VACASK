@@ -677,7 +677,7 @@ bool NoiseCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle NoiseCore errors
     switch (lastNoiseError) {
         case NoiseError::NotFound:
             s.set(Status::Analysis, std::string("Instance '")+std::string(errorInstance)+"' not found.");

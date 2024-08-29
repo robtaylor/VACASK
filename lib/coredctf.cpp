@@ -318,7 +318,7 @@ bool DcTfCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle DcTfCore errors
     switch (lastDcTfError) {
         case DcTfError::NotFound:
             s.set(Status::Analysis, std::string("Source '")+std::string(errorInstance)+"' not found.");

@@ -16,10 +16,28 @@
 
 namespace NAMESPACE {
 
+// Circuit equations
+//              d
+//   f(x(t)) + ---- q(x(t)) = 0 
+//              dt
+// 
+//   x(t) .. unknowns
+//   f(x) .. resistive residual
+//   q(x) .. reactive residual
+
+// Operating point analysis
+// Assuming t=0 solves
+//   f(x) = 0
+//
+// Nodesets are specified as a list of values where each nodeset is given
+// with 2 or 3 values
+// - single node nodesets (...; "<node>"; value; ...)
+// - differential nodeset (...; "<node1>"; "<node2>"; value; ...)
+
 typedef struct OpParameters {
-    Value nodeset {Value("")};  // string to specify stored solution slot or
-                       // list to specify nodesets
-    String store {""}; // name of stored solution slot to write
+    Value nodeset {Value("")}; // String to specify stored solution slot or
+                               // list to specify nodesets
+    String store {""};         // Name of stored solution slot to write
 
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 

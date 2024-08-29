@@ -178,21 +178,7 @@ bool ScalarSweep::compute(Value& v, Status& s) const {
 
 
 SweepSettings::SweepSettings() {
-    name = Id();
     location = Loc::bad;
-    instance = Id();
-    model = Id();
-    parameter = Id();
-    option = Id();
-    variable = Id();
-    component = -1;
-    from = 0;
-    to = 0;
-    step = 0;
-    mode = Id();
-    points = 0;
-    values = 0;
-    continuation = 1;
 }
 
 // Introspection for options structure

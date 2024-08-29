@@ -29,7 +29,7 @@ control
 
   options rawfile="binary" op_debug=0
   options tran_fbr=0.2501
-  analysis tran1 tran step=0.1m stop=30m maxStep=0.1m
+  analysis tran1 tran step=0.1m stop=30m maxstep=0.1m
 
   postprocess(PYTHON, "runme.py")
 endc

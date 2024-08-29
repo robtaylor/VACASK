@@ -208,8 +208,8 @@ double globalDbg[][2] = { // time v
 int nGlobalDbg = sizeof(globalDbg)/(sizeof(double)*2);
 */
 
-Id TranCore::icModeOp = Id::createStatic("op");
-Id TranCore::icModeUic = Id::createStatic("uic"); 
+Id TranCore::icmodeOp = Id::createStatic("op");
+Id TranCore::icmodeUic = Id::createStatic("uic"); 
 
 TranParameters::TranParameters() {
     // Turn off output for op analysis
@@ -220,8 +220,8 @@ template<> int Introspection<TranParameters>::setup() {
     registerMember(step);
     registerMember(stop);
     registerMember(start);
-    registerMember(maxStep);
-    registerMember(icMode);
+    registerMember(maxstep);
+    registerMember(icmode);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerMember(ic);
     registerMember(store);
@@ -407,7 +407,7 @@ bool TranCore::rebuild(Status& s) {
             if (!solPtr) {
                 // No initial conditions 
                 opCore_.solver().forces(2).clear();
-                if (params.icMode==icModeOp) {
+                if (params.icmode==icmodeOp) {
                     Simulator::wrn() << "Warning, solution '"+solutionName+"' not found. No initial conditions applied.\n";
                 } else {
                     Simulator::wrn() << "Warning, solution '"+solutionName+"' not found. Zero initial conditions applied.\n";
@@ -622,7 +622,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     tk = 0.0; 
     internals.time = tk; 
     nPoints = 0; 
-    if (params.icMode==icModeOp) {
+    if (params.icmode==icmodeOp) {
         if (debug>0) {
             Simulator::dbg() << "Solving initial conditions with OP analysis.\n";
         }
@@ -638,7 +638,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             setError(TranError::OpError);
             co_yield CoreState::Aborted;
         }
-    } else if (params.icMode==icModeUic) {
+    } else if (params.icmode==icmodeUic) {
         if (debug>0) {
             Simulator::dbg() << "Setting initial conditions.\n";
         }
@@ -711,7 +711,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     // In UIC IC mode check only esInit
     bool stopFlag = false;
     bool finishFlag = false;
-    if (params.icMode==icModeOp) {
+    if (params.icmode==icmodeOp) {
         finishFlag |= opCore_.solver().evalSetupSystem().requests.finish;
         stopFlag |= opCore_.solver().evalSetupSystem().requests.stop;
     }
@@ -755,9 +755,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
 
     // Initial timestep
     auto h0 = params.step;
-    // Limited by maxStep
-    if (params.maxStep>0) {
-        h0 = std::min(h0, params.maxStep);
+    // Limited by maxstep
+    if (params.maxstep>0) {
+        h0 = std::min(h0, params.maxstep);
     }
     // Limit by maxFreq (tran_ffmax*period/2)
     // Maybe get rid of this
@@ -809,7 +809,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     // Timestep loop
     // Number of past points since last discontinuity
     size_t pointsSinceLastDiscontinuity;
-    if (params.icMode==icModeOp) {
+    if (params.icmode==icmodeOp) {
         // Initially we have one almost valid past point
         // Operating point incorrectly computes 
         // - the current through a capacitor when it is driven by a voltage source
@@ -825,7 +825,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     size_t trapHistory = 0;
     
     // Initialize maximal past solution and residual contribution
-    if (params.icMode==icModeOp) {
+    if (params.icmode==icmodeOp) {
         nrSolver.initializeMaxima(opCore_.solver());
     } else {
         nrSolver.resetMaxima();
@@ -1016,9 +1016,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             // distance to stop
             hmax = std::min(hmax, (params.stop - params.start)/options.tran_minpts); // - tSolve;
         }
-        // Limit by maxStep if given
-        if (params.maxStep>0) {
-            hmax = std::min(hmax, params.maxStep);
+        // Limit by maxstep if given
+        if (params.maxstep>0) {
+            hmax = std::min(hmax, params.maxstep);
         }
         // Limit by maxFreq (tran_ffmax*period/2)
         // Maybe get rid of this
@@ -1467,7 +1467,7 @@ bool TranCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle TranCore errors
     switch (lastTranError) {
         case TranError::EvalAndLoad:
             s.set(Status::Analysis, "Initial state evaluation failed.");

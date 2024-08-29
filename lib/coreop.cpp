@@ -617,11 +617,11 @@ void OperatingPointCore::dump(std::ostream& os) const {
       use nodesets based on stored solution
       start with all zero solution
   tran analysis
-  - icMode = uic
+  - icmode = uic
     - start mode and continue mode
       ignore nodeset parameter
       use ic parameter to build initial solution vector
-  - icMode = op
+  - icmode = op
     - start mode
       start with all zero solution
       use nodesets in first iterations

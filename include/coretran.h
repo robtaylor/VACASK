@@ -16,17 +16,39 @@
 
 namespace NAMESPACE {
 
+// Circuit equations
+//              d
+//   f(x(t)) + ---- q(x(t)) = 0 
+//              dt
+// 
+//   x(t) .. unknowns
+//   f(x) .. resistive residual
+//   q(x) .. reactive residual
+
+// Large signal time-domain analysis. 
+// icmode="op"  computes the point at t=0 using operating point analysis
+//              where initial conditions are forced
+// icmode="uic" tries to compute the initial states of reactive components 
+//              from the given initial condition and does not perform 
+//              operating point analysis. It is equivalent to classic SPICE3 
+//              uic transient analysis. 
+// 
+// See coreop.h on how to specify nodesets. 
+// 
+// Initial conditions are specified with the same format as nodesets. 
+
 typedef struct TranParameters {
     OpParameters opParams;
-    Real step {0.0};
-    Real stop {0.0};
-    Real start {0.0};
-    Real maxStep {0.0};
-    Id icMode {"op"};   // op=op with ic forces, uic=spice uic
-    Value ic {Value("")};      // string specifying stored solution slot or
-                        // list specifying initial conditions
-                        // for transient analysis
-    String store {""};  // name of stored solution slot to write transient solution to
+    Real step {0.0};      // Initial timestep
+    Real stop {0.0};      // Time up to which the circuit is to be simulated
+    Real start {0.0};     // Time at which the results start being recorded
+    Real maxstep {0.0};   // Maximal timestep (optional)
+    Id icmode {"op"};     // op=op with ic forces, uic=spice uic
+    Value ic {Value("")}; // String specifying stored solution slot or
+                          // list specifying initial conditions
+                          // for transient analysis
+    String store {""};    // name of stored solution slot to write transient solution to
+    // Nodeset parameter of the operating point core is also exposed. 
 
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
@@ -89,8 +111,8 @@ public:
 
     void dump(std::ostream& os) const;
 
-    static Id icModeOp;
-    static Id icModeUic;
+    static Id icmodeOp;
+    static Id icmodeUic;
     static Id methodAM;
     static Id methodBDF;
     static Id methodGear;

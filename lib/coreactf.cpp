@@ -543,7 +543,7 @@ bool AcTfCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle AcTfCore errors
     switch (lastAcTfError) {
         case AcTfError::NotFound:
             s.set(Status::Analysis, std::string("Source '")+std::string(errorInstance)+"' not found.");

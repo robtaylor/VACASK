@@ -31,7 +31,7 @@ control
   analysis op1 op
 
   options tran_method="trap" tran_rmax=0
-  analysis tran1 tran stop=10m step=1u icMode="op"
+  analysis tran1 tran stop=10m step=1u icmode="op"
 
   postprocess(PYTHON, "runme.py")
 endc

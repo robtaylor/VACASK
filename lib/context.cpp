@@ -9,91 +9,6 @@ namespace NAMESPACE {
 
 static const double PI = std::numbers::pi;
 
-Context::Context()  {
-}
-
-Context::Context(std::initializer_list<std::pair<const Id, Value>> inl) 
-    : data(inl) {
-}
-
-const Value* Context::get(Id name) const {
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        return &(it->second);
-    } else {
-        return nullptr;
-    }
-}
-
-Value* Context::get(Id name) {
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        return &(it->second);
-    } else {
-        return nullptr;
-    }
-}
-
-bool Context::insert(Id name, const Value& v) {
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        it->second = v;
-        return false;
-    } else {
-        data.insert({name, v});
-        return true;
-    }
-}
-
-bool Context::insert(Id name, Value&& v) {
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        it->second = std::move(v);
-        return false;
-    } else {
-        data.insert({name, std::move(v)});
-        return true;
-    }
-}
-
-std::tuple<bool, bool> Context::insertAndCheck(Id name, const Value& v) {
-    bool changed = false;
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        changed = v != it->second;
-        it->second = v;
-        return std::make_tuple(false, changed);
-    } else {
-        data.insert({name, v});
-        return std::make_tuple(true, changed);
-    }
-}
-
-std::tuple<bool, bool> Context::insertAndCheck(Id name, Value&& v) {
-    bool changed = false;
-    auto it = data.find(name);
-    if (it!=data.end()) {
-        changed = v != it->second;
-        it->second = std::move(v);
-        return std::make_tuple(false, changed);
-    } else {
-        data.insert({name, std::move(v)});
-        return std::make_tuple(true, changed);
-    }
-}
-
-void Context::clear() {
-    data.clear();
-}
-
-
-void Context::dump(int indent, std::ostream& os) const {
-    std::string pfx = std::string(indent, ' ');
-    for(auto& it : data) {
-        os << pfx << it.first << " = " << it.second << "\n";
-    }
-}
-
 Context ContextStack::consts{ 
     { "M_E",         exp(1)                     },  // e or exp(1)
     { "M_LOG2E",     1/log(2)                   },  // log2(e)
@@ -203,6 +118,92 @@ ContextStack::Builtins ContextStack::builtins = {
     { "where",   { 1, 3, true, nullptr} }, // where(s) -> indices of nonzeros, where(s, x, y) -> x if s nonzero, else y
     */
 };
+
+
+Context::Context()  {
+}
+
+Context::Context(std::initializer_list<std::pair<const Id, Value>> inl) 
+    : data(inl) {
+}
+
+const Value* Context::get(Id name) const {
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        return &(it->second);
+    } else {
+        return nullptr;
+    }
+}
+
+Value* Context::get(Id name) {
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        return &(it->second);
+    } else {
+        return nullptr;
+    }
+}
+
+bool Context::insert(Id name, const Value& v) {
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        it->second = v;
+        return false;
+    } else {
+        data.insert({name, v});
+        return true;
+    }
+}
+
+bool Context::insert(Id name, Value&& v) {
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        it->second = std::move(v);
+        return false;
+    } else {
+        data.insert({name, std::move(v)});
+        return true;
+    }
+}
+
+std::tuple<bool, bool> Context::insertAndCheck(Id name, const Value& v) {
+    bool changed = false;
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        changed = v != it->second;
+        it->second = v;
+        return std::make_tuple(false, changed);
+    } else {
+        data.insert({name, v});
+        return std::make_tuple(true, changed);
+    }
+}
+
+std::tuple<bool, bool> Context::insertAndCheck(Id name, Value&& v) {
+    bool changed = false;
+    auto it = data.find(name);
+    if (it!=data.end()) {
+        changed = v != it->second;
+        it->second = std::move(v);
+        return std::make_tuple(false, changed);
+    } else {
+        data.insert({name, std::move(v)});
+        return std::make_tuple(true, changed);
+    }
+}
+
+void Context::clear() {
+    data.clear();
+}
+
+
+void Context::dump(int indent, std::ostream& os) const {
+    std::string pfx = std::string(indent, ' ');
+    for(auto& it : data) {
+        os << pfx << it.first << " = " << it.second << "\n";
+    }
+}
 
 ContextStack::ContextStack() {
 }

@@ -15,11 +15,39 @@
 
 namespace NAMESPACE {
 
+// Circuit equations
+//              d
+//   f(x(t)) + ---- q(x(t)) = 0 
+//              dt
+// 
+//   x(t) .. unknowns
+//   f(x) .. resistive residual
+//   q(x) .. reactive residual
+
+// DC small-signal transfer function analysis
+// Assuming t=0 first solves for operating point (x0)
+//   f(x0) = 0
+// Then it linearizes the circuit by computing the resistive Jacobian Jr
+// (Jacobian of f(x)) at x=x0 and solves
+//   Jr dx = du
+// for each independent source in the system. Here du is set to the 
+// incremental excitation of 1 originating from a particular independent 
+// source for which the equation is being solved. 
+// The obtained dx is used for computing 
+// - the small-signal transfer function from the independent source 
+//   to the output defined by a node or a pair of nodes, 
+// - the small-signal input impedance and admittance felt by a source 
+//   at its terminals
+//
+// See coreop.h on how to specify nodesets. 
+
 typedef struct DcTfParameters {
     OpParameters opParams;
     
-    Value out {""};   // output node or node pair (string vector)
-    Int dumpop {0};   // // 1 = dump operating point to <analysisname>.op.raw;
+    Value out {""};   // Output node or node pair (string vector)
+    Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
+    // Nodeset and store parameters of the operating point core 
+    // are also exposed. 
 
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 

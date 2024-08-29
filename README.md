@@ -11,11 +11,12 @@ VACASK offers several features:
 - RPN interpreter for parameterized expression evaluation
 - integer, real, and string data types
 - vectors (homogeneous containers) and lists (heterogeneous containers)
-- a library of built-in functions and constants for use in parameterized expressions
-- operating point, DC small-signal, DC transfer function, AC small-signal, AC transfer function, transient, and noise analysis
+- a library of [built-in functions and constants](lib/context.cpp) for use in parameterized expressions
+- [operating point](include/coreop.h), [DC small-signal](include/coredcinc.h), [DC transfer function](include/coredctf.h), [AC small-signal](include/coreac.h), [AC transfer function](include/coreactf.h), [noise](include/corenoise.h), and [transient](include/coretran.h) analyses 
+- [options](lib/options.cpp) for fine tuning the simulator
 - selection of what should be saved during simulation (save directives)
 - collection of auxiliary values (opvars) computed by device models
-- parametric sweep of any analysis with arbitrary depth
+- [parametric sweep](include/answeep.h) of any analysis with arbitrary depth
 - almost anything can be swept (instance, model, and subcircuit parameters, options, and circuit variables)
 - anything that can be swept can also be modified without reloading the circuit (no need to build a new netlist and restart the simulator)
 - automatic partial circuit elaboration when circuit topology changes due to a change in parameters, options, or variables
@@ -33,7 +34,7 @@ VACASK offers several features:
 - SPICE ASCII/binary raw file output
 - embedded postprocessing scripts and Verilog-A models in the netlist
 - postprocessing of results with external tools (some basic Python/Numpy scripts are provided)
-- a growing library of Verilog-A models (diode, BSIM3, BSIM4, BSIMBULK, ...)
+- a growing [library of Verilog-A models](devices/) (diode, BSIM3, BSIM4, BSIMBULK, ...)
 - simulator library that can be linked to 3rd party software
 - circuit can be built programmatically or read by a custom parser
 - netlist parser with Spectre-like syntax

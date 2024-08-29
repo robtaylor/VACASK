@@ -227,7 +227,7 @@ bool DcIncrementalCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle AcCore errors
+    // Then handle DcIncrementalCore errors
     switch (lastDcIncrError) {
         case DcIncrError::EvalAndLoad:
             s.set(Status::Analysis, "Jacobian evaluation failed.");

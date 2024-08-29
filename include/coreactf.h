@@ -14,20 +14,51 @@
 
 namespace NAMESPACE {
 
+// Circuit equations
+//              d
+//   f(x(t)) + ---- q(x(t)) = 0 
+//              dt
+// 
+//   x(t) .. unknowns
+//   f(x) .. resistive residual
+//   q(x) .. reactive residual
+
+// AC small-signal transfer function analysis
+// Assuming t=0 first solves for operating point (x0)
+//   f(x0) = 0
+// where f(x) is the resistive residual. 
+// Then it linearizes the circuit by computing the resistive Jacobian Jr
+// (Jacobian of f(x)) and the reactive Jacobian Jc (Jacobian of q(x)) 
+// at x=x0 and solves
+//   (Jr + omega Jc) X = U
+// for each independent source in the system. U is set to reflect the 
+// source's magnitude 1 and phase 0. 
+// The obtained X is used for computing 
+// - the small-signal transfer function from the independent source 
+//   to the output defined by a node or a pair of nodes, 
+// - the small-signal input impedance and admittance felt by a source 
+//   at its terminals
+// Frequency is swept across the given range. 
+// See coreac.h for details on the frequency sweep. 
+// 
+// See coreop.h on how to specify nodesets. 
+
 typedef struct AcTfParameters {
     OpParameters opParams;
     
-    Value out {""};   // output node or node pair (string vector)
-    Real from {0};    // start frequency for step and dec/oct/lin sweep
-    Real to {0};      // stop frequency for step and dec/oct/lin sweep
-    Real step {0};    // step size for step sweep
-    Id mode {Id()};   // mode for dec/oct/lin sweep
-    Int points {0};   // number of points for dec/oct/lin sweep
-    Value values {0}; // vector of values for values sweep
-    Int dumpop {0};   // // 1 = dump operating point to <analysisname>.op.raw;
+    Value out {""};   // Output node or node pair (string vector)
+    Real from {0};    // Start frequency for step and dec/oct/lin sweep
+    Real to {0};      // Stop frequency for step and dec/oct/lin sweep
+    Real step {0};    // Step size for step sweep
+    Id mode {Id()};   // Mode for dec/oct/lin sweep
+    Int points {0};   // Number of points for dec/oct/lin sweep
+    Value values {0}; // Vector of values for values sweep
+    Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
+    // Nodeset and store parameters of the operating point core 
+    // are also exposed. 
 
-    Int writeOutput {1};  // Do we want to write the results to a file
-                      // Not exposed as analysis parameter. 
+    Int writeOutput {1}; // Do we want to write the results to a file
+                         // Not exposed as analysis parameter. 
 
     AcTfParameters();
 } AcTfParameters;

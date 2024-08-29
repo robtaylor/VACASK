@@ -18,8 +18,8 @@ control
   options reltol=1e-3 vntol=1e-9 abstol=1e-12 tran_lteratio=3.5
   options tran_method="trap"
 
-  analysis tranop tran stop=10m step=1u icMode="op" ic=["1"; 2.0; "2"; "3"; 1.0]
-  analysis tranuic tran stop=10m step=1u icMode="uic" ic=["1"; 2.0; "2"; "3"; 1.0]
+  analysis tranop tran stop=10m step=1u icmode="op" ic=["1"; 2.0; "2"; "3"; 1.0]
+  analysis tranuic tran stop=10m step=1u icmode="uic" ic=["1"; 2.0; "2"; "3"; 1.0]
   
   postprocess(PYTHON, "runme.py")
 endc
