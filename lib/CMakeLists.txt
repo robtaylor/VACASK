@@ -122,6 +122,7 @@ add_library(simlib STATIC
     coretrancoef.cpp 
     coretrannr.cpp 
     coretran.cpp
+    corehb.cpp
     an.cpp
     ansupport.cpp 
     ansolution.cpp 
