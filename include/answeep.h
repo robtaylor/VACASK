@@ -44,7 +44,6 @@ typedef struct SweepSettings  {
 } SweepSettings;
 
 
-// TODO: sweeping of vector parameters, should work only with values= which should be a list
 class ScalarSweep {
 public:
     enum class SweepType {

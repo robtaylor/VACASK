@@ -25,7 +25,7 @@ endc
 
 embed "runme.py" <<<FILE
 from rawfile import rawread
-from runtest import absDiff, relDiff, isTest
+from runtest import *
 import numpy as np
 import sys, os
 
@@ -45,7 +45,7 @@ status = (relDiff(v, exact, 1e-6) < 1e-3).all()
 print("V(2)=", v, "exact=", exact, status)
 tests.append(status)
 
-if ("SIM_TEST" in os.environ and os.environ["SIM_TEST"]=="yes"):
+if isTest():
     sys.exit(not all(tests))
 >>>FILE
 

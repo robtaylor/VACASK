@@ -164,7 +164,7 @@ bool Value::getScalar(Value& v, size_t ndx, Status& s) const {
         return false;
     }
     if (ndx<0 || ndx>=size()) {
-        s.set(Status::Range, "Vector idex out of range.");
+        s.set(Status::Range, "Vector index out of range.");
         return false;
     }
     switch (type_) {

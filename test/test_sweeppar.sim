@@ -33,7 +33,7 @@ endc
 
 embed "runme.py" <<<FILE
 from rawfile import rawread
-from runtest import absDiff, relDiff
+from runtest import *
 import numpy as np
 import sys, os
 import diocalc
@@ -60,6 +60,6 @@ for ii in range(tran2.sweepGroups):
     print("OPT rmax=", rmax, "dtmax=", dtmax, "exact=", exact, status)
     tests.append(status)
 
-if ("SIM_TEST" in os.environ and os.environ["SIM_TEST"]=="yes"):
+if isTest():
     sys.exit(not all(tests))
 >>>FILE

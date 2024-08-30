@@ -1,0 +1,73 @@
+Sweeping vector parameters
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+
+subckt vec_sin(p n)
+  parameters vec=[0, 1, 10k]
+  v0 (p n) vsource type="sine" sinedc=vec[0] ampl=vec[1] freq=vec[2]
+ends
+
+v1 (1 0) vec_sin vec=[0, 1, 1]
+r1 (1 0) resistor r=1
+
+control
+  abort always
+
+  options sweep_debug=1
+  options rawfile="binary" strictsave=1
+  
+  // Test vector parameter sweep
+  sweep vs instance="v1" parameter="vec" values=[[0, 1, 1k]; [1, 0.5, 2k]]
+    analysis tran1 tran stop=2m step=1u
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys, os
+import diocalc
+
+tests = []
+
+tran1 = rawread('tran1.raw').get(sweeps=1)
+
+def exact_response(v0, va, f, time):
+	return v0+va*np.sin(2*np.pi*f*time)
+
+for ii in range(tran1.sweepGroups):
+	time = tran1[ii, 'time'] 
+	v = tran1[ii, '1']
+	if ii==0:
+		exact = exact_response(0, 1, 1e3, time)
+	else:
+		exact = exact_response(1, 0.5, 2e3, time)
+	delta = np.abs(v-exact).max()/np.abs(v).max()
+	status = delta<1e-6
+	print(ii, "delta=", delta, status)
+	tests.append(status)
+
+if isTest():
+	sys.exit(not all(tests))
+else:
+	import matplotlib.pyplot as plt
+
+	fig1, ax1 = plt.subplots(1, 1)
+	
+	for ii in range(tran1.sweepGroups):
+		time = tran1[ii, 'time'] 
+		v = tran1[ii, '1']
+		traceName = 'run %d' % ii
+		fig1.axes[0].plot(time*1e3, v, label=traceName)
+		
+	fig1.axes[0].legend(loc='upper left')
+	
+	plt.show()
+>>>FILE

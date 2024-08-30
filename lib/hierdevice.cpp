@@ -372,7 +372,7 @@ bool HierarchicalInstance::getParameter(ParameterIndex ndx, Value& v, Status& s)
 }
 
 std::tuple<bool,bool> HierarchicalInstance::setParameter(ParameterIndex ndx, const Value& v, Status& s) {
-    bool changed = parameters[ndx] == v;
+    bool changed = parameters[ndx] != v;
     // Mark instance for parameter propagation
     if (changed) {
         setFlags(Instance::Flags::ParamsChanged);
