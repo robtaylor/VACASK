@@ -1,11 +1,16 @@
 #include <vector>
 #include <algorithm>
-#include "core.h"
 #include "corehb.h"
 #include "simulator.h"
 #include "common.h"
 
 namespace NAMESPACE {
+
+// Generation of harmonics and intermodulation products
+// See Chapter 1.1 in: 
+//   Kundert, White, Sangiovanni-Vincentelli: 
+//   Steady-state methods for simulating analog and microwave circuits, 
+//   Springer, 1990. 
 
 bool HbCore::buildGrid(Status& s) {
     auto n = params.freq.size();
@@ -81,7 +86,7 @@ bool HbCore::buildGrid(Status& s) {
         });
         for(decltype(n) i=0; i<n; i++) {
             grid.at(i+1, i) = 1.0;
-            int order = -1;
+            Int order = -1;
             if (params.imorder.size()>0) {
                 order = params.imorder[i];
                 if (order<0) {
@@ -99,9 +104,9 @@ bool HbCore::buildGrid(Status& s) {
     } else if (params.truncate==HbCore::truncateBox || params.truncate==HbCore::truncateDiamond) {
         // Box and diamond
         grid.resize(0, n); // Empty table
-        std::vector<int> cnt(n);
-        std::vector<int> end(n);
-        int lastChanged = 0;
+        std::vector<Int> cnt(n);
+        std::vector<Int> end(n);
+        Int lastChanged = 0;
         cnt[0] = 0;
         end[0] = nharmCommon ? nharmScalar+1 : nharm[0]+1;
 
@@ -113,14 +118,14 @@ bool HbCore::buildGrid(Status& s) {
             if (lastChanged<n-1) {
                 // Check if all previous coordinates are 0
                 bool allZero = true;
-                for(int i=0; i<lastChanged+1; i++) {
+                for(decltype(lastChanged) i=0; i<lastChanged+1; i++) {
                     if (cnt[i] != 0) {
                         allZero = false;
                         break;
                     }
                 }
                 // From lastChanged+1 to n-1, set up ranges
-                for(int i=lastChanged+1; i<n; i++) {
+                for(decltype(lastChanged) i=lastChanged+1; i<n; i++) {
                     if (allZero) {
                         cnt[i] = 0;
                     } else {
@@ -131,10 +136,10 @@ bool HbCore::buildGrid(Status& s) {
             }
 
             // Compute properties
-            int order = 0;
+            Int order = 0;
             double f = 0;
-            int nnz = 0;
-            for(int i=0; i<n; i++) {
+            Int nnz = 0;
+            for(decltype(n) i=0; i<n; i++) {
                 order += std::abs(cnt[i]);
                 f += cnt[i]*fundamentals[i];
             }
@@ -147,7 +152,7 @@ bool HbCore::buildGrid(Status& s) {
             if (!(params.truncate==HbCore::truncateDiamond && order>immax)) {
                 // Construct component
                 auto row = grid.addRow();
-                for(int i=0; i<n; i++) {
+                for(decltype(n) i=0; i<n; i++) {
                     row.at(i) = cnt[i];
                     if (cnt[i]!=0) {
                         nnz++;
@@ -161,11 +166,11 @@ bool HbCore::buildGrid(Status& s) {
                 });
             }
 
-            // Advance
-            for(int i=n-1; i>=0; i--) {
-                lastChanged = i;
-                cnt[i]++;
-                if (cnt[i]<end[i]) {
+            // Advance, count up because size_t is unsigned
+            for(decltype(n) i=0; i<n; i++) {
+                lastChanged = n-1-i;
+                cnt[lastChanged]++;
+                if (cnt[lastChanged]<end[lastChanged]) {
                     break;
                 }
             }
@@ -182,13 +187,14 @@ bool HbCore::buildGrid(Status& s) {
     }
 
     if (hb_debug>1) {
-        Simulator::out() << "Raw HB freqeuncy grid\n";
+        Simulator::out() << "Raw HB frequency grid\n";
         auto nn = grid.nRow();
-        for(int i=0; i<nn; i++) {
+        for(decltype(nn) i=0; i<nn; i++) {
             auto row = grid.row(i);
             
             std::cout << "  #" << i << " [";
-            for(int j=0; j<row.count(); j++) {
+            auto nel = row.n();
+            for(decltype(nel) j=0; j<nel; j++) {
                 std::cout << row.at(j) << " ";
             }
             std::cout << "]";
@@ -279,6 +285,11 @@ bool HbCore::buildGrid(Status& s) {
     }
     freq.resize(dest);
 
+    if (dest<2) {
+        s.set(Status::BadArguments, "Too few frequencies in spectrum.");
+        return false;
+    }
+
     // Sort freq vector by frequency
     std::sort(
         freq.begin(), freq.end(), 
@@ -286,12 +297,13 @@ bool HbCore::buildGrid(Status& s) {
     );
 
     if (hb_debug>0) {
-        Simulator::out() << "HB spectrum\n";
+        Simulator::out() << "HB spectrum, " << freq.size() << " frequencies\n";
         auto nn = grid.nRow();
         for(auto& fd : freq) {
             std::cout << "  #" << fd.gridIndex << " [";
             auto row = grid.row(fd.gridIndex);
-            for(int j=0; j<row.count(); j++) {
+            auto nel = row.n();
+            for(decltype(nel) j=0; j<nel; j++) {
                 std::cout << row.at(j) << " ";
             }
             std::cout << "]";

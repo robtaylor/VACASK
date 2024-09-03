@@ -44,6 +44,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/simulator.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/output.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/outrawfile.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/densematrix.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/nrsolver.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/progress.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/core.h 
@@ -125,6 +126,8 @@ add_library(simlib STATIC
     coretran.cpp
     corehb.cpp
     corehbspec.cpp
+    corehbcoloc.cpp
+    corehbxform.cpp
     an.cpp
     ansupport.cpp 
     ansolution.cpp 

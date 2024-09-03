@@ -11,7 +11,12 @@ Id HbCore::truncateRaw = Id::createStatic("raw");
 Id HbCore::truncateBox = Id::createStatic("box");
 Id HbCore::truncateDiamond = Id::createStatic("diamond");
 
+Id HbCore::sampleUniform = Id::createStatic("uniform");
+Id HbCore::sampleRandom = Id::createStatic("random");
+
 HbParameters::HbParameters() {
+    truncate = HbCore::truncateDiamond;
+    sample = HbCore::sampleRandom;
 }
 
 }
