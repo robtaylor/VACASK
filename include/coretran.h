@@ -43,7 +43,7 @@ typedef struct TranParameters {
     Real stop {0.0};      // Time up to which the circuit is to be simulated
     Real start {0.0};     // Time at which the results start being recorded
     Real maxstep {0.0};   // Maximal timestep (optional)
-    Id icmode {"op"};     // op=op with ic forces, uic=spice uic
+    Id icmode {Id()};     // op=op with ic forces, uic=spice uic
     Value ic {Value("")}; // String specifying stored solution slot or
                           // list specifying initial conditions
                           // for transient analysis

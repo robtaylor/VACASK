@@ -214,6 +214,7 @@ Id TranCore::icmodeUic = Id::createStatic("uic");
 TranParameters::TranParameters() {
     // Turn off output for op analysis
     opParams.writeOutput = 0; 
+    icmode = TranCore::icmodeOp;
 }
 
 template<> int Introspection<TranParameters>::setup() {
