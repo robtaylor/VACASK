@@ -27,7 +27,7 @@ bool HbCore::buildColocation(Status& s) {
     auto fmin = freq[1].f;
 
     if (params.samplefac<1.0) {
-        s.set(Status::BadArguments, "samplefac mus be >=1.");
+        s.set(Status::BadArguments, "samplefac must be >=1.");
     }
     
     // Number of samples

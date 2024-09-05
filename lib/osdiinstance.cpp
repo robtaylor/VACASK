@@ -593,6 +593,99 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
     }
 }
 
+void jacobianLoadWithOffsetSanityCheck(OsdiDescriptor* descriptor, void* model, void* instance, bool resist, bool react) {
+    auto nnz = descriptor->num_jacobian_entries;
+    
+    // Temporary pointer storage
+    double* resPtrs[nnz];
+    double* reacPtrs[nnz];
+    
+    // Extracted Jacobian contributions via load() 
+    double resVals[nnz] = {0};
+    double reacVals[nnz] = {0};
+
+    // Extracted Jacobian values via load_with_offset()
+    // 4 slots for each Jacobian entry, initialize to 0
+    double reswVals[nnz*4] = {0};
+    double reacwVals[nnz*4] = {0};
+
+    // Store pointers, redirect to our resVals, reacVals
+    auto instResPtrs = getDataPtr<double**>(instance, descriptor->jacobian_ptr_resist_offset);
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        resPtrs[i] = instResPtrs[i];
+        instResPtrs[i] = resVals+i;
+        if (jac.react_ptr_off != UINT32_MAX) {
+            auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
+            reacPtrs[i] = *reactPtr;
+            *reactPtr = reacVals+i;
+        } else {
+            reacPtrs[i] = nullptr;
+        }
+    }
+
+    // Get Jacobian contributions
+    if (resist) {
+        descriptor->load_jacobian_resist(instance, model);
+    }
+    if (react) {
+        descriptor->load_jacobian_react(instance, model, 1.0);
+    }
+
+    // Redirect to reswVals, reacwVals
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        instResPtrs[i] = reswVals+4*i;
+        if (jac.react_ptr_off != UINT32_MAX) {
+            auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
+            *reactPtr = reacwVals+4*i;
+        }
+    }
+
+    // Get Jacobian contributions with offset
+    if (resist) {
+        // Fill slot 2
+        descriptor->load_jacobian_with_offset_resist(instance, model, 2);
+    }
+    if (react) {
+        // Fill slot 1
+        descriptor->load_jacobian_with_offset_react(instance, model, 1);
+    }
+
+    // Check values
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        // Have resistive entry
+        if (resist) {
+            if (resVals[i] != reswVals[4*i+2]) {
+                throw std::logic_error("Jacobian mismatch, resistive i="+std::to_string(i));
+            }
+            if (reswVals[4*i]!=0 || reswVals[4*i+1]!=0 || reswVals[4*i+3]!=0) {
+                throw std::logic_error("Write outside slot, resistive i="+std::to_string(i));
+            }
+        }
+        // Have reactive entry
+        if (react) {
+            if (reacVals[i] != reacwVals[4*i+1]) {
+                throw std::logic_error("Jacobian mismatch, reactive i="+std::to_string(i));
+            }
+            if (reacwVals[4*i]!=0 || reacwVals[4*i+2]!=0 || reacwVals[4*i+3]!=0) {
+                throw std::logic_error("Write outside slot, reactive i="+std::to_string(i));
+            }
+        }
+    }
+
+    // Restore pointers
+    for(decltype(nnz) i=0; i<nnz; i++) {
+        auto& jac = descriptor->jacobian_entries[i];
+        instResPtrs[i] = resPtrs[i];
+        if (jac.react_ptr_off != UINT32_MAX) {
+            auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
+            *reactPtr = reacPtrs[i];
+        }
+    }
+}
+
 bool OsdiInstance::bypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) {
     // Get descriptor 
     auto model_ = model();
@@ -801,15 +894,6 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         }
     }
     
-    /*
-    // For development
-    jacobianWriteSanityCheck(
-        model()->device()->descriptor(), model()->core(), core(), 
-        els.loadResistiveJacobian || els.loadTransientJacobian, 
-        els.loadReactiveJacobian || els.loadTransientJacobian
-    );
-    */
-    
     auto nodeStateIndex = offsStates + device->internalStateCount();
     if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
         for(auto i : device->nonzeroReactiveResiduals()) {
@@ -882,6 +966,24 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     auto model_ = model();
     auto device = model_->device();
     auto descr = device->descriptor();
+
+    /*
+    // For development
+    jacobianWriteSanityCheck(
+        model()->device()->descriptor(), model()->core(), core(), 
+        loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian, 
+        loadSetup.loadReactiveJacobian || loadSetup.loadTransientJacobian
+    );
+    */
+
+    /*
+    // For development
+    jacobianLoadWithOffsetSanityCheck(
+        model()->device()->descriptor(), model()->core(), core(), 
+        loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian, 
+        loadSetup.loadReactiveJacobian || loadSetup.loadTransientJacobian
+    );
+    */
     
     // Loading
     

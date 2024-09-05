@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             
-            // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
+            "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnodeset.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opstore.sim" ],
@@ -33,7 +33,7 @@
             // "args": [ "-df", "${workspaceFolder}/test/test_sweep.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_sweeppar.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_sweepvar.sim" ],
-            "args": [ "-df", "${workspaceFolder}/test/test_sweepvec.sim" ],
+            // "args": [ "-df", "${workspaceFolder}/test/test_sweepvec.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_dcinc.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_dctf.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_ac.sim" ],
