@@ -155,7 +155,7 @@ bool AcCore::rebuild(Status& s) {
     
     // Resistive Jacobian entries remain bound to OP Jacobian, 
     // reactive parts will be bound to imaginary entries of acMatrix
-    if (!circuit.bind(nullptr, Component::RealPart, &acMatrix, Component::ImagPart, s)) {
+    if (!circuit.bind(nullptr, Component::Real, &acMatrix, Component::Imaginary, s)) {
         return false;
     }
     
@@ -300,7 +300,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         // Because the real part is taken from OP Jacobian it includes
         // the shunt resistors. 
         // Load imaginary part and AC residual. 
-        acMatrix.zero(Component::ImagPart);
+        acMatrix.zero(Component::Imaginary);
         zero(acSolution);
         lsReactive.reactiveJacobianFactor = omega;
         if (!circuit.evalAndLoad(nullptr, &lsReactive, nullptr)) {

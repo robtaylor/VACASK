@@ -231,7 +231,7 @@ bool NoiseCore::rebuild(Status& s) {
     
     // Resistive Jacobian entries remain bound to OP Jacobian, 
     // reactive parts will be bound to imaginary entries of acMatrix
-    if (!circuit.bind(nullptr, Component::RealPart, &acMatrix, Component::ImagPart, s)) {
+    if (!circuit.bind(nullptr, Component::Real, &acMatrix, Component::Imaginary, s)) {
         return false;
     }
     
@@ -385,7 +385,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         }
 
         // Load AC matrix, we must update the imaginary part only
-        acMatrix.zero(Component::ImagPart);
+        acMatrix.zero(Component::Imaginary);
         lsReacNoise.reactiveJacobianFactor = omega;
         if (!circuit.evalAndLoad(nullptr, &lsReacNoise, nullptr)) {
             // Load error

@@ -62,7 +62,7 @@ bool NRSolver::rebuild() {
     // Needed for forcing unknown values and setting gshunts
     for(decltype(n) i=1; i<=n; i++) {
         auto* node = circuit.reprNode(i);
-        diagPtrs[i] = jac.elementPtr(i, i, Component::RealPart);
+        diagPtrs[i] = jac.elementPtr(MatrixEntryPosition(i, i), Component::Real);
         isFlow[i] = node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode;
     }
 
@@ -78,8 +78,8 @@ bool NRSolver::rebuild() {
             auto [u1, u2] = deltaIndices[i];
             ptrs.push_back(
                 std::make_tuple(
-                    jac.elementPtr(u1, u2, Component::RealPart),
-                    jac.elementPtr(u2, u1, Component::RealPart)
+                    jac.elementPtr(MatrixEntryPosition(u1, u2), Component::Real),
+                    jac.elementPtr(MatrixEntryPosition(u2, u1), Component::Real)
                 )
             );
         }

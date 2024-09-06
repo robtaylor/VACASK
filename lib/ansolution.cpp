@@ -125,8 +125,8 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
             if (node1 && node2 && haveAllEntries) {
                 auto u1 = node1->unknownIndex();
                 auto u2 = node2->unknownIndex();
-                auto [dummy1, found12] = circuit.sparsityMap().find(u1, u2);
-                auto [dummy2, found21] = circuit.sparsityMap().find(u2, u1);
+                auto [dummy1, found12] = circuit.sparsityMap().find(MatrixEntryPosition(u1, u2));
+                auto [dummy2, found21] = circuit.sparsityMap().find(MatrixEntryPosition(u2, u1));
                 haveAllEntries = haveAllEntries && found12 && found21;
             }
             state = 0;

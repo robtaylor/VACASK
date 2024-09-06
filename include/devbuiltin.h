@@ -580,7 +580,7 @@ std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, Instan
     
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 void BuiltinInstance<ModelParams, InstanceParams, InstanceData>::jacEntryPtr(double*& destination, EquationIndex e, UnknownIndex u, KluMatrixAccess* mat, Component comp) {
-    destination = mat->valuePtr(e, u, comp);
+    destination = mat->valuePtr(MatrixEntryPosition(e, u), comp);
 }
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 

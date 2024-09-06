@@ -11,21 +11,6 @@ void SparsityMap::clear() {
     ordering.clear();
 }
 
-/*
-std::tuple<MatrixEntryIndex*, bool> SparsityMap::insert(EquationIndex e, UnknownIndex u) {
-    auto [it, inserted] = smap.insert({std::make_pair(e, u), 0});
-    return std::make_tuple(&(it->second), true);
-}
-
-std::tuple<MatrixEntryIndex, bool> SparsityMap::find(EquationIndex e, UnknownIndex u) const {
-    auto it = smap.find(std::make_pair(e, u));
-    if (it==smap.end()) {
-        return std::make_tuple(0, false);
-    }
-    return std::make_tuple(it->second, true);
-}
-*/
-
 // We could make ordering more efficient - now we must order up to n^2 elements 
 // which is on average n^2 log(n^2) operations with std::sort(). 
 // If we collect them by columns and then sort each column separately, 
@@ -60,9 +45,10 @@ void SparsityMap::enumerate() {
 
 void SparsityMap::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    for(auto it=ordering.cbegin(); it!=ordering.end(); ++it) {
-        auto [offs, found] = find(it->first, it->second);
-        os << pfx << "(" << it->first << ", " << it->second << ") : ";
+    for(auto& it : ordering) {
+        auto [offs, found] = find(it);
+        auto [e, u] = it;
+        os << pfx << "(" << e << ", " << u << ") : ";
         if (found) {
             os << offs;
         } else {
@@ -127,7 +113,8 @@ template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueT
     }
 }
 
-template<typename IndexType, typename ValueType> double* KluMatrixCore<IndexType, ValueType>::valueArray() {
+template<typename IndexType, typename ValueType> 
+double* KluMatrixCore<IndexType, ValueType>::valueArray() {
     if constexpr(std::is_same<ValueType, Complex>::value) {
         return nullptr;
     } else {
@@ -145,19 +132,25 @@ Complex* KluMatrixCore<IndexType, ValueType>::cxValueArray() {
 } 
 
 template<typename IndexType, typename ValueType> 
-std::tuple<IndexType, bool> KluMatrixCore<IndexType, ValueType>::valueIndex(IndexType row, IndexType col) {
-    return smap->find(row, col);
+std::tuple<IndexType, bool> KluMatrixCore<IndexType, ValueType>::valueIndex(
+    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
+) const {
+    return smap->find(mep);
 }
 
 template<typename IndexType, typename ValueType> 
-double* KluMatrixCore<IndexType, ValueType>::valuePtr(IndexType row, IndexType col, Component comp) {
-    return elementPtr(row, col, comp);
+double* KluMatrixCore<IndexType, ValueType>::valuePtr(
+    const MatrixEntryPosition& mep, Component comp, const std::optional<MatrixEntryPosition>& blockMep
+) {
+    return elementPtr(mep, comp);
 }
 
 template<typename IndexType, typename ValueType> 
-Complex* KluMatrixCore<IndexType, ValueType>::cxValuePtr(IndexType row, IndexType col) {
+Complex* KluMatrixCore<IndexType, ValueType>::cxValuePtr(
+    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
+) {
     if constexpr(std::is_same<ValueType, Complex>::value) {
-        auto [entryOffset, found] = smap->find(row, col);
+        auto [entryOffset, found] = smap->find(mep);
         if (found) {
             return Ax+entryOffset;
         } else {
@@ -232,7 +225,6 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     }
     zero();
     
-    // Maybe move this to clear
     int st;
     if constexpr(std::is_same<int32_t, IndexType>::value) {
         st = klu_defaults(&common);
@@ -260,21 +252,21 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
 template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, ValueType>::zero(Component what) {
     auto nnz_ = AP[AN];
     if constexpr(std::is_same<ValueType, Complex>::value) {
-        if (what==(Component::RealPart|Component::ImagPart)) {
+        if (what==(Component::Real|Component::Imaginary)) {
             for(IndexType i=0; i<nnz_; i++) {
                 Ax[i] = 0.0;
             }
-        } else if (what==Component::RealPart) {
+        } else if (what==Component::Real) {
             for(IndexType i=0; i<nnz_; i++) {
                 Ax[i].real(0.0);
             }
-        } else if (what==Component::ImagPart) {
+        } else if (what==Component::Imaginary) {
             for(IndexType i=0; i<nnz_; i++) {
                 Ax[i].imag(0.0);
             }
         }
     } else {
-        if ((what&Component::RealPart)==Component::RealPart) {
+        if ((what&Component::Real)==Component::Real) {
             for(IndexType i=0; i<nnz_; i++) {
                 Ax[i] = 0.0;
             }

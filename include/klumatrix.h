@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <complex>
 #include <type_traits>
+#include <optional>
 #include "status.h"
 #include "identifier.h"
 #include "flags.h"
@@ -18,6 +19,8 @@ namespace NAMESPACE {
 // TODO: make multiple matrices share the same sparsity pattern without allocating a new copy
 //       of KLU sparsity pattern
 
+// Abstract class that resolves a row/column index into a name
+// Should be defined by the user of the sparse matrix
 class NameResolver {
 public:
     NameResolver() {};
@@ -26,6 +29,29 @@ public:
     virtual Id operator()(MatrixEntryIndex u) = 0;
 };
 
+
+// Index pair holding row and column posotion
+typedef std::pair<EquationIndex,UnknownIndex> MatrixEntryPosition;
+
+
+// Hash function for MatrixEntryPosition
+ typedef struct MatrixEntryPositionHash {
+    auto operator()(const MatrixEntryPosition& p) const -> size_t {
+        if constexpr(sizeof(MatrixEntryPosition)<=sizeof(size_t)) {
+            // Faster hash if entry coordinates are 32+32 bits on a machine with a 64-bit size_t
+            return std::hash<size_t>{}(
+                (static_cast<size_t>(p.first) << (sizeof(size_t)*8/2)) +
+                p.second
+            );
+        } else {
+            // Standard approach
+            return hash_val(p.first, p.second);
+        }
+    }
+} MatrixEntryPositionHash;
+
+
+// Sparsity map - maps MatrixEntyPosition to an index in a linear array
 class SparsityMap {
 public:
     SparsityMap() {};
@@ -35,24 +61,7 @@ public:
     SparsityMap& operator=(const SparsityMap&)  = delete;
     SparsityMap& operator=(      SparsityMap&&) = delete;
 
-    // Internal map type
-    typedef std::pair<EquationIndex,UnknownIndex> MatrixEntryPosition;
-    
-    typedef struct MatrixEntryPositionHash {
-        auto operator()(const MatrixEntryPosition& p) const -> size_t {
-            if constexpr(sizeof(MatrixEntryPosition)<=sizeof(size_t)) {
-                // Faster hash if entry coordinates are 32+32 bits on a machine with a 64-bit size_t
-                return std::hash<size_t>{}(
-                    (static_cast<size_t>(p.first) << (sizeof(size_t)*8/2)) +
-                    p.second
-                );
-            } else {
-                // Standard approach
-                return hash_val(p.first, p.second);
-            }
-        }
-    } MatrixEntryPositionHash;
-
+    // Type of map from MatrixEntryPosition into a linear array index
     typedef std::unordered_map<MatrixEntryPosition, MatrixEntryIndex, MatrixEntryPositionHash> Map;
 
     // Clear
@@ -70,14 +79,14 @@ public:
     };
 
     // Find, bool value indicates if an entry was found
-    std::tuple<MatrixEntryIndex, bool> find(EquationIndex e, UnknownIndex u) const  {
-        auto it = smap.find(std::make_pair(e, u));
+    std::tuple<MatrixEntryIndex, bool> find(const MatrixEntryPosition& mep) const {
+        auto it = smap.find(mep);
         if (it==smap.end()) {
             return std::make_tuple(0, false);
         }
         return std::make_tuple(it->second, true);
     };
-
+    
     // Get vector of sorted matrix entry positions
     std::vector<MatrixEntryPosition>& positions() { return ordering; };
     const std::vector<MatrixEntryPosition>& positions() const { return ordering; };
@@ -94,10 +103,18 @@ private:
 };
 
 
-typedef enum Component { RealPart=1, ImagPart=2 } Component;
+// Element component when element is complex
+enum class Component { Real=1, Imaginary=2 };
 DEFINE_FLAG_OPERATORS(Component);
 
 
+// Matrix binding interface for accessing element indices and pointers
+// Because Circuit::bind() should by matrix type agnostic we need this interface. 
+// Analyses can use different types of matrices, but instances must be able to 
+// handle them all in the same way via this interface. 
+// Assumes the underlying type of element is either double or std::complex<double> (Complex)
+// This interface is used by the Device::bind() method to bind instances 
+// to matrix elements and their components. 
 template<typename IndexType> class MatrixAccess {
 public:
     // Return array holding matrix nonzero elements
@@ -109,18 +126,24 @@ public:
     virtual Complex* cxValueArray() = 0;
 
     // Return index into element array corresponding to row, column (1-based)
+    // For block matrices, mep is the block position and 
+    // blockMep is the position of the element within the block. 
     // Return value: index, found
-    virtual std::tuple<IndexType, bool> valueIndex(IndexType row, IndexType col) = 0;
+    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const = 0;
 
     // Return pointer to element's component
-    // Returns bucket if element not found 
-    // Returns nullptr if imaginary part is requested for a real matrix
-    virtual double* valuePtr(IndexType row, IndexType col, Component comp=RealPart) = 0;
+    // For block matrices, mep is the block position and 
+    // blockMep is the position of the element within the block. 
+    // Returns bucket if element is not found 
+    // Returns nullptr if imaginary part is requested from a real matrix
+    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
 
     // Return pointer to element's component (complex matrix)
-    // Returns complex bucket if element not found 
+    // For block matrices, mep is the block position and 
+    // blockMep is the position of the element within the block. 
+    // Returns complex bucket if element is not found 
     // Returns nullptr if matrix is real 
-    virtual Complex* cxValuePtr(IndexType row, IndexType col) = 0;
+    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
 };
 
 
@@ -153,11 +176,13 @@ public:
 
     virtual ~KluMatrixCore();
 
+    // Matrix binding interface
+    // Block element position is ignored
     virtual double* valueArray();
     virtual Complex* cxValueArray();
-    virtual std::tuple<IndexType, bool> valueIndex(IndexType row, IndexType col);
-    virtual double* valuePtr(IndexType row, IndexType col, Component comp=RealPart) ;
-    virtual Complex* cxValuePtr(IndexType row, IndexType col);
+    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const;
+    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) ;
+    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
 
     // Set accounting structure
     void setAccounting(Accounting& accounting) { acct = &accounting; }; 
@@ -191,15 +216,17 @@ public:
     bool valid() const { return symbolic; };
 
     // Returns a pointer to element (component), if element is not found returns pointer to bucket
-    double* elementPtr(EquationIndex e, UnknownIndex u, Component comp=Component::RealPart) {
-        auto [entryOffset, found] = smap->find(e, u);
+    // Assumes the undelying type is double or std::complex<double> (Complex)
+    // This is used when the type of the matrix is known. 
+    double* elementPtr(const MatrixEntryPosition& mep, Component comp=Component::Real) {
+        auto [entryOffset, found] = smap->find(mep);
         if (found) {
             if constexpr(std::is_same<ValueType, Complex>::value) {
-                return (comp==Component::ImagPart) ? 
+                return (comp==Component::Imaginary) ? 
                     reinterpret_cast<double*>(Ax+entryOffset)+1 : 
                     reinterpret_cast<double*>(Ax+entryOffset);
             } else {
-                return (comp==Component::ImagPart) ? nullptr : (Ax+entryOffset);
+                return (comp==Component::Imaginary) ? nullptr : (Ax+entryOffset);
             }
         } else {
             return reinterpret_cast<double*>(&bucket_);
@@ -213,7 +240,7 @@ public:
     IndexType nnz() const { return AP[AN]; };
 
     // Set entries to 0, clear error
-    void zero(Component what=Component::RealPart|Component::ImagPart);
+    void zero(Component what=Component::Real|Component::Imaginary);
 
     // Factorization
     bool factor();
