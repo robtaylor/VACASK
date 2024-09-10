@@ -466,8 +466,8 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
 
 bool OsdiInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto descr = model()->device()->descriptor();
@@ -495,7 +495,7 @@ bool OsdiInstance::bindCore(
         auto u = nu->unknownIndex();
         
         // Set resistive Jacobian element pointer
-        if (matResist && !(jacResistArray[i] = matResist->valuePtr(MatrixEntryPosition(e, u), compResist))) {
+        if (matResist && !(jacResistArray[i] = matResist->valuePtr(MatrixEntryPosition(e, u), compResist, mepResist))) {
             s.set(Status::BadConversion, "Matrix is of incorrect type.");
             return false;
         }
@@ -505,7 +505,7 @@ bool OsdiInstance::bindCore(
             auto reactivePointer = reactiveJacobianPointer(i);
             if (reactivePointer) {
                 // Set reactive Jacobian pointer
-                if (!(*reactivePointer = matReact->valuePtr(MatrixEntryPosition(e, u), compReact))) {
+                if (!(*reactivePointer = matReact->valuePtr(MatrixEntryPosition(e, u), compReact, mepReact))) {
                     s.set(Status::BadConversion, "Matrix is of incorrect type.");
                     return false;
                 }

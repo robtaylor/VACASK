@@ -142,8 +142,8 @@ template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVccsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
 template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
@@ -159,8 +159,8 @@ template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVcvsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
 template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
@@ -176,8 +176,8 @@ template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource
 template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCccsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
 template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
@@ -193,8 +193,8 @@ template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource
 template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCcvsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
 template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
@@ -243,8 +243,8 @@ template<> bool BuiltinMutualInstance::preAnalysisWorker(Circuit& circuit, Statu
 template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
 template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);

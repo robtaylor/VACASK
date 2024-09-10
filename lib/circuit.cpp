@@ -1199,16 +1199,16 @@ bool Circuit::enumerateSystem(Status& s) {
 }
 
 bool Circuit::bind(
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     // Call bind() for all devices
     for(auto& dev : devices) {
         if (!dev.get()->bind(
             *this, 
-            matResist, compResist,  
-            matReact, compReact, 
+            matResist, compResist, mepResist, 
+            matReact, compReact, mepReact, 
             s
         )) {
             return false;

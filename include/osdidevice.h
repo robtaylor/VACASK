@@ -51,8 +51,8 @@ public:
     virtual bool populateStructures(Circuit& circuit, Status& s=Status::ignore);
     virtual bool bind(
         Circuit& circuit, 
-        KluMatrixAccess* matResist, Component compResist, 
-        KluMatrixAccess* matReact, Component compReact, 
+        KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+        KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
     virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup);

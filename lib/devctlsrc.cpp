@@ -200,8 +200,8 @@ template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, St
 
 template<> bool BuiltinVccsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto& d = data.core();
@@ -214,10 +214,10 @@ template<> bool BuiltinVccsInstance::bindCore(
 
     // Resistive Jacobian entry pointer
     if (matResist) {
-        jacEntryPtr(d.jacPCp, d.uP, d.uCp, matResist, compResist);
-        jacEntryPtr(d.jacPCn, d.uP, d.uCn, matResist, compResist);
-        jacEntryPtr(d.jacNCp, d.uN, d.uCp, matResist, compResist);
-        jacEntryPtr(d.jacNCn, d.uN, d.uCn, matResist, compResist);
+        jacEntryPtr(d.jacPCp, d.uP, d.uCp, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacPCn, d.uP, d.uCn, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacNCp, d.uN, d.uCp, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacNCn, d.uN, d.uCn, matResist, compResist, mepResist);
     }
     
     // No reactive Jacobian entries
@@ -356,8 +356,8 @@ template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, St
 
 template<> bool BuiltinVcvsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto& d = data.core();
@@ -371,12 +371,12 @@ template<> bool BuiltinVcvsInstance::bindCore(
 
     // Resistive Jacobian entry pointers
     if (matResist) {
-        jacEntryPtr(d.jacPFlow,  d.uP,    d.uFlow, matResist, compResist);
-        jacEntryPtr(d.jacNFlow,  d.uN,    d.uFlow, matResist, compResist);
-        jacEntryPtr(d.jacFlowP,  d.uFlow, d.uP,    matResist, compResist);
-        jacEntryPtr(d.jacFlowN,  d.uFlow, d.uN,    matResist, compResist);
-        jacEntryPtr(d.jacFlowCp, d.uFlow, d.uCp,   matResist, compResist);
-        jacEntryPtr(d.jacFlowCn, d.uFlow, d.uCn,   matResist, compResist);
+        jacEntryPtr(d.jacPFlow,  d.uP,    d.uFlow, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacNFlow,  d.uN,    d.uFlow, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowP,  d.uFlow, d.uP,    matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowN,  d.uFlow, d.uN,    matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowCp, d.uFlow, d.uCp,   matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowCn, d.uFlow, d.uCn,   matResist, compResist, mepResist);
     }
 
     // No reactive Jacobian entries
@@ -505,8 +505,8 @@ template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, St
 
 template<> bool BuiltinCccsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto& d = data.core();
@@ -517,8 +517,8 @@ template<> bool BuiltinCccsInstance::bindCore(
     
     // Resistive Jacobian entry pointers
     if (matResist) {
-        jacEntryPtr(d.jacPCtl,  d.uP,    d.uCtl, matResist, compResist);
-        jacEntryPtr(d.jacNCtl,  d.uN,    d.uCtl, matResist, compResist);
+        jacEntryPtr(d.jacPCtl,  d.uP,    d.uCtl, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacNCtl,  d.uN,    d.uCtl, matResist, compResist, mepResist);
     }
     
     // No reactive Jacobian entries
@@ -658,8 +658,8 @@ template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, St
 
 template<> bool BuiltinCcvsInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto& d = data.core();
@@ -671,11 +671,11 @@ template<> bool BuiltinCcvsInstance::bindCore(
 
     // Resistive Jacobian entry pointers
     if (matResist) {
-        jacEntryPtr(d.jacPFlow,   d.uP,    d.uFlow, matResist, compResist);
-        jacEntryPtr(d.jacNFlow,   d.uN,    d.uFlow, matResist, compResist);
-        jacEntryPtr(d.jacFlowP,   d.uFlow, d.uP,    matResist, compResist);
-        jacEntryPtr(d.jacFlowN,   d.uFlow, d.uN,    matResist, compResist);
-        jacEntryPtr(d.jacFlowCtl, d.uFlow, d.uCtl,  matResist, compResist);
+        jacEntryPtr(d.jacPFlow,   d.uP,    d.uFlow, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacNFlow,   d.uN,    d.uFlow, matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowP,   d.uFlow, d.uP,    matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowN,   d.uFlow, d.uN,    matResist, compResist, mepResist);
+        jacEntryPtr(d.jacFlowCtl, d.uFlow, d.uCtl,  matResist, compResist, mepResist);
     }
     
     // No reactive Jacobian entries
@@ -949,8 +949,8 @@ template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, 
 
 template<> bool BuiltinMutualInstance::bindCore(
     Circuit& circuit, 
-    KluMatrixAccess* matResist, Component compResist, 
-    KluMatrixAccess* matReact, Component compReact, 
+    KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
+    KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 ) {
     auto& d = data.core();
@@ -963,8 +963,8 @@ template<> bool BuiltinMutualInstance::bindCore(
     
     // Reactive Jacobian entry pointers
     if (matReact) {
-        jacEntryPtr(d.jacReact12, d.uFlow1, d.uFlow2, matReact, compReact);
-        jacEntryPtr(d.jacReact21, d.uFlow2, d.uFlow1, matReact, compReact);
+        jacEntryPtr(d.jacReact12, d.uFlow1, d.uFlow2, matReact, compReact, mepReact);
+        jacEntryPtr(d.jacReact21, d.uFlow2, d.uFlow1, matReact, compReact, mepReact);
     }
         
     return true;
