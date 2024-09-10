@@ -30,7 +30,7 @@ public:
 };
 
 
-// Index pair holding row and column posotion
+// Index pair holding row and column position
 typedef std::pair<EquationIndex,UnknownIndex> MatrixEntryPosition;
 
 
@@ -125,22 +125,25 @@ public:
     // For real matrices returns nullptr
     virtual Complex* cxValueArray() = 0;
 
-    // Return index into element array corresponding to row, column (1-based)
-    // For block matrices, mep is the block position and 
-    // blockMep is the position of the element within the block. 
+    // Return index into element array corresponding to row, column given by mep (1-based)
+    // For block matrices, mep is the block position (1-based) and 
+    // blockMep is the position of the element within the block (1-based). 
+    // If blockMep is not given, (1,1) is assumed. 
     // Return value: index, found
     virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const = 0;
 
     // Return pointer to element's component
-    // For block matrices, mep is the block position and 
-    // blockMep is the position of the element within the block. 
+    // For block matrices, mep is the block position (1-based) and 
+    // blockMep is the position of the element within the block (1-based). 
+    // If blockMep is not given, (1,1) is assumed. 
     // Returns bucket if element is not found 
     // Returns nullptr if imaginary part is requested from a real matrix
     virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
 
     // Return pointer to element's component (complex matrix)
-    // For block matrices, mep is the block position and 
-    // blockMep is the position of the element within the block. 
+    // For block matrices, mep is the block position (1-based) and 
+    // blockMep is the position of the element within the block (1-based). 
+    // If blockMep is not given, (1,1) is assumed. 
     // Returns complex bucket if element is not found 
     // Returns nullptr if matrix is real 
     virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
@@ -217,19 +220,18 @@ public:
 
     // Returns a pointer to element (component), if element is not found returns pointer to bucket
     // Assumes the undelying type is double or std::complex<double> (Complex)
-    // This is used when the type of the matrix is known. 
+    // This method is used when the type of the matrix is known. 
     double* elementPtr(const MatrixEntryPosition& mep, Component comp=Component::Real) {
         auto [entryOffset, found] = smap->find(mep);
-        if (found) {
-            if constexpr(std::is_same<ValueType, Complex>::value) {
-                return (comp==Component::Imaginary) ? 
-                    reinterpret_cast<double*>(Ax+entryOffset)+1 : 
-                    reinterpret_cast<double*>(Ax+entryOffset);
-            } else {
-                return (comp==Component::Imaginary) ? nullptr : (Ax+entryOffset);
-            }
-        } else {
+        if (!found) {
             return reinterpret_cast<double*>(&bucket_);
+        }
+        if constexpr(std::is_same<ValueType, Complex>::value) {
+            return (comp==Component::Imaginary) ? 
+                reinterpret_cast<double*>(Ax+entryOffset)+1 : 
+                reinterpret_cast<double*>(Ax+entryOffset);
+        } else {
+            return (comp==Component::Imaginary) ? nullptr : (Ax+entryOffset);
         }
     };
 
@@ -298,7 +300,7 @@ public:
     // Dump vector
     void dumpVector(std::ostream& os, ValueType* v, int colw=12, int prec=2);
     
-private:
+protected:
     Accounting* acct;
     bool isComplex_;
     IndexType AN;

@@ -636,7 +636,7 @@ template<typename IndexType, typename ValueType> std::tuple<IndexType, bool> Klu
 template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, ValueType>::dumpSparsity(std::ostream& os) {
    for(IndexType row=0; row<AN; row++) {
         if (row>0) {
-            std::cout << std::endl;
+            std::cout << "\n";
         }
         for(IndexType col=0; col<AN; col++) {
             auto [offs, found] = nonzeroOffset(row, col);
@@ -654,7 +654,7 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
     for(IndexType i=0; i<=AN; i++) {
         os << AP[i] << " ";
     }
-    os << std::endl;
+    os << "\n";
     os << "Ai: ";
     for(IndexType i=0; i<AP[AN]; i++) {
         os << AI[i] << " ";
@@ -688,10 +688,10 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
             os << std::setw(colw) << "rhs";
         }
     }
-    std::cout << std::endl;
+    std::cout << "\n";
     for(IndexType row=0; row<AN; row++) {
         if (row>0) {
-            os << std::endl;
+            os << "\n";
         }
         os << std::setw(4) << row << ":";
         for(IndexType col=0; col<AN; col++) {
@@ -742,7 +742,7 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
 
     for(IndexType i=0; i<AN; i++) {
         if (i>0) {
-            os << std::endl;
+            os << "\n";
         }
         if constexpr(std::is_same<ValueType, Complex>::value) {
             os << std::setw(colw) << v[i].real();

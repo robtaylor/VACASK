@@ -21,15 +21,26 @@ public:
         if (n_ != from.n_) {
             throw std::out_of_range("Vector length mismatch.");
         }
+        T* ptr = start_;
+        T* ptrFrom = from.start_;
         for(decltype(n_) i=0; i<n_; i++) {
-            start_[i*stride_] = from.start_[i*stride_];
+            *ptr = *ptrFrom;
+            ptr += stride_;
+            ptrFrom += from.stride_;
         }
         return *this;
     };
 
     VectorView<T>& operator=(const T& from) { 
+        if (n_ != from.n_) {
+            throw std::out_of_range("Vector length mismatch.");
+        }
+        T* ptr = start_;
+        T* ptrFrom = from.start_;
         for(decltype(n_) i=0; i<n_; i++) {
-            start_[i*stride_] = from;
+            *ptr = *ptrFrom;
+            ptr += stride_;
+            ptrFrom += from.stride_;
         }
         return *this;
     };
@@ -114,29 +125,125 @@ private:
 };
 
 
-// Dense matrix stored in row-major order
-template<typename T> class DenseMatrix {
+template<typename T> class DenseMatrixView {
 public:
-    DenseMatrix() : nRow_(0), nCol_(0) {};
-    DenseMatrix(size_t nRow, size_t nCol) : nRow_(nRow), nCol_(nCol) { data.resize(nRow*nCol); };
+    DenseMatrixView(T* start, size_t nRow, size_t nCol, size_t rowStride, size_t colStride) 
+        : start_(start), nRow_(nRow), nCol_(nCol), rowStride_(rowStride_), colStride_(colStride) {}; 
 
     size_t nRow() const { return nRow_; }; 
     size_t nCol() const { return nCol_; }; 
 
-    void resize(size_t nRow, size_t nCol) { nRow_ = nRow; nCol_ = nCol; data.resize(nRow*nCol); }; 
+    T& at(size_t row, size_t col) { return *(start_ + row*rowStride_ + col*colStride_); };
+    VectorView<T> row(size_t i) { return VectorView<T>(start_ + i*rowStride_, nCol_, colStride_); };
+    VectorView<T> column(size_t i) { return VectorView<T>(start_ + i*colStride_, nRow_, rowStride_); };
 
-    T& at(size_t row, size_t col) { return data[row*nCol_+col]; }; 
-    VectorView<T> row(size_t i) { return VectorView<T>(data.data()+nCol_*i, nCol_, 1); }
-    VectorView<T> column(size_t i) { return VectorView<T>(data.data()+i, nRow_, nCol_); }
+    void zero() { 
+        for(size_t i=0; i<nRow_; i++) {
+            for(size_t j=0; j<nCol_; j++) {
+                at(i, j) = 0;
+            }
+        }
+    };
 
-    void pushRow(T* rowDataPtr) { for(size_t i=0; i<nCol_; i++) data.push_back(rowDataPtr[i]); };
-    VectorView<T> addRow() { nRow_++; data.resize(nRow_*nCol_); return row(nRow_-1); }
-
-    void zero() { data.assign(data.size(), T()); };
-
-private:
+protected:
+    T* start_;
     size_t nRow_;
     size_t nCol_;
+    size_t rowStride_;
+    size_t colStride_;
+};
+
+
+// Dense matrix stored in row-major order
+template<typename T> class DenseMatrix : public DenseMatrixView<T> {
+public:
+    enum class Major { Row=0, Column=1 }; 
+
+    using DenseMatrixView<T>::start_;
+    using DenseMatrixView<T>::nRow_;
+    using DenseMatrixView<T>::nCol_;
+    using DenseMatrixView<T>::rowStride_;
+    using DenseMatrixView<T>::colStride_;
+    
+    DenseMatrix() 
+        : DenseMatrixView<T>(nullptr, 0, 0, 1, 1), major_(Major::Row) {};
+
+    DenseMatrix(size_t nRow, size_t nCol, Major major=Major::Row) 
+        : DenseMatrixView<T>(nullptr, nRow_, nCol_, 1, 1), major_(major) { 
+        data.resize(nRow*nCol); 
+        start_ = data.data();
+        setStride();
+    };
+
+    // Does not reorder existing data, data moves in mysterious ways index-wise
+    void resize(size_t nRow, size_t nCol) { 
+        nRow_ = nRow; 
+        nCol_ = nCol; 
+        data.resize(nRow*nCol);
+        setStride();
+    }; 
+    
+    // Specializations for DenseMatrix
+    T& at(size_t row, size_t col) { 
+        switch (major_) {
+            case Major::Row:
+                return data[row*nCol_+col]; 
+            case Major::Column:
+            default:
+                return data[row+nRow_*col]; 
+        }
+    }; 
+    
+    // Specializations for DenseMatrix
+    VectorView<T> row(size_t i) { 
+        switch (major_) {
+            case Major::Row:
+                return VectorView<T>(data.data()+nCol_*i, nCol_, 1); 
+            case Major::Column:
+            default:
+                return VectorView<T>(data.data()+i, nCol_, nRow_); 
+        }   
+    };
+    
+    // Specializations for DenseMatrix
+    VectorView<T> column(size_t i) { 
+        switch (major_) {
+            case Major::Row:
+                return VectorView<T>(data.data()+i, nRow_, nCol_); 
+            case Major::Column:
+            default:
+                return VectorView<T>(data.data()+i*nRow_, nRow_, 1); 
+        }
+    };
+
+    // Specializations for DenseMatrix
+    void zero() { data.assign(data.size(), T()); };
+    
+    // Row major only
+    VectorView<T> addRow() { 
+        if (major_==Major::Column) {
+            throw std::out_of_range("Rows cannot be added to column major matrices.");
+        }
+        nRow_++; 
+        data.resize(nRow_*nCol_); 
+        return row(nRow_-1); 
+    };
+    
+private:
+    void setStride() {
+        switch (major_) {
+            case Major::Row:
+                rowStride_ = nCol_;
+                colStride_ = 1;
+                break;
+            case Major::Column:
+                rowStride_ = 1;
+                colStride_ = nRow_;
+                break;
+        }
+    };
+
+    Major major_;
     std::vector<T> data;
 };
 

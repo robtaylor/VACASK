@@ -535,9 +535,9 @@ bool AnalysisCore::formatError(Status& s) const {
 }
 
 void AnalysisCore::dump(std::ostream& os) const {
-    os << "  Output variables: " << std::endl;
+    os << "  Output variables: " << "\n";
     for(auto& desc : outputDescriptors) {
-        os << "    " << desc.name << std::endl;
+        os << "    " << desc.name << "\n";
     }
 }
 

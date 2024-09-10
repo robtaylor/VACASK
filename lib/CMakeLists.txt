@@ -41,6 +41,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/introspection.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/circuit.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/klumatrix.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/klubsmatrix.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/simulator.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/output.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/outrawfile.h 
@@ -107,6 +108,7 @@ add_library(simlib STATIC
     cirvariables.cpp 
     cirparams.cpp
     klumatrix.cpp
+    klubsmatrix.cpp
     simulator.cpp
     output.cpp
     outrawfile.cpp

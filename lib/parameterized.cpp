@@ -123,7 +123,7 @@ std::tuple<bool,bool> Parameterized::setParameters(const PTParameterMap& params,
 void Parameterized::dump(std::ostream& os, const char* prefix) const {
     for(ParameterIndex i=0; i<parameterCount(); i++) {
         if (i>0) {
-            os << std::endl;
+            os << "\n";
         }
         Value v;
         getParameter(i, v);

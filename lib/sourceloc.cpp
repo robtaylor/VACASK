@@ -84,7 +84,7 @@ std::string Loc::toString() const {
         if (nEraseBack) {
             s << " ...";
         }
-        s << std::endl << "  ";
+        s << "\n" << "  ";
         for(SourceColumnNumber i=1; i<col; i++) 
             s << " ";
         s << "^";
@@ -94,7 +94,7 @@ std::string Loc::toString() const {
         // <line>:<column> in <filename>[, section <section>]
         // included on line <lineno> of <filename>[, section <section>] 
         // included on line ...
-        s << std::endl;
+        s << "\n";
 
         // Is it just a string with no inclusion history
         if (fileStack->isString(fileId)) {
@@ -114,7 +114,7 @@ std::string Loc::toString() const {
                 s << ", section " << fileStack->sectionName(pos);
             }
             if (next!=FileStack::badFileId) {
-                s << std::endl;    
+                s << "\n";    
             }
             if (fileStack->inclusionLine(pos)>0) {
                 s << "  included on line " << fileStack->inclusionLine(pos) << " of ";

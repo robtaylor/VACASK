@@ -89,7 +89,7 @@ void Id::constructorHelper(const char *s, size_t n, bool makeStatic) {
 #ifdef SIMDEBUG
     str = it->first;
 #endif
-    // std::cout << "copy " << id_ << " " << it->first << std::endl;
+    // std::cout << "copy " << id_ << " " << it->first << "\n"";
 }
 
 Id::Id(const std::string& s) {

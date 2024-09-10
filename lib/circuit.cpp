@@ -960,7 +960,7 @@ bool Circuit::collapseNodes(Node* n1, Node* n2, Status& s) {
         u2 = tmp;
     }
 
-    // std::cout << n1 << "<-" << n2 << " : " << u1 << "<-" << u2 << std::endl;
+    // std::cout << n1 << "<-" << n2 << " : " << u1 << "<-" << u2 << "\n";
 
     // Relocate nodes corresponding to u2 to nodes corresponding to u1
     auto range = unknownToNodes.equal_range(u2);
@@ -984,12 +984,12 @@ bool Circuit::collapseNodes(Node* n1, Node* n2, Status& s) {
     for(auto it=unknownToNodes.begin(); it!=unknownToNodes.end(); ++it) {
         if (first || it->first!=lastu) {
             lastu = it->first;
-            std::cout << std::endl << "  u" << it->first << " : ";
+            std::cout << "\n" << "  u" << it->first << " : ";
             first = false;
         }
         std::cout << it->second << " ";
     }
-    std::cout << std::endl;
+    std::cout << "\n";
     */
     return true;
 }
@@ -1397,7 +1397,7 @@ void Circuit::dumpSparsity(int indent, std::ostream& os) const {
 void Circuit::dumpSolution(std::ostream& os, const double* solution, const char* prefix) const {
     for(NodeIndex i=0; i<nodeOrder.size(); i++) {
         if (i!=0) {
-            os << std::endl;
+            os << "\n";
         }
         os << prefix << nodeOrder[i]->name() << " : " << nodeValue(nodeOrder[i], solution);
     }
@@ -1406,7 +1406,7 @@ void Circuit::dumpSolution(std::ostream& os, const double* solution, const char*
 void Circuit::dumpSolution(std::ostream& os, const Complex* solution, const char* prefix) const {
     for(NodeIndex i=0; i<nodeOrder.size(); i++) {
         if (i!=0) {
-            os << std::endl;
+            os << "\n";
         }
         auto nv = nodeValue(nodeOrder[i], solution);
         os << prefix << nodeOrder[i]->name() << " : " << nv.real();

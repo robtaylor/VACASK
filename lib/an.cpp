@@ -633,17 +633,17 @@ std::tuple<bool, bool> Analysis::updateParameterExpressions(Status& s) {
 
 void Analysis::dump(std::ostream& os) const {
     os << "Analysis " << std::string(name());
-    os << std::endl; 
+    os << "\n"; 
 
-    os << "  Simulator options:" << std::endl;
+    os << "  Simulator options:" << "\n";
     simOptions.dump(os, "    ");
     auto& params = parameters();
     if (params.parameterCount()>0) {
-        os << std::endl;
-        os << "  Analysis parameters:" << std::endl;
+        os << "\n";
+        os << "  Analysis parameters:" << "\n";
         params.dump(os, "    ");
     }
-    os << std::endl;
+    os << "\n";
 }
 
 }

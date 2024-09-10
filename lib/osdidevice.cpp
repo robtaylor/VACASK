@@ -326,7 +326,7 @@ bool OsdiDevice::collapseNodes(Circuit& circuit, Status& s) {
 bool OsdiDevice::populateStructures(Circuit& circuit, Status& s) {
     for(auto model : models()) {
         for(auto instance : model->instances()) {
-            // std::cout << std::string(name()) << " " << std::string(model->name()) << " " << std::string(instance->name()) << std::endl;
+            // std::cout << std::string(name()) << " " << std::string(model->name()) << " " << std::string(instance->name()) << "\n";
             if (!static_cast<OsdiInstance*>(instance)->populateStructuresCore(circuit, s)) {
                 return false;
             }

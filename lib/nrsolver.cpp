@@ -588,9 +588,9 @@ bool NRSolver::run(bool continuePrevious) {
         }
         
         // jac.dumpSparsityTables(std::cout);
-        // std::cout << std::endl;
+        // std::cout << "\n";
         // jac.dumpEntries(std::cout);
-        // std::cout << std::endl;
+        // std::cout << "\n";
         
         // Weird... KLU does not detect singular matrix for two dangling serially connected resistors
         //          Probably due to numerical errors (1e-16 is taken as a valid pivot)

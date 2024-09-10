@@ -63,7 +63,7 @@ void PoolAllocator::advance() {
 
 void PoolAllocator::dump(std::ostream& os) {
     for(auto at=blockList.begin(); at!=blockList.end(); ++at) {
-        os << "Block size=" << at->size << ", used=" << at->used << std::endl; 
+        os << "Block size=" << at->size << ", used=" << at->used << "\n"; 
     }
 }
 
@@ -91,18 +91,18 @@ const char* CStringPool::allocate(const std::string& s) {
 
 void CStringPool::dump(std::ostream& os, bool details) {
     for(auto at=blockList.begin(); at!=blockList.end(); ++at) {
-        os << "Block size " << at->size << ", used " << at->used << std::endl; 
+        os << "Block size " << at->size << ", used " << at->used << "\n"; 
         size_t strCount = 0;
         for(size_t i=0; i<at->used; ) {
             auto ptr = reinterpret_cast<char*>(at->basePtr(i));
             auto n = std::strlen(ptr);
             if (details) {
-                os << "  " << strCount << ":" << ptr << std::endl;
+                os << "  " << strCount << ":" << ptr << "\n";
             }
             i += n+1;
             strCount++;
         }
-        std::cout << "  string count: " << strCount << std::endl;
+        std::cout << "  string count: " << strCount << "\n";
     }
 }
 
