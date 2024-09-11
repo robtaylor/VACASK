@@ -7,18 +7,7 @@
 
 namespace NAMESPACE {
 
-enum class OpNRSolverFlags : uint8_t { 
-    Abort = 1,  // Exit analysis immediately, even in the middle of computing a point
-    Finish = 2, // Wait until current point is computed to the end, then exit simulation
-                 // i.e. for multipoint analyses (sweep, frequency sweep, time sweep) 
-                 // wait until current point is computed, then exit
-                 // Do not exit sweep. 
-    Stop = 4,   // Stop analysis to possibly continue it later
-                 // Exit sweep. 
-};
-DEFINE_FLAG_OPERATORS(OpNRSolverFlags);
-
-class OpNRSolver : public NRSolver, public FlagBase<OpNRSolverFlags> {
+class OpNRSolver : public NRSolver {
 public:
     // By default OpNRSolver has 2 force slots
     // 0 .. continuation nodesets for sweep

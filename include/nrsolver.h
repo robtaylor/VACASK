@@ -30,8 +30,18 @@ typedef struct NRSettings {
     Real forceFactor {1e5}; 
 } NRSettings;
 
+enum class NRSolverFlags : uint8_t { 
+    Abort = 1,  // Exit analysis immediately, even in the middle of computing a point
+    Finish = 2, // Wait until current point is computed to the end, then exit simulation
+                 // i.e. for multipoint analyses (sweep, frequency sweep, time sweep) 
+                 // wait until current point is computed, then exit
+                 // Do not exit sweep. 
+    Stop = 4,   // Stop analysis to possibly continue it later
+                 // Exit sweep. 
+};
+DEFINE_FLAG_OPERATORS(NRSolverFlags);
 
-class NRSolver {
+class NRSolver : public FlagBase<NRSolverFlags> {
 public:
     enum class Error {
         OK, 
