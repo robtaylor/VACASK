@@ -137,6 +137,8 @@ protected:
     Vector<Complex>& zin;
 
     AcTfParameters& params;
+
+    double frequency;
 };
 
 }

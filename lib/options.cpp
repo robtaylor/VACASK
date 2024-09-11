@@ -177,23 +177,27 @@ SimulatorOptions::SimulatorOptions() {
 }
 
 SimulatorInternals::SimulatorInternals() {
-    sourcescalefactor = 1.0;
+    // Default obtained from SimulatorOptions, also set by homotopy
     gmin = 0.0;
-    gdev = 0.0;
     gshunt = 0.0;
-    iteration = 0;
+
+    // Set by homotopy (by default set so that they have no effect)
+    gdev = 0.0;
+    sourcescalefactor = 1.0;
+    
+    // Set by analysis
     analysis_name = "";
     analysis_type = "";
-    cwd = Simulator::startupPath();
-    initalizeLimiting = false;
     allowContinueStateBypass = false; // Allow the analysis to force bypass in the first iteration of NR
                                       // with continuation when continueState is used without forcing it. 
                                       // This is set to true for all but the first point of the innermost sweep
                                       // if nr_contbypass is enabled and the innermost sweep allows continuation.  
+    
+    // Set by analysis core
+    iteration = 0;
+    initalizeLimiting = false;
     requestForcedBypass = false;      // Request forced bypass in next NR iteration for all bypassable devices 
                                       // regardless of their converged state. 
-    frequency = 0.0;
-    time = 0.0;
 }
 
 void SimulatorInternals::fromOptions(const SimulatorOptions& options) {

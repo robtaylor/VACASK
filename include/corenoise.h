@@ -146,6 +146,8 @@ protected:
     double& outputNoise;
     
     NoiseParameters& params;
+
+    double frequency;
 };
 
 }

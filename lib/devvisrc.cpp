@@ -533,7 +533,7 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     auto sourceFactor = internals.sourcescalefactor;
     
     // Evaluate, placeholder for bypass implementation
-    auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
+    auto [val, nextBreakpoint] = sourceCompute(p, d, evalSetup.time);
     if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             if (evalSetup.evaluateResistiveResidual) {
@@ -625,7 +625,7 @@ template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     auto sourceFactor = internals.sourcescalefactor;
     
     // Evaluate, placeholder for bypass implementation
-    auto [val, nextBreakpoint] = sourceCompute(p, d, internals.time);
+    auto [val, nextBreakpoint] = sourceCompute(p, d, evalSetup.time);
     if (true) {
         if (evalSetup.evaluateResistiveResidual) {
             if (evalSetup.evaluateResistiveResidual) {

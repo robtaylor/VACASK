@@ -132,7 +132,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
                 }
                 break;
             case OutdFrequency:
-                outputSources.emplace_back(&(circuit.simulatorInternals().frequency));
+                outputSources.emplace_back(&frequency);
                 break;
             case OutdOutputNoise:
                 outputSources.emplace_back(&outputNoise);
@@ -356,7 +356,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
     // Frequency sweep
     sweeper.reset();
     bool finished = false;
-    double freq = -1.0;
+    frequency = -1.0;
     std::stringstream ss;
     ss << std::scientific << std::setprecision(4);
     bool error = false;
@@ -375,12 +375,11 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
             error = true;
             break;
         }
-        freq = v.val<Real>();
-        double omega = 2*std::numbers::pi*freq;
-        circuit.simulatorInternals().frequency = freq;
-
+        frequency = v.val<Real>();
+        double omega = 2*std::numbers::pi*frequency;
+        
         if (debug>0) {
-            ss.str(""); ss << freq;
+            ss.str(""); ss << frequency;
             Simulator::dbg() << "frequency=" << ss.str() << "\n";
         }
 
@@ -521,7 +520,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
 
                     // Collect noise excitations
                     noiseDensity.resize(nSources);
-                    if (!inst->loadNoise(circuit, freq, noiseDensity.data())) {
+                    if (!inst->loadNoise(circuit, frequency, noiseDensity.data())) {
                         setError(NoiseError::PsdError);
                         if (debug>0) {
                             Simulator::dbg() << "Failed to compute noise.\n";
@@ -632,7 +631,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
 
         finished = sweeper.advance();
 
-        setProgress(sweeper.at(), freq);
+        setProgress(sweeper.at(), frequency);
     } while (!finished && !error);
 
     if (debug>0) {
@@ -640,7 +639,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
     }
 
     if (!finished) {
-        errorFreq = freq;
+        errorFreq = frequency;
     }
 
     // No need to bind resistive Jacobian entries. 

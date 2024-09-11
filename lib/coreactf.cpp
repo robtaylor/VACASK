@@ -104,7 +104,7 @@ bool AcTfCore::resolveOutputDescriptors(bool strict) {
         }
         switch (it->type) {
         case OutdFrequency:
-            outputSources.emplace_back(&(circuit.simulatorInternals().frequency));
+            outputSources.emplace_back(&frequency);
             break;
         case OutdTf:
             outputSources.emplace_back(&tf, ndx);
@@ -315,7 +315,7 @@ CoreCoroutine AcTfCore::coroutine(bool continuePrevious) {
     // Frequency sweep
     sweeper.reset();
     bool finished = false;
-    double freq = -1.0;
+    frequency = -1.0;
     std::stringstream ss;
     ss << std::scientific << std::setprecision(4);
     bool error = false;
@@ -334,12 +334,11 @@ CoreCoroutine AcTfCore::coroutine(bool continuePrevious) {
             error = true;
             break;
         }
-        freq = v.val<Real>();
-        double omega = 2*std::numbers::pi*freq;
-        circuit.simulatorInternals().frequency = freq;
+        frequency = v.val<Real>();
+        double omega = 2*std::numbers::pi*frequency;
 
         if (debug>0) {
-            ss.str(""); ss << freq;
+            ss.str(""); ss << frequency;
             Simulator::dbg() << "frequency=" << ss.str() << "\n";
         }
 
@@ -498,7 +497,7 @@ CoreCoroutine AcTfCore::coroutine(bool continuePrevious) {
 
         finished = sweeper.advance();
 
-        setProgress(sweeper.at(), freq);
+        setProgress(sweeper.at(), frequency);
     } while (!finished && !error);
 
     if (debug>0) {
@@ -506,7 +505,7 @@ CoreCoroutine AcTfCore::coroutine(bool continuePrevious) {
     }
 
     if (!finished) {
-        errorFreq = freq;
+        errorFreq = frequency;
     }
 
     // No need to bind resistive Jacobian enatries. 

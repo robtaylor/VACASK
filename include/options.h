@@ -114,6 +114,11 @@ typedef struct SimulatorOptions  {
 
 
 // Simulator internals
+// TODO: make this a local temporary structure that is created in analysis, 
+//       passed on to the core, and filled out by analysis and core.
+//       Problem is in setup() that needs this structure. Higher up 
+//       setup is called by elaborate() and elaborateChanges(), which in 
+//       turn are also called from the command interpreter. 
 typedef struct SimulatorInternals {
     Real sourcescalefactor;
     Real gmin;     // gmin applied in parallel to nonlinear branches
@@ -125,17 +130,13 @@ typedef struct SimulatorInternals {
     Int iteration;
     String analysis_name;
     String analysis_type;
-    String cwd;
+    // String cwd;
 
     bool initalizeLimiting;
 
     bool allowContinueStateBypass;
     bool requestForcedBypass; 
     
-    double frequency;
-    double time;
-    double timestep;
-
     SimulatorInternals();
     void fromOptions(const SimulatorOptions& options);
 } SimulatorInternals;

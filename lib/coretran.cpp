@@ -285,7 +285,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
             ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2);
             break;
         case OutdTime:
-            outputSources.emplace_back(&(circuit.simulatorInternals().time));
+            outputSources.emplace_back(&(nrSolver.evalSetupSystem().time));
             break;
         default:
             // Delegate to parent
@@ -621,7 +621,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     // via old solution when topologies match or nodesets (temporary forces) when topologies 
     // do not match. 
     tk = 0.0; 
-    internals.time = tk; 
+    nrSolver.evalSetupSystem().time = tk; 
     nPoints = 0; 
     if (params.icmode==icmodeOp) {
         if (debug>0) {
@@ -834,7 +834,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     
     while (true) {
         // NR will be applied at tSolve
-        internals.time = tSolve;
+        nrSolver.evalSetupSystem().time = tSolve;
 
         if (debug>1) {
             ss.str(""); ss << tSolve;

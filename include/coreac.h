@@ -135,6 +135,8 @@ protected:
     KluComplexMatrix& acMatrix;
     Vector<Complex>& acSolution;
     AcParameters& params;
+
+    double frequency;
 };
 
 }

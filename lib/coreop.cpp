@@ -410,8 +410,8 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     bool tried = false;
 
     // Set time to 0
-    internals.time = 0.0;
-
+    nrSolver.evalSetupSystem().time = 0.0;
+    
     // Make sure repositories are large enough
     auto n = circuit.unknownCount();
     solution.upsize(2, n+1);

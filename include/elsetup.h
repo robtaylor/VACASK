@@ -119,6 +119,9 @@ typedef struct EvalSetup {
     size_t bypassOpportunuties;
     size_t bypassedInstances;
 
+    // Former members of SimulatorInternals
+    double time {0};
+    
     // 
     // Internals
     // 
@@ -176,11 +179,11 @@ typedef struct EvalSetup {
     void setBoundStep(double bound) { if (bound<boundStep) boundStep=bound; };
     void setDiscontinuity(Int i) { if (i<0) return; if (discontinuity<0 || i<discontinuity) discontinuity=i; };
     bool setBreakPoint(double t, SimulatorInternals& internals) {
-        if (std::abs(t-internals.time) <= timeRelativeTolerance*internals.time) {
+        if (std::abs(t-time) <= timeRelativeTolerance*time) {
             // Breakpoint now or close to now, it is too late to take it into account. 
             // It should have been set earlier. 
             // Signal discontinuity
-        } else if (t<internals.time) {
+        } else if (t<time) {
             // Breakpoint in past, ignore
         } else {
             // Set next breakpoint

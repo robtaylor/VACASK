@@ -369,7 +369,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
         char* chrPtrArray[nchrptr];
         
         populate(simInfo.paras, opt, internals, dblArray, chrPtrArray);
-        simInfo.abstime = internals.time;
+        simInfo.abstime = evalSetup->time;
         simInfo.prev_solve = evalSetup->oldSolution;
 
         simInfo.flags = 0;
