@@ -31,6 +31,7 @@ public:
     virtual bool preIteration(bool continuePrevious);
     virtual bool postSolve(bool continuePrevious);
     virtual bool postIteration(bool continuePrevious);
+    virtual bool preConverged(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
     virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms);
@@ -71,6 +72,8 @@ protected:
     EvalSetup esSystem;
     LoadSetup lsSystem;
     ConvSetup csSystem;
+
+    VectorRepository<double>& states;
     
     // Internal structures
     Vector<double> dummyStates;

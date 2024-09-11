@@ -52,7 +52,7 @@ OpNRSolver::OpNRSolver(
     Circuit& circuit, KluRealMatrix& jac, 
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings, Int forcesSize
-) : NRSolver(circuit, jac, states, solution, settings) {
+) : NRSolver(circuit, jac, solution, settings), states(states) {
     resizeForces(forcesSize);
 
     // For constructing the linearized system in NR loop
@@ -111,6 +111,12 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 
     // Clear flags
     clearFlags();
+
+    // If not in continue mode set current states to 0
+    if (!continuePrevious) {
+        // Zero states
+        states.zero();
+    }
 
     // If bypass is enabled, prepare space for previous device states
     // Need to do this here because the user might sweep nr_bypass, but
@@ -200,6 +206,8 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 bool OpNRSolver::preIteration(bool continuePrevious) {
     // Clear maximal residual contribution
     zero(maxResidualContribution_);
+    // Clear future states
+    states.zeroFuture();
     return true;    
 }
 
@@ -242,6 +250,13 @@ bool OpNRSolver::postIteration(bool continuePrevious) {
             pointMaxSolution_ = c;
         }
     }
+    states.rotate();
+    return true;
+}
+
+bool OpNRSolver::preConverged(bool continuePrevious) {
+    // Rotate states because the new state belongs to the current solution
+    states.rotate();
     return true;
 }
 

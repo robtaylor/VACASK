@@ -57,7 +57,7 @@ public:
 
     NRSolver(
         Circuit& circuit, KluRealMatrix& jac, 
-        VectorRepository<double>& states, VectorRepository<double>& solution, 
+        VectorRepository<double>& solution, 
         NRSettings& settings
     );
 
@@ -86,16 +86,24 @@ public:
 
     // Initialize run (upsize internal structures)
     // Called once at the beginning of NRSolver::run() 
+    // Must set lastError on failure
     virtual bool initialize(bool continuePrevious) = 0;
 
     // Pre-iteration tasks, called at the beginning of iteration
+    // Must set lastError on failure
     virtual bool preIteration(bool continuePrevious) { return true; };
 
     // Post-solve tasks
+    // Must set lastError on failure
     virtual bool postSolve(bool continuePrevious) { return true; };
 
     // Post-iteration tasks, called at the end of iteration
+    // Must set lastError on failure
     virtual bool postIteration(bool continuePrevious) { return true; };
+
+    // Pre-converged tasks, called after iteration converges and before exit
+    // Must set lastError on failure
+    virtual bool preConverged(bool continuePrevious) { return true; };
 
     // Resize forces repository
     void resizeForces(Int n);
@@ -143,7 +151,6 @@ protected:
     // Passed from outside
     Circuit& circuit;
     KluRealMatrix& jac;
-    VectorRepository<double>& states;
     VectorRepository<double>& solution;
     NRSettings& settings;
 

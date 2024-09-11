@@ -39,9 +39,9 @@ namespace NAMESPACE {
 // Slots can be activated/deactivated,. 
 NRSolver::NRSolver(
     Circuit& circuit, KluRealMatrix& jac, 
-    VectorRepository<double>& states, VectorRepository<double>& solution, 
+    VectorRepository<double>& solution, 
     NRSettings& settings
-) : circuit(circuit), jac(jac), states(states), solution(solution), settings(settings), 
+) : circuit(circuit), jac(jac), solution(solution), settings(settings), 
     iteration(0) {
 }
 
@@ -167,13 +167,6 @@ bool NRSolver::loadForces(bool loadJacobian) {
     return true;
 }
 
-void stateDump(Vector<double>& states) {
-    auto n=states.size();
-    for(decltype(n) i=0; i<n; i++) {
-        std::cout << states[i] << " ";
-    }
-}
-
 void NRSolver::resizeForces(Int n) {
     forcesList.resize(n);
     forcesEnabled.resize(n, false);
@@ -203,11 +196,10 @@ bool NRSolver::run(bool continuePrevious) {
         itlim = settings.itlim;
     }
 
-    // If not in continue mode set current solution and state to 0
+    // If not in continue mode set current solution to 0
     if (!continuePrevious) {
-        // Zero current solution and states
+        // Zero current solution
         solution.zero();
-        states.zero();
     }
 
     if (settings.debug) {
@@ -242,10 +234,6 @@ bool NRSolver::run(bool continuePrevious) {
     
     bool exitNrLoop = false;
     do {
-        // Simulator::dbg() << "NR it=" << iteration << " : at=" << solution.position() << "/" << solution.size()
-        //     << " state at=" << states.position() << "/" << states.size()
-        //     << " current data ptr=" << size_t(solution.data()) << "\n";
-
         // Assume no convergence
         bool iterationConverged = false;
 
@@ -255,10 +243,9 @@ bool NRSolver::run(bool continuePrevious) {
         // Pass iteration number to Verilog-A models
         circuit.simulatorInternals().iteration = iteration;
         
-        // Zero matrix, new solution, new states, and residual/delta
+        // Zero matrix, new solution, and residual/delta
         jac.zero();
         solution.zeroFuture();
-        states.zeroFuture();
         zero(delta);
         
         double* xprev = solution.data();
@@ -279,6 +266,7 @@ bool NRSolver::run(bool continuePrevious) {
             if (settings.debug) {
                 Simulator::dbg() << "Pre-iteration step failed.\n";
             }
+            converged = false;
             break;
         }
         
@@ -349,18 +337,6 @@ bool NRSolver::run(bool continuePrevious) {
         // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
-        // std::cout << "States 0: ";
-        // stateDump(states.vector(0));
-        // std::cout << "\n";
-        // 
-        // std::cout << "States 1: ";
-        // stateDump(states.vector(1));
-        // std::cout << "\n";
-        // 
-        // std::cout << "Future states: ";
-        // stateDump(states.futureVector());
-        // std::cout << "\n" << size_t(states.futureData()) << "\n";
-
         if (settings.debug>=2) {
             Simulator::dbg() << "Linear system at iteration " << iteration << "\n";
             jac.dump(Simulator::dbg(), dataWithoutBucket(delta));
@@ -414,6 +390,7 @@ bool NRSolver::run(bool continuePrevious) {
             if (settings.debug) {
                 Simulator::dbg() << "Post-solve step failed.\n";
             }
+            converged = false;
             break;
         }
 
@@ -506,18 +483,15 @@ bool NRSolver::run(bool continuePrevious) {
 
         // Exit if converged
         if (converged) {
-            // Rotate states because the new state belongs to the current solution
-            states.rotate();
-
-            // std::cout << "On NR exit:\n";
-            // std::cout << "States 0: ";
-            // stateDump(states.vector(0));
-            // std::cout << "\n";
-            // 
-            // std::cout << "States 1: ";
-            // stateDump(states.vector(1));
-            // std::cout << "\n";
-
+            // Pre-converged tasks
+            if (!preConverged(continuePrevious)) {
+                if (settings.debug) {
+                    Simulator::dbg() << "Post-solve step failed.\n";
+                }
+                converged = false;
+                break;
+            }
+            
             break;
         }
 
@@ -540,6 +514,7 @@ bool NRSolver::run(bool continuePrevious) {
             if (settings.debug) {
                 Simulator::dbg() << "Post-iteration step failed.\n";
             }
+            converged = false;
             break;
         }
     
@@ -553,10 +528,9 @@ bool NRSolver::run(bool continuePrevious) {
             Simulator::dbg() << "\n";
         }
 
-        // Rotate RHS vectors and state (swap current and future)
+        // Rotate RHS vectors (swap current and future)
         solution.rotate();
-        states.rotate();
-
+        
         // std::cout << "Old solution after rotation " << iteration << "\n";
         // circuit.dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
