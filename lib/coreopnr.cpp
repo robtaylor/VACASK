@@ -52,11 +52,12 @@ OpNRSolver::OpNRSolver(
     Circuit& circuit, KluRealMatrix& jac, 
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings, Int forcesSize
-) : NRSolver(circuit, jac, solution, settings), states(states) {
+) : circuit(circuit), states(states), 
+    NRSolver(circuit.tables().accounting(), jac, solution, settings) {
     resizeForces(forcesSize);
 
     // For constructing the linearized system in NR loop
-    esSystem = EvalSetup {
+    evalSetup_ = EvalSetup {
         // Inputs
         .solution = &solution, 
         .states = &states, 
@@ -73,12 +74,12 @@ OpNRSolver::OpNRSolver(
         .evaluateOpvars = true, 
     };
 
-    lsSystem = LoadSetup {
+    loadSetup_ = LoadSetup {
         .states = &states, 
         .loadResistiveJacobian = true, 
     };
 
-    csSystem = ConvSetup {
+    convSetup_ = ConvSetup {
         .solution = &solution, 
         .states = &states
     };
@@ -100,8 +101,14 @@ bool OpNRSolver::rebuild() {
     globalMaxResidualContribution_.resize(n+1);
     globalMaxSolution_.resize(n+1);
     resetMaxima();
-    
 
+    // Build flow node flags
+    isFlow.resize(n+1);
+    for(decltype(n) i=1; i<=n; i++) {
+        auto* node = circuit.reprNode(i);
+        isFlow[i] = node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode;
+    }
+    
     return true;
 }
 
@@ -129,9 +136,9 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     // Set vectors for building linear system
     bool computeMaxResidualContribution = settings.residualCheck;
 
-    lsSystem.resistiveResidual = delta.data();
-    lsSystem.linearizedResistiveRhsResidual = delta.data();
-    lsSystem.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
+    loadSetup_.resistiveResidual = delta.data();
+    loadSetup_.linearizedResistiveRhsResidual = delta.data();
+    loadSetup_.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
 
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
@@ -198,7 +205,7 @@ bool OpNRSolver::initialize(bool continuePrevious) {
         return false;
     }
     
-    csSystem.inputDelta = delta.data();
+    convSetup_.inputDelta = delta.data();
 
     return true;
 }
@@ -208,6 +215,8 @@ bool OpNRSolver::preIteration(bool continuePrevious) {
     zero(maxResidualContribution_);
     // Clear future states
     states.zeroFuture();
+    // Pass iteration number to Verilog-A models
+    circuit.simulatorInternals().iteration = iteration;
     return true;    
 }
 
@@ -217,9 +226,9 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
     if (circuit.simulatorOptions().core().nr_bypass && !skipConvergenceCheck) {
         // When high precision is requested we only store instance state 
         // and assume instance is not converged. 
-        csSystem.storeStateOnly = highPrecision;
+        convSetup_.storeStateOnly = highPrecision;
 
-        if (!circuit.converged(csSystem)) {
+        if (!circuit.converged(convSetup_)) {
             lastError = Error::ConvergenceCheck;
             errorIteration = iteration;
             if (settings.debug>2) {
@@ -230,12 +239,19 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
     }
 
     auto& acct = circuit.tables().accounting();
-    acct.acctNew.bpinst += esSystem.bypassableInstances;
-    acct.acctNew.bpopport += esSystem.bypassOpportunuties;
-    acct.acctNew.bpbypassed += esSystem.bypassedInstances;
-    acct.acctNew.bpiiconvcheck += csSystem.instancesConvergenceChecks;
-    acct.acctNew.bpiiconverged += csSystem.convergedInstances;
+    acct.acctNew.bpinst += evalSetup_.bypassableInstances;
+    acct.acctNew.bpopport += evalSetup_.bypassOpportunuties;
+    acct.acctNew.bpbypassed += evalSetup_.bypassedInstances;
+    acct.acctNew.bpiiconvcheck += convSetup_.instancesConvergenceChecks;
+    acct.acctNew.bpiiconverged += convSetup_.convergedInstances;
     
+    return true;
+}
+
+bool OpNRSolver::postConvergenceCheck(bool continuePrevious) {
+    // If algorithm converged we are going to exit next and states must be 
+    // rotated because the new state belongs to the current solution
+    states.rotate();
     return true;
 }
 
@@ -250,16 +266,8 @@ bool OpNRSolver::postIteration(bool continuePrevious) {
             pointMaxSolution_ = c;
         }
     }
-    states.rotate();
     return true;
 }
-
-bool OpNRSolver::preConverged(bool continuePrevious) {
-    // Rotate states because the new state belongs to the current solution
-    states.rotate();
-    return true;
-}
-
 
 void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
     // Now load gshunt if it is greater than 0.0
@@ -323,14 +331,14 @@ void OpNRSolver::setNodesetAndIcFlags(bool continuePrevious) {
     // Nodesets are enabled in iterations 1..op_nsiter 
     // if continuePrevious is false. 
     // They are also enabled if slot 1 (user nodesets) is active. 
-    esSystem.nodesetEnabled = (iteration<=nsiter) && (continuePrevious==false);
+    evalSetup_.nodesetEnabled = (iteration<=nsiter) && (continuePrevious==false);
     
     // Set icEnabled flag in esSystem
     // Slot 2 holds permanent forces for computing initial conditions
     // when OP analysis is invoked from tran core. 
     // Whenever this slot is active transient forces are enables 
     // and we are applying initial conditions. 
-    esSystem.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
+    evalSetup_.icEnabled = forcesEnabled.size()>2 && forcesEnabled[2];
 }
 
 std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
@@ -365,31 +373,31 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     // Simulator::dbg() << "\n";
     
     // Init limits if not in continue mode and iteration is 1
-    esSystem.initializeLimiting = !continuePrevious && (iteration==1);
+    evalSetup_.initializeLimiting = !continuePrevious && (iteration==1);
     // Write value to simulatorInternals
-    circuit.simulatorInternals().initalizeLimiting = esSystem.initializeLimiting; 
+    circuit.simulatorInternals().initalizeLimiting = evalSetup_.initializeLimiting; 
 
     // Bypass enabled, take it into account at evaluation time
     if (circuit.simulatorOptions().core().nr_bypass) {
         // In continue mode bypass is allowed in first iteration
         // Otherwise we allow it starting with the second one 
         if (continuePrevious || iteration>1) {
-            esSystem.allowBypass = true;
+            evalSetup_.allowBypass = true;
         } else {
-            esSystem.allowBypass = false;
+            evalSetup_.allowBypass = false;
         }
         // For bypass check
-        esSystem.deviceStates = deviceStates.data();
+        evalSetup_.deviceStates = deviceStates.data();
         // For convergence check
-        csSystem.deviceStates = deviceStates.data();
+        convSetup_.deviceStates = deviceStates.data();
     }
 
     
     // Force instance evaluation bypass if requested
-    esSystem.forceBypass = circuit.simulatorInternals().requestForcedBypass;
+    evalSetup_.forceBypass = circuit.simulatorInternals().requestForcedBypass;
     
     // Evaluate and load
-    auto evalSt = evalAndLoadWrapper(esSystem, lsSystem);
+    auto evalSt = evalAndLoadWrapper(evalSetup_, loadSetup_);
     // If bypass forcing was requested clear that request. 
     // It is allowed for one iteration only. 
     if (circuit.simulatorInternals().requestForcedBypass) {
@@ -404,7 +412,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     if (!evalSt) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;
-        return std::make_tuple(false, esSystem.limitingApplied);
+        return std::make_tuple(false, evalSetup_.limitingApplied);
     }
     delta[0] = 0.0;
 
@@ -420,7 +428,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     }
 
     // Prevent convergence if limiting was applied
-    return std::make_tuple(true, esSystem.limitingApplied); 
+    return std::make_tuple(true, evalSetup_.limitingApplied); 
 }
 
 std::tuple<bool, double, double, double, Id> OpNRSolver::checkResidual(bool* residualOk, bool computeNorms) {
@@ -647,6 +655,10 @@ void OpNRSolver::updateMaxima() {
             globalMaxResidualContribution_[ndx] = c;
         }
     }
+}
+
+void OpNRSolver::dumpSolution(std::ostream& os, double* solution, const char* prefix) {
+    circuit.dumpSolution(os, solution, prefix);
 }
 
 }

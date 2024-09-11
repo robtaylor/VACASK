@@ -19,35 +19,35 @@ TranNRSolver::TranNRSolver(
     // They need to be set before rebuild() is called. 
 
     // Set analysis type
-    esSystem.staticAnalysis = false;
-    esSystem.dcAnalysis = false;
-    esSystem.tranAnalysis = true;
+    evalSetup_.staticAnalysis = false;
+    evalSetup_.dcAnalysis = false;
+    evalSetup_.tranAnalysis = true;
     
     // For constructing the linearized system in NR loop
     // Add reactive Jacobian and residual evaluation
-    esSystem.evaluateReactiveJacobian = true;
-    esSystem.evaluateReactiveResidual = true;
-    esSystem.evaluateLinearizedReactiveRhsResidual = true;
+    evalSetup_.evaluateReactiveJacobian = true;
+    evalSetup_.evaluateReactiveResidual = true;
+    evalSetup_.evaluateLinearizedReactiveRhsResidual = true;
 
     // Make sure reactive residual is stored in the state vector at evaluation
-    esSystem.storeReactiveState = true;
+    evalSetup_.storeReactiveState = true;
     
     // Need this for evaluation of residual derivative
-    esSystem.integCoeffs = &integCoeffs;
+    evalSetup_.integCoeffs = &integCoeffs;
 
     // Breakpoints, timestep limiting
-    esSystem.computeNextBreakpoint = true;
-    esSystem.computeBoundStep = true;
+    evalSetup_.computeNextBreakpoint = true;
+    evalSetup_.computeBoundStep = true;
 
     // Also check reactive residual and Jacobian convergence
-    csSystem.checkReactiveConvergece = true;
+    convSetup_.checkReactiveConvergece = true;
     
     
     // Set up Jacobian loading
-    lsSystem.loadResistiveJacobian = false;
-    lsSystem.loadReactiveJacobian = false;
-    lsSystem.loadTransientJacobian = true;
-    lsSystem.integCoeffs = &integCoeffs;
+    loadSetup_.loadResistiveJacobian = false;
+    loadSetup_.loadReactiveJacobian = false;
+    loadSetup_.loadTransientJacobian = true;
+    loadSetup_.integCoeffs = &integCoeffs;
 }
 
 bool TranNRSolver::initialize(bool continuePrevious) {
@@ -61,11 +61,11 @@ bool TranNRSolver::initialize(bool continuePrevious) {
     }
 
     // Set output vector for building linear system (reactive residual derivative)
-    lsSystem.reactiveResidualDerivative = delta.data();
+    loadSetup_.reactiveResidualDerivative = delta.data();
 
     // Compute reactive residual derivative contribution
     // Update it in the max resistive residual contribution vector 
-    lsSystem.maxReactiveResidualDerivativeContribution = lsSystem.maxResistiveResidualContribution; 
+    loadSetup_.maxReactiveResidualDerivativeContribution = loadSetup_.maxResistiveResidualContribution; 
     
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();

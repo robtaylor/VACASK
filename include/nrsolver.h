@@ -6,11 +6,42 @@
 #include "klumatrix.h"
 #include "ansolution.h"
 #include "status.h"
+#include "acct.h"
 #include "common.h"
 
 #include "circuit.h"
 
 namespace NAMESPACE {
+
+// // After every topology change or variables change
+// rebuild(); 
+//
+// run(continuePrevious) {
+//   if (not continuePrevious) {
+//     zero new solution vector;
+//   }
+//   initialize()
+//   do {
+//       zero new solution, Jacobian, delta/residual vector;
+//       preIteration();
+//       buildSystem();
+//       load forces;
+//       check matrix and rhs;
+//       checkResidual();
+//       factor and solve;
+//       postSolve();
+//       check solution;
+//       checkDelta() if not in first iteration;
+//       check convergence;
+//       postConvergenceCheck();
+//       if (converged) {
+//           exit loop;
+//       }
+//       compute new solution;
+//       rotate solutions;
+//       postIteration();
+//   } while (iteration limit not reached);
+// }
 
 typedef struct NRSettings {
     // Input
@@ -56,8 +87,8 @@ public:
     };
 
     NRSolver(
-        Circuit& circuit, KluRealMatrix& jac, 
-        VectorRepository<double>& solution, 
+        Accounting& acct, 
+        KluRealMatrix& jac, VectorRepository<double>& solution, 
         NRSettings& settings
     );
 
@@ -97,13 +128,17 @@ public:
     // Must set lastError on failure
     virtual bool postSolve(bool continuePrevious) { return true; };
 
-    // Post-iteration tasks, called at the end of iteration
+    // Post convergence check tasks, called after convergence check regardless 
+    // of its outcome. 
+    // Convergence means that sufficient consecutive iterations converge. 
+    // Must set lastError on failure
+    virtual bool postConvergenceCheck(bool continuePrevious) { return true; };
+
+    // Post-iteration tasks, called at the end of iteration. 
+    // At this point the solution has been rotated and the current solution
+    // is the one that will be used for building the next NR system. 
     // Must set lastError on failure
     virtual bool postIteration(bool continuePrevious) { return true; };
-
-    // Pre-converged tasks, called after iteration converges and before exit
-    // Must set lastError on failure
-    virtual bool preConverged(bool continuePrevious) { return true; };
 
     // Resize forces repository
     void resizeForces(Int n);
@@ -144,15 +179,18 @@ public:
 protected:
     // Load forces
     bool loadForces(bool loadJacobian=true); 
+
+    // Dump solution
+    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="") {};
     
     // High precision requested
     bool highPrecision;
 
     // Passed from outside
-    Circuit& circuit;
     KluRealMatrix& jac;
     VectorRepository<double>& solution;
     NRSettings& settings;
+    Accounting& acct;
 
     // Solution natures and residual natures are currently limited to 
     //   0 .. voltage
@@ -160,8 +198,7 @@ protected:
     
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
-    Vector<bool> isFlow;
-
+    
     std::vector<Forces> forcesList;
     std::vector<bool> forcesEnabled;
     

@@ -38,27 +38,25 @@ namespace NAMESPACE {
 // Analysis::setAnalysisOptions() before rebuild() is called. 
 // Slots can be activated/deactivated,. 
 NRSolver::NRSolver(
-    Circuit& circuit, KluRealMatrix& jac, 
+    Accounting& acct, KluRealMatrix& jac, 
     VectorRepository<double>& solution, 
     NRSettings& settings
-) : circuit(circuit), jac(jac), solution(solution), settings(settings), 
+) : acct(acct), jac(jac), solution(solution), settings(settings), 
     iteration(0) {
 }
 
 bool NRSolver::rebuild() {
     // Allocate space in vectors
-    auto n = circuit.unknownCount();
+    // Jacobian is already built, get number of unknowns excluding ground
+    auto n = jac.nRows();
     diagPtrs.resize(n+1);
-    isFlow.resize(n+1);
     delta.resize(n+1);
     rowNorm.resize(n+1);
     
     // Bind diagonal matrix elements
     // Needed for forcing unknown values and setting gshunts
-    for(decltype(n) i=1; i<=n; i++) {
-        auto* node = circuit.reprNode(i);
-        diagPtrs[i] = jac.elementPtr(MatrixEntryPosition(i, i), Component::Real);
-        isFlow[i] = node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode;
+    for(decltype(n) i=0; i<n; i++) {
+        diagPtrs[i+1] = jac.elementPtr(MatrixEntryPosition(i+1, i+1), Component::Real);
     }
 
     // Bind extradiagonal matrix entries for forced deltas
@@ -91,7 +89,7 @@ bool NRSolver::loadForces(bool loadJacobian) {
     jac.rowMaxNorm(dataWithoutBucket(rowNorm));
 
     // Load forces
-    auto n = circuit.unknownCount();
+    auto n = jac.nRows();
     double* xprev = solution.data();
     for(decltype(nf) iForce=0; iForce<nf; iForce++) {
         // Skip disabled force lists
@@ -178,9 +176,9 @@ Forces& NRSolver::forces(Int ndx) {
 
 bool NRSolver::run(bool continuePrevious) {
     auto t0 = Accounting::wclk();
-    circuit.tables().accounting().acctNew.nrcall++;
+    acct.acctNew.nrcall++;
 
-    jac.setAccounting(circuit.tables().accounting());
+    jac.setAccounting(acct);
 
     // Clear error
     clearError();
@@ -225,14 +223,13 @@ bool NRSolver::run(bool continuePrevious) {
     // Initialize structures
     if (!initialize(continuePrevious)) {
         // Assume initialize() has set lastError
-        circuit.tables().accounting().acctNew.tnr += Accounting::wclkDelta(t0);
+        acct.acctNew.tnr += Accounting::wclkDelta(t0);
         return false;
     }
 
     // Allow lower precision
     highPrecision = false;
     
-    bool exitNrLoop = false;
     do {
         // Assume no convergence
         bool iterationConverged = false;
@@ -240,9 +237,6 @@ bool NRSolver::run(bool continuePrevious) {
         // Iteration counter (first iteration is 1)
         iteration++;
 
-        // Pass iteration number to Verilog-A models
-        circuit.simulatorInternals().iteration = iteration;
-        
         // Zero matrix, new solution, and residual/delta
         jac.zero();
         solution.zeroFuture();
@@ -254,11 +248,11 @@ bool NRSolver::run(bool continuePrevious) {
 
         if (settings.debug>=4) {
             std::cout << "Old solution at iteration " << iteration << "\n";
-            circuit.dumpSolution(std::cout, solution.data(), "  ");
+            dumpSolution(std::cout, solution.data(), "  ");
             std::cout << "\n";
         }
         // std::cout << "New solution at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
         // Pre-iteration tasks
@@ -305,10 +299,10 @@ bool NRSolver::run(bool continuePrevious) {
         }
 
         // std::cout << "Old solution before residual check at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
         // std::cout << "New solution before residual check at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
 
         // Residual norms are needed if we have dynamic damping or debug is set
@@ -331,10 +325,10 @@ bool NRSolver::run(bool continuePrevious) {
         }
 
         // std::cout << "Old solution after residual check at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
         // std::cout << "New solution after residual check at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
         if (settings.debug>=2) {
@@ -394,7 +388,7 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
 
-        circuit.tables().accounting().acctNew.nriter++;
+        acct.acctNew.nriter++;
 
         if (settings.solutionCheck && !jac.isFinite(dataWithoutBucket(delta), true, true)) {
             lastError = Error::SolutionError;
@@ -406,10 +400,10 @@ bool NRSolver::run(bool continuePrevious) {
         }
 
         // std::cout << "Old solution after solve at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
         // std::cout << "New solution after solve at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
         // Set solution delta and new solution buckets to 0. 
@@ -417,7 +411,7 @@ bool NRSolver::run(bool continuePrevious) {
         xnew[0] = 0.0; 
 
         // std::cout << "Negative solution delta at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, delta.data(), "  ");
+        // dumpSolution(std::cout, delta.data(), "  ");
         // std::cout << "\n";
 
         // Delta norms are computed in debug mode
@@ -476,30 +470,30 @@ bool NRSolver::run(bool continuePrevious) {
             convIter = 0;
         }
 
-        // Set converged flag
+        // Set converged flag based on how many consecutive iterations converged
         converged = convIter >= settings.convIter;
         
         // std::cout << "Iteration " << iteration << " residualOK=" << residualOk << " deltaOk=" << deltaOk << "\n";
 
+        // Post convergence check tasks
+        if (!postConvergenceCheck(continuePrevious)) {
+            if (settings.debug) {
+                Simulator::dbg() << "Post convergence check step failed.\n";
+            }
+            converged = false;
+            break;
+        }
+        
         // Exit if converged
         if (converged) {
-            // Pre-converged tasks
-            if (!preConverged(continuePrevious)) {
-                if (settings.debug) {
-                    Simulator::dbg() << "Post-solve step failed.\n";
-                }
-                converged = false;
-                break;
-            }
-            
             break;
         }
 
         // std::cout << "Old solution before update at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
         // std::cout << "New solution before update at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
         // Not converged yet, compute new solution 
@@ -508,6 +502,19 @@ bool NRSolver::run(bool continuePrevious) {
         for(decltype(n) i=1; i<=n; i++) {
             xnew[i] = xprev[i] - xdelta[i]*settings.dampingFactor;
         }
+
+        // std::cout << "Old solution after update at iteration " << iteration << "\n";
+        // dumpSolution(std::cout, solution.array(), "  ");
+        // std::cout << "\n";
+
+        if (settings.debug>=3) {
+            Simulator::dbg() << "New solution in iteration " << iteration << "\n";
+            dumpSolution(Simulator::dbg(), solution.futureData(), "  ");
+            Simulator::dbg() << "\n";
+        }
+
+        // Rotate RHS vectors (swap current and future)
+        solution.rotate();
 
         // Post-iteration tasks
         if (!postIteration(continuePrevious)) {
@@ -518,27 +525,14 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
     
-        // std::cout << "Old solution after update at iteration " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
-        // std::cout << "\n";
-
-        if (settings.debug>=3) {
-            Simulator::dbg() << "New solution in iteration " << iteration << "\n";
-            circuit.dumpSolution(Simulator::dbg(), solution.futureData(), "  ");
-            Simulator::dbg() << "\n";
-        }
-
-        // Rotate RHS vectors (swap current and future)
-        solution.rotate();
-        
         // std::cout << "Old solution after rotation " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.array(), "  ");
         // std::cout << "\n";
         // std::cout << "New solution after rotation " << iteration << "\n";
-        // circuit.dumpSolution(std::cout, solution.futureArray(), "  ");
+        // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
 
-    } while (iteration<itlim && !exitNrLoop); // NR loop
+    } while (iteration<itlim); // NR loop
 
     if (settings.debug) {
         Simulator::dbg() << "NR algorithm " << (converged ? "converged in " : "failed to converge in ") << iteration << " iteration(s).\n";
@@ -549,7 +543,7 @@ bool NRSolver::run(bool continuePrevious) {
         errorIteration = iteration;
     }
 
-    circuit.tables().accounting().acctNew.tnr += Accounting::wclkDelta(t0);
+    acct.acctNew.tnr += Accounting::wclkDelta(t0);
     return converged;
 }
 
@@ -587,6 +581,5 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
     }
     return matrixError;
 }
-
 
 }

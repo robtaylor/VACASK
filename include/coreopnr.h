@@ -30,8 +30,8 @@ public:
     virtual bool initialize(bool continuePrevious);
     virtual bool preIteration(bool continuePrevious);
     virtual bool postSolve(bool continuePrevious);
+    virtual bool postConvergenceCheck(bool continuePrevious);
     virtual bool postIteration(bool continuePrevious);
-    virtual bool preConverged(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
     virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms);
@@ -46,8 +46,9 @@ public:
     // Update historic and global maxima (across history and unknowns)
     void updateMaxima();
         
-    EvalSetup& evalSetupSystem() { return esSystem; };
-    LoadSetup& loadSetupSystem() { return lsSystem; };
+    EvalSetup& evalSetup() { return evalSetup_; };
+    LoadSetup& loadSetup() { return loadSetup_; };
+    ConvSetup& convSetup() { return convSetup_; };
 
     // Return max historic solution vector
     const Vector<double>& historicMaxSolution() const { return historicMaxSolution_; };
@@ -69,9 +70,9 @@ protected:
     
     void setNodesetAndIcFlags(bool continuePrevious);
 
-    EvalSetup esSystem;
-    LoadSetup lsSystem;
-    ConvSetup csSystem;
+    EvalSetup evalSetup_;
+    LoadSetup loadSetup_;
+    ConvSetup convSetup_;
 
     VectorRepository<double>& states;
     
@@ -91,7 +92,10 @@ protected:
     Vector<double> globalMaxSolution_; // accross time and all points, updated on external command
                                        // one component per each solution nature
     double pointMaxSolution_; // at current point solution
-    
+
+    // Flags indicating nodes are flow nodes
+    Vector<bool> isFlow;
+
     // Flag that forces skipping of device convergence check
     bool skipConvergenceCheck;
 };

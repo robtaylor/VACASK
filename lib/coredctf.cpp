@@ -34,7 +34,7 @@ DcTfCore::DcTfCore(
     sources(sources), tf(tf), yin(yin), zin(zin) {
     
     // Set analysis type for the initial operating point analysis
-    auto& elsSystem = opCore_.solver().evalSetupSystem();
+    auto& elsSystem = opCore_.solver().evalSetup();
     elsSystem.staticAnalysis = true;
     elsSystem.dcAnalysis = false;
     elsSystem.acAnalysis = true;

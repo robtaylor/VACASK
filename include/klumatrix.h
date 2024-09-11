@@ -238,6 +238,9 @@ public:
     // Returns internal data array or a real matrix
     ValueType* data() { return reinterpret_cast<ValueType*>(Ax); };
 
+    // Return number of unknowns
+    IndexType nRows() const { return AN; };
+
     // Return number of nonzeros
     IndexType nnz() const { return AP[AN]; };
 

@@ -248,7 +248,7 @@ TranCore::TranCore(
     opCore_.solver().resizeForces(3);
 
     // Set analysis type for the initial operating point analysis
-    auto& esSystem = opCore_.solver().evalSetupSystem();
+    auto& esSystem = opCore_.solver().evalSetup();
     esSystem.staticAnalysis = true;
     esSystem.dcAnalysis = false;
     esSystem.tranAnalysis = true;
@@ -285,7 +285,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
             ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2);
             break;
         case OutdTime:
-            outputSources.emplace_back(&(nrSolver.evalSetupSystem().time));
+            outputSources.emplace_back(&(nrSolver.evalSetup().time));
             break;
         default:
             // Delegate to parent
@@ -621,7 +621,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     // via old solution when topologies match or nodesets (temporary forces) when topologies 
     // do not match. 
     tk = 0.0; 
-    nrSolver.evalSetupSystem().time = tk; 
+    nrSolver.evalSetup().time = tk; 
     nPoints = 0; 
     if (params.icmode==icmodeOp) {
         if (debug>0) {
@@ -713,8 +713,8 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     bool stopFlag = false;
     bool finishFlag = false;
     if (params.icmode==icmodeOp) {
-        finishFlag |= opCore_.solver().evalSetupSystem().requests.finish;
-        stopFlag |= opCore_.solver().evalSetupSystem().requests.stop;
+        finishFlag |= opCore_.solver().evalSetup().requests.finish;
+        stopFlag |= opCore_.solver().evalSetup().requests.stop;
     }
     finishFlag |= esInit.requests.finish;
     stopFlag |= esInit.requests.stop;
@@ -834,7 +834,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     
     while (true) {
         // NR will be applied at tSolve
-        nrSolver.evalSetupSystem().time = tSolve;
+        nrSolver.evalSetup().time = tSolve;
 
         if (debug>1) {
             ss.str(""); ss << tSolve;
@@ -997,9 +997,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         }
 
         // Next break point assuming tSolve will be accepted,
-        nextBreakPoint = nrSolver.evalSetupSystem().nextBreakPoint;
-        auto boundStep = nrSolver.evalSetupSystem().boundStep;
-        auto discontinuity = nrSolver.evalSetupSystem().discontinuity;
+        nextBreakPoint = nrSolver.evalSetup().nextBreakPoint;
+        auto boundStep = nrSolver.evalSetup().boundStep;
+        auto discontinuity = nrSolver.evalSetup().discontinuity;
         // Update breakpoint with stop and start time, ignore breakpoints <= tSolve
         // tsolve=tk+hk>0 because tk>=0 and hk>0. 
         updateBreakPoint(nextBreakPoint, params.stop, tSolve);
@@ -1395,9 +1395,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             // Check Finish and Stop
             // Verilog-AMS LRM states that Finish and Stop should be taken into account
             // at converged iterations (we assume that this means accepted timepoints in transient analysis). 
-            if (nrSolver.evalSetupSystem().requests.finish) {
+            if (nrSolver.evalSetup().requests.finish) {
                 co_yield CoreState::Finished;
-            } else if (nrSolver.evalSetupSystem().requests.stop) {
+            } else if (nrSolver.evalSetup().requests.stop) {
                 co_yield CoreState::Stopped;
             }
             
