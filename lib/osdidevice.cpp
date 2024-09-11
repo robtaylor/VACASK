@@ -615,7 +615,7 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
         os << "  Nodes (terminals+internals=" << descriptor_->num_nodes << ", terminals=" << descriptor_->num_terminals << "):\n";
         for(OsdiFile::OsdiNodeIndex i=0; i<descriptor_->num_nodes; i++) {
             os << pfx << "    ";
-            os << descriptor_->nodes[i].name;
+            os << nodeName(i);
             if (descriptor_->nodes[i].is_flow) {
                 os << " (flow)";
             }
@@ -664,9 +664,9 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
                 os << "(ground)";
             }
             if (n2!=UINT32_MAX) {
-                os << ", " << nodeName(n2);
+                os << " - " << nodeName(n2);
             } else {
-                os << ", (ground)";
+                os << " - (ground)";
             }
             os << "\n";
         }
@@ -720,7 +720,7 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (instanceParameterCount()>0) {
         os << pfx << "  Instance parameters:\n";
         for(ParameterIndex i=0; i<instanceParameterCount(); i++) {
-            os << pfx << "    " << " id=" << instanceOsdiParameterId(i) << ": " << std::string(instanceParameterName(i));
+            os << pfx << "   " << " id=" << instanceOsdiParameterId(i) << ": " << std::string(instanceParameterName(i));
             auto& p = descriptor_->param_opvar[instanceOsdiParameterId(i)];
             os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
@@ -735,7 +735,7 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (opvarCount()>0) {
         os << pfx << "  Opvars:\n";
         for(ParameterIndex i=0; i<opvarCount(); i++) {
-            os << pfx << "    " << " id=" << opvarOsdiParameterId(i) << ": " << std::string(opvarName(i));
+            os << pfx << "   " << " id=" << opvarOsdiParameterId(i) << ": " << std::string(opvarName(i));
             auto& p = descriptor_->param_opvar[opvarOsdiParameterId(i)];
             os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
