@@ -70,37 +70,16 @@ public:
     // Return value: ok, prevent convergence
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious) = 0;
 
-    // Reset solution maxima and residual maxima
-    void resetMaxima();
-
-    // Initialize maxima from another solver
-    void initializeMaxima(NRSolver& other);
-
-    // Update historic and global maxima (across history and unknowns)
-    void updateMaxima();
-
-    // Return max historic solution vector
-    const Vector<double>& historicMaxSolution() const { return historicMaxSolution_; };
-    const Vector<double>& historicMaxResidualContribution() const { return historicMaxResidualContribution_; };
-
-    // Return max global historic solution
-    const Vector<double>& globalMaxSolution() const { return globalMaxSolution_; };
-    const Vector<double>& globalMaxResidualContribution() const { return globalMaxResidualContribution_; };
-
-    // Return point max solution
-    double pointMaxSolution() const { return pointMaxSolution_; };
-    double pointMaxResidualContribution() const { return pointMaxResidualContribution_; };
-
     // Return values: ok, magnitude of residual component with maximal relative magnitude, 
-    //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector
-    //                corresponding node
+    //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector, 
+    //                corresponding node identifier
     // Relative magnitude is computed wrt. tolerance. 
-    std::tuple<bool, double, double, double, Node*> checkResidual(bool* residualOk, bool computeNorms);
+    virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms) = 0;
     
     // Return values: ok, magnitude of delta component with maximal relative magnitude, 
-    //                maximal relative magnitude of component, corresponding node
+    //                maximal relative magnitude of component, corresponding node identifier
     // Relative magnitude is computed wrt. tolerance. 
-    std::tuple<bool, double, double, Node*> checkDelta(bool* deltaOk, bool computeNorms);
+    virtual std::tuple<bool, double, double, Id> checkDelta(bool* deltaOk, bool computeNorms) = 0;
 
     // Rebuild internal structures that depend on topology
     virtual bool rebuild();
@@ -109,10 +88,14 @@ public:
     // Called once at the beginning of NRSolver::run() 
     virtual bool initialize(bool continuePrevious) = 0;
 
+    // Pre-iteration tasks, called at the beginning of iteration
+    virtual bool preIteration(bool continuePrevious) { return true; };
+
     // Post-solve tasks
     virtual bool postSolve(bool continuePrevious) { return true; };
 
-    double* maxResidualContribution() { return maxResidualContribution_.data(); }; 
+    // Post-iteration tasks, called at the end of iteration
+    virtual bool postIteration(bool continuePrevious) { return true; };
 
     // Resize forces repository
     void resizeForces(Int n);
@@ -163,19 +146,6 @@ protected:
     VectorRepository<double>& states;
     VectorRepository<double>& solution;
     NRSettings& settings;
-
-    // Internal structure for max residual contribution
-    Vector<double> maxResidualContribution_; // maximal residual contributionm at this point
-    
-    // Historic and global maxima
-    Vector<double> historicMaxResidualContribution_; // across produced solutions, updated on external command
-    Vector<double> globalMaxResidualContribution_; // accross time and all points, updated on external command
-                                                   // one component per each residual nature
-    double pointMaxResidualContribution_; // at current point solution
-    Vector<double> historicMaxSolution_; // across produced solutions, updated on external command
-    Vector<double> globalMaxSolution_; // accross time and all points, updated on external command
-                                       // one component per each solution nature
-    double pointMaxSolution_; // at current point solution
 
     // Solution natures and residual natures are currently limited to 
     //   0 .. voltage

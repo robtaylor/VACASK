@@ -28,12 +28,39 @@ public:
 
     virtual bool rebuild();
     virtual bool initialize(bool continuePrevious);
+    virtual bool preIteration(bool continuePrevious);
     virtual bool postSolve(bool continuePrevious);
+    virtual bool postIteration(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
-    
+    virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms);
+    virtual std::tuple<bool, double, double, Id> checkDelta(bool* deltaOk, bool computeNorms);
+
+    // Reset solution maxima and residual maxima
+    void resetMaxima();
+
+    // Initialize maxima from another solver
+    void initializeMaxima(OpNRSolver& other);
+
+    // Update historic and global maxima (across history and unknowns)
+    void updateMaxima();
+        
     EvalSetup& evalSetupSystem() { return esSystem; };
     LoadSetup& loadSetupSystem() { return lsSystem; };
+
+    // Return max historic solution vector
+    const Vector<double>& historicMaxSolution() const { return historicMaxSolution_; };
+    const Vector<double>& historicMaxResidualContribution() const { return historicMaxResidualContribution_; };
+
+    // Return max global historic solution
+    const Vector<double>& globalMaxSolution() const { return globalMaxSolution_; };
+    const Vector<double>& globalMaxResidualContribution() const { return globalMaxResidualContribution_; };
+
+    // Return point max solution
+    double pointMaxSolution() const { return pointMaxSolution_; };
+    double pointMaxResidualContribution() const { return pointMaxResidualContribution_; };
+
+    double* maxResidualContribution() { return maxResidualContribution_.data(); }; 
     
 protected:
     void loadShunts(double gshunt, bool loadJacobian=true);
@@ -49,6 +76,19 @@ protected:
     Vector<double> dummyStates;
     Vector<double> deviceStates;
 
+    // Internal structure for max residual contribution
+    Vector<double> maxResidualContribution_; // maximal residual contributionm at this point
+    
+    // Historic and global maxima
+    Vector<double> historicMaxResidualContribution_; // across produced solutions, updated on external command
+    Vector<double> globalMaxResidualContribution_; // accross time and all points, updated on external command
+                                                   // one component per each residual nature
+    double pointMaxResidualContribution_; // at current point solution
+    Vector<double> historicMaxSolution_; // across produced solutions, updated on external command
+    Vector<double> globalMaxSolution_; // accross time and all points, updated on external command
+                                       // one component per each solution nature
+    double pointMaxSolution_; // at current point solution
+    
     // Flag that forces skipping of device convergence check
     bool skipConvergenceCheck;
 };
