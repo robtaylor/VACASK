@@ -221,7 +221,10 @@ typedef struct LoadSetup {
     // - reactive Jacobian scaled by integCoeffs->leadingCoeff()
     bool loadTransientJacobian {}; 
     IntegratorCoeffs* integCoeffs {};
-    
+
+    // Offset for loading Jacobian elements
+    MatrixEntryIndex jacobianLoadOffset {0}; 
+
     // Where to load resistive residual, skip if nullptr
     double* resistiveResidual {}; // with bucket
 

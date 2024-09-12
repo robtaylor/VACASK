@@ -989,13 +989,27 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     
     // Load Jacobian computed with limiting (if it was computed)
     if (loadSetup.loadResistiveJacobian) {
-        descr->load_jacobian_resist(core(), model_->core());
+        if (loadSetup.jacobianLoadOffset==0) {
+            descr->load_jacobian_resist(core(), model_->core());
+        } else {
+            descr->load_jacobian_with_offset_resist(core(), model_->core(), loadSetup.jacobianLoadOffset);
+        }
     }
     if (loadSetup.loadReactiveJacobian) {
-        descr->load_jacobian_react(core(), model_->core(), loadSetup.reactiveJacobianFactor);
+        if (loadSetup.jacobianLoadOffset==0) {
+            descr->load_jacobian_react(core(), model_->core(), loadSetup.reactiveJacobianFactor);
+        } else {
+            descr->load_jacobian_with_offset_react(core(), model_->core(), loadSetup.jacobianLoadOffset); 
+        }
     }
     if (loadSetup.loadTransientJacobian) {
-        descr->load_jacobian_tran(core(), model_->core(), loadSetup.integCoeffs->leadingCoeff());
+        if (loadSetup.jacobianLoadOffset==0) {
+            descr->load_jacobian_tran(core(), model_->core(), loadSetup.integCoeffs->leadingCoeff());
+        } else {
+            // Not supported, needs support in OpenVAF
+            // At this point it is not needed. 
+            return false;
+        }
     }
 
     // Without limiting the residual is 

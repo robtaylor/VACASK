@@ -121,6 +121,9 @@ public:
         }
     };
 
+    IndexType blocksInColumn() const { return n_; };
+    IndexType blockRows() const { return nb_; };
+    
     void dumpBlockSparsity(std::ostream& os);
 
 protected:
@@ -160,8 +163,8 @@ protected:
 };
 
 // Default KLU matrix flavor
-typedef KluBlockSparseMatrixCore<MatrixEntryIndex, double> KluBlockDenseRealMatrix;
-typedef KluBlockSparseMatrixCore<MatrixEntryIndex, Complex> KluBlockDenseComplexMatrix;
+typedef KluBlockSparseMatrixCore<MatrixEntryIndex, double> KluBlockSparseRealMatrix;
+typedef KluBlockSparseMatrixCore<MatrixEntryIndex, Complex> KluBlockSparseComplexMatrix;
 
 }
 

@@ -253,10 +253,10 @@ template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
         // KCL
-        *(d.jacPCp) += p.mfactor*p.gain;
-        *(d.jacPCn) += -p.mfactor*p.gain;
-        *(d.jacNCp) += -p.mfactor*p.gain;
-        *(d.jacNCn) += p.mfactor*p.gain;
+        *(d.jacPCp+loadSetup.jacobianLoadOffset) += p.mfactor*p.gain;
+        *(d.jacPCn+loadSetup.jacobianLoadOffset) += -p.mfactor*p.gain;
+        *(d.jacNCp+loadSetup.jacobianLoadOffset) += -p.mfactor*p.gain;
+        *(d.jacNCn+loadSetup.jacobianLoadOffset) += p.mfactor*p.gain;
     }
 
     // Load resistive residual
@@ -413,13 +413,13 @@ template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
         // KCL
-        *(d.jacPFlow) += p.mfactor;
-        *(d.jacNFlow) += -p.mfactor;
+        *(d.jacPFlow+loadSetup.jacobianLoadOffset) += p.mfactor;
+        *(d.jacNFlow+loadSetup.jacobianLoadOffset) += -p.mfactor;
         // Control
-        *(d.jacFlowP) += -1;
-        *(d.jacFlowN) += 1;
-        *(d.jacFlowCp) += p.gain;
-        *(d.jacFlowCn) += -p.gain;
+        *(d.jacFlowP+loadSetup.jacobianLoadOffset) += -1;
+        *(d.jacFlowN+loadSetup.jacobianLoadOffset) += 1;
+        *(d.jacFlowCp+loadSetup.jacobianLoadOffset) += p.gain;
+        *(d.jacFlowCn+loadSetup.jacobianLoadOffset) += -p.gain;
     }
 
     // Load resistive residual
@@ -553,8 +553,8 @@ template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
         // KCL
-        *(d.jacPCtl) += p.mfactor*p.gain;
-        *(d.jacNCtl) += -p.mfactor*p.gain;
+        *(d.jacPCtl+loadSetup.jacobianLoadOffset) += p.mfactor*p.gain;
+        *(d.jacNCtl+loadSetup.jacobianLoadOffset) += -p.mfactor*p.gain;
     }
 
     // Load resistive residual
@@ -713,12 +713,12 @@ template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadS
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
         // KCL
-        *(d.jacPFlow) += p.mfactor;
-        *(d.jacNFlow) += -p.mfactor;
+        *(d.jacPFlow+loadSetup.jacobianLoadOffset) += p.mfactor;
+        *(d.jacNFlow+loadSetup.jacobianLoadOffset) += -p.mfactor;
         // Control
-        *(d.jacFlowP) += -1;
-        *(d.jacFlowN) += 1;
-        *(d.jacFlowCtl) += p.gain;
+        *(d.jacFlowP+loadSetup.jacobianLoadOffset) += -1;
+        *(d.jacFlowN+loadSetup.jacobianLoadOffset) += 1;
+        *(d.jacFlowCtl+loadSetup.jacobianLoadOffset) += p.gain;
     }
 
     // Load resistive residual
@@ -1015,15 +1015,15 @@ template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loa
     if (loadSetup.loadReactiveJacobian) {
         auto factor = loadSetup.reactiveJacobianFactor;
         // Extra equations
-        *(d.jacReact12) += d.mutual*factor;
-        *(d.jacReact21) += d.mutual*factor;
+        *(d.jacReact12+loadSetup.jacobianLoadOffset) += d.mutual*factor;
+        *(d.jacReact21+loadSetup.jacobianLoadOffset) += d.mutual*factor;
     }
 
     if (loadSetup.loadTransientJacobian) {
         auto factor = loadSetup.integCoeffs->leadingCoeff();
         // Extra equations
-        *(d.jacReact12) += d.mutual*factor;
-        *(d.jacReact21) += d.mutual*factor;
+        *(d.jacReact12+loadSetup.jacobianLoadOffset) += d.mutual*factor;
+        *(d.jacReact21+loadSetup.jacobianLoadOffset) += d.mutual*factor;
     }
 
     // Load reactive residual

@@ -70,10 +70,14 @@ protected:
     
     void setNodesetAndIcFlags(bool continuePrevious);
 
+    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
+
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
     ConvSetup convSetup_;
 
+    // Passed from outside
+    Circuit& circuit;
     VectorRepository<double>& states;
     
     // Internal structures

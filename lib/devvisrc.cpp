@@ -570,11 +570,11 @@ template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& lo
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
         // KCL
-        *(d.jacPFlow) += p.mfactor;
-        *(d.jacNFlow) += -p.mfactor;
+        *(d.jacPFlow+loadSetup.jacobianLoadOffset) += p.mfactor;
+        *(d.jacNFlow+loadSetup.jacobianLoadOffset) += -p.mfactor;
         // Extra equation
-        *(d.jacFlowP) += -1.0;
-        *(d.jacFlowN) += 1.0;
+        *(d.jacFlowP+loadSetup.jacobianLoadOffset) += -1.0;
+        *(d.jacFlowN+loadSetup.jacobianLoadOffset) += 1.0;
     }
 
     // Load resistive residual

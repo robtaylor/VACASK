@@ -60,6 +60,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretrannr.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretran.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/corehb.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/corehbnr.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/an.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/ansupport.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/ansolution.h 
@@ -130,6 +131,7 @@ add_library(simlib STATIC
     corehbspec.cpp
     corehbcoloc.cpp
     corehbxform.cpp
+    corehbnr.cpp
     an.cpp
     ansupport.cpp 
     ansolution.cpp 

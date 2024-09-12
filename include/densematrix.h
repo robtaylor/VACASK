@@ -127,6 +127,8 @@ private:
 
 template<typename T> class DenseMatrixView {
 public:
+    DenseMatrixView() 
+        : start_(nullptr), nRow_(0), nCol_(0), rowStride_(0), colStride_(0) {};
     DenseMatrixView(T* start, size_t nRow, size_t nCol, size_t rowStride, size_t colStride) 
         : start_(start), nRow_(nRow), nCol_(nCol), rowStride_(rowStride_), colStride_(colStride) {}; 
 
@@ -145,6 +147,14 @@ public:
         }
     };
 
+    // TODO: optimize this further
+    void vecMul(VectorView<T>& other, VectorView<T>& result) {
+        for(size_t i=0; i<nRow_; i++) {
+            auto x = row(i).dot(other);
+            result[i] = x;
+        }
+    };
+    
 protected:
     T* start_;
     size_t nRow_;
