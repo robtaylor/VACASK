@@ -55,10 +55,6 @@ typedef struct NRSettings {
     bool matrixCheck {};
     bool rhsCheck {};
     bool solutionCheck {};
-    bool historicSolRef {false};
-    bool globalSolRef {false};
-    bool historicResRef {false};
-    bool globalResRef {false};
     Real forceFactor {1e5}; 
 } NRSettings;
 

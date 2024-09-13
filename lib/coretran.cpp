@@ -1123,7 +1123,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                     tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
                 } else if (options.relreflte == SimulatorOptions::relrefPointGlobal) {
                     // Maximum over all unknowns, for each timepoint
-                    tol = circuit.solutionTolerance(rn, nrSolver.pointMaxSolution());
+                    tol = circuit.solutionTolerance(rn, nrSolver.pointMaxSolution()[ndx]);
                 } else if (options.relreflte == SimulatorOptions::relrefLocal) {
                     // For each unknown, maximum over past timepoints
                     tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);

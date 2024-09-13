@@ -95,11 +95,13 @@ bool OpNRSolver::rebuild() {
     // Allocate space in vetors
     auto n = circuit.unknownCount();
     dummyStates.resize(circuit.statesCount());
+    maxResidualContribution_.resize(n+1);       
     historicMaxSolution_.resize(n+1);
+    globalMaxSolution_.resize(2); // Number of solution natures
+    pointMaxSolution_.resize(2);  // Number of solution natures
     historicMaxResidualContribution_.resize(n+1);
-    maxResidualContribution_.resize(n+1);
-    globalMaxResidualContribution_.resize(n+1);
-    globalMaxSolution_.resize(n+1);
+    globalMaxResidualContribution_.resize(2); // Number of residual natures
+    pointMaxResidualContribution_.resize(2);  // Number of residual natures
     resetMaxima();
 
     // Build flow node flags
@@ -143,27 +145,27 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
     if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
-        settings.globalSolRef = false;
-        settings.historicSolRef = false;
+        globalSolRef = false;
+        historicSolRef = false;
     } else if (options.relrefsol==SimulatorOptions::relrefLocal) {
-        settings.globalSolRef = false;
-        settings.historicSolRef = true;
+        globalSolRef = false;
+        historicSolRef = true;
     } else if (options.relrefsol==SimulatorOptions::relrefPointGlobal) {
-        settings.globalSolRef = true;
-        settings.historicSolRef = false;
+        globalSolRef = true;
+        historicSolRef = false;
     } else if (options.relrefsol==SimulatorOptions::relrefGlobal) {
-        settings.globalSolRef = true;
-        settings.historicSolRef = true;
+        globalSolRef = true;
+        historicSolRef = true;
     } else if (options.relrefsol==SimulatorOptions::relrefRelref) {
         if (options.relref == SimulatorOptions::relrefAlllocal) {
-            settings.globalSolRef = false;
-            settings.historicSolRef = true;
+            globalSolRef = false;
+            historicSolRef = true;
         } else if (options.relref == SimulatorOptions::relrefSigglobal) {
-            settings.globalSolRef = true;
-            settings.historicSolRef = true;
+            globalSolRef = true;
+            historicSolRef = true;
         } else if (options.relref == SimulatorOptions::relrefAllglobal) {
-            settings.globalSolRef = true;
-            settings.historicSolRef = true;
+            globalSolRef = true;
+            historicSolRef = true;
         } else {
             lastError = Error::BadSolReference;
             return false;
@@ -175,27 +177,27 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 
     // Set up tolerance reference value for residual
     if (options.relrefres==SimulatorOptions::relrefPointLocal) {
-        settings.globalResRef = false;
-        settings.historicResRef = false;
+        globalResRef = false;
+        historicResRef = false;
     } else if (options.relrefres==SimulatorOptions::relrefLocal) {
-        settings.globalResRef = false;
-        settings.historicResRef = true;
+        globalResRef = false;
+        historicResRef = true;
     } else if (options.relrefres==SimulatorOptions::relrefPointGlobal) {
-        settings.globalResRef = true;
-        settings.historicResRef = false;
+        globalResRef = true;
+        historicResRef = false;
     } else if (options.relrefres==SimulatorOptions::relrefGlobal) {
-        settings.globalResRef = true;
-        settings.historicResRef = true;
+        globalResRef = true;
+        historicResRef = true;
     } else if (options.relrefres==SimulatorOptions::relrefRelref) {
         if (options.relref == SimulatorOptions::relrefAlllocal) {
-            settings.globalResRef = false;
-            settings.historicResRef = true;
+            globalResRef = false;
+            historicResRef = true;
         } else if (options.relref == SimulatorOptions::relrefSigglobal) {
-            settings.globalResRef = false;
-            settings.historicResRef = true;
+            globalResRef = false;
+            historicResRef = true;
         } else if (options.relref == SimulatorOptions::relrefAllglobal) {
-            settings.globalResRef = true;
-            settings.historicResRef = true;
+            globalResRef = true;
+            historicResRef = true;
         } else {
             lastError = Error::BadResReference;
             return false;
@@ -275,16 +277,6 @@ bool OpNRSolver::postConvergenceCheck(bool continuePrevious) {
 }
 
 bool OpNRSolver::postIteration(bool continuePrevious) {
-    // Update pointMaxSolution_
-    pointMaxSolution_ = 0;
-    auto xnew = solution.futureData();
-    auto n = solution.length()-1;
-    for(decltype(n) i=1; i<=n; i++) {
-        double c = std::fabs(xnew[i]);
-        if (c>pointMaxSolution_) {
-            pointMaxSolution_ = c;
-        }
-    }
     return true;
 }
 
@@ -469,12 +461,15 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
     // Assume residual is OK
     bool residualOk = true;
     
-    // Get point maximum
-    pointMaxResidualContribution_ = 0;
+    // Get point maximum for each residual nature
+    zero(pointMaxResidualContribution_); 
     for(decltype(n) i=1; i<=n; i++) {
         double c = std::fabs(maxResidualContribution_[i]);
-        if (c>pointMaxResidualContribution_) {
-            pointMaxResidualContribution_ = c;
+        auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 1 : 0;
+        if (c>pointMaxResidualContribution_[ndx]) {
+            pointMaxResidualContribution_[ndx] = c;
         }
     }
     
@@ -486,17 +481,22 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
         size_t ndx = isPotential ? 1 : 0;
 
         // Compute tolerance reference
+        // Point local reference by default
+        // Compute tolerance reference, start with previous value of the i-th unknown
         double tolref = std::fabs(maxResidualContribution_[i]);
 
         // Account for global and historic references
-        if (settings.historicResRef) {
-            if (settings.globalResRef) {
+        if (historicResRef) {
+            if (globalResRef) {
+                // Historic global reference, ndx is the nature index
                 tolref = std::max(tolref, globalMaxResidualContribution_[ndx]);
             } else {
+                // Historic local reference, i is the index of unknown
                 tolref = std::max(tolref, historicMaxResidualContribution_[i]);
             }
-        } else if (settings.globalResRef) {
-            tolref = std::max(tolref, pointMaxResidualContribution_);
+        } else if (globalResRef) {
+            // Point global reference, ndx is the nature index
+            tolref = std::max(tolref, pointMaxResidualContribution_[ndx]);
         }
 
         // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
@@ -557,12 +557,15 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
     
     double* xdelta = delta.data();
 
-    // Get point maximum
-    pointMaxSolution_ = 0;
+    // Get point maximum for each solution nature
+    auto xold = solution.data();
     for(decltype(n) i=1; i<=n; i++) {
-        double c = std::fabs(xprev[i]);
-        if (c>pointMaxSolution_) {
-            pointMaxSolution_ = c;
+        double c = std::fabs(xold[i]);
+        auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 0 : 1;
+        if (c>pointMaxSolution_[ndx]) {
+            pointMaxSolution_[ndx] = c;
         }
     }
 
@@ -574,19 +577,24 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
         size_t ndx = isPotential ? 0 : 1;
 
         // Compute tolerance reference
+        // Point local reference by default
+        // Compute tolerance reference, start with previous value of the i-th unknown
         double tolref = std::fabs(xprev[i]);
         
         // Cannot account for new solution because damping has not been performed yet
 
         // Account for global and historic references
-        if (settings.historicSolRef) {
-            if (settings.globalSolRef) {
+        if (historicSolRef) {
+            if (globalSolRef) {
+                // Historic global reference, ndx is the nature index
                 tolref = std::max(tolref, globalMaxSolution_[ndx]);
             } else {
+                // Historic local reference, i is the index of unknown
                 tolref = std::max(tolref, historicMaxSolution_[i]);
             }
-        } else if (settings.globalSolRef) {
-            tolref = std::max(tolref, pointMaxSolution_);
+        } else if (globalSolRef) {
+            // Point global reference, ndx is the nature index
+            tolref = std::max(tolref, pointMaxSolution_[ndx]);
         }
         
         // Compute tolerance
@@ -621,11 +629,11 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
 
 void OpNRSolver::resetMaxima() {
     zero(historicMaxSolution_);
-    zero(historicMaxResidualContribution_);
     zero(globalMaxSolution_);
+    zero(pointMaxSolution_); 
+    zero(historicMaxResidualContribution_);
     zero(globalMaxResidualContribution_);
-    pointMaxSolution_ = 0;
-    pointMaxResidualContribution_ = 0;
+    zero(pointMaxResidualContribution_); 
 }  
 
 void OpNRSolver::initializeMaxima(OpNRSolver& other) {
@@ -645,8 +653,10 @@ void OpNRSolver::updateMaxima() {
         double c;
         size_t ndx;
         
+        // Historic local and historic global maximal solution
         // Voltage nodes -> potential nature is voltage (0) 
         // Flow nodes -> potential nature is current (1) 
+        // Unknown nature
         ndx = isPotential ? 0 : 1;
         c = std::fabs(x[i]);
         if (c>historicMaxSolution_[i]) {
@@ -656,8 +666,10 @@ void OpNRSolver::updateMaxima() {
             globalMaxSolution_[ndx] = c;
         }
         
+        // Historic local and historic global maximal residual contribution
         // Voltage nodes -> flow nature is current (1) 
         // Flow nodes -> flow nature is voltage (0) 
+        // Residual nature
         ndx = isPotential ? 1 : 0;
         c = std::fabs(mrc[i]);
         if (c>historicMaxResidualContribution_[i]) {
