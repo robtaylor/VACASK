@@ -32,6 +32,7 @@ typedef struct SimulatorOptions  {
     Int solutioncheck;
     Int sweep_pointmarker;
     Int sweep_debug;
+    int nr_debug;
     Int nr_bypass; 
     Real nr_convtol;
     Real nr_bypasstol;

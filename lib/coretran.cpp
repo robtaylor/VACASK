@@ -374,7 +374,7 @@ bool TranCore::rebuild(Status& s) {
     // Prepare NR solver settings
     auto& options = circuit.simulatorOptions().core();
     nrSettings = NRSettings {
-        .debug = options.tran_debug>=100 ? options.tran_debug-100+1 : 0, 
+        .debug = options.nr_debug, 
         .itlim = options.tran_itl, 
         .itlimCont = options.tran_itl, 
         .convIter = options.nr_conviter, 

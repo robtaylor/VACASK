@@ -34,8 +34,8 @@ public:
     virtual bool postIteration(bool continuePrevious);
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
-    virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms);
-    virtual std::tuple<bool, double, double, Id> checkDelta(bool* deltaOk, bool computeNorms);
+    virtual std::tuple<bool, bool> checkResidual();
+    virtual std::tuple<bool, bool> checkDelta();
 
     // Reset solution maxima and residual maxima
     void resetMaxima();
@@ -102,6 +102,19 @@ protected:
 
     // Flag that forces skipping of device convergence check
     bool skipConvergenceCheck;
+
+    // Solution natures and residual natures are currently limited to 
+    //   0 .. voltage
+    //   1 .. current
+    
+    // Convergence check auxiliary results
+    double maxResidual; 
+    double maxNormResidual; 
+    double l2normResidual2;
+    Node* maxResidualNode;
+    double maxDelta; 
+    double maxNormDelta; 
+    Node* maxDeltaNode;
 };
 
 }

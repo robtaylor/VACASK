@@ -62,6 +62,7 @@ SimulatorOptions::SimulatorOptions() {
                   // 102  = nrdebug=3, print solutions
                   // >102 = nrdebug>=4, print old solution before building system
 
+    nr_debug = 0;  // >0 enables nonlinear solver debugging
     nr_bypass = 0; // 1 = disable core evaluation for bypassed instances 
                    // To be bypassed an instance must converge and 
                    // the instance inputs change between iterations must be within tolerances. 
@@ -236,6 +237,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(sweep_pointmarker);
     registerMember(sweep_debug);
     
+    registerMember(nr_debug);
     registerMember(nr_bypass);
     registerMember(nr_convtol);
     registerMember(nr_bypasstol);

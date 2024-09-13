@@ -252,6 +252,25 @@ bool OpNRSolver::postConvergenceCheck(bool continuePrevious) {
     // If algorithm converged we are going to exit next and states must be 
     // rotated because the new state belongs to the current solution
     states.rotate();
+
+    // Print debug information on convergence
+    if (settings.debug) {
+        std::stringstream ss;
+        ss << std::scientific << std::setprecision(2);
+        Simulator::dbg() << "Iteration " << std::to_string(iteration) << (preventedConvergence ? ", convergence not allowed" : "");
+        if (!preventedConvergence) {
+            Simulator::dbg() << (iterationConverged ? ", converged" : "");
+            if (settings.residualCheck) {
+                ss.str(""); ss << maxResidual;
+                Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << (maxResidualNode ? maxResidualNode->name() : "(unknown)");
+            }
+            if (iteration>1) {
+                ss.str(""); ss << maxDelta;
+                Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << (maxDeltaNode ? maxDeltaNode->name() : "(unknown)");
+            }
+        }
+        Simulator::dbg() << "\n";
+    }
     return true;
 }
 
@@ -431,7 +450,10 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     return std::make_tuple(true, evalSetup_.limitingApplied); 
 }
 
-std::tuple<bool, double, double, double, Id> OpNRSolver::checkResidual(bool* residualOk, bool computeNorms) {
+std::tuple<bool, bool> OpNRSolver::checkResidual() {
+    // Compute norms only in debug mode
+    bool computeNorms = settings.debug;
+
     // In residual we have the residual at previous solution
     // We are going to check that residual
     
@@ -445,10 +467,8 @@ std::tuple<bool, double, double, double, Id> OpNRSolver::checkResidual(bool* res
     Node* maxResidualNode = nullptr;
     
     // Assume residual is OK
-    if (residualOk) {
-        *residualOk = true;
-    }
-
+    bool residualOk = true;
+    
     // Get point maximum
     pointMaxResidualContribution_ = 0;
     for(decltype(n) i=1; i<=n; i++) {
@@ -500,23 +520,21 @@ std::tuple<bool, double, double, double, Id> OpNRSolver::checkResidual(bool* res
 
         // See if residual component exceeds tolerance
         if (rescomp>tol) {
-            if (residualOk) {
-                *residualOk = false;
-                // Can exit if not computing norms
-                if (!computeNorms) {
-                    break;
-                }
+            residualOk = false;
+            // Can exit if not computing norms
+            if (!computeNorms) {
+                break;
             }
         }
     }
     
-    return std::make_tuple(
-        true, maxResidual, maxNormResidual, l2normResidual2, 
-        maxResidualNode ? maxResidualNode->name() : Id()
-    ); 
+    return std::make_tuple(true, residualOk); 
 }
 
-std::tuple<bool, double, double, Id> OpNRSolver::checkDelta(bool* deltaOk, bool computeNorms) {
+std::tuple<bool, bool> OpNRSolver::checkDelta() {
+    // Compute norms only in debug mode
+    bool computeNorms = settings.debug;
+
     // In delta we have the solution change
     // Check it for convergence
     
@@ -526,8 +544,8 @@ std::tuple<bool, double, double, Id> OpNRSolver::checkDelta(bool* deltaOk, bool 
     // Raw arrays
     double* xprev = solution.data();
     
-    double maxDelta = 0.0;
-    double maxNormDelta = 0.0;
+    maxDelta = 0.0;
+    maxNormDelta = 0.0;
     Node* maxDeltaNode = nullptr;
     
     // Check convergence (see if delta is small enough), 
@@ -535,10 +553,8 @@ std::tuple<bool, double, double, Id> OpNRSolver::checkDelta(bool* deltaOk, bool 
     // In iteration 1 assume we did not converge
     
     // Assume we converged
-    if (deltaOk) {
-        *deltaOk = true;
-    }
-
+    bool deltaOk = true;
+    
     double* xdelta = delta.data();
 
     // Get point maximum
@@ -591,9 +607,8 @@ std::tuple<bool, double, double, Id> OpNRSolver::checkDelta(bool* deltaOk, bool 
         // Check tolerance
         if (deltaAbs>tol) {
             // Did not converge
-            if (deltaOk) {
-                *deltaOk = false;
-            }
+            deltaOk = false;
+            
             // Can exit if not computing norms
             if (!computeNorms) {
                 break;
@@ -601,10 +616,7 @@ std::tuple<bool, double, double, Id> OpNRSolver::checkDelta(bool* deltaOk, bool 
         }
     }
     
-    return std::make_tuple(
-        true, maxDelta, maxNormDelta, 
-        maxDeltaNode ? maxDeltaNode->name() : Id()
-    );
+    return std::make_tuple(true, deltaOk);
 }
 
 void OpNRSolver::resetMaxima() {

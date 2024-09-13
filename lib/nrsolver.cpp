@@ -216,7 +216,7 @@ bool NRSolver::run(bool continuePrevious) {
     Id maxDeltaNodeId;
     iteration = 0;
     Int convIter = 0;
-    bool converged = false;
+    converged = false;
 
     clearError();
 
@@ -232,7 +232,7 @@ bool NRSolver::run(bool continuePrevious) {
     
     do {
         // Assume no convergence
-        bool iterationConverged = false;
+        iterationConverged = false;
 
         // Iteration counter (first iteration is 1)
         iteration++;
@@ -264,7 +264,7 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
         
-        auto [buildOk, preventConvergence] = buildSystem(continuePrevious);
+        auto [buildOk, preventedConvergence] = buildSystem(continuePrevious);
         if (!buildOk) {
             // Load error or abort
             break;
@@ -305,17 +305,12 @@ bool NRSolver::run(bool continuePrevious) {
         // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
 
-        // Residual norms are needed if we have dynamic damping or debug is set
-        bool computeResidualNorms = settings.debug;
         // Assume residual is OK
         bool residualOk = true;
-        // Call residualCheck() if 
-        // - check is required and convergence was not prevented or
-        // - residual norms are needed
-        if (settings.residualCheck || computeResidualNorms) {
+        // Call residualCheck() if check is required
+        if (settings.residualCheck) {
             bool residualCheckOk;
-            std::tie(residualCheckOk, maxResidual, maxNormResidual, l2normResidual2, maxResidualNodeId) = 
-                checkResidual(settings.residualCheck ? &residualOk : nullptr, computeResidualNorms);
+            std::tie(residualCheckOk, residualOk) = checkResidual();
             if (!residualCheckOk) { 
                 if (settings.debug) {
                     Simulator::dbg() << "Residual check error.\n";
@@ -414,16 +409,13 @@ bool NRSolver::run(bool continuePrevious) {
         // dumpSolution(std::cout, delta.data(), "  ");
         // std::cout << "\n";
 
-        // Delta norms are computed in debug mode
-        bool computeDeltaNorms = settings.debug;
         // Check convergence (see if delta is small enough)
         // Assume delta did not converge
-        bool deltaOk = false;
-        // Check is not performed in first iteration
+        deltaOk = false;
+        // Check is not performed in the first iteration
         if (iteration>1) {
             bool deltaCheckOk;
-            std::tie(deltaCheckOk, maxDelta, maxNormDelta, maxDeltaNodeId) =
-                checkDelta(&deltaOk, computeDeltaNorms);
+            std::tie(deltaCheckOk, deltaOk) = checkDelta();
             if (!deltaCheckOk) {
                 if (settings.debug) {
                     Simulator::dbg() << "Solution delta check error.\n";
@@ -441,28 +433,8 @@ bool NRSolver::run(bool continuePrevious) {
 
 
         // Check if this iteration converged
-        iterationConverged = !preventConvergence && deltaOk && residualOk;
+        iterationConverged = !preventedConvergence && deltaOk && residualOk;
         
-        // Print debug messages
-        if (settings.debug) {
-            bool iterationConverged = deltaOk && residualOk;
-            std::stringstream ss;
-            ss << std::scientific << std::setprecision(2);
-            Simulator::dbg() << "Iteration " << std::to_string(iteration) << (preventConvergence ? ", convergence not allowed" : "");
-            if (!preventConvergence) {
-                Simulator::dbg() << (iterationConverged ? ", converged" : "");
-                if (computeResidualNorms) {
-                    ss.str(""); ss << maxResidual;
-                    Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << maxResidualNodeId;
-                }
-                if (iteration>1) {
-                    ss.str(""); ss << maxDelta;
-                    Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << maxDeltaNodeId;
-                }
-            }
-            Simulator::dbg() << "\n";
-        }
-
         // Count consecutive convergent iterations
         if (iterationConverged) {
             convIter++;
@@ -483,7 +455,7 @@ bool NRSolver::run(bool continuePrevious) {
             converged = false;
             break;
         }
-        
+
         // Exit if converged
         if (converged) {
             break;

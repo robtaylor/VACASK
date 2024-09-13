@@ -220,7 +220,7 @@ bool OperatingPointCore::rebuild(Status& s) {
     // Prepare NR solver settings
     auto& options = circuit.simulatorOptions().core();
     nrSettings = NRSettings {
-        .debug = options.op_debug >= 100 ? options.op_debug-100+1 : 0, 
+        .debug = options.nr_debug, 
         .itlim = options.op_itl, 
         .itlimCont = options.op_itlcont, 
         .convIter = options.nr_conviter, 

@@ -32,6 +32,7 @@ namespace NAMESPACE {
 //       postSolve();
 //       check solution;
 //       checkDelta() if not in first iteration;
+//       check iteration convergence;
 //       check convergence;
 //       postConvergenceCheck();
 //       if (converged) {
@@ -101,16 +102,11 @@ public:
     // Return value: ok, prevent convergence
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious) = 0;
 
-    // Return values: ok, magnitude of residual component with maximal relative magnitude, 
-    //                maximal relative magnitude of component, squared L2 norm of relative magnitude vector, 
-    //                corresponding node identifier
-    // Relative magnitude is computed wrt. tolerance. 
-    virtual std::tuple<bool, double, double, double, Id> checkResidual(bool* residualOk, bool computeNorms) = 0;
+    // Return values: ok, residual ok
+    virtual std::tuple<bool, bool> checkResidual() = 0;
     
-    // Return values: ok, magnitude of delta component with maximal relative magnitude, 
-    //                maximal relative magnitude of component, corresponding node identifier
-    // Relative magnitude is computed wrt. tolerance. 
-    virtual std::tuple<bool, double, double, Id> checkDelta(bool* deltaOk, bool computeNorms) = 0;
+    // Return values: ok, delta ok
+    virtual std::tuple<bool, bool> checkDelta() = 0;
 
     // Rebuild internal structures that depend on topology
     virtual bool rebuild();
@@ -192,10 +188,6 @@ protected:
     NRSettings& settings;
     Accounting& acct;
 
-    // Solution natures and residual natures are currently limited to 
-    //   0 .. voltage
-    //   1 .. current
-    
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
     
@@ -209,6 +201,19 @@ protected:
     
     Int iteration;
 
+    // Convergence check results
+    // System build requested no convergence
+    bool preventedConvergence;
+    // Residual is within tolerances
+    bool residualOk;
+    // Solution change is within tolerances
+    bool deltaOk;
+    // Iteration converged (convergence not prevented, residual and delta are ok)
+    bool iterationConverged;
+    // Sufficient number of consecutive iterations converged (settings.convIter), solver done
+    bool converged;
+
+    // Error information
     Error lastError;
     Int errorIteration;
 };
