@@ -87,10 +87,36 @@ bool HBNRSolver::rebuild() {
 }
 
 bool HBNRSolver::initialize(bool continuePrevious) {
+    // Maximal residual contribution computed by evalAndLoad()
+    loadSetup_.maxResistiveResidualContribution = maxResidualContributionAtTimepoint_.data();
+
+    // Compute maximal row value for XF and XFdot
+    auto nt = XF.nRow();
+    XFrowMax.resize(nt);
+    XFdotRowMax.resize(nt);
+    zero(XFrowMax);
+    zero(XFdotRowMax);
+    for(decltype(nt) i=0; i<nt; i++) {
+        auto XFrow = XF.row(i);
+        auto XFdotRow = XFdot.row(i);
+        for(decltype(nt) j=0; j<nt; j++) {
+            auto c = std::fabs(XFrow[j]);
+            if (c>XFrowMax[i]) {
+                XFrowMax[i] = c;
+            }
+            auto cdot = std::fabs(XFdotRow[j]);
+            if (cdot>XFdotRowMax[i]) {
+                XFdotRowMax[i] = cdot;
+            }
+        }
+    }
+
     return true;
 }
 
 bool HBNRSolver::preIteration(bool continuePrevious) {
+    // Clear maximal resistive residual contribution
+    zero(maxResidualContribution_);
     return true;
 }
 
@@ -99,6 +125,26 @@ bool HBNRSolver::postSolve(bool continuePrevious) {
 }
 
 bool HBNRSolver::postConvergenceCheck(bool continuePrevious) {
+    // Print debug information on convergence
+    if (settings.debug) {
+        std::stringstream ss;
+        ss << std::scientific << std::setprecision(2);
+        Simulator::dbg() << "Iteration " << std::to_string(iteration) << (preventedConvergence ? ", convergence not allowed" : "");
+        if (!preventedConvergence) {
+            Simulator::dbg() << (iterationConverged ? ", converged" : "");
+            if (settings.residualCheck) {
+                ss.str(""); ss << maxResidual;
+                Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << (maxResidualNode ? maxResidualNode->name() : "(unknown)")
+                                 << ", t" << maxResidualTimepointIndex << "=" << timepoints[maxResidualTimepointIndex];
+            }
+            if (iteration>1) {
+                ss.str(""); ss << maxDelta;
+                Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << (maxDeltaNode ? maxDeltaNode->name() : "(unknown)")
+                                 << ", f" << maxDeltaFreqIndex << "=" << spectrum[maxDeltaFreqIndex];
+            }
+        }
+        Simulator::dbg() << "\n";
+    }
     return true;
 }
 
@@ -257,6 +303,27 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
             // 1-based            1-based
             delta[1+i*nb+k] = resistiveResidualTk[1+i];
         }
+
+        // Handle maximal resistive residual contribution at this timepoint
+        // Loop through nodes
+        for(decltype(n) i=0; i<n; i++) {
+            auto c = maxResidualContributionAtTimepoint_[1+i];
+            // 1-based                              // 1-based
+            maxResidualContribution_[1+i*nb+k] = maxResidualContributionAtTimepoint_[1+i];
+            
+            // Update historic max for node
+            if (c>historicMaxResidualContribution_[1+i]) {
+                historicMaxResidualContribution_[1+i] = c;
+            }
+
+            // Update global historic max for nature (representative node index is 1-based)
+            auto rn = circuit.reprNode(1+i);
+            bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+            size_t ndx = isPotential ? 1 : 0;
+            if (c>globalMaxResidualContribution_[ndx]) {
+                globalMaxResidualContribution_[ndx] = c;
+            }
+        }
     }
 
     // For each block (ordered in column major order)
@@ -274,7 +341,7 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         auto gCol = block.column(0);
         auto cCol = block.column(1);
         
-        // Scan columns in reverse from nb-1 to 1 
+        // Scan columns in block in reverse from nb-1 to 1 
         // l=0 is for DC which should hold Jr_ijk*1 + Jc_ijk*0 
         // and is already filled with correct values (Jr_ijk). 
         for(decltype(nb) l=nb-1; l>0; l--) {   
@@ -289,9 +356,20 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
             auto solDot = VectorView<double>(solTDDot+1+j*nb, nb, 1);
 
             // Get delta (residual) subvector for equation i
-            auto deltaSub =VectorView<double>(delta.data()+1+i*nb, nb, 1);
+            auto deltaSub = VectorView<double>(delta.data()+1+i*nb, nb, 1);
 
-            // Scan rows
+            // When l==1, update max residual contribution with reactive cotribution
+            if (l==1) {
+                // Scan rows in block
+                for(decltype(nb) k=0; k<nb; k++) {
+                    auto c = cCol[k]*solDot[k];
+                    if (c>maxResidualContribution_[1+i*nb+k]) {
+                        maxResidualContribution_[1+i*nb+k] = c;
+                    }
+                }
+            }
+
+            // Scan rows in block
             for(decltype(nb) k=0; k<nb; k++) {
                 // Get resistive and reactive Jacobian of block (i, j) at t_k
                 // before gCol is filled with contributions when l=1. 
@@ -317,6 +395,233 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
     // OK, do not prevent convergence
     return std::make_tuple(true, false); 
 }
+
+std::tuple<bool, bool> HBNRSolver::checkResidual() {
+    // Compute norms only in debug mode
+    bool computeNorms = settings.debug;
+
+    // In residual we have the residual at previous solution
+    // We are going to check that residual
+    
+    // Number of unknowns (vector length includes a bucket at index 0)
+    auto n = circuit.unknownCount();
+
+    // Number of timepoints
+    auto nt = timepoints.size();
+
+    // Results
+    double maxResidual = 0.0;
+    double maxNormResidual = 0.0;
+    double l2normResidual2 = 0.0;
+    Node* maxResidualNode = nullptr;
+    
+    // Assume residual is OK
+    bool residualOk = true;
+    
+    // Get point maximum for each residual nature
+    zero(pointMaxResidualContribution_); 
+    // Loop through all nodes
+    for(decltype(n) i=0; i<n; i++) {
+        // Get representative node (1-based index) and nature index
+        auto rn = circuit.reprNode(i+1);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 1 : 0;
+        // Loop through all timepoints
+        for(decltype(nt) k=0; k<nt; k++) {
+            double c = std::fabs(maxResidualContribution_[1+i*nt+k]);
+            if (c>pointMaxResidualContribution_[ndx]) {
+                pointMaxResidualContribution_[ndx] = c;
+            }
+        }
+    }
+    
+    // Go through all variables (except ground)
+    for(decltype(n) i=1; i<=n; i++) {
+        // Representative node (1-based index), associated flow nature index
+        auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 1 : 0;
+        
+        // Go through all timepoints
+        for(decltype(nt) k=0; k<nt; k++) {
+            // Compute tolerance reference
+            // Point local reference by default
+            // Compute tolerance reference, start with previous value of the i-th unknown
+            double tolref = std::fabs(maxResidualContribution_[1+(i-1)*nt+k]);
+            
+            // Account for global and historic references
+            if (historicResRef) {
+                if (globalResRef) {
+                    // Historic global reference, ndx is the nature index
+                    tolref = std::max(tolref, globalMaxResidualContribution_[ndx]);
+                } else {
+                    // Historic local reference, i is the index of unknown
+                    tolref = std::max(tolref, historicMaxResidualContribution_[i]);
+                }
+            } else if (globalResRef) {
+                // Point global reference, ndx is the nature index
+                tolref = std::max(tolref, pointMaxResidualContribution_[ndx]);
+            }
+
+            // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
+            auto tol = circuit.residualTolerance(rn, tolref);
+
+            // Residual component
+            double rescomp = fabs(delta[1+(i-1)*nt+k]);
+
+            // Normalized residual component
+            double normResidual = rescomp/tol;
+
+            if (computeNorms) {
+                l2normResidual2 += normResidual*normResidual;
+                // Update largest normalized component
+                if (i==0 || normResidual>maxNormResidual) {
+                    maxResidual = rescomp;
+                    maxNormResidual = normResidual;
+                    maxResidualNode = rn;
+                    maxResidualTimepointIndex = k;
+                }
+            }
+
+            // See if residual component exceeds tolerance
+            if (rescomp>tol) {
+                residualOk = false;
+                // Can exit if not computing norms
+                if (!computeNorms) {
+                    return std::make_tuple(true, residualOk); 
+                }
+            }
+        }
+    }
+    
+    return std::make_tuple(true, residualOk); 
+}
+
+std::tuple<bool, bool> HBNRSolver::checkDelta() {
+    // Compute norms only in debug mode
+    bool computeNorms = settings.debug;
+
+    // In delta we have the solution change
+    // Check it for convergence
+    
+    // Number of unknowns (vector length includes a bucket at index 0)
+    auto n = circuit.unknownCount();
+    auto nf = spectrum.size();
+
+    maxDelta = 0.0;
+    maxNormDelta = 0.0;
+    Node* maxDeltaNode = nullptr;
+    maxDeltaFreqIndex = 0;
+    
+    // Check convergence (see if delta is small enough), 
+    // but only if this is iteration 2 or later
+    // In iteration 1 assume we did not converge
+    
+    // Assume we converged
+    bool deltaOk = true;
+    
+    // Get point maximum for each solution nature
+    auto compPtr = solution.data();
+    // Skip bucket
+    compPtr++;
+    for(decltype(n) i=1; i<=n; i++) {
+        // Representative node, associated potential nature index
+        auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 0 : 1;
+        for(decltype(nf) j=0; j<nf; j++) {
+            double c;
+            if (j==0) {
+                // DC
+                c = std::fabs(*compPtr);
+                // Advance by 1
+                compPtr++;
+            } else {
+                // Not DC, it is complex
+                c = std::abs(*reinterpret_cast<Complex*>(compPtr));
+                // Advance by 2 (real, imaginary)
+                compPtr += 2;
+            }
+            // Rows are natures, columns are frequency components (DC, f1, f2, ...)
+            if (c>pointMaxSolution_.at(ndx, j)) {
+                pointMaxSolution_.at(ndx, j) = c;
+            }
+        }
+    }
+
+    // Use 1-based index (with bucket) because same indexing is used for variables
+    compPtr = solution.data();
+    auto deltaPtr = delta.data();
+    // Skip bucket
+    compPtr++;
+    deltaPtr++;
+    for(decltype(n) i=1; i<=n; i++) {
+        // Representative node, associated potential nature index
+        auto rn = circuit.reprNode(i);
+        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
+        size_t ndx = isPotential ? 0 : 1;
+        for(decltype(nf) j=0; j<nf; j++) {
+            // Compute tolerance reference
+            // Point local reference by default
+            // Compute tolerance reference, start with previous value of the i-th unknown at j-th frequency
+            double tolref;
+            if (j==0) {
+                // DC
+                tolref = std::fabs(*compPtr);
+                compPtr++;
+            } else {
+                // Complex
+                tolref = std::abs(*reinterpret_cast<Complex*>(compPtr));
+                compPtr += 2;
+            }
+            
+            // Account for global references, no historic reference because we are in frequency domain
+            if (globalSolRef) {
+                // Point global reference, ndx is the nature index
+                tolref = std::max(tolref, pointMaxSolution_.at(ndx, j));
+            }
+            
+            // Compute tolerance
+            double tol = circuit.solutionTolerance(rn, tolref);
+
+            // Absolute solution change 
+            double deltaAbs;
+            if (j==0) {
+                // DC
+                deltaAbs = fabs(*deltaPtr);
+                deltaPtr++;
+            } else {
+                // Complex
+                tolref = std::abs(*reinterpret_cast<Complex*>(deltaPtr));
+                deltaPtr += 2;
+            }
+
+            if (computeNorms) {
+                double normDelta = deltaAbs/tol;
+                if (i==1 || normDelta>maxNormDelta) {
+                    maxDelta = deltaAbs;
+                    maxNormDelta = normDelta;
+                    maxDeltaNode = rn;
+                    maxDeltaFreqIndex = j;
+                }
+            }
+
+            // Check tolerance
+            if (deltaAbs>tol) {
+                // Did not converge
+                deltaOk = false;
+                
+                // Can exit if not computing norms
+                if (!computeNorms) {
+                    return std::make_tuple(true, deltaOk);
+                }
+            }
+        }
+    }
+    
+    return std::make_tuple(true, deltaOk);
+}
+
 
 }
 

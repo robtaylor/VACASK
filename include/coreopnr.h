@@ -40,17 +40,13 @@ public:
     // Reset solution maxima and residual maxima
     void resetMaxima();
 
-    // Initialize maxima from another solver
+    // Initialize maxima from another OP NR solver
     void initializeMaxima(OpNRSolver& other);
 
     // Update historic and global maxima (across history and unknowns)
     void updateMaxima();
-        
-    EvalSetup& evalSetup() { return evalSetup_; };
-    LoadSetup& loadSetup() { return loadSetup_; };
-    ConvSetup& convSetup() { return convSetup_; };
 
-    // Return max historic solution vector
+    // Return max historic solution vector (needed for LTE convergence check)
     const Vector<double>& historicMaxSolution() const { return historicMaxSolution_; };
     const Vector<double>& historicMaxResidualContribution() const { return historicMaxResidualContribution_; };
 
@@ -61,9 +57,13 @@ public:
     // Return point max solution
     const Vector<double>& pointMaxSolution() const { return pointMaxSolution_; };
     const Vector<double>& pointMaxResidualContribution() const { return pointMaxResidualContribution_; };
-
+        
     double* maxResidualContribution() { return maxResidualContribution_.data(); }; 
     
+    EvalSetup& evalSetup() { return evalSetup_; };
+    LoadSetup& loadSetup() { return loadSetup_; };
+    ConvSetup& convSetup() { return convSetup_; };
+
 protected:
     void loadShunts(double gshunt, bool loadJacobian=true);
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
@@ -85,7 +85,7 @@ protected:
     Vector<double> deviceStates;
 
     // Internal structure for max residual contribution
-    Vector<double> maxResidualContribution_; // maximal residual contributionm at this point for each equation
+    Vector<double> maxResidualContribution_; // maximal residual contributionm at this evaluation for each equation
     
     // What kind of tolerance reference to use
     bool historicSolRef;
@@ -94,16 +94,13 @@ protected:
     bool globalResRef;
     
     // Historic and global maxima
-    Vector<double> historicMaxResidualContribution_; // across produced solutions, updated on external command
-    Vector<double> globalMaxResidualContribution_;   // accross time and all points, updated on external command
-                                                     // one component per each residual nature
-    Vector<double> pointMaxResidualContribution_;    // at current point solution
+    Vector<double> historicMaxResidualContribution_; // across produced solutions, maximal value for each equation, updated on external command
+    Vector<double> globalMaxResidualContribution_;   // accross produced solutions, maximal value for each nature, updated on external command
+    Vector<double> pointMaxResidualContribution_;    // at current solution, maximal value for each nature
     
-    Vector<double> historicMaxSolution_; // across produced solutions, updated on external command
-    Vector<double> globalMaxSolution_;   // accross time and all points, updated on external command
-                                         // one component per each solution nature
-    Vector<double> pointMaxSolution_;    // at current point solution
-                                         // one component per each solution nature
+    Vector<double> historicMaxSolution_; // across produced solutions, maximal value for each unknown, updated on external command
+    Vector<double> globalMaxSolution_;   // across produced solutions, maximal value for each nature, updated on external command
+    Vector<double> pointMaxSolution_;    // previous solution, maximal value for each nature
 
     // Flags indicating nodes are flow nodes
     Vector<bool> isFlow;

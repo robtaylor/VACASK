@@ -253,6 +253,8 @@ bool OpNRSolver::postSolve(bool continuePrevious) {
 bool OpNRSolver::postConvergenceCheck(bool continuePrevious) {
     // If algorithm converged we are going to exit next and states must be 
     // rotated because the new state belongs to the current solution
+    // We also rotate states if no convergence yet
+    // beacuse we must prepare for next iteration. 
     states.rotate();
 
     // Print debug information on convergence
@@ -523,7 +525,7 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
             residualOk = false;
             // Can exit if not computing norms
             if (!computeNorms) {
-                break;
+                return std::make_tuple(true, residualOk); 
             }
         }
     }
@@ -558,6 +560,7 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
     double* xdelta = delta.data();
 
     // Get point maximum for each solution nature
+    zero(pointMaxSolution_);
     auto xold = solution.data();
     for(decltype(n) i=1; i<=n; i++) {
         double c = std::fabs(xold[i]);
@@ -581,8 +584,6 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
         // Compute tolerance reference, start with previous value of the i-th unknown
         double tolref = std::fabs(xprev[i]);
         
-        // Cannot account for new solution because damping has not been performed yet
-
         // Account for global and historic references
         if (historicSolRef) {
             if (globalSolRef) {
@@ -619,7 +620,7 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
             
             // Can exit if not computing norms
             if (!computeNorms) {
-                break;
+                return std::make_tuple(true, deltaOk);
             }
         }
     }
@@ -637,10 +638,10 @@ void OpNRSolver::resetMaxima() {
 }  
 
 void OpNRSolver::initializeMaxima(OpNRSolver& other) {
-    historicMaxSolution_ = other.historicMaxSolution();
-    globalMaxSolution_ = other.globalMaxSolution();
-    historicMaxResidualContribution_ = other.historicMaxResidualContribution();
-    globalMaxResidualContribution_ = other.globalMaxResidualContribution();
+    historicMaxSolution_ = other.historicMaxSolution_;
+    globalMaxSolution_ = other.globalMaxSolution_;
+    historicMaxResidualContribution_ = other.historicMaxResidualContribution_;
+    globalMaxResidualContribution_ = other.globalMaxResidualContribution_;
 }
 
 void OpNRSolver::updateMaxima() {
