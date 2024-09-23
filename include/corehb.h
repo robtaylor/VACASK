@@ -45,6 +45,10 @@ public:
 
     bool buildGrid(Status& s=Status::ignore);
     bool buildColocation(Status& s=Status::ignore);
+
+    // Recompute the spectrum, check if its length changed
+    // Return value: Ok, requesting rebuild
+    std::tuple<bool, bool> requestsRebuild(Status& s = Status::ignore);
     
     static Id truncateRaw;
     static Id truncateBox;

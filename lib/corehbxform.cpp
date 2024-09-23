@@ -85,8 +85,8 @@ bool HbCore::buildTransformMatrix(Status& s) {
 // Must call buildTransformMatrix() first. 
 
 bool HbCore::buildDdtTransformMatrix(Status& s) {
-    auto nt = XF.nRow();
-    auto nc = XF.nCol();
+    auto nt = XF.nRows();
+    auto nc = XF.nCols();
     auto nf = freq.size();
 
     if (nt!=nc) {

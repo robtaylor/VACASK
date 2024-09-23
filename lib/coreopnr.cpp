@@ -215,8 +215,6 @@ bool OpNRSolver::initialize(bool continuePrevious) {
 bool OpNRSolver::preIteration(bool continuePrevious) {
     // Clear maximal residual contribution
     zero(maxResidualContribution_);
-    // Clear future states
-    states.zeroFuture();
     // Pass iteration number to Verilog-A models
     circuit.simulatorInternals().iteration = iteration;
     return true;    

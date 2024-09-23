@@ -123,7 +123,6 @@ public:
     bool addNoiseContribInst(const PTSave& save, bool details);
     
     // Common handlers for output descriptor -> output source
-    // TODO: handle error formatting in callers
     bool addRealVarOutputSource(bool strict, Id name, const Vector<double>& solution);
     bool addRealVarOutputSource(bool strict, Id name, const VectorRepository<double>& solution);
     bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution);

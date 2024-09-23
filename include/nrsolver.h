@@ -17,10 +17,10 @@ namespace NAMESPACE {
 // rebuild(); 
 //
 // run(continuePrevious) {
-//   if (not continuePrevious) {
-//     zero new solution vector;
-//   }
 //   initialize()
+//   if (not continuePrevious) {
+//     zero old solution vector;
+//   }
 //   do {
 //       zero new solution, Jacobian, delta/residual vector;
 //       preIteration();

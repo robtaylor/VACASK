@@ -159,7 +159,7 @@ bool HbCore::buildGrid(Status& s) {
                     }
                 }
                 freq.push_back({
-                    .gridIndex = grid.nRow()-1, 
+                    .gridIndex = grid.nRows()-1, 
                     .f = f, 
                     .order = order, 
                     .isHarmonic = nnz<=1, 
@@ -188,7 +188,7 @@ bool HbCore::buildGrid(Status& s) {
 
     if (hb_debug>1) {
         Simulator::out() << "Raw HB frequency grid\n";
-        auto nn = grid.nRow();
+        auto nn = grid.nRows();
         for(decltype(nn) i=0; i<nn; i++) {
             auto row = grid.row(i);
             
@@ -298,7 +298,7 @@ bool HbCore::buildGrid(Status& s) {
 
     if (hb_debug>0) {
         Simulator::out() << "HB spectrum, " << freq.size() << " frequencies\n";
-        auto nn = grid.nRow();
+        auto nn = grid.nRows();
         for(auto& fd : freq) {
             std::cout << "  #" << fd.gridIndex << " [";
             auto row = grid.row(fd.gridIndex);

@@ -58,40 +58,83 @@ bool HBNRSolver::rebuild() {
         return false;
     }
 
-    // Allocate space in vectors
-    auto n = circuit.unknownCount();
-    auto nf = spectrum.size();
-    auto nt = timepoints.size();
-    auto ncomp = nf*2-1;
-
     // Old states at one timepoint (dummy vector of zeros because we do no limiting)
     dummyStatesRepo.upsize(1, circuit.statesCount());
     dummyStatesRepo.zero();
+    
+    // Jacobian is sized in core or analysis.
+    // solution is sized in core. 
+    // delta is resized by NRSolver::rebuild() based on Jacobian size. 
+
+    // Because vector lengths and Jacobian size may change 
+    // due to different number of frequency components 
+    // we size them in initialize() before first iteration. 
+    // Analysis asks cores if they request a rebuild. 
+    // HB core replies that it does if the spectrum changes. 
+    
+    return true;
+}
+
+bool HBNRSolver::initialize(bool continuePrevious) {
+    // Number fo frequency components and timepoints
+    auto nf = spectrum.size();
+    auto nt = timepoints.size();
+    // nt = 2*nf-1
+
+    // XF and XFdot are already set up
+
+    // Number of nodes
+    auto n = circuit.unknownCount();
+
+    // Number of block rows
+    auto nb = bsjac.nBlockElementRows();
+
+    // Resize vectors and matrices
+    // XF and XFdot row maximum
+    XFrowMax.resize(nt);
+    XFdotRowMax.resize(nt);
     
     // Old solution and derivative wrt time at all timepoints
     // Bucket for ground node is needed because these vectors 
     // are used by NRSolver which assumes a bucket of length 1. 
     oldSolutionTD.upsize(1, n*nt+1);
-    oldSolutionTDDot.upsize(1, n*nt+1);
+    oldSolutionTDDot.resize(n*nt+1);
 
     // Old solution and resistive residual at one timepoint
     // Includes ground node because it is used by evalAndLoad()
     oldSolutionTDtk.upsize(1, n+1);
-    resistiveResidualTk.resize(n+1);
+    resistiveResidualAtTk.resize(n+1);
 
-    // Jacobian is sized is core or analysis.
-    // solution is sized in core. 
-    // delta is resized by NRSolver::rebuild() based on Jacobian size. 
+    // Maximum residual contribution at single timepoint
+    maxResidualContributionAtTk_.resize(n+1);
 
-    return true;
-}
+    // Maximum residual contribution for each equation at each timepoint
+    maxResidualContribution_.resize(n*nt+1);
 
-bool HBNRSolver::initialize(bool continuePrevious) {
+    // Maximum across all timepoints for each equation
+    historicMaxResidualContribution_.resize(n+1);
+
+    // Maximum across all timepoints and equations for each nature
+    globalMaxResidualContribution_.resize(2);
+
+    // Maximum across all equations at given timepoint for each nature
+    // Computed in checkResidual()
+    pointMaxResidualContribution_.resize(2);
+
+    // Maximum across all (complex) unknowns for each nature and frequency
+    // Computed in checkDelta()
+    pointMaxSolution_.resize(2, nf);
+
+    // Set up loading
+    // Resistive residual
+    loadSetup_.resistiveResidual = resistiveResidualAtTk.data();
     // Maximal residual contribution computed by evalAndLoad()
-    loadSetup_.maxResistiveResidualContribution = maxResidualContributionAtTimepoint_.data();
+    loadSetup_.maxResistiveResidualContribution = maxResidualContributionAtTk_.data();
 
+    // Zero states
+    dummyStatesRepo.zero();
+    
     // Compute maximal row value for XF and XFdot
-    auto nt = XF.nRow();
     XFrowMax.resize(nt);
     XFdotRowMax.resize(nt);
     zero(XFrowMax);
@@ -111,16 +154,87 @@ bool HBNRSolver::initialize(bool continuePrevious) {
         }
     }
 
+    // Set up tolerance reference value for solution
+    auto& options = circuit.simulatorOptions().core();
+    if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
+        globalSolRef = false;
+        // historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefLocal) {
+        globalSolRef = false;
+        // historicSolRef = true;
+    } else if (options.relrefsol==SimulatorOptions::relrefPointGlobal) {
+        globalSolRef = true;
+        // historicSolRef = false;
+    } else if (options.relrefsol==SimulatorOptions::relrefGlobal) {
+        globalSolRef = true;
+        // historicSolRef = true;
+    } else if (options.relrefsol==SimulatorOptions::relrefRelref) {
+        if (options.relref == SimulatorOptions::relrefAlllocal) {
+            globalSolRef = false;
+            // historicSolRef = true;
+        } else if (options.relref == SimulatorOptions::relrefSigglobal) {
+            globalSolRef = true;
+            // historicSolRef = true;
+        } else if (options.relref == SimulatorOptions::relrefAllglobal) {
+            globalSolRef = true;
+            // historicSolRef = true;
+        } else {
+            lastError = Error::BadSolReference;
+            return false;
+        }
+    } else {
+        lastError = Error::BadSolReference;
+        return false;
+    }
+
+    // Set up tolerance reference value for residual
+    if (options.relrefres==SimulatorOptions::relrefPointLocal) {
+        globalResRef = false;
+        historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefLocal) {
+        globalResRef = false;
+        historicResRef = true;
+    } else if (options.relrefres==SimulatorOptions::relrefPointGlobal) {
+        globalResRef = true;
+        historicResRef = false;
+    } else if (options.relrefres==SimulatorOptions::relrefGlobal) {
+        globalResRef = true;
+        historicResRef = true;
+    } else if (options.relrefres==SimulatorOptions::relrefRelref) {
+        if (options.relref == SimulatorOptions::relrefAlllocal) {
+            globalResRef = false;
+            historicResRef = true;
+        } else if (options.relref == SimulatorOptions::relrefSigglobal) {
+            globalResRef = false;
+            historicResRef = true;
+        } else if (options.relref == SimulatorOptions::relrefAllglobal) {
+            globalResRef = true;
+            historicResRef = true;
+        } else {
+            lastError = Error::BadResReference;
+            return false;
+        }
+    } else {
+        lastError = Error::BadResReference;
+        return false;
+    }
+
     return true;
 }
 
 bool HBNRSolver::preIteration(bool continuePrevious) {
-    // Clear maximal resistive residual contribution
+    // Clear maximal residual contribution
     zero(maxResidualContribution_);
+
+    // Zero historic values (we compute them at each iteration)
+    zero(historicMaxResidualContribution_);
+    zero(globalMaxResidualContribution_);
+
     return true;
 }
 
 bool HBNRSolver::postSolve(bool continuePrevious) {
+    // Nothing to do - we have no bypassing
     return true;
 }
 
@@ -232,9 +346,14 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
     // optimal because they are stored as row major matrices. Fortunately 
     // they are fairly small so we expect them to be fully cached. 
 
+    // TODO: When computing residual instead of 
+    //       dq(x(t))/dt = dq/dx dx/dt use
+    //       q(x(t)) -> freq domain -> compute derivative -> time domain = dq(x(t))/dt
+    //       This will correctly handle elements that depend on time. 
+
     // Get sizes
-    auto n = bsjac.blocksInColumn();
-    auto nb = bsjac.blockRows();
+    auto n = bsjac.nBlockRows();
+    auto nb = bsjac.nBlockElementRows();
 
     // Transform old solution from frequency domain (x) to time domain (oldSolutionTd). 
     // Compute derivative of old solution wrt time to obtain oldSolutionTDdot. 
@@ -285,10 +404,13 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
             solTDPtr += nb;
         }
 
-        // Clear residual vector where evalAndLoad() will load the 
+        // Zero residual vector where evalAndLoad() will load the 
         // resistive residual at t_k
-        resistiveResidualTk.clear();
+        zero(resistiveResidualAtTk);
 
+        // Zero maximal residual contribution at timepoint
+        zero(maxResidualContributionAtTk_);
+        
         // Set time and offset
         evalSetup_.time = timepoints[k];
         loadSetup_.jacobianLoadOffset = k;
@@ -301,15 +423,15 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         // Put resistive residuals at t_k in residual vector (delta)
         for(decltype(n) i=0; i<n; i++) {
             // 1-based            1-based
-            delta[1+i*nb+k] = resistiveResidualTk[1+i];
+            delta[1+i*nb+k] = resistiveResidualAtTk[1+i];
         }
 
         // Handle maximal resistive residual contribution at this timepoint
         // Loop through nodes
         for(decltype(n) i=0; i<n; i++) {
-            auto c = maxResidualContributionAtTimepoint_[1+i];
+            auto c = maxResidualContributionAtTk_[1+i];
             // 1-based                              // 1-based
-            maxResidualContribution_[1+i*nb+k] = maxResidualContributionAtTimepoint_[1+i];
+            maxResidualContribution_[1+i*nb+k] = maxResidualContributionAtTk_[1+i];
             
             // Update historic max for node
             if (c>historicMaxResidualContribution_[1+i]) {

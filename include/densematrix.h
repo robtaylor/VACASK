@@ -132,8 +132,8 @@ public:
     DenseMatrixView(T* start, size_t nRow, size_t nCol, size_t rowStride, size_t colStride) 
         : start_(start), nRow_(nRow), nCol_(nCol), rowStride_(rowStride_), colStride_(colStride) {}; 
 
-    size_t nRow() const { return nRow_; }; 
-    size_t nCol() const { return nCol_; }; 
+    size_t nRows() const { return nRow_; }; 
+    size_t nCols() const { return nCol_; }; 
 
     T& at(size_t row, size_t col) { return *(start_ + row*rowStride_ + col*colStride_); };
     VectorView<T> row(size_t i) { return VectorView<T>(start_ + i*rowStride_, nCol_, colStride_); };

@@ -256,12 +256,19 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 }
             }
 
+            // Check if any core requests a rebuild
+            auto [okcrr, rebuildRequested] = requestsRebuild(s);
+            if (!okcrr) {
+                s.extend("Check whether a core needs to be rebuilt failed.");
+                co_yield AnalysisState::Aborted;
+            }
+
             // Do not allow analysis to use forced bypass by default
             circuit.simulatorInternals().allowContinueStateBypass = false;
 
             // If outputs not bound yet or core needs rebuilding, bind them to actual quantities
             bool coreRebuilt = false;
-            if (!outputsBound || needsCoreRebuild) {
+            if (!outputsBound || needsCoreRebuild || rebuildRequested) {
                 if (sweepDebug>1) {
                     Simulator::dbg() << "Rebuilding analysis internals and invalidating stored analysis states.\n";
                 }

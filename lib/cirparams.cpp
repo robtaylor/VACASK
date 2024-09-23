@@ -290,6 +290,8 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
                 tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
                 return std::make_tuple(false, false, false);
             }
+
+            // TODO: check if analysis requests a rebuild
         }
     }
 
@@ -426,6 +428,11 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         return std::make_tuple(false, false, false);
     }
 
+    // Do not check here if any core requests a rebuild
+    // Because this check may be computationally intensive 
+    // (i.e. HB recomputes the spectrum and transforms). 
+    // Do it in an.cpp
+    
     // Circuit is now in a consistent state
     clearFlags(Circuit::Flags::VariablesChanged);
     clearFlags(Circuit::Flags::HierarchyAffectingOptionsChanged);

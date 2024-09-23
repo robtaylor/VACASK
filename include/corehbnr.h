@@ -54,13 +54,13 @@ protected:
     
     // Internal structures
     VectorRepository<double> oldSolutionTD;
-    VectorRepository<double> oldSolutionTDDot;
+    Vector<double> oldSolutionTDDot;
     VectorRepository<double> oldSolutionTDtk;
-    Vector<double> resistiveResidualTk;
+    Vector<double> resistiveResidualAtTk;
     VectorRepository<double> dummyStatesRepo;
 
     // Internal structure for max residual contribution
-    Vector<double> maxResidualContributionAtTimepoint_; // maximal residual contribution for all equations at a given timepoint
+    Vector<double> maxResidualContributionAtTk_; // maximal residual contribution for all equations at a given timepoint
                                                         // filled with maximal resistive contribution in evalAndLoadWrapper()
     Vector<double> maxResidualContribution_; // maximal residual contribution for each equation at each timepoint
     

@@ -19,4 +19,48 @@ HbParameters::HbParameters() {
     sample = HbCore::sampleRandom;
 }
 
+// Analysis asks cores if they request a rebuild. 
+// HB core replies that it does if the spectrum changes. 
+// Along with changed spectrum this function recomputes
+// - colocation points
+// - transform matrices
+std::tuple<bool, bool> HbCore::requestsRebuild(Status& s) {
+    auto oldSpectrum = spectrum;
+    
+    // Recompute spectrum
+    if (!buildGrid(s)) {
+        return std::make_tuple(false, false);
+    }
+
+    // See if it changed
+    bool changed = oldSpectrum.size() != spectrum.size();
+    if (!changed) {
+        auto nf = spectrum.size();
+        for(decltype(nf) i=0; i<nf; i++) {
+            if (oldSpectrum[i]!=spectrum[i]) {
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    if (changed) {
+        // Recompute colocation
+        if (!buildColocation(s)) {
+            return std::make_tuple(false, changed);
+        }
+
+        // Recompute transforms
+        if (!buildTransformMatrix(s)) {
+            return std::make_tuple(false, changed);
+        }
+
+        if (!buildDdtTransformMatrix(s)) {
+            return std::make_tuple(false, changed);
+        }
+    }
+
+    return std::make_tuple(true, changed);
+}
+
 }

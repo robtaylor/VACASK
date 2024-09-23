@@ -63,7 +63,7 @@ bool HbCore::buildColocation(Status& s) {
     buildTransformMatrix();
     
     // Number of cadidate rows
-    auto ncand = XF.nRow();
+    auto ncand = XF.nRows();
 
     if (hb_debug>1) {
         Simulator::dbg() << "Colocation points (" << nt << "):\n" ;

@@ -239,7 +239,8 @@ public:
     ValueType* data() { return reinterpret_cast<ValueType*>(Ax); };
 
     // Return number of unknowns
-    IndexType nRows() const { return AN; };
+    IndexType nRow() const { return AN; };
+    IndexType nCol() const { return AN; };
 
     // Return number of nonzeros
     IndexType nnz() const { return AP[AN]; };

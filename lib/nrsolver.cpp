@@ -48,7 +48,7 @@ NRSolver::NRSolver(
 bool NRSolver::rebuild() {
     // Allocate space in vectors
     // Jacobian is already built, get number of unknowns excluding ground
-    auto n = jac.nRows();
+    auto n = jac.nRow();
     diagPtrs.resize(n+1);
     delta.resize(n+1);
     rowNorm.resize(n+1);
@@ -89,7 +89,7 @@ bool NRSolver::loadForces(bool loadJacobian) {
     jac.rowMaxNorm(dataWithoutBucket(rowNorm));
 
     // Load forces
-    auto n = jac.nRows();
+    auto n = jac.nRow();
     double* xprev = solution.data();
     for(decltype(nf) iForce=0; iForce<nf; iForce++) {
         // Skip disabled force lists
@@ -180,9 +180,6 @@ bool NRSolver::run(bool continuePrevious) {
 
     jac.setAccounting(acct);
 
-    // Clear error
-    clearError();
-
     // Number of unknowns (vector length includes a bucket at index 0)
     auto n = solution.length()-1;
     
@@ -194,17 +191,7 @@ bool NRSolver::run(bool continuePrevious) {
         itlim = settings.itlim;
     }
 
-    // If not in continue mode set current solution to 0
-    if (!continuePrevious) {
-        // Zero current solution
-        solution.zero();
-    }
-
-    if (settings.debug) {
-        Simulator::dbg() << "Starting NR algorithm " << (continuePrevious ? "with given initial solution" : "with zero initial solution") << ".\n";
-    }
-
-    // Main loop
+    // Main loop setup
     bool deltaOk;
     bool residualOk;
     double maxResidual;
@@ -218,6 +205,10 @@ bool NRSolver::run(bool continuePrevious) {
     Int convIter = 0;
     converged = false;
 
+    // Allow lower precision
+    highPrecision = false;
+    
+    // Clear error
     clearError();
 
     // Initialize structures
@@ -227,9 +218,17 @@ bool NRSolver::run(bool continuePrevious) {
         return false;
     }
 
-    // Allow lower precision
-    highPrecision = false;
+    // If not in continue mode set current solution to 0
+    if (!continuePrevious) {
+        // Zero current solution
+        solution.zero();
+    }
+
+    if (settings.debug) {
+        Simulator::dbg() << "Starting NR algorithm " << (continuePrevious ? "with given initial solution" : "with zero initial solution") << ".\n";
+    }
     
+    // Main loop
     do {
         // Assume no convergence
         iterationConverged = false;

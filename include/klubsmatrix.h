@@ -66,7 +66,8 @@ public:
     };
 
     // Rebuild it based on the given sparsity map of dense blocks, 
-    // dense block size nb x nb, set elements to zero, clear error
+    // n x n dense blocks with nb x nb elements
+    // Set elements to zero, clear error
     bool rebuild(SparsityMap& m, EquationIndex n, EquationIndex nb);
 
     // Returns the linear nonzero element index coresponding to dense block
@@ -121,8 +122,10 @@ public:
         }
     };
 
-    IndexType blocksInColumn() const { return n_; };
-    IndexType blockRows() const { return nb_; };
+    IndexType nBlockRows() const { return n_; };
+    IndexType nBlockCols() const { return n_; };
+    IndexType nBlockElementRows() const { return nb_; };
+    IndexType nBlockElementCols() const { return nb_; };
     
     void dumpBlockSparsity(std::ostream& os);
 
