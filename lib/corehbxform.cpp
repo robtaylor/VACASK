@@ -76,6 +76,64 @@ bool HbCore::buildTransformMatrix(Status& s) {
     return true;
 }
 
+bool HbCore::buildAPFT(Status& s) {
+    auto n = timepoints.size();
+    auto m = freq.size();
+    auto ncoef = 2*m-1;
+    
+    IAPFT.resize(n, ncoef);
+    
+    // Storage of (2 pi f t) factors for base frequencies
+    auto nBase = params.freq.size();
+    double baseFac[nBase];
+    
+    // Loop through timepoints
+    for(decltype(n) i=0; i<n; i++) {
+        auto row = IAPFT.row(i);
+        auto t = timepoints[i];
+        
+        // For base frequencies compute phase at t (2 pi f t)
+        // Subtract integer multiple of 2 pi to keep phase small
+        for(decltype(nBase) k=0; k<nBase; k++) {
+            auto prod = params.freq[k]*t; 
+            auto frac = prod - std::trunc(prod);
+            baseFac[k] = 2 * std::numbers::pi * frac;
+        }
+
+        // DC
+        row.at(0) = 1.0;
+
+        // Nonzero frequencies
+        for(decltype(m) j=1; j<m; j++) {
+            // Grid entry
+            auto weights = grid.row(freq[j].gridIndex);
+            // Assemble phase from base frequency contributions
+            double phase = 0;
+            for(decltype(nBase) k=0; k<nBase; k++) {
+                phase += weights.at(k)*baseFac[k];
+            }
+            // Compute cosine and sine component
+            row.at(j*2-1) =  std::cos(phase);
+            row.at(j*2)   = -std::sin(phase);
+        }
+    }
+
+    // Make a copy that will be destroyed during matrix inversion
+    DenseMatrix coeffs = IAPFT;
+    
+    // Invert to obtain APFT
+    APFT.resize(n, n);
+    coeffs.destructiveInvert(APFT);
+
+    // Test
+    DenseMatrix<double> result(n, n);
+
+    APFT.multiply(IAPFT, result);
+    result.dump(std::cout);
+    
+    return true;
+}
+
 
 // Tranformation of an amplitude vector to a vector of 
 // signal derivative values at n colocation points. 

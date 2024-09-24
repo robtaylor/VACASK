@@ -120,13 +120,21 @@ public:
 
     void swap(VectorView<T>&& other) {
         swap(other);
-    }
+    };
 
     void swap(size_t i, size_t j) {
         T tmp = at(j);
         at(j) = at(i);
         at(i) = tmp;
-    }
+    };
+
+    void scale(T factor) {
+        T* ptr = start_;
+        for(size_t i=0; i<n_; i++) {
+            *ptr *= factor;
+            ptr += stride_;
+        }
+    };
 
     // Add scaled vector, assume vectors have no common components
     void addScaled(VectorView<T>& other, T factor) {
@@ -136,7 +144,7 @@ public:
         T* ptr = start_;
         T* ptrOther = other.start_;
         for(size_t i=0; i<n_; i++) {
-            *ptr += *other * factor;
+            *ptr += *ptrOther * factor;
             ptr += stride_;
             ptrOther += other.stride_;
         }
@@ -180,6 +188,18 @@ public:
         }
     };
 
+    void identity() {
+        for(size_t i=0; i<nRow_; i++) {
+            for(size_t j=0; j<nCol_; j++) {
+                if (i==j) {
+                    at(i, j) = 1;
+                } else {
+                    at(i, j) = 0;
+                }
+            }
+        }
+    };
+
     // TODO: optimize this further
     void vecMul(VectorView<T>& other, VectorView<T>& result) {
         for(size_t i=0; i<nRow_; i++) {
@@ -198,6 +218,47 @@ public:
 
     bool factor(VectorView<size_t>& rowPerm) {
         return solveCore(static_cast<VectorView<T>*>(nullptr), &rowPerm);
+    };
+
+    // Vector must be distinct from result
+    void multiply(VectorView<T>& vector, VectorView<T>& result) {
+        if (nCol_!=vector.n()) {
+            throw std::out_of_range("Matrix is not compatible with vector.");
+        }
+        if (nRow_!=result.n()) {
+            throw std::out_of_range("Result is not compatible with product.");
+        }
+        for(size_t i=0; i<nRow_; i++) {
+            result[i] = row(i).dot(vector);
+        }
+    };
+
+    // Result must be distinct from this and other
+    void multiply(DenseMatrixView<T>& other, DenseMatrixView<T>& result) {
+        if (nCol_!=other.nRow_) {
+            throw std::out_of_range("Matrices are not compatible.");
+        }
+        if (nRow_!=result.nRow_ || other.nCol_!=result.nCol_) {
+            throw std::out_of_range("Result is not compatible with product.");
+        }
+        for(size_t i=0; i<nRow_; i++) {
+            for(size_t j=0; j<other.nCol_; j++) {
+                auto otherCol = other.column(j);
+                result.at(i, j) = row(i).dot(otherCol);
+            }
+        }
+    };
+
+    // Destructive invert, result must be distinct from this
+    bool destructiveInvert(DenseMatrixView<T>& result) {
+        if (nRow_!=result.nRow_ || nCol_!=result.nCol_) {
+            throw std::out_of_range("Matrices are not compatible.");
+        }
+        if (nRow_!=nCol_) {
+            throw std::out_of_range("Matrix is not square.");
+        }
+        result.identity();
+        return solveCore(&result);
     };
 
     void dump(std::ostream& os)  {
@@ -298,7 +359,8 @@ private:
                     if constexpr(std::is_same<RhsType, VectorView<T>>::value) {
                         rhs->at(j) += fac*rhs->at(i);
                     } else {
-                        rhs->row(j).addScaled(rhs->row(i), fac);
+                        auto rhsRow = rhs->row(i);
+                        rhs->row(j).addScaled(rhsRow, fac);
                     }
                 }
             }
@@ -314,6 +376,14 @@ private:
                         rhs->at(irow) -= rhs->at(j)*matRow[j];
                     }
                     rhs->at(irow) /= matRow[irow];
+                } else {
+                    auto rhsRowi = rhs->row(i);
+                    for(size_t j=irow+1; j<n; j++) {
+                        auto rhsRowj = rhs->row(j);
+                        auto fac = -matRow[j];
+                        rhsRowi.addScaled(rhsRowj, fac);
+                    }
+                    rhsRowi.scale(1.0/matRow[irow]);
                 }
             }
         }
@@ -337,20 +407,20 @@ public:
         : DenseMatrixView<T>(nullptr, 0, 0, 1, 1), major_(Major::Row) {};
 
     DenseMatrix(size_t nRow, size_t nCol, Major major=Major::Row) 
-        : DenseMatrixView<T>(nullptr, nRow_, nCol_, 1, 1), major_(major) { 
+        : DenseMatrixView<T>(nullptr, nRow, nCol, 1, 1), major_(major) { 
         data_.resize(nRow*nCol); 
         start_ = data_.data();
         setStride();
     };
 
-    DenseMatrix(std::vector<T>&& from, size_t nRows, size_t nCols, Major major=Major::Row) { 
-        if (nRows*nCols != from.size()) {
+    DenseMatrix(std::vector<T>&& from, size_t nRow, size_t nCol, Major major=Major::Row) { 
+        if (nRow*nCol != from.size()) {
             throw std::out_of_range("Matrix size inconsistent with data.");
         }
         data_ = std::move(from);
         start_ = data_.data();
-        nRow_ = nRows;
-        nCol_ = nCols;
+        nRow_ = nRow;
+        nCol_ = nCol;
         setStride();
     };
     

@@ -443,64 +443,91 @@ void IntegratorCoeffs::dump(std::ostream& os, bool scaled) {
     }
 }
 
-void IntegratorCoeffs::test() {
+bool IntegratorCoeffs::test() {
+    // Object
+    IntegratorCoeffs ic;
+
+    // Test outcome
+    bool ok = true;
+
+    // Expected values are for order=3
     int order = 3;
 
-    // 3 past steps
+    // Past steps
     CircularBuffer<double> pastSteps(order);
     for(int i=0; i<order; i++) {
         pastSteps.add(0.1);
     }
     
     // AM3, uniform step
-    setMethod(Method::AdamsMoulton, order);
-    if (compute(pastSteps, 0.1)) {
-        dump(std::cout);
-        std::cout << " C=" << err_ << "\n";
+    ic.setMethod(Method::AdamsMoulton, order);
+    if (ic.compute(pastSteps, 0.1)) {
+        ic.dump(std::cout);
+        auto errExpect = (1.0/24)*ffactorial(order+1);
+        std::cout << " C=" << ic.err_ << "\n";
         std::cout << "Expected: " << 1.0 << " " << (5.0/12) << " " << (8.0/12) << " " << (-1.0/12) 
-                << " " << (1.0/24)*ffactorial(order+1) << "\n";
+                << " " << errExpect << "\n";
         std::cout << "\n";
+        if (std::abs(ic.err_-errExpect)>1e-12) {
+            ok = false;
+        }
     } else {
         std::cout << "AM failed\n";
+        ok = false;
     }
 
     // BDF3, uniform step
-    setMethod(Method::BDF, order);
-    if (compute(pastSteps, 0.1)) {
-        dump(std::cout);
-        std::cout << " C=" << err_ << "\n";
+    ic.setMethod(Method::BDF, order);
+    if (ic.compute(pastSteps, 0.1)) {
+        ic.dump(std::cout);
+        auto errExpect = (3.0/22)*ffactorial(order+1);
+        std::cout << " C=" << ic.err_ << "\n";
         std::cout << "Expected: " << " " << (18.0/11) << " " << (-9.0/11) << " " << (2.0/11) << " " << (6.0/11) 
-                << " " << (3.0/22)*ffactorial(order+1) << "\n";
+                << " " << errExpect << "\n";
         std::cout << "\n";
+        if (std::abs(ic.err_-errExpect)>1e-12) {
+            ok = false;
+        }
     } else {
         std::cout << "BDF failed\n";
+        ok = false;
     }
     
     // AB3, uniform step
-    setMethod(Method::AdamsBashforth, order);
-    if (compute(pastSteps, 0.1)) {
-        dump(std::cout);
-        std::cout << " C=" << err_ << "\n";
+    ic.setMethod(Method::AdamsBashforth, order);
+    if (ic.compute(pastSteps, 0.1)) {
+        ic.dump(std::cout);
+        auto errExpect = (-3.0/8)*ffactorial(order+1);
+        std::cout << " C=" << ic.err_ << "\n";
         std::cout << "Expected: " << " " << (1) << " " << (23.0/12) << " " << (-16.0/12) << " " << (5.0/12) 
-                << " " << (-3.0/8)*ffactorial(order+1) << "\n";
+                << " " << errExpect << "\n";
         std::cout << "\n";
+        if (std::abs(ic.err_-errExpect)>1e-12) {
+            ok = false;
+        }
     } else {
         std::cout << "AB failed\n";
+        ok = false;
     }
 
     // Polynomial extrapolation
-    setMethod(Method::PolynomialExtrapolation, order);
-    if (compute(pastSteps, 0.1)) {
-        dump(std::cout);
-        std::cout << " C=" << err_ << "\n";
+    ic.setMethod(Method::PolynomialExtrapolation, order);
+    if (ic.compute(pastSteps, 0.1)) {
+        ic.dump(std::cout);
+        auto errExpect = (-1.0)*ffactorial(order+1);
+        std::cout << " C=" << ic.err_ << "\n";
         std::cout << "Expected: " << " " << (4) << " " << (-6) << " " << (4) << " " << (-1) 
-                << " " << (-1.0)*ffactorial(order+1) << "\n";
+                << " " << errExpect << "\n";
         std::cout << "\n";
+        if (std::abs(ic.err_-errExpect)>1e-12) {
+            ok = false;
+        }
     } else {
         std::cout << "Polynomial extrapolation failed\n";
+        ok = false;
     }
+    std::cout << "Integrator coeffs test " << (ok ? "OK" : "FAILED") << "\n";
+    return ok;
 }
-
-
 
 }

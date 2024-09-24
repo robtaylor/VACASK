@@ -45,7 +45,8 @@ public:
 
     bool buildGrid(Status& s=Status::ignore);
     bool buildColocation(Status& s=Status::ignore);
-
+    bool buildAPFT(Status& s=Status::ignore);
+    
     // Recompute the spectrum, check if its length changed
     // Return value: Ok, requesting rebuild
     std::tuple<bool, bool> requestsRebuild(Status& s = Status::ignore);
@@ -75,6 +76,8 @@ private:
     Vector<Real> timepoints;    
     DenseMatrix<Real> XF;
     DenseMatrix<Real> XFdot;
+    DenseMatrix<Real> APFT;
+    DenseMatrix<Real> IAPFT;
 };
 
 }

@@ -141,7 +141,7 @@ public:
         return cache[n];
     };
 
-    void test();
+    static bool test();
     
 private:
     bool size();
