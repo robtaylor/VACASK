@@ -113,6 +113,7 @@ add_library(simlib STATIC
     simulator.cpp
     output.cpp
     outrawfile.cpp
+    densematrix.cpp
     nrsolver.cpp 
     progress.cpp
     core.cpp 

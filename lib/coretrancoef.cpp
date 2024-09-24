@@ -9,15 +9,17 @@ IntegratorCoeffs::IntegratorCoeffs(Method method, Int order)
     b1_ = 0.0;
     err_ = 0.0;
 
-    // // Test solver
-    // matrix = {1, 2, 3, 2, 3, -5, -6, -8, 1};
-    // rhs = {-7, 9, 22};
-    // solve(3);
-    // for(auto it : rhs) {
-    //     std::cout << it*25 << " ";
-    // }
-    // std::cout << "\n";
-    // // Result should be: -393 217 72
+    /*
+    // Test solver
+    matrix = DenseMatrix<double>({1, 2, 3, 2, 3, -5, -6, -8, 1}, 3, 3);
+    rhs = {-7, 9, 22};
+    solve(3);
+    for(auto it : rhs) {
+        std::cout << it*25 << " ";
+    }
+    std::cout << "\n";
+    // Result should be: -393 217 72
+    */ 
 }
 
 bool IntegratorCoeffs::setMethod(Method method, Int order, double xmu) {
@@ -110,8 +112,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
     // Unknowns order: a_0, ..., a_{numx-1}
     //                 b_{-1}
     //                 b_0, ..., b_{numxdot-1}
-    Int matSize = n_*n_;
-    matrix.resize(matSize);
+    matrix.resize(n_, n_);
     rhs.resize(n_);
 
     // Prepare space for coeffs
@@ -124,23 +125,6 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
     b_.assign(numXdot_, 0.0);
 
     // All matrix and RHS entries will be set, so there is no need to set them to 0
-
-    /*
-    // Check if we have enough past steps
-    DBGCHECK(pastSteps.size()<numX_-1 || pastSteps.size()<numXdot_-1, "Timestep history is too short.");
-    
-    // Compute past timepoints, index 0 is timepoint 0.0 (last computed solution)
-    normalizedTimePoint.resize(pastSteps.size()+1);
-    normalizedTimePoint[0] = 0.0;
-    for(Int i=0;i<pastSteps.size();i++) {
-        normalizedTimePoint[i+1] = normalizedTimePoint[i]-pastSteps[i];
-    }
-
-    // Normalize by newStep
-    for(Int i=1; i<normalizedTimePoint.size(); i++) {
-        normalizedTimePoint[i] /= newStep;
-    }
-    */
     DBGCHECK(pastSteps.valueCount()+1<numX_ || pastSteps.valueCount()+1<numXdot_, "Timestep history is too short.");
     
     // Compute past timepoints, index 0 is timepoint 0.0 (last computed solution)
@@ -196,32 +180,21 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             // j = 1..order
             //   sum_{i=-1}^{numXdot-1} j (t_{k-i}/h_k)^(j-1) b_i = 1
             // Unknowns: b_{-1}, b_0, b_1, ...
-            Int base = 0;
-            for(Int j=1; j<=order_; j++, base+=n_) {
+            for(Int j=1; j<=order_; j++) {
+                auto row = matrix.row(j-1);
                 // Manually add b_{-1}
-                matrix[base+0] = j;
+                row[0] = j;
                 // b coeffs
                 for(Int i=0; i<numXdot_; i++) {
                     // Treat b_0 differently for j=1
                     if (i==0 && j==1) {
-                        matrix[base+1+i] = j;
+                        row[1+i] = j;
                     } else {
-                        matrix[base+1+i] = j*pow(normalizedTimePoint[i], j-1);
+                        row[1+i] = j*pow(normalizedTimePoint[i], j-1);
                     }
                 }
                 rhs[j-1] = 1.0;
             }
-            
-            // Dump system
-            // std::cout << "A: ";
-            // for(auto it : matrix) {
-            //     std::cout << it << " ";
-            // }
-            // std::cout << "\nb: ";
-            // for(auto it : rhs) {
-            //     std::cout << it << " ";
-            // }
-            // std::cout << "\n";
             
             // Solve 
             if (!solve(n_)) {
@@ -254,21 +227,22 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             //   sum_{i=1}^{numX-1} (t_{k-i}/h_k)^j a_i + j (t_{k+1}/h_k)^(j-1) b_{-1} = 1
             // Unknowns: a_0, a_1, ..., a_{numX-1}, b_{-1}
             // First equation
-            Int base = 0;
+            auto row0 = matrix.row(0);
             for(Int i=0; i<numX_; i++) {
-                matrix[base+i] = 1.0;
+                row0[i] = 1.0;
             }
-            matrix[base+numX_+1] = 0.0;
+            row0[numX_] = 0.0;
             rhs[0] = 1.0;
             // Remaining order_ equations
-            base += n_;
-            for(Int j=1; j<=order_; j++, base+=n_) {
+            for(Int j=1; j<=order_; j++) {
+                auto row = matrix.row(j);
                 // a coeffs
-                for(Int i=0; i<numX_; i++) {
-                    matrix[base+i] = pow(normalizedTimePoint[i], j);
+                row[0] = 0;
+                for(Int i=1; i<numX_; i++) {
+                    row[i] = pow(normalizedTimePoint[i], j);
                 }
                 // b_{-1} coeff
-                matrix[base+numX_] = j;
+                row[numX_] = j;
                 // RHS
                 rhs[j] = 1.0;
             }
@@ -277,7 +251,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             if (!solve(n_)) {
                 return false;
             }
-
+            
             // Unpack
             for(Int i=0; i<numX_; i++) {
                 a_[i] = rhs[i]; 
@@ -303,15 +277,15 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             // j = 1..order:
             //   sum_{i=0}^{numXdot-1} j (t_{k-i}/h_k)^(j-1) b_i = 1
             // Unknowns: b_0, b_1, ...
-            Int base = 0;
-            for(Int j=1; j<=order_; j++, base+=n_) {
+            for(Int j=1; j<=order_; j++) {
+                auto row = matrix.row(j-1);
                 // b coeffs
                 for(Int i=0; i<numXdot_; i++) {
                     // Treat b_0 differently for j=1
                     if (i==0 && j==1) {
-                        matrix[base+i] = j;
+                        row[i] = j;
                     } else {
-                        matrix[base+i] = j*pow(normalizedTimePoint[i], j-1);
+                        row[i] = j*pow(normalizedTimePoint[i], j-1);
                     }
                 }
                 // RHS
@@ -322,7 +296,7 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
             if (!solve(n_)) {
                 return false;
             }
-
+            
             // Unpack
             for(Int i=0; i<numXdot_; i++) {
                 b_[i] = rhs[i];
@@ -340,18 +314,17 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
         //   sum_{i=1}^{numX-1} (t_{k-i}/h_k)^j a_i = 1
         // Unknowns: a_0, a_1, ...
         // First equation
-        Int base = 0;
+        auto row0 = matrix.row(0);
         for(Int i=0; i<numX_; i++) {
-            matrix[base+i] = 1.0;
+            row0[i] = 1.0;
         }
-        matrix[base+numX_+1] = 0.0;
         rhs[0] = 1.0;
         // Remaining order_ equations
-        base += n_;
-        for(Int j=1; j<=order_; j++, base+=n_) {
+        for(Int j=1; j<=order_; j++) {
+            auto row = matrix.row(j);
             // a coeffs
             for(Int i=0; i<numX_; i++) {
-                matrix[base+i] = pow(normalizedTimePoint[i], j);
+                row[i] = pow(normalizedTimePoint[i], j);
             }
             // RHS
             rhs[j] = 1.0;
@@ -392,64 +365,9 @@ bool IntegratorCoeffs::compute(CircularBuffer<double>& pastSteps, double newStep
 }
 
 bool IntegratorCoeffs::solve(Int n) {
-    // Gaussian elimination with partial pivoting
-    Int diagRow = 0;
-    double* mxptr = matrix.data();
-    double* rhsPtr = rhs.data();
-    double* diagRowPtr = mxptr;
-    for(Int i=0; i<n; i++, diagRowPtr+=n) {
-        // Look for pivot
-        double* pivRowPtr = diagRowPtr;
-        double pivot = std::abs(pivRowPtr[i]);
-        Int pivRowNdx = i; // Pivot row index
-        double* atRowPtr = pivRowPtr+n;
-        for(Int j=i+1; j<n; j++, atRowPtr+=n) {
-            if (std::abs(atRowPtr[i])>pivot) {
-                pivot = std::abs(atRowPtr[i]);
-                // pivRow = atRow;
-                pivRowPtr = atRowPtr;
-                pivRowNdx = j;
-            }
-        }
-        // Do we need to swap
-        if (diagRowPtr!=pivRowPtr) {
-            // Swap RHS
-            double tmp;
-            tmp = rhsPtr[i];
-            rhsPtr[i] = rhsPtr[pivRowNdx];
-            rhsPtr[pivRowNdx] = tmp;
-            // Swap rows
-            for(Int j=i; j<n; j++) {
-                tmp = diagRowPtr[j];
-                diagRowPtr[j] = pivRowPtr[j];
-                pivRowPtr[j] = tmp;
-            }
-        }
-        // Eliminate
-        double* subDiagRowPtr = diagRowPtr + n;
-        for(Int j=i+1; j<n; j++, subDiagRowPtr+=n) {
-            double factor = subDiagRowPtr[i]/diagRowPtr[i];
-            // Below diagonal we get 0.0, no need to compute it
-            for(Int k=i+1; k<n; k++) {
-                subDiagRowPtr[k] -= factor*diagRowPtr[k];
-            }
-            // Subtract RHS
-            rhsPtr[j] -= factor*rhsPtr[i];
-            // Store factor (LU decomposition) - no need to do this
-            // subDiagRowPtr[i] = factor;
-            // For actual LU decomposition we also need to store row permutations
-        }
-    }
-    // Back substitution, start with last row
-    double* rowPtr = diagRowPtr - n;
-    for(Int i=n-1; i>=0; i--, rowPtr -= n) {
-        for(Int j=i+1; j<n; j++) {
-            rhsPtr[i] -= rhsPtr[j]*rowPtr[j];
-        }
-        // Divide
-        rhsPtr[i] /= rowPtr[i];
-    }
-    return true;
+    // auto dmv = DenseMatrixView(matrix.data(), n, n, n, 1);
+    auto vv = VectorView(rhs.data(), n, 1);
+    return matrix.destructiveSolve(vv);
 }
 
 bool IntegratorCoeffs::scaleDifferentiator(double hk) {
@@ -524,5 +442,65 @@ void IntegratorCoeffs::dump(std::ostream& os, bool scaled) {
         }
     }
 }
+
+void IntegratorCoeffs::test() {
+    int order = 3;
+
+    // 3 past steps
+    CircularBuffer<double> pastSteps(order);
+    for(int i=0; i<order; i++) {
+        pastSteps.add(0.1);
+    }
+    
+    // AM3, uniform step
+    setMethod(Method::AdamsMoulton, order);
+    if (compute(pastSteps, 0.1)) {
+        dump(std::cout);
+        std::cout << " C=" << err_ << "\n";
+        std::cout << "Expected: " << 1.0 << " " << (5.0/12) << " " << (8.0/12) << " " << (-1.0/12) 
+                << " " << (1.0/24)*ffactorial(order+1) << "\n";
+        std::cout << "\n";
+    } else {
+        std::cout << "AM failed\n";
+    }
+
+    // BDF3, uniform step
+    setMethod(Method::BDF, order);
+    if (compute(pastSteps, 0.1)) {
+        dump(std::cout);
+        std::cout << " C=" << err_ << "\n";
+        std::cout << "Expected: " << " " << (18.0/11) << " " << (-9.0/11) << " " << (2.0/11) << " " << (6.0/11) 
+                << " " << (3.0/22)*ffactorial(order+1) << "\n";
+        std::cout << "\n";
+    } else {
+        std::cout << "BDF failed\n";
+    }
+    
+    // AB3, uniform step
+    setMethod(Method::AdamsBashforth, order);
+    if (compute(pastSteps, 0.1)) {
+        dump(std::cout);
+        std::cout << " C=" << err_ << "\n";
+        std::cout << "Expected: " << " " << (1) << " " << (23.0/12) << " " << (-16.0/12) << " " << (5.0/12) 
+                << " " << (-3.0/8)*ffactorial(order+1) << "\n";
+        std::cout << "\n";
+    } else {
+        std::cout << "AB failed\n";
+    }
+
+    // Polynomial extrapolation
+    setMethod(Method::PolynomialExtrapolation, order);
+    if (compute(pastSteps, 0.1)) {
+        dump(std::cout);
+        std::cout << " C=" << err_ << "\n";
+        std::cout << "Expected: " << " " << (4) << " " << (-6) << " " << (4) << " " << (-1) 
+                << " " << (-1.0)*ffactorial(order+1) << "\n";
+        std::cout << "\n";
+    } else {
+        std::cout << "Polynomial extrapolation failed\n";
+    }
+}
+
+
 
 }

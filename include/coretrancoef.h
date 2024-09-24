@@ -3,6 +3,7 @@
 
 #include "value.h"
 #include "ansupport.h"
+#include "densematrix.h"
 #include "common.h"
 #include <algorithm>
 
@@ -139,6 +140,8 @@ public:
         }
         return cache[n];
     };
+
+    void test();
     
 private:
     bool size();
@@ -154,7 +157,7 @@ private:
     
     // Number of equations, matrix (ordered by rows), and RHS
     Int n_;
-    std::vector<double> matrix; // row1, row2, ...
+    DenseMatrix<double> matrix; // row1, row2, ...
     std::vector<double> rhs;
     
     // New timepoint: 
