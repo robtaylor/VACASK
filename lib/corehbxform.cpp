@@ -119,19 +119,143 @@ bool HbCore::buildAPFT(Status& s) {
     }
 
     // Make a copy that will be destroyed during matrix inversion
-    DenseMatrix coeffs = IAPFT;
+    DenseMatrix<double> coeffs = IAPFT;
     
     // Invert to obtain APFT
     APFT.resize(n, n);
-    coeffs.destructiveInvert(APFT);
+    if (!coeffs.destructiveInvert(APFT)) {
+        s.set(Status::Analysis, "Failed to compute forward transform matrix.");
+        return false;
+    }
 
-    // Test
-    DenseMatrix<double> result(n, n);
+    // Construct Omega matrix (for computing the derivative wrt. time on a spectrum)
+    // Assume first component is DC magnitude, 
+    // the remaining ones are (cosine, -sine) magnitudes, i,e, (Re, Im) parts of a phasor
+    // First 6 rows and columns are
+    // 0 0  0  0   0  .
+    // 0 0 -w1 0   0  .
+    // 0 w1 0  0   0  .
+    // 0 0  0  0  -w2 .
+    // 0 0  0  w2  0  .
+    // . .  .  .   .  .
+    DenseMatrix<double> Omega(n, n);
+    Omega.zero();
+    for(decltype(m) i=1; i<m; i++) {
+        auto base = 1+(i-1)*2;
+        auto omega = 2*std::numbers::pi*freq[i].f;
+        Omega.at(base, base+1) = -omega;
+        Omega.at(base+1, base) = omega;
+    }
 
-    APFT.multiply(IAPFT, result);
-    result.dump(std::cout);
-    
+    // Compute DDT matrix as IAPFT * Omega * APFT
+    DDT.resize(n, n);
+    DenseMatrix<double> tmp(n, n);
+    IAPFT.multiply(Omega, tmp);
+    tmp.multiply(APFT, DDT);
+
     return true;
+}
+
+bool HbCore::test() {
+    Status s;
+    bool ok = true;
+
+    HbParameters p;
+    p.freq = {1000, 100000};
+    p.nharm = 4;
+    p.truncate = "diamond";
+    p.sample = "random";
+    p.samplefac = 4;
+
+    HbCore hb(p);
+
+    if (ok && !hb.buildGrid(s)) {
+        ok = false;
+        std::cout << "Failed to build grid: " << s.message() << "\n";
+    }
+    
+    if (ok && !hb.buildColocation(s)) {
+        ok = false;
+        std::cout << "Failed to select colocation points: " << s.message() << "\n";
+    } 
+    
+    if (!hb.buildAPFT(s)) {
+        ok = false;
+        std::cout << "Failed to build APFT: " << s.message() << "\n";
+    }
+
+    if (ok) {
+        double delta;
+        auto n = hb.timepoints.size();
+        DenseMatrix<double> result(n, n);
+
+        // APFT*IAPFT
+        hb.APFT.multiply(hb.IAPFT, result);
+        DenseMatrix<double> I(n, n);
+        I.identity();
+        result.subtract(I, result);
+        delta = result.maxAbs();
+        std::cout << "APFT * IAPFT - I :: delta = " << delta << "\n";
+        std::cout << "\n";
+        if (delta>1e-12) {
+            ok = false;
+            std::cout << "IAPFT inverse failed\n";
+        }
+
+        // APFT of first non zero frequency cosine
+        std::vector<double> v(n, 0.0);
+        std::vector<double> vres(n, 0.0);
+        auto f = hb.freq[1].f;
+        auto mag = 10;
+        for(size_t i=0; i<n; i++) {
+            auto t = hb.timepoints[i];
+            v[i] = mag*std::cos(2*std::numbers::pi*f*t);
+        }
+
+        auto vv = VectorView<double>(v);
+        auto vvres = VectorView<double>(vres);
+        hb.APFT.multiply(vv, vvres);
+        auto norm = vvres.maxAbs();
+        std::cout << "APFT of cosine at f1\n";
+        vvres.dump(std::cout);
+        std::cout << "\n";
+        for(size_t i=0; i<n; i++) {
+            if (
+                i==1 && std::abs(vvres[i]-mag)/norm>1e-12 ||
+                i!=1 && std::abs(vvres[i])/norm>1e-12
+            ) {
+                ok = false;
+                std::cout << "APFT failed\n";
+                break;
+            }
+        }
+
+        // Derivative of first nonzero frequency cosine wrt time
+        hb.DDT.multiply(vv, vvres);
+        norm = vvres.maxAbs();
+        std::cout << "APFT of DDT of cosine at f1\n";
+        auto spec = std::vector<double>(n, 0);
+        auto vspec = VectorView<double>(spec);
+        hb.APFT.multiply(vvres, vspec);
+        vspec.dump(std::cout);
+        std::cout << "\n";
+        for(size_t i=0; i<n; i++) {
+            auto t = hb.timepoints[i];
+            auto exact = -mag*2*std::numbers::pi*f*std::sin(2*std::numbers::pi*f*t);
+            if (std::abs(vvres[i] - exact)/norm>1e-12) {
+                ok = false;
+                std::cout << "DDT failed\n";
+                break;
+            }
+        }
+
+    }
+
+    if (!ok) {
+        std::cout << "HB core test failed.\n";
+    }
+
+    return ok;
 }
 
 
@@ -175,5 +299,7 @@ bool HbCore::buildDdtTransformMatrix(Status& s) {
 
     return true;
 }
+
+
 
 }

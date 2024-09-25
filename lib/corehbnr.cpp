@@ -377,8 +377,8 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         auto vvFD = VectorView<double>(solFDPtr, nb, 1);
         auto vvTD = VectorView<double>(solTDPtr, nb, 1);
         auto vvTDdot = VectorView<double>(solTDDotPtr, nb, 1);
-        XF.vecMul(vvFD, vvTD);
-        XFdot.vecMul(vvFD, vvTDdot);
+        XF.multiply(vvFD, vvTD);
+        XFdot.multiply(vvFD, vvTDdot);
         solFDPtr += nb;
         solTDPtr += nb;
         solTDDotPtr += nb;

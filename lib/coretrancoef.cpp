@@ -470,6 +470,7 @@ bool IntegratorCoeffs::test() {
         std::cout << "\n";
         if (std::abs(ic.err_-errExpect)>1e-12) {
             ok = false;
+            std::cout << "AM failed\n";
         }
     } else {
         std::cout << "AM failed\n";
@@ -487,6 +488,7 @@ bool IntegratorCoeffs::test() {
         std::cout << "\n";
         if (std::abs(ic.err_-errExpect)>1e-12) {
             ok = false;
+            std::cout << "BDF failed\n";
         }
     } else {
         std::cout << "BDF failed\n";
@@ -504,6 +506,7 @@ bool IntegratorCoeffs::test() {
         std::cout << "\n";
         if (std::abs(ic.err_-errExpect)>1e-12) {
             ok = false;
+            std::cout << "AB failed\n";
         }
     } else {
         std::cout << "AB failed\n";
@@ -521,6 +524,7 @@ bool IntegratorCoeffs::test() {
         std::cout << "\n";
         if (std::abs(ic.err_-errExpect)>1e-12) {
             ok = false;
+            std::cout << "Polynomial extrapolation failed\n";
         }
     } else {
         std::cout << "Polynomial extrapolation failed\n";

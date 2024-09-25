@@ -31,29 +31,10 @@ char helpText[] =
     ; 
 
 int main(int argc, char**argv) {
-    IntegratorCoeffs::test();
+    // IntegratorCoeffs::test();
+    // DenseMatrix<double>::test();
+    HbCore::test();
     return 0;
-
-    
-    HbParameters p;
-    p.freq = {1000, 3000, 10000};
-    p.nharm = 4;
-    p.truncate = "diamond";
-    p.sample = "random";
-    p.samplefac = 4;
-
-    HbCore hb(p);
-    Status s;
-    if (!hb.buildGrid(s)) {
-        std::cout << s.message() << "\n";
-    } else if (!hb.buildColocation(s)) {
-        std::cout << s.message() << "\n";
-    } else if (!hb.buildAPFT(s)) {
-        std::cout << s.message() << "\n";
-    }
-    
-    return 0;
-    
 
     Status status;
 

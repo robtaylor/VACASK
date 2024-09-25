@@ -15,12 +15,20 @@ namespace NAMESPACE {
 // Due to stride_ it can handle columns, rows, and much more
 template<typename T> class VectorView {
 public:
+    VectorView(std::vector<T>& v) : start_(v.data()), n_(v.size()), stride_(1) {};
     VectorView(T* start, size_t n, size_t stride=1) : start_(start), n_(n), stride_(stride) {};
     
+    // Access to members
+    const T& at(size_t col) const { return *(start_+col*stride_); };
     T& at(size_t col) { return *(start_+col*stride_); };
-    
+
+    const T& operator[](size_t i) const { return *(start_+i*stride_); };
+    T& operator[](size_t i) { return *(start_+i*stride_); };
+
+    // Length
     size_t n() const { return n_; };
 
+    // Assign elements from another VectorView
     VectorView<T>& operator=(const VectorView<T>& from) { 
         if (n_ != from.n_) {
             throw std::out_of_range("Vector length mismatch.");
@@ -35,21 +43,32 @@ public:
         return *this;
     };
 
+    // Assign same value to all elements
     VectorView<T>& operator=(const T& from) { 
         if (n_ != from.n_) {
             throw std::out_of_range("Vector length mismatch.");
         }
         T* ptr = start_;
-        T* ptrFrom = from.start_;
         for(decltype(n_) i=0; i<n_; i++) {
-            *ptr = *ptrFrom;
+            *ptr = from;
             ptr += stride_;
-            ptrFrom += from.stride_;
         }
         return *this;
     };
 
-    T& operator[](size_t i) { return *(start_+i*stride_); };
+    // Apply function to each element, put result in result
+    void apply(T (*func)(T), VectorView<T>& result) const {
+        for(size_t i=0; i<n_; i++) {
+            result.at(i) = func(at(i));
+        }
+    };
+
+    // Apply function to each element in place
+    void apply(T (*func)(T)) {
+        for(size_t i=0; i<n_; i++) {
+            at(i) = func(at(i));
+        }
+    };
 
     // Squared norm
     double norm2() const {
@@ -68,13 +87,13 @@ public:
 
     // Dot product
     // Conjugates other if T is complex, works only for double complex
-    T dot(VectorView<T>& other) {
+    T dot(const VectorView<T>& other) const {
         if (n_ != other.n_) {
             throw std::out_of_range("Vector length mismatch.");
         }
         T sum = 0;
-        T* ptr = start_;
-        T* ptrOther = other.start_;
+        const T* ptr = start_;
+        const T* ptrOther = other.start_;
         for(size_t i=0; i<n_; i++) {
             if constexpr(std::is_same<T, Complex>::value) {
                 sum += *ptr * std::conj(*ptrOther);
@@ -88,7 +107,7 @@ public:
     };
 
     // Orthogonalize to wrt
-    void orthogonalize(VectorView<T>& wrt) {
+    void orthogonalize(const VectorView<T>& wrt) {
         // dot() checks vector compatibility
         auto prod = dot(wrt);
         auto nrm2 = wrt.norm2();
@@ -102,7 +121,8 @@ public:
         }
     };
 
-    // Swap with other, assume vectors have no common elements (e.g. row crossing a column)
+    // Swap elements with other
+    // Assume vectors have no common elements (e.g. row crossing a column)
     void swap(VectorView<T>& other) {
         if (n_ != other.n_) {
             throw std::out_of_range("Vector length mismatch.");
@@ -118,16 +138,20 @@ public:
         }
     };
 
+    // Swap elements with other (other is a rvalue reference)
+    // Assume vectors have no common elements (e.g. row crossing a column)
     void swap(VectorView<T>&& other) {
         swap(other);
     };
 
+    // Swap i-th and j-th elements
     void swap(size_t i, size_t j) {
         T tmp = at(j);
         at(j) = at(i);
         at(i) = tmp;
     };
 
+    // Scale by a factor
     void scale(T factor) {
         T* ptr = start_;
         for(size_t i=0; i<n_; i++) {
@@ -136,13 +160,13 @@ public:
         }
     };
 
-    // Add scaled vector, assume vectors have no common components
-    void addScaled(VectorView<T>& other, T factor) {
+    // Add scaled vector
+    void addScaled(const VectorView<T>& other, T factor) {
         if (n_ != other.n_) {
             throw std::out_of_range("Vector length mismatch.");
         }
         T* ptr = start_;
-        T* ptrOther = other.start_;
+        const T* ptrOther = other.start_;
         for(size_t i=0; i<n_; i++) {
             *ptr += *ptrOther * factor;
             ptr += stride_;
@@ -150,7 +174,42 @@ public:
         }
     };
 
-    void dump(std::ostream& os)  {
+    // Add scaled vector, store in result
+    // Result can be *self
+    // Assume result is not other
+    void addScaled(const VectorView<T>& other, T factor, VectorView<T>& result) {
+        if (n_ != other.n_) {
+            throw std::out_of_range("Vector lengths do not match.");
+        }
+        if (n_ != result.n_) {
+            throw std::out_of_range("Result length does not match vector.");
+        }
+        T* ptr = start_;
+        const T* ptrOther = other.start_;
+        T* ptrResult = result.start_;
+        for(size_t i=0; i<n_; i++) {
+            *ptrResult = *ptr + *ptrOther * factor;
+            ptr += stride_;
+            ptrOther += other.stride_;
+            ptrResult += result.stride_;
+        }
+    };
+
+    // Maximal absolute element
+    double maxAbs() const {
+        double m = 0;
+        T* ptr = start_;
+        for(size_t i=0; i<n_; i++) {
+            auto c = std::abs(*ptr);
+            if (c>m) {
+                m = c;
+            }
+            ptr += stride_;
+        }
+        return m;
+    };
+
+    void dump(std::ostream& os) const {
         T* ptr = start_;
         for(size_t i=0; i<n_; i++) {
             os << *ptr << " ";
@@ -168,26 +227,55 @@ private:
 
 template<typename T> class DenseMatrixView {
 public:
+    // Default constructor, uninitialized view
     DenseMatrixView() 
         : start_(nullptr), nRow_(0), nCol_(0), rowStride_(0), colStride_(0) {};
+
+    // Construct from array
     DenseMatrixView(T* start, size_t nRow, size_t nCol, size_t rowStride, size_t colStride) 
         : start_(start), nRow_(nRow), nCol_(nCol), rowStride_(rowStride), colStride_(colStride) {}; 
 
+    // Size
     size_t nRows() const { return nRow_; }; 
     size_t nCols() const { return nCol_; }; 
 
+    // Element access
+    const T& at(size_t row, size_t col) const { return *(start_ + row*rowStride_ + col*colStride_); };
     T& at(size_t row, size_t col) { return *(start_ + row*rowStride_ + col*colStride_); };
+    
+    // Row access
+    const VectorView<T> row(size_t i) const { return VectorView<T>(start_ + i*rowStride_, nCol_, colStride_); };
     VectorView<T> row(size_t i) { return VectorView<T>(start_ + i*rowStride_, nCol_, colStride_); };
+    
+    // Column access
+    const VectorView<T> column(size_t i) const { return VectorView<T>(start_ + i*colStride_, nRow_, rowStride_); };
     VectorView<T> column(size_t i) { return VectorView<T>(start_ + i*colStride_, nRow_, rowStride_); };
 
-    void zero() { 
-        for(size_t i=0; i<nRow_; i++) {
-            for(size_t j=0; j<nCol_; j++) {
-                at(i, j) = 0;
-            }
+    // Assign elements from another MatrixView
+    DenseMatrixView<T>& operator=(const DenseMatrixView<T>& other) {
+        if (nRow_!=other.nRow_ || nCol_!=other.nCol_) {
+            throw std::out_of_range("Matrices do not match.");
         }
+        for(size_t i=0; i<nRow_; i++) {
+            row(i) = other.row(i);
+        }
+        return *this;
     };
 
+    // Assign value to all elements
+    DenseMatrixView<T>& operator=(const T& val) {
+        for(size_t i=0; i<nRow_; i++) {
+            row(i) = val;
+        }
+        return *this;
+    };
+
+    // Set to zero
+    void zero() { 
+        *this = 0;
+    };
+
+    // Set to identity
     void identity() {
         for(size_t i=0; i<nRow_; i++) {
             for(size_t j=0; j<nCol_; j++) {
@@ -200,28 +288,27 @@ public:
         }
     };
 
-    // TODO: optimize this further
-    void vecMul(VectorView<T>& other, VectorView<T>& result) {
-        for(size_t i=0; i<nRow_; i++) {
-            auto x = row(i).dot(other);
-            result[i] = x;
-        }
-    };
-
+    // Solve Ax = rhs, destroy A, result in rhs
+    // Use partial pivoting
     bool destructiveSolve(VectorView<T>& rhs) {
         return solveCore(&rhs, nullptr);
     };
 
+    // Solve Ax = Rhs, destroy A, result in Rhs
+    // Use partial pivoting
     bool destructiveSolve(DenseMatrixView<T>& rhs) {
         return solveCore(&rhs, nullptr);
     };
 
+    // Perform LU decomposition in place, return row permutation vector
+    // Use partial pivoting
     bool factor(VectorView<size_t>& rowPerm) {
         return solveCore(static_cast<VectorView<T>*>(nullptr), &rowPerm);
     };
 
+    // Multiply with vector, store result in result
     // Vector must be distinct from result
-    void multiply(VectorView<T>& vector, VectorView<T>& result) {
+    void multiply(const VectorView<T>& vector, VectorView<T>& result) const {
         if (nCol_!=vector.n()) {
             throw std::out_of_range("Matrix is not compatible with vector.");
         }
@@ -233,8 +320,9 @@ public:
         }
     };
 
+    // Multiply with matrix, store result in result
     // Result must be distinct from this and other
-    void multiply(DenseMatrixView<T>& other, DenseMatrixView<T>& result) {
+    void multiply(const DenseMatrixView<T>& other, DenseMatrixView<T>& result) const {
         if (nCol_!=other.nRow_) {
             throw std::out_of_range("Matrices are not compatible.");
         }
@@ -243,12 +331,66 @@ public:
         }
         for(size_t i=0; i<nRow_; i++) {
             for(size_t j=0; j<other.nCol_; j++) {
-                auto otherCol = other.column(j);
-                result.at(i, j) = row(i).dot(otherCol);
+                result.at(i, j) = row(i).dot(other.column(j));
             }
         }
     };
 
+    // Add scaled other matrix, put result in result
+    // Result must be distinct from this and other
+    void addScaled(const DenseMatrixView<T>& other, T factor, DenseMatrixView<T>& result) {
+        if (nRow_!=other.nRow_ || nCol_!=other.nCol_) {
+            throw std::out_of_range("Matrices are not compatible.");
+        }
+        if (nRow_!=result.nRow_ || nCol_!=result.nCol_) {
+            throw std::out_of_range("Result is not compatible with matrix.");
+        }
+        for(size_t i=0; i<nRow_; i++) {
+            auto rrow = result.row(i);
+            row(i).addScaled(other.row(i), factor, rrow);
+        }
+    };
+
+    // Add other matrix, put result in result
+    // Result must be distinct from this and other
+    void add(DenseMatrixView<T>& other, DenseMatrixView<T>& result) {
+        addScaled(other, 1.0, result);
+    };
+
+    // Subtract other matrix, put result in result
+    // Result must be distinct from this and other
+    void subtract(DenseMatrixView<T>& other, DenseMatrixView<T>& result) {
+        addScaled(other, -1.0, result);
+    };
+
+    // Apply function to each element, put result in result
+    void apply(T (*func)(T), DenseMatrixView<T>& result) const {
+        for(size_t i=0; i<nRow_; i++) {
+            auto rrow = result.row(i);
+            row(i).apply(func, rrow);
+        }
+    };
+
+    // Apply function to each element in place
+    void apply(T (*func)(T), DenseMatrixView<T>& result) {
+        for(size_t i=0; i<nRow_; i++) {
+            row(i).apply(func);
+        }
+    };
+
+    // Absolute maximal element
+    double maxAbs() const {
+        double m = 0;
+        for(size_t i=0; i<nRow_; i++) {
+            auto c = row(i).maxAbs();
+            if (c>m) {
+                m = c;
+            }
+        }
+        return m;
+    };
+
+    
     // Destructive invert, result must be distinct from this
     bool destructiveInvert(DenseMatrixView<T>& result) {
         if (nRow_!=result.nRow_ || nCol_!=result.nCol_) {
@@ -261,7 +403,7 @@ public:
         return solveCore(&result);
     };
 
-    void dump(std::ostream& os)  {
+    void dump(std::ostream& os) const {
         for(size_t i=0; i<nRow_; i++) {
             for(size_t j=0; j<nCol_; j++) {
                 os << at(i, j) << " ";
@@ -316,16 +458,16 @@ private:
             // Find pivot
             auto pivCol = column(i);
             size_t pivI = i;
-            T pivot = pivCol[pivI];
+            auto p = std::abs(pivCol[pivI]);
             for(size_t j=i; j<n; j++) {
                 auto cand = std::abs(pivCol[j]);
-                if (cand>pivot) {
-                    pivot = cand;
+                if (cand>p) {
+                    p = cand;
                     pivI = j;
                 }
             }
-            pivot = pivCol[pivI];
-            if (pivot==0) {
+            auto pivot = pivCol[pivI];
+            if (p==0) {
                 return false;
             }
             
@@ -368,22 +510,22 @@ private:
 
         // Back-substitute
         if (rhs) {
-            for(size_t i=0; i<n; i++) {
-                auto irow = n-1-i;
-                auto matRow = row(irow);
+            for(size_t cnt=0; cnt<n; cnt++) {
+                auto i = n-1-cnt;
+                auto matRow = row(i);
                 if constexpr(std::is_same<RhsType, VectorView<T>>::value) {
-                    for(size_t j=irow+1; j<n; j++) {
-                        rhs->at(irow) -= rhs->at(j)*matRow[j];
+                    for(size_t j=i+1; j<n; j++) {
+                        rhs->at(i) -= rhs->at(j)*matRow[j];
                     }
-                    rhs->at(irow) /= matRow[irow];
+                    rhs->at(i) /= matRow[i];
                 } else {
                     auto rhsRowi = rhs->row(i);
-                    for(size_t j=irow+1; j<n; j++) {
+                    for(size_t j=i+1; j<n; j++) {
                         auto rhsRowj = rhs->row(j);
                         auto fac = -matRow[j];
                         rhsRowi.addScaled(rhsRowj, fac);
                     }
-                    rhsRowi.scale(1.0/matRow[irow]);
+                    rhsRowi.scale(1.0/matRow[i]);
                 }
             }
         }
@@ -403,9 +545,31 @@ public:
     using DenseMatrixView<T>::rowStride_;
     using DenseMatrixView<T>::colStride_;
     
+    // Default constructor, uninitialized matrix
     DenseMatrix() 
         : DenseMatrixView<T>(nullptr, 0, 0, 1, 1), major_(Major::Row) {};
 
+    // Copy constructor
+    DenseMatrix(const DenseMatrix<T>& A) {
+        major_ = A.major_;
+        data_ = A.data_;
+        start_ = data_.data();
+        nRow_ = A.nRow_;
+        nCol_ = A.nCol_;
+        setStride();
+    };
+
+    // Move constructor
+    DenseMatrix(DenseMatrix<T>&& A) {
+        major_ = A.major_;
+        data_ = std::move(A.data_);
+        start_ = data_.data();
+        nRow_ = A.nRow_;
+        nCol_ = A.nCol_;
+        setStride();
+    };
+
+    // Size-based constructor
     DenseMatrix(size_t nRow, size_t nCol, Major major=Major::Row) 
         : DenseMatrixView<T>(nullptr, nRow, nCol, 1, 1), major_(major) { 
         data_.resize(nRow*nCol); 
@@ -413,18 +577,55 @@ public:
         setStride();
     };
 
+    // Move-construct from vector and size
     DenseMatrix(std::vector<T>&& from, size_t nRow, size_t nCol, Major major=Major::Row) { 
         if (nRow*nCol != from.size()) {
             throw std::out_of_range("Matrix size inconsistent with data.");
         }
+        major_ = major;
         data_ = std::move(from);
         start_ = data_.data();
         nRow_ = nRow;
         nCol_ = nCol;
         setStride();
     };
+
+    // Copy-construct from vector and size
+    DenseMatrix(const std::vector<T>& from, size_t nRow, size_t nCol, Major major=Major::Row) { 
+        if (nRow*nCol != from.size()) {
+            throw std::out_of_range("Matrix size inconsistent with data.");
+        }
+        major_ = major;
+        data_ = from;
+        start_ = data_.data();
+        nRow_ = nRow;
+        nCol_ = nCol;
+        setStride();
+    };
+
+    // Copy assignment
+    DenseMatrix<T>& operator=(const DenseMatrix<T>& other) {
+        major_ = other.major_;
+        data_ = other.data_;
+        start_ = data_.data();
+        nRow_ = other.nRow_;
+        nCol_ = other.nCol_;
+        setStride();
+        return *this;
+    };
+
+    // Move assignment
+    DenseMatrix<T>& operator=(DenseMatrix<T>&& other) {
+        major_ = other.major_;
+        data_ = other.data_;
+        start_ = std::move(data_.data());
+        nRow_ = other.nRow_;
+        nCol_ = other.nCol_;
+        setStride();
+        return *this;
+    };
     
-    // Does not reorder existing data, data moves in mysterious ways index-wise
+    // Resize, does not reorder elements (content is invalidated)
     void resize(size_t nRow, size_t nCol) { 
         data_.resize(nRow*nCol);
         nRow_ = nRow; 
@@ -433,7 +634,7 @@ public:
         setStride();
     }; 
     
-    // Specializations for DenseMatrix
+    // Override for DenseMatrix
     T& at(size_t row, size_t col) { 
         switch (major_) {
             case Major::Row:
@@ -444,7 +645,7 @@ public:
         }
     }; 
     
-    // Specializations for DenseMatrix
+    // Override for DenseMatrix
     VectorView<T> row(size_t i) { 
         switch (major_) {
             case Major::Row:
@@ -455,7 +656,7 @@ public:
         }   
     };
     
-    // Specializations for DenseMatrix
+    // Override for DenseMatrix
     VectorView<T> column(size_t i) { 
         switch (major_) {
             case Major::Row:
@@ -466,7 +667,7 @@ public:
         }
     };
 
-    // Specializations for DenseMatrix
+    // Override for DenseMatrix
     void zero() { data_.assign(data_.size(), T()); };
     
     // Row major only
@@ -478,6 +679,8 @@ public:
         data_.resize(nRow_*nCol_); 
         return row(nRow_-1); 
     };
+
+    static bool test();
 
 private:
     void setStride() {

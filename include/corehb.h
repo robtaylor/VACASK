@@ -57,6 +57,8 @@ public:
     static Id sampleUniform;
     static Id sampleRandom;
 
+    static bool test();
+
 protected:
     bool buildTransformMatrix(Status& s=Status::ignore);
     bool buildDdtTransformMatrix(Status& s=Status::ignore);
@@ -78,6 +80,7 @@ private:
     DenseMatrix<Real> XFdot;
     DenseMatrix<Real> APFT;
     DenseMatrix<Real> IAPFT;
+    DenseMatrix<Real> DDT;
 };
 
 }
