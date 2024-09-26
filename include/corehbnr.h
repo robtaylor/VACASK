@@ -16,8 +16,8 @@ public:
         VectorRepository<double>& solution, 
         Vector<Real>& spectrum, 
         Vector<Real>& timepoints, 
-        DenseMatrix<Real>& XF, 
-        DenseMatrix<Real>& XFdot, 
+        DenseMatrix<Real>& DDT, 
+        DenseMatrix<Real>& DDTcolMajor, 
         NRSettings& settings
     ); 
 
@@ -42,44 +42,42 @@ protected:
     LoadSetup loadSetup_;
 
     KluBlockSparseRealMatrix& bsjac;
-    Vector<Real>& spectrum; 
-    Vector<Real>& timepoints; 
-    DenseMatrix<Real>& XF; 
-    DenseMatrix<Real>& XFdot; 
+    Vector<double>& spectrum; 
+    Vector<double>& timepoints; 
+    DenseMatrix<double>& DDT;
+    DenseMatrix<double>& DDTcolMajor;
     Circuit& circuit;
 
-    // Maximal value in each row of XF, XFdot
-    Vector<double> XFrowMax;
-    Vector<double> XFdotRowMax;
-    
     // Internal structures
-    VectorRepository<double> oldSolutionTD;
-    Vector<double> oldSolutionTDDot;
-    VectorRepository<double> oldSolutionTDtk;
+    // At t_k
+    VectorRepository<double> oldSolutionAtTk;
     Vector<double> resistiveResidualAtTk;
+    Vector<double> reactiveResidualAtTk;
     VectorRepository<double> dummyStatesRepo;
 
+    // For all timepoints
+    Vector<double> resistiveResidual;
+    Vector<double> reactiveResidual;
+    
     // Internal structure for max residual contribution
     Vector<double> maxResidualContributionAtTk_; // maximal residual contribution for all equations at a given timepoint
-                                                        // filled with maximal resistive contribution in evalAndLoadWrapper()
+                                                 // filled with maximal resistive contribution in evalAndLoadWrapper()
     Vector<double> maxResidualContribution_; // maximal residual contribution for each equation at each timepoint
     
     // What kind of tolerance reference to use
-    // Solution has only global/local reference
-    // Point/historic reference distinction is not available 
-    // because the solution is in the frequency domain
+    // We support only global/local reference
+    // Historic reference is not possible. 
+    // We always use point-wise reference. 
     bool globalSolRef;
-    bool historicResRef;
     bool globalResRef;
 
-    // Historic and global maxima
-    Vector<double> historicMaxResidualContribution_; // across produced solutions, maximal value for each euqation
-    Vector<double> globalMaxResidualContribution_;   // accross produced solutions, maximal value for each nature
-    Vector<double> pointMaxResidualContribution_;    // at current solution, maximal value for each nature
+    // Global maxima
+    DenseMatrix<double> pointMaxResidualContribution_;  // at current solution, maximal value for each nature, each timepoint
+                                                        // rows are natures, columns are timepoints
     
-    DenseMatrix<double> pointMaxSolution_;  // previous solution, maximal value for each nature
-                                            // rows are natures, columns are frequency components
-
+    DenseMatrix<double> pointMaxSolution_;  // previous solution, maximal value for each nature, each timepoint
+                                            // rows are natures, columns are timepoints
+    
     // Convergence check auxiliary results
     double maxResidual; 
     double maxNormResidual; 

@@ -51,11 +51,7 @@ std::tuple<bool, bool> HbCore::requestsRebuild(Status& s) {
         }
 
         // Recompute transforms
-        if (!buildTransformMatrix(s)) {
-            return std::make_tuple(false, changed);
-        }
-
-        if (!buildDdtTransformMatrix(s)) {
+        if (!buildAPFT(s)) {
             return std::make_tuple(false, changed);
         }
     }

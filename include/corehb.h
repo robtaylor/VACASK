@@ -60,8 +60,7 @@ public:
     static bool test();
 
 protected:
-    bool buildTransformMatrix(Status& s=Status::ignore);
-    bool buildDdtTransformMatrix(Status& s=Status::ignore);
+    bool buildTransformMatrix(DenseMatrix<double>& XF, Status& s=Status::ignore);
     
     struct SpecFreq {
         size_t gridIndex;
@@ -72,15 +71,14 @@ protected:
 
 private:
     HbParameters& params;
-    Vector<Real> spectrum;
+    Vector<double> spectrum;
     std::vector<SpecFreq> freq;
     DenseMatrix<int> grid;
-    Vector<Real> timepoints;    
-    DenseMatrix<Real> XF;
-    DenseMatrix<Real> XFdot;
-    DenseMatrix<Real> APFT;
-    DenseMatrix<Real> IAPFT;
-    DenseMatrix<Real> DDT;
+    Vector<double> timepoints;    
+    DenseMatrix<double> APFT;
+    DenseMatrix<double> IAPFT;
+    DenseMatrix<double> DDT;
+    DenseMatrix<double> DDTcolMajor;
 };
 
 }

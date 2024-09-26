@@ -16,6 +16,8 @@ namespace NAMESPACE {
 template<typename T> class VectorView {
 public:
     VectorView(std::vector<T>& v) : start_(v.data()), n_(v.size()), stride_(1) {};
+    VectorView(std::vector<T>& v, size_t offset, size_t length, size_t stride) 
+        : start_(v.data()+offset), n_(length), stride_(stride) {};
     VectorView(T* start, size_t n, size_t stride=1) : start_(start), n_(n), stride_(stride) {};
     
     // Access to members
@@ -174,6 +176,34 @@ public:
         }
     };
 
+    // Add scaled vector
+    void add(const VectorView<T>& other) {
+        if (n_ != other.n_) {
+            throw std::out_of_range("Vector length mismatch.");
+        }
+        T* ptr = start_;
+        const T* ptrOther = other.start_;
+        for(size_t i=0; i<n_; i++) {
+            *ptr += *ptrOther;
+            ptr += stride_;
+            ptrOther += other.stride_;
+        }
+    };
+
+    // Write scaled vector
+    void writeScaled(const VectorView<T>& other, T factor) {
+        if (n_ != other.n_) {
+            throw std::out_of_range("Vector length mismatch.");
+        }
+        T* ptr = start_;
+        const T* ptrOther = other.start_;
+        for(size_t i=0; i<n_; i++) {
+            *ptr = *ptrOther * factor;
+            ptr += stride_;
+            ptrOther += other.stride_;
+        }
+    };
+
     // Add scaled vector, store in result
     // Result can be *self
     // Assume result is not other
@@ -224,6 +254,10 @@ private:
     size_t stride_;
 };
 
+// Deduction guides for VectorView
+template<typename T> VectorView(std::vector<T>& v) -> VectorView<T>;
+template<typename T> VectorView(std::vector<T>& v, size_t offset, size_t length, size_t stride) -> VectorView<T>;
+template<typename T> VectorView(T* start, size_t n, size_t stride=1) -> VectorView<T>;
 
 template<typename T> class DenseMatrixView {
 public:
@@ -626,7 +660,8 @@ public:
     };
     
     // Resize, does not reorder elements (content is invalidated)
-    void resize(size_t nRow, size_t nCol) { 
+    void resize(size_t nRow, size_t nCol, Major major=Major::Row) { 
+        major_ = major;
         data_.resize(nRow*nCol);
         nRow_ = nRow; 
         nCol_ = nCol; 

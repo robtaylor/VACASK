@@ -60,10 +60,10 @@ bool HbCore::buildColocation(Status& s) {
     }
 
     // Build fd->td transform matrix from timepoints
-    buildTransformMatrix();
+    buildTransformMatrix(IAPFT);
     
     // Number of cadidate rows
-    auto ncand = XF.nRows();
+    auto ncand = IAPFT.nRows();
 
     if (hb_debug>1) {
         Simulator::dbg() << "Colocation points (" << nt << "):\n" ;
@@ -73,7 +73,7 @@ bool HbCore::buildColocation(Status& s) {
     decltype(ncand) nkeep = 1;
 
     if (hb_debug>1) {
-        Simulator::dbg() << "  t=" << timepoints[0] << " xform norm2=" << XF.row(0).norm2() << "\n" ;
+        Simulator::dbg() << "  t=" << timepoints[0] << " xform norm2=" << IAPFT.row(0).norm2() << "\n" ;
     }
 
     // Keep nt best rows
@@ -81,9 +81,9 @@ bool HbCore::buildColocation(Status& s) {
         // Orthogonalize rows i+1 .. ncand-1, find the one with largest norm
         double maxNorm2 = 0;
         decltype(ncand) ndx = 0;
-        auto wrt = XF.row(i);
+        auto wrt = IAPFT.row(i);
         for(decltype(ncand) j=i+1; j<ncand; j++) {
-            auto row = XF.row(j);
+            auto row = IAPFT.row(j);
             row.orthogonalize(wrt);
             auto nrm2 = row.norm2();
             if (nrm2>maxNorm2) {
@@ -101,7 +101,7 @@ bool HbCore::buildColocation(Status& s) {
         if (hb_debug>1) {
             Simulator::dbg() << "  t=" << timepoints[ndx] << " xform norm2=" << maxNorm2 << "\n" ;
         }
-        XF.row(i+1).swap(XF.row(ndx));
+        IAPFT.row(i+1).swap(IAPFT.row(ndx));
         nkeep++;
 
         // Also swap timepoints
