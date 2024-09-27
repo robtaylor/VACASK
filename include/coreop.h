@@ -80,7 +80,7 @@ class OperatingPointCore : public AnalysisCore {
 public:
     using RunType = OpRunType;
     typedef OperatingPointParameters Parameters;
-    enum class OpError {
+    enum class OperatingPointError {
         OK, 
         InitialOp, 
         SteppingSolver, 
@@ -128,11 +128,11 @@ public:
 
 protected:
     // Clear error
-    void clearError() { AnalysisCore::clearError(); lastOpError = OpError::OK; }; 
+    void clearError() { AnalysisCore::clearError(); lastOpError = OperatingPointError::OK; }; 
 
-    void setError(OpError e) { lastOpError = e; lastError = Error::OK; };
+    void setError(OperatingPointError e) { lastOpError = e; lastError = Error::OK; };
     
-    OpError lastOpError;
+    OperatingPointError lastOpError;
     RunType errorRunType; 
     Int errorHomotopyIterations;
 

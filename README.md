@@ -12,7 +12,7 @@ VACASK offers several features:
 - integer, real, and string data types
 - vectors (homogeneous containers) and lists (heterogeneous containers)
 - a library of [built-in functions and constants](lib/context.cpp) for use in parameterized expressions
-- [operating point](include/coreop.h), [DC small-signal](include/coredcinc.h), [DC transfer function](include/coredctf.h), [AC small-signal](include/coreac.h), [AC transfer function](include/coreactf.h), [noise](include/corenoise.h), and [transient](include/coretran.h) analyses 
+- [operating point](include/coreop.h), [DC small-signal](include/coredcinc.h), [DC transfer function](include/coredcxf.h), [AC small-signal](include/coreac.h), [AC transfer function](include/coreacxf.h), [noise](include/corenoise.h), and [transient](include/coretran.h) analyses 
 - [options](lib/options.cpp) for fine tuning the simulator
 - selection of what should be saved during simulation (save directives)
 - collection of auxiliary values (opvars) computed by device models

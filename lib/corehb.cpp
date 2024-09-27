@@ -7,31 +7,31 @@
 
 namespace NAMESPACE {
 
-Id HbCore::truncateRaw = Id::createStatic("raw");
-Id HbCore::truncateBox = Id::createStatic("box");
-Id HbCore::truncateDiamond = Id::createStatic("diamond");
+Id HBCore::truncateRaw = Id::createStatic("raw");
+Id HBCore::truncateBox = Id::createStatic("box");
+Id HBCore::truncateDiamond = Id::createStatic("diamond");
 
-Id HbCore::sampleUniform = Id::createStatic("uniform");
-Id HbCore::sampleRandom = Id::createStatic("random");
+Id HBCore::sampleUniform = Id::createStatic("uniform");
+Id HBCore::sampleRandom = Id::createStatic("random");
 
-HbParameters::HbParameters() {
-    truncate = HbCore::truncateDiamond;
-    sample = HbCore::sampleRandom;
+HBParameters::HBParameters() {
+    truncate = HBCore::truncateDiamond;
+    sample = HBCore::sampleRandom;
 }
 
-HbCore::HbCore(
-    OutputDescriptorResolver& parentResolver, HbParameters& params, Circuit& circuit, 
+HBCore::HBCore(
+    OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
     KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
 ) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
     nrSolver(circuit, jacobian, solution, spectrum, timepoints, DDT, DDTcolMajor, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true) {
 };
 
-HbCore::~HbCore() {
+HBCore::~HBCore() {
     delete outfile;
 }
 
-bool HbCore::addCoreOutputDescriptors() {
+bool HBCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
@@ -45,7 +45,7 @@ bool HbCore::addCoreOutputDescriptors() {
     return true;
 }
 
-bool HbCore::addDefaultOutputDescriptors() {
+bool HBCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -56,7 +56,7 @@ bool HbCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool HbCore::resolveOutputDescriptors(bool strict, Status& s) {
+bool HBCore::resolveOutputDescriptors(bool strict, Status& s) {
     // Clear output sources
     outputSources.clear();
     // Resolve output descriptors
@@ -84,7 +84,7 @@ bool HbCore::resolveOutputDescriptors(bool strict, Status& s) {
     return ok;
 }
 
-bool HbCore::initializeOutputs(Id name, Status& s) {
+bool HBCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -103,7 +103,7 @@ bool HbCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool HbCore::finalizeOutputs(Status& s) {
+bool HBCore::finalizeOutputs(Status& s) {
     if (outfile) {
         outfile->epilogue();
         delete outfile;
@@ -112,7 +112,7 @@ bool HbCore::finalizeOutputs(Status& s) {
     return true;
 }
 
-bool HbCore::deleteOutputs(Id name, Status& s) {
+bool HBCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }
@@ -130,7 +130,7 @@ bool HbCore::deleteOutputs(Id name, Status& s) {
 // Along with changed spectrum this function recomputes
 // - colocation points
 // - transform matrices
-std::tuple<bool, bool> HbCore::requestsRebuild(Status& s) {
+std::tuple<bool, bool> HBCore::requestsRebuild(Status& s) {
     // First build, nothing to compare to
     if (firstBuild) {
         return std::make_tuple(true, true);
@@ -149,7 +149,7 @@ std::tuple<bool, bool> HbCore::requestsRebuild(Status& s) {
     return std::make_tuple(true, needsRebuild);
 }
 
-bool HbCore::rebuild(Status& s) {
+bool HBCore::rebuild(Status& s) {
     clearError();
 
     // Compute spectrum
@@ -169,7 +169,7 @@ bool HbCore::rebuild(Status& s) {
 
     // HB Jacobian
     if (!bsjac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), timepoints.size())) {
-        setError(HbError::MatrixError);
+        setError(HBError::MatrixError);
         return false;
     }
 
@@ -190,7 +190,7 @@ bool HbCore::rebuild(Status& s) {
     return true;
 }
 
-CoreCoroutine HbCore::coroutine(bool continuePrevious) {
+CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     initProgress(1, 0);
 
     clearError();
@@ -213,7 +213,7 @@ CoreCoroutine HbCore::coroutine(bool continuePrevious) {
     // Run solver (time domain formulation)
     converged_ = nrSolver.run(continuePrevious);
     if (!converged_) {
-        setError(HbError::SolverError);
+        setError(HBError::SolverError);
     }
 
     if (converged_ && params.writeOutput) {
@@ -256,7 +256,7 @@ CoreCoroutine HbCore::coroutine(bool continuePrevious) {
     }
 }
 
-bool HbCore::run(bool continuePrevious) {
+bool HBCore::run(bool continuePrevious) {
     auto c = coroutine(continuePrevious);
     bool ok = true;
     while (!c.done()) {
@@ -283,7 +283,7 @@ private:
 };
 
 
-bool HbCore::formatError(Status& s) const {
+bool HBCore::formatError(Status& s) const {
     auto nb = timepoints.size();
     auto nr = HbUnknownNameResolver(circuit, nb);
     std::stringstream ss;
@@ -297,27 +297,27 @@ bool HbCore::formatError(Status& s) const {
     
     // Then handle OperatingPointCore errors
     switch (lastHbError) {
-        case HbError::MatrixError:
+        case HBError::MatrixError:
             bsjac.formatError(s, &nr);
             return false;
-        case HbError::SolverError:
+        case HBError::SolverError:
             nrSolver.formatError(s, &nr);
             return false;
     }
     return true;
 }
 
-void HbCore::dump(std::ostream& os) const {
+void HBCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     // os << "  Results\n";
     // circuit.dumpSolution(os, acSolution.data(), "    ");
 }
 
-bool HbCore::test() {
+bool HBCore::test() {
     Status s;
     bool ok = true;
 
-    HbParameters p;
+    HBParameters p;
     p.freq = {1000, 100000};
     p.nharm = 4;
     p.truncate = "diamond";
@@ -331,7 +331,7 @@ bool HbCore::test() {
     ParserTables tab;
     Circuit dummyCircuit(tab);
 
-    HbCore hb(dummyResolver, p, dummyCircuit, bsjac, sol);
+    HBCore hb(dummyResolver, p, dummyCircuit, bsjac, sol);
 
     if (ok && !hb.buildGrid(s)) {
         ok = false;

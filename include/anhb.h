@@ -15,18 +15,18 @@
 
 namespace NAMESPACE {
 
-class Hb : public Analysis {
+class HB : public Analysis {
 public:
-    typedef HbParameters Parameters;
+    typedef HBParameters Parameters;
     
-    Hb(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
+    HB(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
     
-    Hb           (const Hb&)  = delete;
-    Hb           (      Hb&&) = delete;
-    Hb& operator=(const Hb&)  = delete;
-    Hb& operator=(      Hb&&) = delete;
+    HB           (const HB&)  = delete;
+    HB           (      HB&&) = delete;
+    HB& operator=(const HB&)  = delete;
+    HB& operator=(      HB&&) = delete;
 
-    virtual ~Hb();
+    virtual ~HB();
     
     virtual void dump(std::ostream& os) const;
 
@@ -67,8 +67,8 @@ protected:
 
     
 private:
-    IStruct<HbParameters> params;
-    HbCore core;
+    IStruct<HBParameters> params;
+    HBCore core;
 
     KluBlockSparseRealMatrix jac; // Jacobian
     VectorRepository<double> solution; // Solution history

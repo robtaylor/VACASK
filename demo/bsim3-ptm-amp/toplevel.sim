@@ -109,7 +109,7 @@ control
 
   analysis dcinc1 dcinc 
 
-  analysis dctf1 dctf out=["out"]
+  analysis dcxf1 dcxf out=["out"]
 
   analysis ac1 ac from=1 to=1G mode="dec" points=20
 
@@ -123,7 +123,7 @@ control
 
   elaborate circuit("rrtest")
 
-  analysis actf1 actf out=["out"] from=1 to=1G mode="dec" points=20
+  analysis acxf1 acxf out=["out"] from=1 to=1G mode="dec" points=20
   
 
   postprocess(PYTHON, "postproc.py")
@@ -154,7 +154,7 @@ plot = rawread("dcinc1.raw").get()
 Adiff_dc = plot["out"]/(plot["inp"]-plot["inn"])
 print("DC gain=", Adiff_dc)
 
-plot = rawread("dctf1.raw").get()
+plot = rawread("dcxf1.raw").get()
 print("DC closed loop gain=", plot["tf(vin1)"])
 
 plot = rawread('ac1.raw').get()
@@ -195,7 +195,7 @@ fig1.axes[1].plot(plot["time"]*1e6, plot["out"], marker=".")
 fig1.subplots_adjust()
 
 
-plot = rawread('actf1.raw').get()
+plot = rawread('acxf1.raw').get()
 freq = np.real(plot["frequency"])
 gain = plot["tf(vdif1)"]
 cmrr = gain/plot["tf(vcom1)"]

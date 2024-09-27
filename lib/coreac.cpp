@@ -174,7 +174,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
     // Compute operating point
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
-        setError(AcError::OpError);
+        setError(AcError::OperatingPointError);
         co_yield CoreState::Aborted;
     }
 
@@ -462,7 +462,7 @@ bool AcCore::formatError(Status& s) const {
             acMatrix.formatError(s, &nr);
             s.extend("Solution component is not finite.");
             break;
-        case AcError::OpError:
+        case AcError::OperatingPointError:
             opCore_.formatError(s);
             break;
         case AcError::SingularMatrix:

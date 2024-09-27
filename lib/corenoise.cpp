@@ -263,7 +263,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
     // Compute operating point
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
-        setError(NoiseError::OpError);
+        setError(NoiseError::OperatingPointError);
         co_yield CoreState::Aborted;
     }
 
@@ -699,7 +699,7 @@ bool NoiseCore::formatError(Status& s) const {
             acMatrix.formatError(s, &nr);
             s.extend("Solution component is not finite.");
             break;
-        case NoiseError::OpError:
+        case NoiseError::OperatingPointError:
             opCore_.formatError(s);
             break;
         case NoiseError::SingularMatrix:

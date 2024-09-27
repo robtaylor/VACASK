@@ -84,7 +84,7 @@ public:
         EvalAndLoad, 
         MatrixError, 
         SolutionError, 
-        OpError, 
+        OperatingPointError, 
         SingularMatrix, 
         BadFrequency, 
     };

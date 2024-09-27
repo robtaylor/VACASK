@@ -13,7 +13,7 @@ namespace NAMESPACE {
 //   Steady-state methods for simulating analog and microwave circuits, 
 //   Springer, 1990. 
 
-bool HbCore::buildColocation(Status& s) {
+bool HBCore::buildColocation(Status& s) {
     auto hb_debug = 2;
 
     // Includes DC
@@ -36,14 +36,14 @@ bool HbCore::buildColocation(Status& s) {
     // Build initial sample pool
     auto range = params.nper/fmin;
     timepoints.clear();
-    if (params.sample==HbCore::sampleUniform) {
+    if (params.sample==HBCore::sampleUniform) {
         if (hb_debug>1) {
             Simulator::dbg() << "Generating pool of " << nsam << " uniformly distributed points, tmax=" << range << "\n" ;
         }
         for(decltype(nsam) i=0; i<nsam; i++) {
             timepoints.push_back(i/fmin);
         }
-    } else if (params.sample==HbCore::sampleRandom) {
+    } else if (params.sample==HBCore::sampleRandom) {
         std::mt19937_64 gen;
         gen.seed(1);
         std::uniform_real_distribution dist(0.0, 1.0);

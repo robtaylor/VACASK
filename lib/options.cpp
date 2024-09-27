@@ -109,7 +109,7 @@ SimulatorOptions::SimulatorOptions() {
     op_nsiter = 1; // Number of iterations during which nodesets are applied
 
 
-    smsig_debug = 0; // 1=debug small signal analyses (dcinc, dctf, ac, actf, noise), 
+    smsig_debug = 0; // 1=debug small signal analyses (dcinc, dcxf, ac, acxf, noise), 
                      // >=100 print linear system
     
     tran_debug = 0; // 1 = debug steps, 2 = debug solver

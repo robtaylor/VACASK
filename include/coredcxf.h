@@ -1,5 +1,5 @@
-#ifndef __ANCOREDCTF_DEFINED
-#define __ANCOREDCTF_DEFINED
+#ifndef __ANCOREDCXF_DEFINED
+#define __ANCOREDCXF_DEFINED
 
 #include "status.h"
 #include "circuit.h"
@@ -41,7 +41,7 @@ namespace NAMESPACE {
 //
 // See coreop.h on how to specify nodesets. 
 
-typedef struct DcTfParameters {
+typedef struct DCXFParameters {
     OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
@@ -52,35 +52,35 @@ typedef struct DcTfParameters {
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
 
-    DcTfParameters();
-} DcTfParameters;
+    DCXFParameters();
+} DCXFParameters;
 
 
-class DcTfCore : public AnalysisCore {
+class DCXFCore : public AnalysisCore {
 public:
-    typedef DcTfParameters Parameters;
-    enum class DcTfError {
+    typedef DCXFParameters Parameters;
+    enum class DCXFError {
         OK, 
         NotFound, 
         NotSource, 
         EvalAndLoad, 
         MatrixError, 
         SolutionError, 
-        OpError, 
+        OperatingPointError, 
         SingularMatrix, 
     };
-    DcTfCore(
-        OutputDescriptorResolver& parentResolver, DcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
+    DCXFCore(
+        OutputDescriptorResolver& parentResolver, DCXFParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
         std::vector<Instance*>& sources, Vector<double>& tf, Vector<double>& yin, 
         Vector<double>& zin
     ); 
-    ~DcTfCore();
+    ~DCXFCore();
     
-    DcTfCore           (const DcTfCore&)  = delete;
-    DcTfCore           (      DcTfCore&&) = delete;
-    DcTfCore& operator=(const DcTfCore&)  = delete;
-    DcTfCore& operator=(      DcTfCore&&) = delete;
+    DCXFCore           (const DCXFCore&)  = delete;
+    DCXFCore           (      DCXFCore&&) = delete;
+    DCXFCore& operator=(const DCXFCore&)  = delete;
+    DCXFCore& operator=(      DCXFCore&&) = delete;
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -102,10 +102,10 @@ public:
 
 protected:
     // Clear error
-    void clearError() { AnalysisCore::clearError(); lastDcTfError = DcTfError::OK; }; 
+    void clearError() { AnalysisCore::clearError(); lastDcTfError = DCXFError::OK; }; 
 
-    void setError(DcTfError e) { lastDcTfError = e; lastError = Error::OK; };
-    DcTfError lastDcTfError;
+    void setError(DCXFError e) { lastDcTfError = e; lastError = Error::OK; };
+    DCXFError lastDcTfError;
     Id errorInstance;
     
     KluRealMatrix& jacobian;
@@ -117,7 +117,7 @@ protected:
     Vector<double>& yin;
     Vector<double>& zin;
 
-    DcTfParameters& params;
+    DCXFParameters& params;
 };
 
 }

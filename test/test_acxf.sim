@@ -22,7 +22,7 @@ control
 
   options temp=27
   options rawfile="binary" reltol=1e-14 vntol=1e-12 op_debug=0 smsig_debug=0
-  analysis actf1 actf out="3" from=1 to=10k mode="dec" points=10
+  analysis acxf1 acxf out="3" from=1 to=10k mode="dec" points=10
   
   postprocess(PYTHON, "runme.py")
 endc
@@ -36,36 +36,36 @@ import diocalc
 
 tests = []
 
-actf1 = rawread('actf1.raw').get()
-# print(actf1.names)
+acxf1 = rawread('acxf1.raw').get()
+# print(acxf1.names)
 
 exactv3 = diocalc.dioSolve(1e-12, 2, 27, 1000, 0.8)
 exacti, exactgd = diocalc.dioMod(exactv3, 1e-12, 2, 27)
 
-f = actf1['frequency']
+f = acxf1['frequency']
 omega = 2*np.pi*f
 zdio = 1.0/(exactgd+1j*omega*1e-6)
 
 exacttf2 = zdio/(zdio+1e3)
-tf2 = actf1['tf(v2)']
+tf2 = acxf1['tf(v2)']
 status = (relDiff(tf2, exacttf2, 1e-16) < 1e-3).all()
 tests.append(status)
 print("tf(v2)", status)
 
 exactzinv2 = zdio+1e3
-zinv2 = actf1['zin(v2)']
+zinv2 = acxf1['zin(v2)']
 status = (relDiff(zinv2, exactzinv2, 1e-16) < 1e-3).all()
 tests.append(status)
 print("zin(v2)", status)
 
 exacttf3 = 1e3/(zdio+1e3)
-tf3 = actf1['tf(v3)']
+tf3 = acxf1['tf(v3)']
 status = (relDiff(tf3, exacttf3, 1e-16) < 1e-3).all()
 tests.append(status)
 print("tf(v3)", status)
 
 exactzinv3 = zdio+1e3
-zinv3 = actf1['zin(v3)']
+zinv3 = acxf1['zin(v3)']
 status = (relDiff(zinv3, exactzinv3, 1e-16) < 1e-3).all()
 tests.append(status)
 print("zin(v3)", status)

@@ -2,9 +2,9 @@
 #include "simulator.h"
 #include "anop.h"
 #include "andcinc.h"
-#include "andctf.h"
+#include "andcxf.h"
 #include "anac.h"
-#include "anactf.h"
+#include "anacxf.h"
 #include "antran.h"
 #include "annoise.h" 
 #include "anhb.h" 
@@ -62,13 +62,13 @@ bool Simulator::setup(
 
     bool ok = true;
     ok &= registerAnalysis<OperatingPoint>("op", s);
-    ok &= registerAnalysis<DcIncremental>("dcinc", s);
-    ok &= registerAnalysis<DcTf>("dctf", s);
-    ok &= registerAnalysis<Ac>("ac", s);
-    ok &= registerAnalysis<AcTf>("actf", s);
+    ok &= registerAnalysis<DCIncremental>("dcinc", s);
+    ok &= registerAnalysis<DCXF>("dcxf", s);
+    ok &= registerAnalysis<AC>("ac", s);
+    ok &= registerAnalysis<ACXF>("acxf", s);
     ok &= registerAnalysis<Noise>("noise", s);
     ok &= registerAnalysis<Tran>("tran", s);
-    ok &= registerAnalysis<Tran>("hb", s);
+    ok &= registerAnalysis<HB>("hb", s);
     
     return ok;
 }

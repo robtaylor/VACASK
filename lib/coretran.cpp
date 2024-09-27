@@ -636,7 +636,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         
         // Run op analysis
         if (!opCore_.run(continuePrevious)) {
-            setError(TranError::OpError);
+            setError(TranError::OperatingPointError);
             co_yield CoreState::Aborted;
         }
     } else if (params.icmode==icmodeUic) {
@@ -1476,7 +1476,7 @@ bool TranCore::formatError(Status& s) const {
         case TranError::MatrixError:
             jacobian.formatError(s, &nr);
             break;
-        case TranError::OpError:
+        case TranError::OperatingPointError:
             opCore_.formatError(s);
             break;
         case TranError::UicForces:

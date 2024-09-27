@@ -25,8 +25,8 @@ template<> bool SmallSignal<DCIncrementalCore, DCIncrementalData>::resolveSave(c
 // Dump specialization
 template<> void SmallSignal<DCIncrementalCore, DCIncrementalData>::dump(std::ostream& os) const;
 
-// Typedef DcIncremental
-typedef SmallSignal<DCIncrementalCore, DCIncrementalData> DcIncremental;
+// Typedef DCIncremental
+typedef SmallSignal<DCIncrementalCore, DCIncrementalData> DCIncremental;
 
 }
 

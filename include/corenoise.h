@@ -81,7 +81,7 @@ public:
         PsdError, 
         MatrixError, 
         SolutionError, 
-        OpError, 
+        OperatingPointError, 
         SingularMatrix, 
         BadFrequency, 
     };

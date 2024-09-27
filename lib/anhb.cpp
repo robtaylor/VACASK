@@ -9,28 +9,28 @@
 
 namespace NAMESPACE {
 
-Hb::Hb(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
+HB::HB(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
       core(*this, params.core(), circuit, jac, solution) {
 };
 
-Hb::~Hb() {
+HB::~HB() {
 }
 
-Analysis* Hb::create(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s) {
-    auto* an = new Hb(ptAnalysis.name(), circuit, ptAnalysis);
+Analysis* HB::create(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s) {
+    auto* an = new HB(ptAnalysis.name(), circuit, ptAnalysis);
     return an;
 }
 
-void Hb::clearOutputDescriptors() {
+void HB::clearOutputDescriptors() {
     core.clearOutputDescriptors();
 }
 
-bool Hb::addCommonOutputDescriptor(const OutputDescriptor& desc) {
+bool HB::addCommonOutputDescriptor(const OutputDescriptor& desc) {
     return core.addOutputDescriptor(desc);
 }
 
-bool Hb::addCoreOutputDescriptors(Status& s) {
+bool HB::addCoreOutputDescriptors(Status& s) {
     if (!core.addCoreOutputDescriptors()) {
         core.formatError(s);
         return false;
@@ -38,12 +38,12 @@ bool Hb::addCoreOutputDescriptors(Status& s) {
     return true;
 }
 
-bool Hb::resolveOutputDescriptors(bool strict, Status& s) {
+bool HB::resolveOutputDescriptors(bool strict, Status& s) {
     // Trigger resolving in core analyses
     return core.resolveOutputDescriptors(strict, s);
 }
 
-bool Hb::resolveSave(const PTSave& save, bool verify, Status& s) {
+bool HB::resolveSave(const PTSave& save, bool verify, Status& s) {
     static const auto idDefault = Id("default");
     static const auto idFull = Id("full");
     static const auto idV = Id("v");
@@ -83,56 +83,56 @@ bool Hb::resolveSave(const PTSave& save, bool verify, Status& s) {
     return true;
 }
 
-bool Hb::addDefaultOutputDescriptors() {
+bool HB::addDefaultOutputDescriptors() {
     return core.addDefaultOutputDescriptors();
 }
 
-bool Hb::initializeOutputs(Status& s) {
+bool HB::initializeOutputs(Status& s) {
     return core.initializeOutputs(name_, s);
 }
 
-bool Hb::finalizeOutputs(Status& s) {
+bool HB::finalizeOutputs(Status& s) {
     return core.finalizeOutputs(s);
 }
 
-bool Hb::deleteOutputs(Status& s) {
+bool HB::deleteOutputs(Status& s) {
     return core.deleteOutputs(name_, s);
 }
 
-bool Hb::rebuildCores(Status& s) {
+bool HB::rebuildCores(Status& s) {
     // Jacobian will be built by the core
     return core.rebuild(s);
 }
 
-size_t Hb::analysisStateStorageSize() const { 
+size_t HB::analysisStateStorageSize() const { 
     return core.stateStorageSize();
 }
 
-void Hb::resizeAnalysisStateStorage(size_t n) { 
+void HB::resizeAnalysisStateStorage(size_t n) { 
     core.resizeStateStorage(n);
 }
 
-bool Hb::storeState(size_t ndx) {
+bool HB::storeState(size_t ndx) {
     return core.storeState(ndx);
 }
 
-bool Hb::restoreState(size_t ndx) {
+bool HB::restoreState(size_t ndx) {
     return core.restoreState(ndx);
 }
 
-void Hb::makeStateIncoherent(size_t ndx) {
+void HB::makeStateIncoherent(size_t ndx) {
     core.makeStateIncoherent(ndx);
 }
 
-std::tuple<bool, bool> Hb::preMapping(Status& s) {
+std::tuple<bool, bool> HB::preMapping(Status& s) {
     return core.preMapping(s);
 }
 
-bool Hb::populateStructures(Status& s) {
+bool HB::populateStructures(Status& s) {
     return core.populateStructures(s);
 }
 
-void Hb::dump(std::ostream& os) const {
+void HB::dump(std::ostream& os) const {
     Analysis::dump(os);
     os << "Analysis type: harmonic balance"<< std::endl;
     os << "HB analysis core:" << std::endl;

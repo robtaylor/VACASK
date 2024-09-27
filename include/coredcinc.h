@@ -52,12 +52,12 @@ typedef struct DCIncrementalParameters {
 class DCIncrementalCore : public AnalysisCore {
 public:
     typedef DCIncrementalParameters Parameters;
-    enum class DcIncrError {
+    enum class DCIncrementalError {
         OK, 
         EvalAndLoad, 
         MatrixError, 
         SolutionError, 
-        OpError, 
+        OperatingPointError, 
         SingularMatrix, 
     };
     DCIncrementalCore(
@@ -91,10 +91,10 @@ public:
 
 protected:
     // Clear error
-    void clearError() { AnalysisCore::clearError(); lastDcIncrError = DcIncrError::OK; }; 
+    void clearError() { AnalysisCore::clearError(); lastDcIncrError = DCIncrementalError::OK; }; 
 
-    void setError(DcIncrError e) { lastDcIncrError = e; lastError = Error::OK; };
-    DcIncrError lastDcIncrError;
+    void setError(DCIncrementalError e) { lastDcIncrError = e; lastError = Error::OK; };
+    DCIncrementalError lastDcIncrError;
     double errorFreq;
     Status errorStatus;
 

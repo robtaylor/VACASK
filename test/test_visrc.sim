@@ -28,11 +28,11 @@ control
 
   clear saves
   analysis dcinc1 dcinc
-  analysis dctf1 dctf out="v1:flow(br)"
-  analysis dctf2 dctf out="2"
+  analysis dcxf1 dcxf out="v1:flow(br)"
+  analysis dcxf2 dcxf out="2"
   analysis ac1 ac values=[1k]
-  analysis actf1 actf values=[1k] out="v1:flow(br)"
-  analysis actf2 actf values=[1k] out="2"
+  analysis acxf1 acxf values=[1k] out="v1:flow(br)"
+  analysis acxf2 acxf values=[1k] out="2"
 
   postprocess(PYTHON, "runme.py")
 endc
@@ -107,34 +107,34 @@ print("DCINC V(2)=", v, "exact=", exact, status)
 tests.append(status)
 
 
-dctf1 = rawread('dctf1.raw').get()
+dcxf1 = rawread('dcxf1.raw').get()
 
 # TF from source magnitude to one parallel instance's current
-tf = dctf1["tf(v1)"]
+tf = dcxf1["tf(v1)"]
 exact = -1/2e3/3 
 status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
 print("DCTF tf(v1)=", tf, "exact=", exact, status)
 tests.append(status)
 
 # Input impedance at terminals of the source
-zin = dctf1["zin(v1)"]
+zin = dcxf1["zin(v1)"]
 exact = 2e3 
 status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
 print("DCTF zin(v1)=", zin, "exact=", exact, status)
 tests.append(status)
 
 
-dctf2 = rawread('dctf2.raw').get()
+dcxf2 = rawread('dcxf2.raw').get()
 
 # TF from source magnitude to nodal voltage at node 2
-tf = dctf2["tf(i1)"]
+tf = dcxf2["tf(i1)"]
 exact = 1*2e3*3 
 status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
 print("DCTF tf(i1)=", tf, "exact=", exact, status)
 tests.append(status)
 
 # Input impedance at terminals of the source
-zin = dctf2["zin(i1)"]
+zin = dcxf2["zin(i1)"]
 exact = 1*2e3 
 status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
 print("DCTF zin(i1)=", zin, "exact=", exact, status)
@@ -156,34 +156,34 @@ print("AC V(2)=", v, "exact=", exact, status)
 tests.append(status)
 
 
-actf1 = rawread('actf1.raw').get()
+acxf1 = rawread('acxf1.raw').get()
 
 # TF from source magnitude to one parallel instance's current
-tf = actf1["tf(v1)"]
+tf = acxf1["tf(v1)"]
 exact = -1/2e3/3 
 status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
 print("ACTF tf(v1)=", tf, "exact=", exact, status)
 tests.append(status)
 
 # Input impedance at terminals of the source
-zin = actf1["zin(v1)"]
+zin = acxf1["zin(v1)"]
 exact = 2e3 
 status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
 print("ACTF zin(v1)=", zin, "exact=", exact, status)
 tests.append(status)
 
 
-actf2 = rawread('actf2.raw').get()
+acxf2 = rawread('acxf2.raw').get()
 
 # TF from source magnitude to nodal voltage at node 2
-tf = actf2["tf(i1)"]
+tf = acxf2["tf(i1)"]
 exact = 1*2e3*3 
 status = (relDiff(tf, exact, 1e-12) < 1e-3).all()
 print("ACTF tf(i1)=", tf, "exact=", exact, status)
 tests.append(status)
 
 # Input impedance at terminals of the source
-zin = actf2["zin(i1)"]
+zin = acxf2["zin(i1)"]
 exact = 1*2e3 
 status = (relDiff(zin, exact, 1e-12) < 1e-3).all()
 print("ACTF zin(i1)=", zin, "exact=", exact, status)

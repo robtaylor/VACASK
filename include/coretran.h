@@ -72,7 +72,7 @@ public:
         Corrector, 
         EvalAndLoad, 
         MatrixError, 
-        OpError, 
+        OperatingPointError, 
         UicForces, 
         TimestepTooSmall, 
         BadLteReference, 

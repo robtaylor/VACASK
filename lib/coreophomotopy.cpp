@@ -66,7 +66,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
         circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
-            setError(OpError::SteppingSolver);
+            setError(OperatingPointError::SteppingSolver);
             errorRunType = runType;
             errorHomotopyIterations = itCount;
         }
@@ -170,7 +170,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
             // Try with original gmin, but this time with continuation
             converged = runSolver(continuation);
             if (!converged) {
-                setError(OpError::SteppingSolver);
+                setError(OperatingPointError::SteppingSolver);
                 errorRunType = runType;
                 errorHomotopyIterations = itCount;
             }
@@ -183,7 +183,7 @@ bool OperatingPointCore::gminStepping(RunType type) {
             }
         } else {
             // Failed 
-            setError(OpError::SteppingSteps);
+            setError(OperatingPointError::SteppingSteps);
             errorRunType = type;
             errorHomotopyIterations = itCount;
         }
@@ -240,7 +240,7 @@ bool OperatingPointCore::spice3GminStepping() {
         circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
-            setError(OpError::SteppingSolver);
+            setError(OperatingPointError::SteppingSolver);
             errorRunType = runType;
             errorHomotopyIterations = itCount;
         }
@@ -272,7 +272,7 @@ bool OperatingPointCore::spice3GminStepping() {
             // Try with original gmin, but this time with continuation
             converged = runSolver(continuation);
             if (!converged) {
-                setError(OpError::SteppingSolver);
+                setError(OperatingPointError::SteppingSolver);
                 errorRunType = runType;
                 errorHomotopyIterations = itCount;
             }
@@ -285,7 +285,7 @@ bool OperatingPointCore::spice3GminStepping() {
             }
         } else {
             // Failed
-            setError(OpError::SteppingSteps);
+            setError(OperatingPointError::SteppingSteps);
             errorRunType = RunType::Spice3GminStepping;
             errorHomotopyIterations = itCount;
         }
@@ -319,7 +319,7 @@ bool OperatingPointCore::sourceStepping() {
     // Try solving without gmin stepping at source scale factor = 0.0
     converged = runSolver(continuation);
     if (!converged) {
-        setError(OpError::SteppingSolver);
+        setError(OperatingPointError::SteppingSolver);
         errorRunType = runType;
         errorHomotopyIterations = itCount;
     }
@@ -386,7 +386,7 @@ bool OperatingPointCore::sourceStepping() {
             circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
             converged = runSolver(continuation);
             if (!converged) {
-                setError(OpError::SteppingSolver);
+                setError(OperatingPointError::SteppingSolver);
                 errorRunType = runType;
                 errorHomotopyIterations = itCount;
             }
@@ -453,7 +453,7 @@ bool OperatingPointCore::sourceStepping() {
     if (!leave) {
         if (itCount>=srcsteps) {
             // Failed
-            setError(OpError::SteppingSteps);
+            setError(OperatingPointError::SteppingSteps);
             errorRunType = RunType::SourceStepping;
             errorHomotopyIterations = itCount;
         }
@@ -500,7 +500,7 @@ bool OperatingPointCore::spice3SourceStepping() {
         circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
         converged = runSolver(continuation);
         if (!converged) {
-            setError(OpError::SteppingSolver);
+            setError(OperatingPointError::SteppingSolver);
             errorRunType = runType;
             errorHomotopyIterations = itCount;
         }
@@ -523,7 +523,7 @@ bool OperatingPointCore::spice3SourceStepping() {
     if (!leave) {
         if (itCount>srcsteps) {
             // Failed
-            setError(OpError::SteppingSteps);
+            setError(OperatingPointError::SteppingSteps);
             errorRunType = RunType::Spice3SourceStepping;
             errorHomotopyIterations = itCount;
 }

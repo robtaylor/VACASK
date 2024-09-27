@@ -33,7 +33,7 @@ namespace NAMESPACE {
 // frequencies as in the book. If trigonometric functions have a decent 
 // implementation this should not be neccessary. 
 
-bool HbCore::buildTransformMatrix(DenseMatrix<double>& XF, Status& s) {
+bool HBCore::buildTransformMatrix(DenseMatrix<double>& XF, Status& s) {
     auto n = timepoints.size();
     auto m = freq.size();
     auto ncoef = 2*m-1;
@@ -78,7 +78,7 @@ bool HbCore::buildTransformMatrix(DenseMatrix<double>& XF, Status& s) {
     return true;
 }
 
-bool HbCore::buildAPFT(Status& s) {
+bool HBCore::buildAPFT(Status& s) {
     auto n = timepoints.size();
     auto m = freq.size();
     auto ncoef = 2*m-1;

@@ -12,7 +12,7 @@ namespace NAMESPACE {
 //   Steady-state methods for simulating analog and microwave circuits, 
 //   Springer, 1990. 
 
-bool HbCore::buildGrid(Status& s) {
+bool HBCore::buildGrid(Status& s) {
     auto n = params.freq.size();
 
     Int hb_debug = 2;
@@ -69,7 +69,7 @@ bool HbCore::buildGrid(Status& s) {
     }
 
     // Build grid
-    if (params.truncate==HbCore::truncateRaw) {
+    if (params.truncate==HBCore::truncateRaw) {
         // Raw
         // Check imorder
         if (params.imorder.size()!=0 && params.imorder.size()!=n) {
@@ -101,7 +101,7 @@ bool HbCore::buildGrid(Status& s) {
                 .isHarmonic = false, 
             });
         }
-    } else if (params.truncate==HbCore::truncateBox || params.truncate==HbCore::truncateDiamond) {
+    } else if (params.truncate==HBCore::truncateBox || params.truncate==HBCore::truncateDiamond) {
         // Box and diamond
         grid.resize(0, n); // Empty table
         std::vector<Int> cnt(n);
@@ -149,7 +149,7 @@ bool HbCore::buildGrid(Status& s) {
             // Not optimal for diamond truncation because we traverse the whole box and 
             // leave out frequencies with order above imax. 
             // But then again, HB spends a lot more time solving the problem. 
-            if (!(params.truncate==HbCore::truncateDiamond && order>immax)) {
+            if (!(params.truncate==HBCore::truncateDiamond && order>immax)) {
                 // Construct component
                 auto row = grid.addRow();
                 for(decltype(n) i=0; i<n; i++) {

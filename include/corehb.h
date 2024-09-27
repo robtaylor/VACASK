@@ -12,7 +12,7 @@
 
 namespace NAMESPACE {
 
-typedef struct HbParameters {
+typedef struct HBParameters {
     RealVector freq {};   // Fundamental frequencies (f1, f2, ..., fd) 
     Value nharm {4};      // Number of harmonics for each fundamental frequency 
                           // (H1, H2, ..., Hd) in box truncation
@@ -36,29 +36,29 @@ typedef struct HbParameters {
     Int writeOutput {1};  // Do we want to write the results to a file
                           // Not exposed as analysis parameter. 
                              
-    HbParameters();
-} HbParameters;
+    HBParameters();
+} HBParameters;
 
 
-class HbCore : public AnalysisCore {
+class HBCore : public AnalysisCore {
 public:
-    typedef HbParameters Parameters;
-    enum class HbError {
+    typedef HBParameters Parameters;
+    enum class HBError {
         OK, 
         MatrixError, 
         SolverError, 
     };
 
-    HbCore(
-        OutputDescriptorResolver& parentResolver, HbParameters& params, Circuit& circuit, 
+    HBCore(
+        OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
         KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
     );
-    ~HbCore();
+    ~HBCore();
     
-    HbCore           (const HbCore&)  = delete;
-    HbCore           (      HbCore&&) = delete;
-    HbCore& operator=(const HbCore&)  = delete;
-    HbCore& operator=(      HbCore&&) = delete;
+    HBCore           (const HBCore&)  = delete;
+    HBCore           (      HBCore&&) = delete;
+    HBCore& operator=(const HBCore&)  = delete;
+    HBCore& operator=(      HBCore&&) = delete;
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -92,13 +92,13 @@ public:
 
 protected:
     // Clear error
-    void clearError() { AnalysisCore::clearError(); lastHbError = HbError::OK; }; 
+    void clearError() { AnalysisCore::clearError(); lastHbError = HBError::OK; }; 
 
-    void setError(HbError e) { lastHbError = e; lastError = Error::OK; };
+    void setError(HBError e) { lastHbError = e; lastError = Error::OK; };
     
     bool buildTransformMatrix(DenseMatrix<double>& XF, Status& s=Status::ignore);
 
-    HbError lastHbError;
+    HBError lastHbError;
 
     KluBlockSparseRealMatrix& bsjac; // Jacobian
     VectorRepository<double>& solution; // Solution history
@@ -120,10 +120,10 @@ private:
     VectorRepository<Complex> outputPhasors;
     Complex outputFreq;
 
-    HbParameters oldParams;
+    HBParameters oldParams;
     bool firstBuild;
 
-    HbParameters& params;
+    HBParameters& params;
     Vector<double> spectrum;
     std::vector<SpecFreq> freq;
     DenseMatrix<int> grid;

@@ -1,5 +1,5 @@
-#ifndef __ANCOREACTF_DEFINED
-#define __ANCOREACTF_DEFINED
+#ifndef __ANCOREACXF_DEFINED
+#define __ANCOREACXF_DEFINED
 
 #include "status.h"
 #include "circuit.h"
@@ -43,7 +43,7 @@ namespace NAMESPACE {
 // 
 // See coreop.h on how to specify nodesets. 
 
-typedef struct AcTfParameters {
+typedef struct ACXFParameters {
     OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
@@ -60,14 +60,14 @@ typedef struct AcTfParameters {
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
 
-    AcTfParameters();
-} AcTfParameters;
+    ACXFParameters();
+} ACXFParameters;
 
 
-class AcTfCore : public AnalysisCore {
+class ACXFCore : public AnalysisCore {
 public:
-    typedef AcTfParameters Parameters;
-    enum class AcTfError {
+    typedef ACXFParameters Parameters;
+    enum class ACXFError {
         OK, 
         NotFound, 
         NotSource, 
@@ -76,24 +76,24 @@ public:
         EvalAndLoad, 
         MatrixError, 
         SolutionError, 
-        OpError, 
+        OperatingPointError, 
         SingularMatrix, 
         BadFrequency, 
     };
     
-    AcTfCore(
-        OutputDescriptorResolver& parentResolver, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
+    ACXFCore(
+        OutputDescriptorResolver& parentResolver, ACXFParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
         std::vector<Instance*>& sources, Vector<Complex>& tf, Vector<Complex>& yin, Vector<Complex>& zin
     ); 
-    ~AcTfCore();
+    ~ACXFCore();
     
-    AcTfCore           (const AcTfCore&)  = delete;
-    AcTfCore           (      AcTfCore&&) = delete;
-    AcTfCore& operator=(const AcTfCore&)  = delete;
-    AcTfCore& operator=(      AcTfCore&&) = delete;
+    ACXFCore           (const ACXFCore&)  = delete;
+    ACXFCore           (      ACXFCore&&) = delete;
+    ACXFCore& operator=(const ACXFCore&)  = delete;
+    ACXFCore& operator=(      ACXFCore&&) = delete;
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -116,10 +116,10 @@ public:
 
 protected:
     // Clear error
-    void clearError() { AnalysisCore::clearError(); lastAcTfError = AcTfError::OK; }; 
+    void clearError() { AnalysisCore::clearError(); lastAcTfError = ACXFError::OK; }; 
 
-    void setError(AcTfError e) { lastAcTfError = e; lastError = Error::OK; };
-    AcTfError lastAcTfError;
+    void setError(ACXFError e) { lastAcTfError = e; lastError = Error::OK; };
+    ACXFError lastAcTfError;
     double errorFreq;
     Status errorStatus;
     Id errorInstance;
@@ -136,7 +136,7 @@ protected:
     Vector<Complex>& yin;
     Vector<Complex>& zin;
 
-    AcTfParameters& params;
+    ACXFParameters& params;
 
     double frequency;
 };

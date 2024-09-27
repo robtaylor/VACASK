@@ -127,7 +127,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
-        setError(DcIncrError::OpError);
+        setError(DCIncrementalError::OperatingPointError);
         co_yield CoreState::Aborted;
     }
 
@@ -150,7 +150,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     auto filter = [](Device* device) { return device->checkFlags(Device::Flags::GeneratesDCIncremental); };
     if (!circuit.evalAndLoad(nullptr, &lsRhs, filter)) {
         // Load error
-        setError(DcIncrError::EvalAndLoad);
+        setError(DCIncrementalError::EvalAndLoad);
         if (debug>0) {
             Simulator::dbg() << "Error in DC incremental excitation load.\n";
         }
@@ -173,7 +173,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
 
     // Solve 
     if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
-        setError(DcIncrError::MatrixError);
+        setError(DCIncrementalError::MatrixError);
         co_yield CoreState::Aborted;
     }
 
@@ -181,7 +181,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     incrementalSolution[0] = 0.0;
 
     if (options.solutioncheck && !jacobian.isFinite(dataWithoutBucket(incrementalSolution), true, true)) {
-        setError(DcIncrError::SolutionError);
+        setError(DCIncrementalError::SolutionError);
         if (options.smsig_debug) {
             Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
         }
@@ -227,17 +227,17 @@ bool DCIncrementalCore::formatError(Status& s) const {
     
     // Then handle DCIncrementalCore errors
     switch (lastDcIncrError) {
-        case DcIncrError::EvalAndLoad:
+        case DCIncrementalError::EvalAndLoad:
             s.set(Status::Analysis, "Jacobian evaluation failed.");
             break;
-        case DcIncrError::MatrixError:
+        case DCIncrementalError::MatrixError:
             jacobian.formatError(s, &nr);
             break;
-        case DcIncrError::SolutionError:
+        case DCIncrementalError::SolutionError:
             jacobian.formatError(s, &nr);
             s.extend("Solution component is not finite.");
             break;
-        case DcIncrError::OpError:
+        case DCIncrementalError::OperatingPointError:
             opCore_.formatError(s);
             break;
         default:

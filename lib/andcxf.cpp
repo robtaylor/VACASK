@@ -1,17 +1,17 @@
-#include "andctf.h"
+#include "andcxf.h"
 #include "common.h"
 
 
 namespace NAMESPACE {
 
-template<> SmallSignal<DcTfCore, DcTfData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
+template<> SmallSignal<DCXFCore, DCXFData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
       opCore(*this, params.core().opParams, circuit, jac, solution, states), 
       smsigCore(*this, params.core(), opCore, sourceIndex, circuit, jac, incrementalSolution, sources, tf, yin, zin) {
 }
 
-template<> bool SmallSignal<DcTfCore, DcTfData>::resolveSave(const PTSave& save, bool verify, Status& s) {
-    // DcTf saves
+template<> bool SmallSignal<DCXFCore, DCXFData>::resolveSave(const PTSave& save, bool verify, Status& s) {
+    // DCXF saves
     static const auto idDefault = Id("default");
     static const auto idTf  = Id("tf");
     static const auto idZin = Id("zin");
@@ -53,7 +53,7 @@ template<> bool SmallSignal<DcTfCore, DcTfData>::resolveSave(const PTSave& save,
     return true;
 }
 
-template<> void SmallSignal<DcTfCore, DcTfData>::dump(std::ostream& os) const {
+template<> void SmallSignal<DCXFCore, DCXFData>::dump(std::ostream& os) const {
     Analysis::dump(os);
     os << "Analysis type: DC TF"<< std::endl;
     os << "OP analysis core:" << std::endl;

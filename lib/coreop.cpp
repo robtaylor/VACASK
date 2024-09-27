@@ -421,7 +421,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
         tried = true;
         converged_ = runSolver(continuePrevious);
         if (!converged_) {
-            setError(OpError::InitialOp);
+            setError(OperatingPointError::InitialOp);
         }
         leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
         if (debug>0) {
@@ -492,7 +492,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
         // Did not leave early
         if (!tried) {
             // No algorithm tried
-            setError(OpError::NoAlgorithm);
+            setError(OperatingPointError::NoAlgorithm);
         } else if (converged_) {
             // Tried and converged, write results
             if (outfile && params.writeOutput) {
@@ -543,12 +543,12 @@ bool OperatingPointCore::formatError(Status& s) const {
     
     // Then handle OperatingPointCore errors
     switch (lastOpError) {
-        case OpError::InitialOp:
+        case OperatingPointError::InitialOp:
             s.extend("Initial OP analysis failed.");
             return false;
-        case OpError::SteppingSolver:
-        case OpError::SteppingSteps:
-            if (lastOpError==OpError::SteppingSteps) {
+        case OperatingPointError::SteppingSolver:
+        case OperatingPointError::SteppingSteps:
+            if (lastOpError==OperatingPointError::SteppingSteps) {
                 s.set(Status::Analysis, "Homotopy reached step limit.");
             }
             switch (errorRunType) {
@@ -578,7 +578,7 @@ bool OperatingPointCore::formatError(Status& s) const {
                     break;
             }
             return false;
-        case OpError::NoAlgorithm:
+        case OperatingPointError::NoAlgorithm:
             s.set(Status::Analysis, "No operating point algorithm tried."); 
             return false;
     }

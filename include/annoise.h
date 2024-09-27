@@ -31,7 +31,7 @@ template<> bool SmallSignal<NoiseCore, NoiseData>::resolveSave(const PTSave& sav
 // Dump specialization
 template<> void SmallSignal<NoiseCore, NoiseData>::dump(std::ostream& os) const;
 
-// Typedef Ac
+// Typedef AC
 typedef SmallSignal<NoiseCore, NoiseData> Noise;
 
 }

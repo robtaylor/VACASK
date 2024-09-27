@@ -1,18 +1,18 @@
 #include <iomanip>
 #include <cmath>
 #include <filesystem>
-#include "coredctf.h"
+#include "coredcxf.h"
 #include "simulator.h"
 #include "common.h"
 
 namespace NAMESPACE {
 
 // Default parameters
-DcTfParameters::DcTfParameters() {
+DCXFParameters::DCXFParameters() {
     opParams.writeOutput = 0;
 }
 
-template<> int Introspection<DcTfParameters>::setup() {
+template<> int Introspection<DCXFParameters>::setup() {
     registerMember(out);
     registerMember(dumpop);
     registerNamedMember(opParams.nodeset, "nodeset");
@@ -20,11 +20,11 @@ template<> int Introspection<DcTfParameters>::setup() {
     
     return 0;
 }
-instantiateIntrospection(DcTfParameters);
+instantiateIntrospection(DCXFParameters);
 
 
-DcTfCore::DcTfCore(
-    OutputDescriptorResolver& parentResolver, DcTfParameters& params, OperatingPointCore& opCore, 
+DCXFCore::DCXFCore(
+    OutputDescriptorResolver& parentResolver, DCXFParameters& params, OperatingPointCore& opCore, 
     std::unordered_map<Id,size_t>& sourceIndex, Circuit& circuit, 
     KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
     std::vector<Instance*>& sources, Vector<double>& tf, 
@@ -40,11 +40,11 @@ DcTfCore::DcTfCore(
     elsSystem.acAnalysis = true;
 }
 
-DcTfCore::~DcTfCore() {
+DCXFCore::~DCXFCore() {
     delete outfile;
 }
 
-bool DcTfCore::resolveOutputDescriptors(bool strict) {
+bool DCXFCore::resolveOutputDescriptors(bool strict) {
     clearError();
     // Clear output sources
     outputSources.clear();
@@ -69,7 +69,7 @@ bool DcTfCore::resolveOutputDescriptors(bool strict) {
                 sources[ndx] = inst;
                 if (strict) {
                     if (!inst) {
-                        setError(DcTfError::NotFound);
+                        setError(DCXFError::NotFound);
                         errorInstance = name;
                         ok = false;
                         break;
@@ -77,7 +77,7 @@ bool DcTfCore::resolveOutputDescriptors(bool strict) {
                 }
                 // Instance found, but is not a source... this is always an error
                 if (inst && !inst->model()->device()->isSource()) {
-                    setError(DcTfError::NotSource);
+                    setError(DCXFError::NotSource);
                     errorInstance = name;
                     ok = false;
                     break;
@@ -112,7 +112,7 @@ bool DcTfCore::resolveOutputDescriptors(bool strict) {
     return ok;
 }
 
-bool DcTfCore::addDefaultOutputDescriptors() {
+bool DCXFCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -123,7 +123,7 @@ bool DcTfCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool DcTfCore::initializeOutputs(Id name, Status& s) {
+bool DCXFCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -138,14 +138,14 @@ bool DcTfCore::initializeOutputs(Id name, Status& s) {
     return true;
 }
 
-bool DcTfCore::finalizeOutputs(Status& s) {
+bool DCXFCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool DcTfCore::deleteOutputs(Id name, Status& s) {
+bool DCXFCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }
@@ -158,13 +158,13 @@ bool DcTfCore::deleteOutputs(Id name, Status& s) {
     return true;
 }
     
-bool DcTfCore::rebuild(Status& s) {
+bool DCXFCore::rebuild(Status& s) {
     return true;
 }
 
 // System of equations is 
 //   G(x) dx  = dJ
-CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
+CoreCoroutine DCXFCore::coroutine(bool continuePrevious) {
     initProgress(1, 0);
 
     jacobian.setAccounting(circuit.tables().accounting());
@@ -185,7 +185,7 @@ CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
     // Compute operating point
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
-        setError(DcTfError::OpError);
+        setError(DCXFError::OperatingPointError);
         co_yield CoreState::Aborted;
     }
 
@@ -235,7 +235,7 @@ CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
 
         // Solve
         if (!jacobian.solve(dataWithoutBucket(incrementalSolution))) {
-            setError(DcTfError::MatrixError);
+            setError(DCXFError::MatrixError);
             error = true;
             break;
         }
@@ -244,7 +244,7 @@ CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
         rhsVec[0] = 0.0;
 
         if (options.solutioncheck && !jacobian.isFinite(dataWithoutBucket(incrementalSolution), true, true)) {
-            setError(DcTfError::SolutionError);
+            setError(DCXFError::SolutionError);
             if (options.smsig_debug) {
                 Simulator::dbg() << "A solution entry is not finite. Solver failed.\n";
             }
@@ -293,7 +293,7 @@ CoreCoroutine DcTfCore::coroutine(bool continuePrevious) {
     co_yield CoreState::Finished;
 }
 
-bool DcTfCore::run(bool continuePrevious) {
+bool DCXFCore::run(bool continuePrevious) {
     auto c = coroutine(continuePrevious);
     bool ok = true;
     while (!c.done()) {
@@ -305,7 +305,7 @@ bool DcTfCore::run(bool continuePrevious) {
     return ok;
 }
 
-bool DcTfCore::formatError(Status& s) const {
+bool DCXFCore::formatError(Status& s) const {
     auto nr = UnknownNameResolver(circuit);
     std::stringstream ss;
     ss << std::scientific << std::setprecision(4);
@@ -316,25 +316,25 @@ bool DcTfCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle DcTfCore errors
+    // Then handle DCXFCore errors
     switch (lastDcTfError) {
-        case DcTfError::NotFound:
+        case DCXFError::NotFound:
             s.set(Status::Analysis, std::string("Source '")+std::string(errorInstance)+"' not found.");
             break;
-        case DcTfError::NotSource:
+        case DCXFError::NotSource:
             s.set(Status::Analysis, std::string("Instance '")+std::string(errorInstance)+"' is not a source.");
             break;
-        case DcTfError::EvalAndLoad:
+        case DCXFError::EvalAndLoad:
             s.set(Status::Analysis, "Jacobian evaluation failed.");
             break;
-        case DcTfError::MatrixError:
+        case DCXFError::MatrixError:
             jacobian.formatError(s, &nr);
             break;
-        case DcTfError::SolutionError:
+        case DCXFError::SolutionError:
             jacobian.formatError(s, &nr);
             s.extend("Solution component is not finite.");
             break;
-        case DcTfError::OpError:
+        case DCXFError::OperatingPointError:
             opCore_.formatError(s);
             break;
         default:
@@ -344,7 +344,7 @@ bool DcTfCore::formatError(Status& s) const {
     return false;
 }
 
-void DcTfCore::dump(std::ostream& os) const {
+void DCXFCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     os << "  Results" << std::endl;
     auto nSrc = sources.size();

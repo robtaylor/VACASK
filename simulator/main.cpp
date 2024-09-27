@@ -33,7 +33,7 @@ char helpText[] =
 int main(int argc, char**argv) {
     // IntegratorCoeffs::test();
     // DenseMatrix<double>::test();
-    // HbCore::test();
+    // HBCore::test();
     // return 0;
 
     Status status;

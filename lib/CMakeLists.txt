@@ -52,9 +52,9 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreop.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreopnr.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coredcinc.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/coredctf.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/coredcxf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreac.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreactf.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreacxf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/corenoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretrancoef.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coretrannr.h 
@@ -67,9 +67,9 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/answeep.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anop.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/andcinc.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/andctf.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/andcxf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anac.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/anactf.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/anacxf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/annoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/antran.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anhb.h 
@@ -122,9 +122,9 @@ add_library(simlib STATIC
     coreopnr.cpp 
     coreophomotopy.cpp 
     coredcinc.cpp 
-    coredctf.cpp 
+    coredcxf.cpp 
     coreac.cpp 
-    coreactf.cpp 
+    coreacxf.cpp 
     corenoise.cpp
     coretrancoef.cpp 
     coretrannr.cpp 
@@ -140,9 +140,9 @@ add_library(simlib STATIC
     answeep.cpp
     anop.cpp
     andcinc.cpp 
-    andctf.cpp 
+    andcxf.cpp 
     anac.cpp 
-    anactf.cpp 
+    anacxf.cpp 
     annoise.cpp 
     antran.cpp 
     anhb.cpp
