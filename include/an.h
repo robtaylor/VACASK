@@ -21,7 +21,7 @@ enum class AnalysisState { Uninitilized=0, Aborted, Stopped, Finished, SweepPoin
 typedef Generator<AnalysisState> AnalysisCoroutine;
 
 // Generic analysis
-class Analysis {
+class Analysis : public OutputDescriptorResolver {
 public:
     typedef Analysis* (*AnalysisFactory)(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s);
 
@@ -36,10 +36,11 @@ public:
     Id name() const { return name_; };
     IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
 
+    // Inherited from OutputDescriptorResolver, overide it
     // Converts an output descriptor to output source and stores it in the given output sources list
     // This handles output descriptors that are not specific for an analysis core, 
     // i.e. it is called by a core when resolving a descriptor is delegated to the analysis
-    bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict);
+    virtual bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict);
 
     // Sweep API
     size_t sweepCount() const { return ptAnalysis.sweeps().data().size(); };

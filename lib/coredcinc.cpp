@@ -8,24 +8,24 @@
 namespace NAMESPACE {
 
 // Default parameters
-DcIncrParameters::DcIncrParameters() {
+DCIncrementalParameters::DCIncrementalParameters() {
     opParams.writeOutput = 0; 
 }
 
-template<> int Introspection<DcIncrParameters>::setup() {
+template<> int Introspection<DCIncrementalParameters>::setup() {
     registerMember(dumpop);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerNamedMember(opParams.store, "store");
 
     return 0;
 }
-instantiateIntrospection(DcIncrParameters);
+instantiateIntrospection(DCIncrementalParameters);
 
 
-DcIncrementalCore::DcIncrementalCore(
-    Analysis& analysis, DcIncrParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+DCIncrementalCore::DCIncrementalCore(
+    OutputDescriptorResolver& parentResolver, DCIncrementalParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
     KluRealMatrix& jacobian, Vector<double>& incrementalSolution
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), incrementalSolution(incrementalSolution) {
 
     // Set analysis type for the initial operating point analysis
@@ -35,13 +35,11 @@ DcIncrementalCore::DcIncrementalCore(
     elsSystem.acAnalysis = true;
 }
 
-DcIncrementalCore::~DcIncrementalCore() {
+DCIncrementalCore::~DCIncrementalCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
-bool DcIncrementalCore::resolveOutputDescriptors(bool strict) {
+bool DCIncrementalCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
     // Resolve output descriptors
@@ -55,7 +53,7 @@ bool DcIncrementalCore::resolveOutputDescriptors(bool strict) {
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -65,7 +63,7 @@ bool DcIncrementalCore::resolveOutputDescriptors(bool strict) {
     return ok;
 }
 
-bool DcIncrementalCore::addDefaultOutputDescriptors() {
+bool DCIncrementalCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -76,7 +74,7 @@ bool DcIncrementalCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool DcIncrementalCore::initializeOutputs(Id name) {
+bool DCIncrementalCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -91,14 +89,14 @@ bool DcIncrementalCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool DcIncrementalCore::finalizeOutputs() {
+bool DCIncrementalCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool DcIncrementalCore::deleteOutputs(Id name) {
+bool DCIncrementalCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }
@@ -111,13 +109,13 @@ bool DcIncrementalCore::deleteOutputs(Id name) {
     return true;
 }
     
-bool DcIncrementalCore::rebuild(Status& s) {
+bool DCIncrementalCore::rebuild(Status& s) {
     return true;
 }
 
 // System of equations is 
 //   G(x) dx = dJ
-CoreCoroutine DcIncrementalCore::coroutine(bool continuePrevious) {
+CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     initProgress(1, 0);
 
     jacobian.setAccounting(circuit.tables().accounting());
@@ -204,7 +202,7 @@ CoreCoroutine DcIncrementalCore::coroutine(bool continuePrevious) {
     co_yield CoreState::Finished;
 }
 
-bool DcIncrementalCore::run(bool continuePrevious) {
+bool DCIncrementalCore::run(bool continuePrevious) {
     auto c = coroutine(continuePrevious);
     bool ok = true;
     while (!c.done()) {
@@ -216,7 +214,7 @@ bool DcIncrementalCore::run(bool continuePrevious) {
     return ok;
 }
 
-bool DcIncrementalCore::formatError(Status& s) const {
+bool DCIncrementalCore::formatError(Status& s) const {
     auto nr = UnknownNameResolver(circuit);
     std::stringstream ss;
     ss << std::scientific << std::setprecision(4);
@@ -227,7 +225,7 @@ bool DcIncrementalCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle DcIncrementalCore errors
+    // Then handle DCIncrementalCore errors
     switch (lastDcIncrError) {
         case DcIncrError::EvalAndLoad:
             s.set(Status::Analysis, "Jacobian evaluation failed.");
@@ -249,7 +247,7 @@ bool DcIncrementalCore::formatError(Status& s) const {
     return false;
 }
 
-void DcIncrementalCore::dump(std::ostream& os) const {
+void DCIncrementalCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     os << "  Results" << std::endl;
     circuit.dumpSolution(os, incrementalSolution.data(), "    ");

@@ -80,6 +80,7 @@ typedef struct SimulatorOptions  {
     Int tran_spicelte;
     Real tran_xmu;
     Int tran_trapltefilter;
+    Int hb_debug;
     Id rawfile;
     Int strictoutput;
     Int strictsave;

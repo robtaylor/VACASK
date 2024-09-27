@@ -38,7 +38,7 @@ namespace NAMESPACE {
 // Initial conditions are specified with the same format as nodesets. 
 
 typedef struct TranParameters {
-    OpParameters opParams;
+    OperatingPointParameters opParams;
     Real step {0.0};      // Initial timestep
     Real stop {0.0};      // Time up to which the circuit is to be simulated
     Real start {0.0};     // Time at which the results start being recorded
@@ -80,7 +80,7 @@ public:
     };
     
     TranCore(
-        Analysis& analysis, TranParameters& params, OperatingPointCore& opCore, 
+        OutputDescriptorResolver& parentResolver, TranParameters& params, OperatingPointCore& opCore, 
         Circuit& circuit, 
         KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
     ); 
@@ -102,12 +102,12 @@ public:
     bool populateStructures(Status& s=Status::ignore);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     void install(ProgressReporter* p);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 

@@ -24,12 +24,12 @@ instantiateIntrospection(DcTfParameters);
 
 
 DcTfCore::DcTfCore(
-    Analysis& analysis, DcTfParameters& params, OperatingPointCore& opCore, 
+    OutputDescriptorResolver& parentResolver, DcTfParameters& params, OperatingPointCore& opCore, 
     std::unordered_map<Id,size_t>& sourceIndex, Circuit& circuit, 
     KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
     std::vector<Instance*>& sources, Vector<double>& tf, 
     Vector<double>& yin, Vector<double>& zin
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
     jacobian(jacobian), incrementalSolution(incrementalSolution), 
     sources(sources), tf(tf), yin(yin), zin(zin) {
     
@@ -44,8 +44,6 @@ DcTfCore::~DcTfCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
 bool DcTfCore::resolveOutputDescriptors(bool strict) {
     clearError();
     // Clear output sources
@@ -105,7 +103,7 @@ bool DcTfCore::resolveOutputDescriptors(bool strict) {
             break; 
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -125,7 +123,7 @@ bool DcTfCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool DcTfCore::initializeOutputs(Id name) {
+bool DcTfCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -140,14 +138,14 @@ bool DcTfCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool DcTfCore::finalizeOutputs() {
+bool DcTfCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool DcTfCore::deleteOutputs(Id name) {
+bool DcTfCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }

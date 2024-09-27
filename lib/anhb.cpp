@@ -1,5 +1,5 @@
 #include <cmath>
-#include "anop.h"
+#include "anhb.h"
 #include "introspection.h"
 #include "devbase.h"
 #include <iomanip>
@@ -9,28 +9,28 @@
 
 namespace NAMESPACE {
 
-OperatingPoint::OperatingPoint(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
+Hb::Hb(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      core(*this, params.core(), circuit, jac, solution, states) {
+      core(*this, params.core(), circuit, jac, solution) {
 };
 
-OperatingPoint::~OperatingPoint() {
+Hb::~Hb() {
 }
 
-Analysis* OperatingPoint::create(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s) {
-    auto* an = new OperatingPoint(ptAnalysis.name(), circuit, ptAnalysis);
+Analysis* Hb::create(PTAnalysis& ptAnalysis, Circuit& circuit, Status& s) {
+    auto* an = new Hb(ptAnalysis.name(), circuit, ptAnalysis);
     return an;
 }
 
-void OperatingPoint::clearOutputDescriptors() {
+void Hb::clearOutputDescriptors() {
     core.clearOutputDescriptors();
 }
 
-bool OperatingPoint::addCommonOutputDescriptor(const OutputDescriptor& desc) {
+bool Hb::addCommonOutputDescriptor(const OutputDescriptor& desc) {
     return core.addOutputDescriptor(desc);
 }
 
-bool OperatingPoint::addCoreOutputDescriptors(Status& s) {
+bool Hb::addCoreOutputDescriptors(Status& s) {
     if (!core.addCoreOutputDescriptors()) {
         core.formatError(s);
         return false;
@@ -38,12 +38,12 @@ bool OperatingPoint::addCoreOutputDescriptors(Status& s) {
     return true;
 }
 
-bool OperatingPoint::resolveOutputDescriptors(bool strict, Status& s) {
+bool Hb::resolveOutputDescriptors(bool strict, Status& s) {
     // Trigger resolving in core analyses
     return core.resolveOutputDescriptors(strict, s);
 }
 
-bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
+bool Hb::resolveSave(const PTSave& save, bool verify, Status& s) {
     static const auto idDefault = Id("default");
     static const auto idFull = Id("full");
     static const auto idV = Id("v");
@@ -51,6 +51,7 @@ bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
     static const auto idP = Id("p");
 
     bool st = true;
+    // TODO: handle opvars someday
     if (save.typeName() == idDefault) {
         st = core.addAllUnknowns(save);
     } else if (save.typeName() == idFull) {
@@ -59,8 +60,6 @@ bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
         st = core.addNode(save);
     } else if (save.typeName() == idI) {
         st = core.addFlow(save);
-    } else if (save.typeName() == idP) {
-        st = core.addInstanceOpvar(save);
     } else {
         // Report error only if verification is required
         if (verify) {
@@ -84,65 +83,59 @@ bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
     return true;
 }
 
-bool OperatingPoint::addDefaultOutputDescriptors() {
+bool Hb::addDefaultOutputDescriptors() {
     return core.addDefaultOutputDescriptors();
 }
 
-bool OperatingPoint::initializeOutputs(Status& s) {
+bool Hb::initializeOutputs(Status& s) {
     return core.initializeOutputs(name_, s);
 }
 
-bool OperatingPoint::finalizeOutputs(Status& s) {
+bool Hb::finalizeOutputs(Status& s) {
     return core.finalizeOutputs(s);
 }
 
-bool OperatingPoint::deleteOutputs(Status& s) {
+bool Hb::deleteOutputs(Status& s) {
     return core.deleteOutputs(name_, s);
 }
 
-bool OperatingPoint::rebuildCores(Status& s) {
-    // Create Jacobian - it is common to both cores in small-signal analyses
-    // Therefore we build it outside the core before the core is rebuilt. 
-    if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
-        jac.formatError(s);
-        return false;
-    }
-
+bool Hb::rebuildCores(Status& s) {
+    // Jacobian will be built by the core
     return core.rebuild(s);
 }
 
-size_t OperatingPoint::analysisStateStorageSize() const { 
+size_t Hb::analysisStateStorageSize() const { 
     return core.stateStorageSize();
 }
 
-void OperatingPoint::resizeAnalysisStateStorage(size_t n) { 
+void Hb::resizeAnalysisStateStorage(size_t n) { 
     core.resizeStateStorage(n);
 }
 
-bool OperatingPoint::storeState(size_t ndx) {
+bool Hb::storeState(size_t ndx) {
     return core.storeState(ndx);
 }
 
-bool OperatingPoint::restoreState(size_t ndx) {
+bool Hb::restoreState(size_t ndx) {
     return core.restoreState(ndx);
 }
 
-void OperatingPoint::makeStateIncoherent(size_t ndx) {
+void Hb::makeStateIncoherent(size_t ndx) {
     core.makeStateIncoherent(ndx);
 }
 
-std::tuple<bool, bool> OperatingPoint::preMapping(Status& s) {
+std::tuple<bool, bool> Hb::preMapping(Status& s) {
     return core.preMapping(s);
 }
 
-bool OperatingPoint::populateStructures(Status& s) {
+bool Hb::populateStructures(Status& s) {
     return core.populateStructures(s);
 }
 
-void OperatingPoint::dump(std::ostream& os) const {
+void Hb::dump(std::ostream& os) const {
     Analysis::dump(os);
-    os << "Analysis type: operating point"<< std::endl;
-    os << "OP analysis core:" << std::endl;
+    os << "Analysis type: harmonic balance"<< std::endl;
+    os << "HB analysis core:" << std::endl;
     core.dump(os);
 }
 

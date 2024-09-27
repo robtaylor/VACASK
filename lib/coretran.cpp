@@ -233,10 +233,10 @@ instantiateIntrospection(TranParameters);
 
 
 TranCore::TranCore(
-    Analysis& analysis, TranParameters& params, OperatingPointCore& opCore, 
+    OutputDescriptorResolver& parentResolver, TranParameters& params, OperatingPointCore& opCore, 
     Circuit& circuit, 
     KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), solution(solution), states(states), 
     nrSolver(circuit, jacobian, states, solution, nrSettings, integCoeffs) { 
     // Slots 0 (current) and -1 (future) are used for the NR solver
@@ -289,7 +289,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -455,7 +455,7 @@ bool TranCore::rebuild(Status& s) {
     return true;
 }
 
-bool TranCore::initializeOutputs(Id name) {
+bool TranCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -470,7 +470,7 @@ bool TranCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool TranCore::finalizeOutputs() {
+bool TranCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
@@ -484,7 +484,7 @@ bool TranCore::finalizeOutputs() {
     return true;
 }
 
-bool TranCore::deleteOutputs(Id name) {
+bool TranCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }

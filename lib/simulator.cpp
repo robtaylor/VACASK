@@ -7,6 +7,7 @@
 #include "anactf.h"
 #include "antran.h"
 #include "annoise.h" 
+#include "anhb.h" 
 #include "libplatform.h"
 #include "common.h"
 
@@ -67,6 +68,7 @@ bool Simulator::setup(
     ok &= registerAnalysis<AcTf>("actf", s);
     ok &= registerAnalysis<Noise>("noise", s);
     ok &= registerAnalysis<Tran>("tran", s);
+    ok &= registerAnalysis<Tran>("hb", s);
     
     return ok;
 }

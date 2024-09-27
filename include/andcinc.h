@@ -11,22 +11,22 @@
 namespace NAMESPACE {
 
 // DcIncr analysis data
-class DcIncrData {
+class DCIncrementalData {
 protected:
     Vector<double> incrementalSolution; // Incremental solution
 };
 
 // Constructor specialization
-template<> SmallSignal<DcIncrementalCore, DcIncrData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
+template<> SmallSignal<DCIncrementalCore, DCIncrementalData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
 
 // Resolve save specialization
-template<> bool SmallSignal<DcIncrementalCore, DcIncrData>::resolveSave(const PTSave& save, bool verify, Status& s);
+template<> bool SmallSignal<DCIncrementalCore, DCIncrementalData>::resolveSave(const PTSave& save, bool verify, Status& s);
 
 // Dump specialization
-template<> void SmallSignal<DcIncrementalCore, DcIncrData>::dump(std::ostream& os) const;
+template<> void SmallSignal<DCIncrementalCore, DCIncrementalData>::dump(std::ostream& os) const;
 
 // Typedef DcIncremental
-typedef SmallSignal<DcIncrementalCore, DcIncrData> DcIncremental;
+typedef SmallSignal<DCIncrementalCore, DCIncrementalData> DcIncremental;
 
 }
 

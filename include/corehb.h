@@ -2,7 +2,11 @@
 #define __COREHB_DEFINED
 
 #include "densematrix.h"
+#include "klubsmatrix.h"
 #include "core.h"
+#include "corehbnr.h"
+#include "outrawfile.h"
+#include "corehbnr.h"
 #include "value.h"
 #include "common.h"
 
@@ -28,29 +32,56 @@ typedef struct HbParameters {
     Real samplefac {2};   // Sampling factor in time domain (>=1). 
     Real nper {3};        // Number of periods across which colocation points are selected
     Id sample {Id()};     // Sampling mode (uniform, random), default is random. 
+
+    Int writeOutput {1};  // Do we want to write the results to a file
+                          // Not exposed as analysis parameter. 
                              
     HbParameters();
 } HbParameters;
 
 
-class HbCore /*: public AnalysisCore*/ {
+class HbCore : public AnalysisCore {
 public:
     typedef HbParameters Parameters;
     enum class HbError {
         OK, 
-        StatusError, 
+        MatrixError, 
+        SolverError, 
     };
 
-    HbCore(HbParameters& params) : params(params) {};
+    HbCore(
+        OutputDescriptorResolver& parentResolver, HbParameters& params, Circuit& circuit, 
+        KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
+    );
+    ~HbCore();
+    
+    HbCore           (const HbCore&)  = delete;
+    HbCore           (      HbCore&&) = delete;
+    HbCore& operator=(const HbCore&)  = delete;
+    HbCore& operator=(      HbCore&&) = delete;
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore) const; 
+
+    bool addCoreOutputDescriptors();
+    bool addDefaultOutputDescriptors();
+    bool resolveOutputDescriptors(bool strict, Status& s=Status::ignore);
+
+    std::tuple<bool, bool> requestsRebuild(Status& s = Status::ignore);
+    
+    bool rebuild(Status& s=Status::ignore); 
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
+    bool run(bool continuePrevious);
+    CoreCoroutine coroutine(bool continuePrevious);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     bool buildGrid(Status& s=Status::ignore);
     bool buildColocation(Status& s=Status::ignore);
     bool buildAPFT(Status& s=Status::ignore);
     
-    // Recompute the spectrum, check if its length changed
-    // Return value: Ok, requesting rebuild
-    std::tuple<bool, bool> requestsRebuild(Status& s = Status::ignore);
-    
+    void dump(std::ostream& os) const;
+
     static Id truncateRaw;
     static Id truncateBox;
     static Id truncateDiamond;
@@ -60,7 +91,21 @@ public:
     static bool test();
 
 protected:
+    // Clear error
+    void clearError() { AnalysisCore::clearError(); lastHbError = HbError::OK; }; 
+
+    void setError(HbError e) { lastHbError = e; lastError = Error::OK; };
+    
     bool buildTransformMatrix(DenseMatrix<double>& XF, Status& s=Status::ignore);
+
+    HbError lastHbError;
+
+    KluBlockSparseRealMatrix& bsjac; // Jacobian
+    VectorRepository<double>& solution; // Solution history
+    
+    OutputRawfile* outfile;
+
+    bool converged_;
     
     struct SpecFreq {
         size_t gridIndex;
@@ -70,6 +115,14 @@ protected:
     };
 
 private:
+    NRSettings nrSettings;
+    HBNRSolver nrSolver;
+    VectorRepository<Complex> outputPhasors;
+    Complex outputFreq;
+
+    HbParameters oldParams;
+    bool firstBuild;
+
     HbParameters& params;
     Vector<double> spectrum;
     std::vector<SpecFreq> freq;

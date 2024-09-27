@@ -1,5 +1,5 @@
-#ifndef __ANOP_DEFINED
-#define __ANOP_DEFINED
+#ifndef __ANHB_DEFINED
+#define __ANHB_DEFINED
 
 #include "parameterized.h"
 #include "status.h"
@@ -9,24 +9,24 @@
 #include "output.h"
 #include "outrawfile.h"
 #include "flags.h"
-#include "coreop.h"
+#include "corehb.h"
 #include "common.h"
 
 
 namespace NAMESPACE {
 
-class OperatingPoint : public Analysis {
+class Hb : public Analysis {
 public:
-    typedef OperatingPointParameters Parameters;
+    typedef HbParameters Parameters;
     
-    OperatingPoint(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
+    Hb(Id name, Circuit& circuit, PTAnalysis& ptAnalysis);
     
-    OperatingPoint           (const OperatingPoint&)  = delete;
-    OperatingPoint           (      OperatingPoint&&) = delete;
-    OperatingPoint& operator=(const OperatingPoint&)  = delete;
-    OperatingPoint& operator=(      OperatingPoint&&) = delete;
+    Hb           (const Hb&)  = delete;
+    Hb           (      Hb&&) = delete;
+    Hb& operator=(const Hb&)  = delete;
+    Hb& operator=(      Hb&&) = delete;
 
-    virtual ~OperatingPoint();
+    virtual ~Hb();
     
     virtual void dump(std::ostream& os) const;
 
@@ -67,12 +67,11 @@ protected:
 
     
 private:
-    IStruct<OperatingPointParameters> params;
-    OperatingPointCore core;
+    IStruct<HbParameters> params;
+    HbCore core;
 
-    KluRealMatrix jac; // Resistive Jacobian
+    KluBlockSparseRealMatrix jac; // Jacobian
     VectorRepository<double> solution; // Solution history
-    VectorRepository<double> states; // Circuit states
 };
 
 }

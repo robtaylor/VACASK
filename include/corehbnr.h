@@ -77,7 +77,7 @@ protected:
     
     DenseMatrix<double> pointMaxSolution_;  // previous solution, maximal value for each nature, each timepoint
                                             // rows are natures, columns are timepoints
-    
+
     // Convergence check auxiliary results
     double maxResidual; 
     double maxNormResidual; 

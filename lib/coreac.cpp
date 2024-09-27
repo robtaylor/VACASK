@@ -32,10 +32,10 @@ instantiateIntrospection(AcParameters);
 
 
 AcCore::AcCore(
-    Analysis& analysis, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+    OutputDescriptorResolver& parentResolver, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution) {
     
@@ -50,8 +50,6 @@ AcCore::~AcCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
 bool AcCore::resolveOutputDescriptors(bool strict) {
     // Clear output sources
     outputSources.clear();
@@ -69,7 +67,7 @@ bool AcCore::resolveOutputDescriptors(bool strict) {
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {
@@ -104,7 +102,7 @@ bool AcCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool AcCore::initializeOutputs(Id name) {
+bool AcCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
     if (!params.writeOutput) {
         return true;
@@ -123,7 +121,7 @@ bool AcCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool AcCore::finalizeOutputs() {
+bool AcCore::finalizeOutputs(Status& s) {
     if (outfile) {
         outfile->epilogue();
         delete outfile;
@@ -132,7 +130,7 @@ bool AcCore::finalizeOutputs() {
     return true;
 }
 
-bool AcCore::deleteOutputs(Id name) {
+bool AcCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }

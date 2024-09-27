@@ -72,6 +72,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/anactf.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/annoise.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/antran.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/anhb.h 
     acct.cpp
     libplatform.cpp 
     dynload.cpp 
@@ -144,6 +145,7 @@ add_library(simlib STATIC
     anactf.cpp 
     annoise.cpp 
     antran.cpp 
+    anhb.cpp
 )
 target_include_directories(simlib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}

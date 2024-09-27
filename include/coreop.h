@@ -34,7 +34,7 @@ namespace NAMESPACE {
 // - single node nodesets (...; "<node>"; value; ...)
 // - differential nodeset (...; "<node1>"; "<node2>"; value; ...)
 
-typedef struct OpParameters {
+typedef struct OperatingPointParameters {
     Value nodeset {Value("")}; // String to specify stored solution slot or
                                // list to specify nodesets
     String store {""};         // Name of stored solution slot to write
@@ -42,8 +42,8 @@ typedef struct OpParameters {
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
 
-    OpParameters(); 
-} OpParameters;
+    OperatingPointParameters(); 
+} OperatingPointParameters;
 
 enum class OpRunType { 
     OrdinaryOp=0, 
@@ -79,7 +79,7 @@ typedef struct OperatingPointState {
 class OperatingPointCore : public AnalysisCore {
 public:
     using RunType = OpRunType;
-    typedef OpParameters Parameters;
+    typedef OperatingPointParameters Parameters;
     enum class OpError {
         OK, 
         InitialOp, 
@@ -89,7 +89,7 @@ public:
     };
     
     OperatingPointCore(
-        Analysis& analysis, OpParameters& params, Circuit& circuit, 
+        OutputDescriptorResolver& parentResolver, OperatingPointParameters& params, Circuit& circuit, 
         KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
     ); 
     ~OperatingPointCore();
@@ -165,7 +165,7 @@ private:
     bool spice3SourceStepping();
     std::string homotopyProgress() const;
     
-    OpParameters& params;
+    OperatingPointParameters& params;
 };
 
 }

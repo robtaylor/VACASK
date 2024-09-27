@@ -55,7 +55,7 @@ namespace NAMESPACE {
 // See coreop.h on how to specify nodesets. 
 
 typedef struct AcParameters {
-    OpParameters opParams;
+    OperatingPointParameters opParams;
 
     Real from {0};    // Start frequency for step and dec/oct/lin sweep
     Real to {0};      // Stop frequency for step and dec/oct/lin sweep
@@ -90,7 +90,7 @@ public:
     };
        
     AcCore(
-        Analysis& analysis, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+        OutputDescriptorResolver& parentResolver, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution
     ); 
@@ -109,11 +109,11 @@ public:
     bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     bool run(bool continuePrevious);
     CoreCoroutine coroutine(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 

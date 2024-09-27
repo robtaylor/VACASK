@@ -156,7 +156,7 @@ bool Tran::deleteOutputs(Status& s) {
 }
 
 bool Tran::rebuildCores(Status& s) {
-    // Create Jacobian - it is common to both cores, so we need to rebuild it here
+    // Create Jacobian - it is common to Op and tran core, so we need to rebuild it here
     if (!jac.rebuild(circuit.sparsityMap(), circuit.unknownCount())) {
         jac.formatError(s);
         return false;

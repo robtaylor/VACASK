@@ -8,23 +8,23 @@
 namespace NAMESPACE {
 
 // Default parameters
-OpParameters::OpParameters() {
+OperatingPointParameters::OperatingPointParameters() {
 }
 
 // Introspection for parameters structure
-template<> int Introspection<OpParameters>::setup() {
+template<> int Introspection<OperatingPointParameters>::setup() {
     registerMember(nodeset);
     registerMember(store); 
     return 0;
 }
-instantiateIntrospection(OpParameters);
+instantiateIntrospection(OperatingPointParameters);
 
 
 OperatingPointCore::OperatingPointCore(
-    Analysis& analysis, OpParameters& params, Circuit& circuit, 
+    OutputDescriptorResolver& parentResolver, OperatingPointParameters& params, Circuit& circuit, 
     KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), 
-      nrSolver(circuit, jac, states, solution, nrSettings), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
+      nrSolver(circuit, jacobian, states, solution, nrSettings), 
       jac(jacobian), solution(solution), states(states), 
       converged_(false), continueState(nullptr) {
 }
@@ -33,8 +33,6 @@ OperatingPointCore::~OperatingPointCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
 bool OperatingPointCore::resolveOutputDescriptors(bool strict, Status& s) {
     // Clear output sources
     outputSources.clear();
@@ -52,7 +50,7 @@ bool OperatingPointCore::resolveOutputDescriptors(bool strict, Status& s) {
             break;
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
             break;
         }
         if (!ok) {

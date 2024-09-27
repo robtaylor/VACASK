@@ -33,14 +33,10 @@ char helpText[] =
 int main(int argc, char**argv) {
     // IntegratorCoeffs::test();
     // DenseMatrix<double>::test();
-    HbCore::test();
-    return 0;
-
-    Status status;
-
-    // std::cout << "abc" << '\r' << "   def" << std::flush;
+    // HbCore::test();
     // return 0;
 
+    Status status;
 
     // Setup platform
     //   openVafName, openVafArgs
@@ -240,7 +236,7 @@ int main(int argc, char**argv) {
         
         // Create circuit
         OpenvafCompiler comp;
-        Circuit cirObj(tab, comp, status);
+        Circuit cirObj(tab, &comp, status);
         if (!cirObj.isValid()) {
             Simulator::err() << status.message() << "\n";
             return 1;

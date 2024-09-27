@@ -3,8 +3,8 @@
 
 namespace NAMESPACE {
 
-AnalysisCore::AnalysisCore(Analysis& analysis, Circuit& circuit) 
-    : analysis(analysis), circuit(circuit), savesCount(0) {
+AnalysisCore::AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit) 
+    : parentResolver(parentResolver), circuit(circuit), savesCount(0) {
 }
 
 void AnalysisCore::clearOutputDescriptors() {

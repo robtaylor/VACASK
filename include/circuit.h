@@ -165,7 +165,7 @@ DEFINE_FLAG_OPERATORS(CircuitFlags);
 
 class Circuit : public FlagBase<CircuitFlags> {
 public:
-    Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s=Status::ignore);
+    Circuit(ParserTables& tab, SourceCompiler* compiler=nullptr, Status& s=Status::ignore);
     ~Circuit();
 
     Circuit           (const Circuit&)  = delete;

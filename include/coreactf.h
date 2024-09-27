@@ -44,7 +44,7 @@ namespace NAMESPACE {
 // See coreop.h on how to specify nodesets. 
 
 typedef struct AcTfParameters {
-    OpParameters opParams;
+    OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
     Real from {0};    // Start frequency for step and dec/oct/lin sweep
@@ -82,7 +82,7 @@ public:
     };
     
     AcTfCore(
-        Analysis& analysis, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
+        OutputDescriptorResolver& parentResolver, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
@@ -103,11 +103,11 @@ public:
     bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 

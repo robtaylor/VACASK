@@ -47,7 +47,7 @@ namespace NAMESPACE {
 // See coreop.h on how to specify nodesets. 
 
 typedef struct NoiseParameters {
-    OpParameters opParams;
+    OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
     Id in {""};       // Input source
@@ -87,7 +87,7 @@ public:
     };
     
     NoiseCore(
-        Analysis& analysis, NoiseParameters& params, OperatingPointCore& opCore, 
+        OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
         std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset, 
         Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
@@ -110,11 +110,11 @@ public:
     bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 

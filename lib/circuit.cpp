@@ -182,7 +182,7 @@ API:
   Instance::buildHierarchy()      - build subhierarchy, implicitly also propagates parameters
 */
 
-Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s) 
+Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s) 
     : valid(false), tables_(tab), title_("Untitled"), 
       unknownCountExcludingGround(0), hdev(nullptr), 
       parameters(nullptr) {
@@ -284,7 +284,13 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler& compiler, Status& s)
         // Found file, handle compilation of supported files
         // Compiler decides where to put the compiled file and returns its path
         std::string outputPath;
-        auto [ok, compiled] = compiler.compile(loadDirectiveCanonicalPath, fileName, canonicalPath, outputPath, s);
+        bool ok = false;
+        bool compiled = false;
+        if (compiler) {
+            std::tie(ok, compiled) = compiler->compile(loadDirectiveCanonicalPath, fileName, canonicalPath, outputPath, s);
+        } else {
+            s.set(Status::Unsupported, "Sozurce compiler not available.");
+        }
         if (!ok) {
             s.extend(it->location());
             return;

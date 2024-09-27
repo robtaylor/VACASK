@@ -24,6 +24,14 @@ typedef struct IdPairHash {
     }
 } IdPairHash;
 
+class OutputDescriptorResolver {
+public:
+    // Resolves output descriptor, adds output sorce to srcs
+    // Returns true on successž
+    // Fail by default 
+    virtual bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict) { return false; };
+};
+
 class Analysis;
 
 // Analysis core, one analysis can have multiple analysis cores (i.e. op, tran, ...)
@@ -41,7 +49,7 @@ public:
         Descriptor, 
     };
 
-    AnalysisCore(Analysis& analysis, Circuit& circuit);
+    AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit);
     
     AnalysisCore           (const AnalysisCore&)  = delete;
     AnalysisCore           (      AnalysisCore&&) = delete;
@@ -140,7 +148,7 @@ protected:
 
     std::tuple<bool, UnknownIndex, UnknownIndex> getOutput(Value& v);
     std::tuple<bool, Instance*> getInput(Id name);
-    Analysis& analysis;
+    OutputDescriptorResolver& parentResolver;
     Circuit& circuit;
     Output::DescriptorList outputDescriptors;
     Output::SourcesList outputSources;

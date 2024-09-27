@@ -34,13 +34,13 @@ instantiateIntrospection(NoiseParameters);
 
 
 NoiseCore::NoiseCore(
-    Analysis& analysis, NoiseParameters& params, OperatingPointCore& opCore, 
+    OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
     std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset, 
     Circuit& circuit, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
     Vector<double>& results, double& powerGain, double& outputNoise
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution), 
     contributionOffset(contributionOffset), 
@@ -57,8 +57,6 @@ NoiseCore::~NoiseCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
 bool NoiseCore::resolveOutputDescriptors(bool strict) {
     clearError();
     // Clear contribution offsets
@@ -142,7 +140,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
                 break;
             default:
                 // Delegate to parent
-                ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+                ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -187,7 +185,7 @@ bool NoiseCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool NoiseCore::initializeOutputs(Id name) {
+bool NoiseCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -202,14 +200,14 @@ bool NoiseCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool NoiseCore::finalizeOutputs() {
+bool NoiseCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool NoiseCore::deleteOutputs(Id name) {
+bool NoiseCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }

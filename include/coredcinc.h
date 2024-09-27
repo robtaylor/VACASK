@@ -35,8 +35,8 @@ namespace NAMESPACE {
 // 
 // See coreop.h on how to specify nodesets. 
 
-typedef struct DcIncrParameters {
-    OpParameters opParams;
+typedef struct DCIncrementalParameters {
+    OperatingPointParameters opParams;
     
     Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
     // Nodeset and store parameters of the operating point core 
@@ -45,13 +45,13 @@ typedef struct DcIncrParameters {
     Int writeOutput {1}; // Do we want to write the results to a file
                          // Not exposed as analysis parameter. 
 
-    DcIncrParameters();
-} DcIncrParameters;
+    DCIncrementalParameters();
+} DCIncrementalParameters;
 
 
-class DcIncrementalCore : public AnalysisCore {
+class DCIncrementalCore : public AnalysisCore {
 public:
-    typedef DcIncrParameters Parameters;
+    typedef DCIncrementalParameters Parameters;
     enum class DcIncrError {
         OK, 
         EvalAndLoad, 
@@ -60,16 +60,16 @@ public:
         OpError, 
         SingularMatrix, 
     };
-    DcIncrementalCore(
-        Analysis& analysis, DcIncrParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+    DCIncrementalCore(
+        OutputDescriptorResolver& parentResolver, DCIncrementalParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
         KluRealMatrix& jacobian, Vector<double>& incrementalSolution
     ); 
-    ~DcIncrementalCore();
+    ~DCIncrementalCore();
     
-    DcIncrementalCore           (const DcIncrementalCore&)  = delete;
-    DcIncrementalCore           (      DcIncrementalCore&&) = delete;
-    DcIncrementalCore& operator=(const DcIncrementalCore&)  = delete;
-    DcIncrementalCore& operator=(      DcIncrementalCore&&) = delete;
+    DCIncrementalCore           (const DCIncrementalCore&)  = delete;
+    DCIncrementalCore           (      DCIncrementalCore&&) = delete;
+    DCIncrementalCore& operator=(const DCIncrementalCore&)  = delete;
+    DCIncrementalCore& operator=(      DCIncrementalCore&&) = delete;
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -78,11 +78,11 @@ public:
     bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 
@@ -100,7 +100,7 @@ protected:
 
     KluRealMatrix& jacobian;
     Vector<double>& incrementalSolution;
-    DcIncrParameters& params;
+    DCIncrementalParameters& params;
 };
 
 }

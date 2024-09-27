@@ -33,12 +33,12 @@ instantiateIntrospection(AcTfParameters);
 
 
 AcTfCore::AcTfCore(
-    Analysis& analysis, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
+    OutputDescriptorResolver& parentResolver, AcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
     Circuit& circuit, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
     std::vector<Instance*>& sources, Vector<Complex>& tf, Vector<Complex>& yin, Vector<Complex>& zin
-) : AnalysisCore(analysis, circuit), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution), sources(sources), tf(tf), yin(yin), zin(zin) {
     
@@ -53,8 +53,6 @@ AcTfCore::~AcTfCore() {
     delete outfile;
 }
 
-// Implement this in every derived class so that calls to 
-// resolveOutputDescriptor() will be inlined. 
 bool AcTfCore::resolveOutputDescriptors(bool strict) {
     clearError();
     // Clear output sources
@@ -117,7 +115,7 @@ bool AcTfCore::resolveOutputDescriptors(bool strict) {
             break; 
         default:
             // Delegate to parent
-            ok = analysis.resolveOutputDescriptor(*it, outputSources, strict);
+            ok = parentResolver.resolveOutputDescriptor(*it, outputSources, strict);
         }
         if (!ok) {
             break;
@@ -151,7 +149,7 @@ bool AcTfCore::addDefaultOutputDescriptors() {
     return true;
 }
 
-bool AcTfCore::initializeOutputs(Id name) {
+bool AcTfCore::initializeOutputs(Id name, Status& s) {
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -166,14 +164,14 @@ bool AcTfCore::initializeOutputs(Id name) {
     return true;
 }
 
-bool AcTfCore::finalizeOutputs() {
+bool AcTfCore::finalizeOutputs(Status& s) {
     outfile->epilogue();
     delete outfile;
     outfile = nullptr;
     return true;
 }
 
-bool AcTfCore::deleteOutputs(Id name) {
+bool AcTfCore::deleteOutputs(Id name, Status& s) {
     if (!params.writeOutput) {
         return true;
     }

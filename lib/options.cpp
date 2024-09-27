@@ -57,10 +57,6 @@ SimulatorOptions::SimulatorOptions() {
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
     
     op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
-                  // 100  = nrdebug=1, print NRSolver internals (progress)
-                  // 101  = nrdebug=2, print linear system
-                  // 102  = nrdebug=3, print solutions
-                  // >102 = nrdebug>=4, print old solution before building system
 
     nr_debug = 0;  // >0 enables nonlinear solver debugging
     nr_bypass = 0; // 1 = disable core evaluation for bypassed instances 
@@ -117,8 +113,6 @@ SimulatorOptions::SimulatorOptions() {
                      // >=100 print linear system
     
     tran_debug = 0; // 1 = debug steps, 2 = debug solver
-                    // 100 = print linear system, 
-                    // >100 print solutions
     tran_method = "trap"; // am, bdf, gear - Adams-Moulton, backward differentiation (Gear)
                           //   (use maxord to limit maximal integration order)
                           // euler (ignore maxord, use am maxord=1), 
@@ -162,6 +156,7 @@ SimulatorOptions::SimulatorOptions() {
                     // 0 = pure Euler, 0.5 = pure trapezoidal
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
+    hb_debug = 0; // 0 = none, 1 = solver and homotopy runs, 2 = homotopy and continuation internals
     rawfile = "binary"; // ascii or binary
     strictoutput = 2; // 0 = leave output files in place after error, 
                       // 1 = delete output files on error
@@ -288,6 +283,8 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_spicelte);
     registerMember(tran_xmu);
     registerMember(tran_trapltefilter);
+
+    registerMember(hb_debug);
     
     registerMember(rawfile);
     registerMember(strictoutput);

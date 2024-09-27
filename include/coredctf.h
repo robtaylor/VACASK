@@ -42,7 +42,7 @@ namespace NAMESPACE {
 // See coreop.h on how to specify nodesets. 
 
 typedef struct DcTfParameters {
-    OpParameters opParams;
+    OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
     Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
@@ -70,7 +70,7 @@ public:
         SingularMatrix, 
     };
     DcTfCore(
-        Analysis& analysis, DcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
+        OutputDescriptorResolver& parentResolver, DcTfParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
         Circuit& circuit, KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
         std::vector<Instance*>& sources, Vector<double>& tf, Vector<double>& yin, 
         Vector<double>& zin
@@ -89,11 +89,11 @@ public:
     bool resolveOutputDescriptors(bool strict);
 
     bool rebuild(Status& s=Status::ignore); 
-    bool initializeOutputs(Id name);
+    bool initializeOutputs(Id name, Status& s=Status::ignore);
     CoreCoroutine coroutine(bool continuePrevious);
     bool run(bool continuePrevious);
-    bool finalizeOutputs();
-    bool deleteOutputs(Id name);
+    bool finalizeOutputs(Status& s=Status::ignore);
+    bool deleteOutputs(Id name, Status& s=Status::ignore);
 
     void dump(std::ostream& os) const;
 
