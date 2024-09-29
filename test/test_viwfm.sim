@@ -24,6 +24,14 @@ r3 (3 0) resistor r=1
 i4 (0 4) isource type="pulse" val0=1 val1=2 rise=1u fall=2u width=2m period=4m delay=1.2m
 r4 (4 0) resistor r=1
 
+// AM
+i5 (0 5) isource type="am" sinedc=0.5 ampl=2.0 freq=1000 phase=-90 modfreq=50 modphase=90 modindex=0.5
+r5 (5 0) resistor r=1
+
+// FM
+i6 (0 6) isource type="fm" sinedc=0.5 ampl=2.0 freq=1000 phase=-90 modfreq=50 modphase=90 modindex=10
+r6 (6 0) resistor r=1
+
 control
   abort always
 
@@ -109,12 +117,24 @@ status = (relDiff(vtrain, exact, 1e-9) < 1e-3).all()
 print("Train", status, "breaks", breakOk)
 tests.append(status and breakOk)
 
+vam = tran1["5"]
+exact = 0.5+2.0*np.sin(2*np.pi*1000.0*time-90*np.pi/180)*(1+0.5*np.sin(2*np.pi*50.0*time+90*np.pi/180))
+status = (relDiff(vam, exact, 1e-9) < 1e-3).all()
+print("AM", status)
+tests.append(status)
+
+vfm = tran1["6"]
+exact = 0.5+2.0*np.sin(2*np.pi*1000.0*time-90*np.pi/180+10*np.sin(2*np.pi*50.0*time+90*np.pi/180))
+status = (relDiff(vfm, exact, 1e-9) < 1e-3).all()
+print("FM", status)
+tests.append(status)
+
 if isTest():
     sys.exit(not all(tests))
 else:
     import matplotlib.pyplot as plt 
 
-    fig1, ax1 = plt.subplots(4, 1, figsize=(6,9), dpi=100, constrained_layout=True)
+    fig1, ax1 = plt.subplots(6, 1, figsize=(6,9), dpi=100, constrained_layout=True)
     fig1.suptitle("Transient excitations")
 
     fig1.axes[0].set_title('Sine')
@@ -133,6 +153,16 @@ else:
     fig1.axes[3].set_ylabel('V [V]')
     fig1.axes[3].set_xlabel('time [ms]')
     fig1.axes[3].plot(time*1000, vtrain, marker=".")
+
+    fig1.axes[4].set_title('AM')
+    fig1.axes[4].set_ylabel('V [V]')
+    fig1.axes[4].set_xlabel('time [ms]')
+    fig1.axes[4].plot(time*1000, vam, marker=".")
+
+    fig1.axes[5].set_title('FM')
+    fig1.axes[5].set_ylabel('V [V]')
+    fig1.axes[5].set_xlabel('time [ms]')
+    fig1.axes[5].plot(time*1000, vfm, marker=".")
 
     plt.show()
 >>>FILE

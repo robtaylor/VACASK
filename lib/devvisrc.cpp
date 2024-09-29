@@ -40,6 +40,9 @@ template<> int Introspection<DevSourceInstanceParams>::setup() {
     registerMember(allbrkpts);
     registerMember(slopetol);
     registerMember(reltol);
+    registerMember(modfreq);
+    registerMember(modphase);
+    registerMember(modindex);
     registerMember(mag);
     registerMember(phase);
     return 0;
@@ -52,8 +55,10 @@ DevSourceInstanceParams::DevSourceInstanceParams() {
     type = "dc";
     delay = 0.0;
     
+    // type="dc"
     dc = 0.0;
 
+    // type="pulse"
     val0 = 0.0;
     val1 = 1.0;
     period = 0.0;
@@ -61,11 +66,13 @@ DevSourceInstanceParams::DevSourceInstanceParams() {
     fall = 0.0;
     width = 0.0;
 
+    // type="sine"
     sinedc = 0.0;
     ampl = 1.0;
     freq = 1e3;
     sinephase = 0.0;
 
+    // type="pwl"
     wave = RealVector();
     offset = 0.0;
     scale = 1.0;
@@ -76,6 +83,13 @@ DevSourceInstanceParams::DevSourceInstanceParams() {
     slopetol = 0.0;
     reltol = 0.1;
 
+    // type="am" or "fm"
+    // sinedc, ampl, freq, sinephase
+    modfreq = 1e3;
+    modphase = 0;
+    modindex = 0.5; 
+    
+    // small signal parameters
     mag = 0.0;
     phase = 0.0;
 }
@@ -106,6 +120,8 @@ static Id typeSine = Id::createStatic("sine");
 static Id typePulse = Id::createStatic("pulse");
 static Id typeDc = Id::createStatic("dc");
 static Id typePwl = Id::createStatic("pwl");
+static Id typeAm = Id::createStatic("am");
+static Id typeFm = Id::createStatic("fm");
 
 static Id valYes = Id::createStatic("yes");
 static Id valNo = Id::createStatic("no");
@@ -169,7 +185,10 @@ std::tuple<bool, bool, bool> sourceSetup(InstanceParams& params, InstanceData& d
         // Check slopetol and reltol
 
         // Breakpoint handling mechanism
-
+    } else if (p.type == typeAm) {
+        d.typeCode = IndependentSourceType::Am;
+    } else if (p.type == typeFm) {
+        d.typeCode = IndependentSourceType::Fm;
     } else if (p.type == typeDc) {
         d.typeCode = IndependentSourceType::Dc;
     } else {
@@ -201,6 +220,36 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
         } else {
             // For t >= delay start sine at given phase
             val = params.sinedc+params.ampl*std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180);
+        }
+        break;
+    case IndependentSourceType::Am:
+        if (time<params.delay) {
+            // For t < delay the value is equal to value at t=delay
+            val = params.sinedc+params.ampl*std::sin(params.phase*PI/180)*(
+                1+params.modindex*std::sin(params.modphase*PI/180)
+            );
+            nextBreak = params.delay;
+        } else {
+            // For t >= delay start sine at given phase
+            val = params.sinedc+params.ampl*std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180)*(
+                1+params.modindex*std::sin(2*PI*params.modfreq*(time-params.delay)+params.modphase*PI/180)
+            );
+        }
+        break;
+    case IndependentSourceType::Fm:
+        if (time<params.delay) {
+            // For t < delay the value is equal to value at t=delay
+            val = params.sinedc+params.ampl*std::sin(
+                params.phase*PI/180+
+                params.modindex*std::sin(params.modphase*PI/180)
+            );
+            nextBreak = params.delay;
+        } else {
+            // For t >= delay start sine at given phase
+            val = params.sinedc+params.ampl*std::sin(
+                2*PI*params.freq*(time-params.delay)+params.phase*PI/180+
+                params.modindex*std::sin(2*PI*params.modfreq*(time-params.delay)+params.modphase*PI/180)
+            );
         }
         break;
     case IndependentSourceType::Pulse:

@@ -8,7 +8,7 @@
 
 namespace NAMESPACE {
 
-enum class IndependentSourceType : char { Dc, Sine, Pulse, Sffm, Exp, Pwl };
+enum class IndependentSourceType : char { Dc, Sine, Pulse, Sffm, Exp, Pwl, Am, Fm };
 
 struct DevSourceModelParams {
     DevSourceModelParams();
@@ -49,6 +49,10 @@ struct DevSourceInstanceParams {
     Id allbrkpts; // yes, no, auto
     Real slopetol;
     Real reltol;
+    // AM, FM
+    Real modfreq;
+    Real modphase;
+    Real modindex; 
     // AC, DC incremental
     Real mag;
     Real phase; // degrees (only for AC)
