@@ -595,8 +595,12 @@ void OperatingPointCore::dump(std::ostream& os) const {
     }
     os << ", last NR run completed with " << std::to_string(nrSolver.iterations()) << " iterations";
     os << std::endl;
-    os << "  Unknowns vector: " << std::endl;
-    circuit.dumpSolution(os, solution.data(), "    ");
+    os << "  Results: " << "\n";
+    auto n = circuit.unknownCount();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        os << "    " << rn->name() << " : " << solution.data()[i] << "\n";
+    }
 }
 
 }

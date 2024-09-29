@@ -297,6 +297,12 @@ bool HBCore::buildGrid(Status& s) {
         [](const SpecFreq& a, const SpecFreq& b) { return a.f < b.f; }
     );
 
+    // Build frequencies vector for the solver
+    frequencies.resize(dest);
+    for(decltype(dest) i=0; i<dest; i++) {
+        frequencies[i] = freq[i].f;
+    }
+
     if (hb_debug>0) {
         Simulator::out() << "HB spectrum, " << freq.size() << " frequencies\n";
         auto nn = grid.nRows();

@@ -37,7 +37,7 @@ HBCore::HBCore(
     OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
     KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
 ) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
-    nrSolver(circuit, jacobian, solution, timepoints, DDT, DDTcolMajor, nrSettings), 
+    nrSolver(circuit, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true) {
 };
 
@@ -251,27 +251,13 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     }
 
     if (converged_ && params.writeOutput) {
-        // Convert results from time domain to frequency domain
-        std::vector<double> spectra(n*nb+1);
-        for(decltype(n) i=0; i<n; i++) {
-            auto dest = VectorView(spectra, 1+i*nb, nb, 1);
-            auto src = VectorView(solution.vector(), 1+i*nb, nb, 1);
-            APFT.multiply(src, dest);
-        }
-
         // Collect results
         outputPhasors.upsize(1, n+1);
         auto outvec = outputPhasors.data();
         for(decltype(nf) k=0; k<nf; k++) {
             outputFreq = freq[k].f;
             for(decltype(n) i=0; i<n; i++) {
-                if (k==0) {
-                    // DC
-                    outvec[i+1] = spectra[1+i*nb];
-                } else {
-                    // Get real and imaginary part
-                    outvec[i+1] = Complex(spectra[1+i*nb+1+2*(k-1)],spectra[1+i*nb+1+2*(k-1)+1]);
-                }
+                outvec[i+1] = solutionFD[i*nf+k];
             }
             
             // Dump to output
@@ -342,6 +328,21 @@ bool HBCore::formatError(Status& s) const {
 
 void HBCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
+    os << "  Results\n";
+    auto n = circuit.unknownCount();
+    auto nf = frequencies.size();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        for(decltype(nf) k=0; k<nf; k++) {
+            auto c = solutionFD[i];
+            os << "    " << rn->name() << "@" << frequencies[k] << "Hz : " << c.real();
+            if (c.imag()>=0) {
+                os << "+";
+            }
+            os << c.imag();
+            os << "i\n";
+        }
+    }
 }
 
 bool HBCore::test() {

@@ -14,9 +14,12 @@ public:
     HBNRSolver(
         Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
+        Vector<Complex>& solutionFD,
+        Vector<Real>& frequencies, 
         Vector<Real>& timepoints, 
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
+        DenseMatrix<Real>& APFT, 
         NRSettings& settings
     ); 
 
@@ -26,6 +29,7 @@ public:
     virtual bool postSolve(bool continuePrevious);
     virtual bool postConvergenceCheck(bool continuePrevious);
     virtual bool postIteration(bool continuePrevious);
+    virtual bool postRun(bool continuePrevious); 
     
     virtual std::tuple<bool, bool> buildSystem(bool continuePrevious);
     virtual std::tuple<bool, bool> checkResidual();
@@ -43,9 +47,12 @@ protected:
     LoadSetup loadSetup_;
 
     KluBlockSparseRealMatrix& bsjac;
+    std::vector<double>& frequencies;
     Vector<double>& timepoints; 
     DenseMatrix<double>& DDT;
     DenseMatrix<double>& DDTcolMajor;
+    DenseMatrix<double>& APFT;
+    Vector<Complex>& solutionFD;
     Circuit& circuit;
 
     // Internal structures

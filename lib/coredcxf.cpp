@@ -346,16 +346,16 @@ bool DCXFCore::formatError(Status& s) const {
 
 void DCXFCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
-    os << "  Results" << std::endl;
+    os << "  Results\n";
     auto nSrc = sources.size();
     for(decltype(nSrc) i=0; i<nSrc; i++) {
         auto inst = sources[i];
         if (!inst) {
             continue;
         }
-        os << "    tf(" << inst->name() << ") " << tf[i] << std::endl;
-        os << "    zin(" << inst->name() << ") " << zin[i] << std::endl;
-        os << "    yin(" << inst->name() << ") " << yin[i] << std::endl;
+        os << "    tf(" << inst->name() << ") " << tf[i] << "\n";
+        os << "    zin(" << inst->name() << ") " << zin[i] << "\n";
+        os << "    yin(" << inst->name() << ") " << yin[i] << "\n";
     }
 }
 

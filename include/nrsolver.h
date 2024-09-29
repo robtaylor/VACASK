@@ -132,6 +132,9 @@ public:
     // Must set lastError on failure
     virtual bool postIteration(bool continuePrevious) { return true; };
 
+    // Post run tasks, called before exit
+    virtual bool postRun(bool continuePrevious) { return true; }; 
+
     // Resize forces repository
     void resizeForces(Int n);
 

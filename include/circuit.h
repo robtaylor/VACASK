@@ -242,9 +242,6 @@ public:
     bool isGlobalNode(Id node) const;
     // Representative node corresponding to unknown
     Node* reprNode(UnknownIndex u) const { return unknownToReprNode[u]; };
-    // Node value from solution vector
-    double nodeValue(Node* node, const double* solution) const { return solution[node->unknownIndex()]; };
-    Complex nodeValue(Node* node, const Complex* solution) const { return solution[node->unknownIndex()]; };
     // Add global node (does not create a node, just marks the node name as global)
     bool addGlobal(Id name, Status& s=Status::ignore);
     // Create ground node, there can be multiple ground nodes, all corresponding to the same variable (0)
@@ -335,9 +332,7 @@ public:
     void dumpNodes(int indent, std::ostream& os) const;
     void dumpUnknowns(int indent, std::ostream& os) const;
     void dumpSparsity(int indent, std::ostream& os) const;
-    void dumpSolution(std::ostream& os, const double* solution, const char* prefix="") const;
-    void dumpSolution(std::ostream& os, const Complex* solution, const char* prefix="") const;
-
+    
     // Tolerance computation 
     double solutionTolerance(Node* node, double ref)  {
         auto& options = simOptions.core();

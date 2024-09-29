@@ -8,12 +8,15 @@ namespace NAMESPACE {
 HBNRSolver::HBNRSolver(
     Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
+        Vector<Complex>& solutionFD, 
+        Vector<Real>& frequencies, 
         Vector<Real>& timepoints, 
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
+        DenseMatrix<double>& APFT, 
         NRSettings& settings
-) : circuit(circuit), bsjac(bsjac) , 
-    timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), 
+) : circuit(circuit), bsjac(bsjac), solutionFD(solutionFD), 
+    frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), APFT(APFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
     resizeForces(0);
 
@@ -220,6 +223,29 @@ bool HBNRSolver::postConvergenceCheck(bool continuePrevious) {
 }
 
 bool HBNRSolver::postIteration(bool continuePrevious) {
+    return true;
+}
+
+bool HBNRSolver::postRun(bool continuePrevious) {
+    if (converged) {
+        // If converged, convert solution from TD to FD
+        auto n = circuit.unknownCount();
+        auto nf = frequencies.size();
+        auto nt = timepoints.size();
+        solutionFD.resize(n*nf); // no bucket
+
+        for(decltype(n) i=0; i<n; i++) {
+            auto cxSpecPtr = solutionFD.data()+nf*i;
+            // APFT computes spectrum as complex values, with the exception of DC which is stored as real. 
+            // We write APFT output starting at the imaginary part of the DC complex magnitude. 
+            auto inPtr = solution.data()+1+i*nt;
+            auto outPtr = reinterpret_cast<double*>(cxSpecPtr)+1;
+            auto outVec = VectorView<Real>(outPtr, nt, 1);
+            APFT.multiply(VectorView<Real>(inPtr, nt, 1), outVec);
+            // Move DC from imaginary to real part of DC complex magnitude. 
+            *cxSpecPtr = cxSpecPtr->imag();
+        }
+    }
     return true;
 }
 

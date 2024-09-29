@@ -486,7 +486,17 @@ bool AcCore::formatError(Status& s) const {
 void AcCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     os << "  Results\n";
-    circuit.dumpSolution(os, acSolution.data(), "    ");
+    auto n = circuit.unknownCount();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        auto c = acSolution.data()[i];
+        os << "    " << rn->name() << " : " << c.real();
+        if (c.imag()>=0) {
+            os << "+";
+        }
+        os << c.imag();
+        os << "i\n";
+    }
 }
 
 }

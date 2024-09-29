@@ -10,10 +10,10 @@ model nl3 nl3
 v1 (1 0) vsource dc=0 type="sine" sinedc=0.0 ampl=1 freq=1k
 nl1 (1 0) nl3
 
-// sin(x)**3 = 3/4 sin(x) - 1/4 sin(3x)
+// 0.5 + sin(x)**3 = 0.5 + 3/4 sin(x) - 1/4 sin(3x)
 //
-// Spectrum: mag   0 0.75 0 0.25
-//           phase 0 -90  0 +90
+// Spectrum: mag   0.5 0.75 0 0.25
+//           phase 0   -90  0 +90
 
 control
   abort always
@@ -24,7 +24,7 @@ control
   
   options hb_debug=5 nr_debug=0
   alter instance("v1") type="sine"
-  analysis hb1 hb freq=[1k] nharm=6
+  analysis hb1 hb freq=[1k] nharm=12
   
   postprocess(PYTHON, "runme.py")
 endc
@@ -41,7 +41,7 @@ module nl3(A,B);
     electrical A,B;
     
     analog begin
-        I(A,B) <+ pow(V(A,B), 3);
+        I(A,B) <+ 0.5 + pow(V(A,B), 3);
     end
 endmodule
 >>>FILE
@@ -60,16 +60,23 @@ v1 = dc1['1']
 i1 = -dc1["v1:flow(br)"]
 
 hb1 = rawread('hb1.raw').get()
-f = hb1['frequency']
+f = np.real(hb1['frequency'])
 i1s = -hb1['v1:flow(br)']
 i1mag = np.abs(i1s)
 i1ph = np.angle(i1s)*180/np.pi
 
-exactmag = np.array([0, 0.75, 0, 0.25, 0, 0, 0])
-exactph = np.array([0, -90, 0, 90, 0, 0, 0])
+exactmag = np.zeros(f.size)
+exactph = np.zeros(f.size)
+exactmag[0] = 0.5
+exactmag[1] = 0.75
+exactmag[3] = 0.25
+exactph[1] = -90
+exactph[3] = 90
 
 exact = exactmag*(np.cos(exactph*np.pi/180)+1j*np.sin(exactph*np.pi/180))
-tests.append(np.abs(i1s-exact).max()<1e-12)
+delta = np.abs(i1s-exact).max()
+print("spectrum max delta:", delta)
+tests.append(delta<1e-12)
 
 if isTest():
     sys.exit(not all(tests))
@@ -81,7 +88,7 @@ else:
     fig1.axes[0].set_title('DC response')
     fig1.axes[0].set_ylabel('I [A]')
     fig1.axes[0].set_xlabel('V [V]')
-    fig1.axes[0].plot(v1, v1**3)
+    fig1.axes[0].plot(v1, 0.5+v1**3)
     fig1.axes[0].plot(v1, i1, marker=".", color="red", linestyle="none")
 
     fig1.axes[1].set_title('I(v1) spectrum')

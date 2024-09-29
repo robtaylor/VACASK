@@ -213,7 +213,11 @@ bool NRSolver::run(bool continuePrevious) {
 
     // Initialize structures
     if (!initialize(continuePrevious)) {
-        // Assume initialize() has set lastError
+        // Assume initiđalize() has set lastError
+        if (settings.debug) {
+            Simulator::dbg() << "NR solver initialization step failed.\n";
+        }
+        converged = false;
         acct.acctNew.tnr += Accounting::wclkDelta(t0);
         return false;
     }
@@ -257,7 +261,7 @@ bool NRSolver::run(bool continuePrevious) {
         // Pre-iteration tasks
         if (!preIteration(continuePrevious)) {
             if (settings.debug) {
-                Simulator::dbg() << "Pre-iteration step failed.\n";
+                Simulator::dbg() << "NR solver pre-iteration step failed.\n";
             }
             converged = false;
             break;
@@ -377,7 +381,7 @@ bool NRSolver::run(bool continuePrevious) {
         // Post-solve tasks (instance convergence check)
         if (!postSolve(continuePrevious)) {
             if (settings.debug) {
-                Simulator::dbg() << "Post-solve step failed.\n";
+                Simulator::dbg() << "NR solver post-solve step failed.\n";
             }
             converged = false;
             break;
@@ -450,7 +454,7 @@ bool NRSolver::run(bool continuePrevious) {
         // Post convergence check tasks
         if (!postConvergenceCheck(continuePrevious)) {
             if (settings.debug) {
-                Simulator::dbg() << "Post convergence check step failed.\n";
+                Simulator::dbg() << "NR solver post convergence check step failed.\n";
             }
             converged = false;
             break;
@@ -491,7 +495,7 @@ bool NRSolver::run(bool continuePrevious) {
         // Post-iteration tasks
         if (!postIteration(continuePrevious)) {
             if (settings.debug) {
-                Simulator::dbg() << "Post-iteration step failed.\n";
+                Simulator::dbg() << "NR solver post-iteration step failed.\n";
             }
             converged = false;
             break;
@@ -510,11 +514,18 @@ bool NRSolver::run(bool continuePrevious) {
         Simulator::dbg() << "NR algorithm " << (converged ? "converged in " : "failed to converge in ") << iteration << " iteration(s).\n";
     }
 
+    if (!postRun(continuePrevious)) {
+        if (settings.debug) {
+            Simulator::dbg() << "NR solver post-run step failed.\n";
+        }
+        converged = false;
+    }
+
     if (!converged && lastError==Error::OK) {
         lastError = Error::Convergence;
         errorIteration = iteration;
     }
-
+    
     acct.acctNew.tnr += Accounting::wclkDelta(t0);
     return converged;
 }

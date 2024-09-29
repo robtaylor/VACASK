@@ -250,7 +250,11 @@ bool DCIncrementalCore::formatError(Status& s) const {
 void DCIncrementalCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
     os << "  Results" << std::endl;
-    circuit.dumpSolution(os, incrementalSolution.data(), "    ");
+    auto n = circuit.unknownCount();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        os << "    " << rn->name() << " : " << incrementalSolution.data()[i] << "\n";
+    }
 }
 
 

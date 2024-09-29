@@ -101,7 +101,7 @@ protected:
     HBError lastHbError;
 
     KluBlockSparseRealMatrix& bsjac; // Jacobian
-    VectorRepository<double>& solution; // Solution history
+    VectorRepository<Real>& solution; // Solution history
     
     OutputRawfile* outfile;
 
@@ -120,11 +120,14 @@ private:
     VectorRepository<Complex> outputPhasors;
     Complex outputFreq;
 
+    Vector<Complex> solutionFD;
+
     HBParameters oldParams;
     bool firstBuild;
 
     HBParameters& params;
     std::vector<SpecFreq> freq;
+    std::vector<double> frequencies;
     DenseMatrix<int> grid;
     Vector<double> timepoints;    
     DenseMatrix<double> APFT;
