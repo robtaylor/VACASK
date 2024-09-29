@@ -22,7 +22,7 @@ namespace NAMESPACE {
 // blockMep     .. element coordinates within the block
 // block origin .. element with blockMep=(1,1)
 template<typename IndexType, typename ValueType> 
-class KluBlockSparseMatrixCore : public KluMatrixCore<IndexType, ValueType> {
+class KluBlockSparseMatrixCore : public KluMatrixCore<IndexType, ValueType>, public MatrixAccess<IndexType> {
 public: 
     KluBlockSparseMatrixCore();
     
@@ -32,14 +32,6 @@ public:
     KluBlockSparseMatrixCore& operator=(      KluBlockSparseMatrixCore&&) = delete;
 
     virtual ~KluBlockSparseMatrixCore();
-
-    // Matrix binding interface
-    // If blockMep is not given the block origin is returned
-    virtual double* valueArray();
-    virtual Complex* cxValueArray();
-    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const;
-    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) ;
-    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
 
     // BlockSparseMatrixCore specific interface
     // Returns a dense matrix view of a block. 
@@ -54,11 +46,14 @@ public:
     std::tuple<DenseMatrixView<ValueType>, bool> block(const MatrixEntryPosition& mep) {
         auto [nzPosition, found] = elementIndex(mep);
         if (!found) {
-            return std::make_tuple(DenseMatrixView<ValueType>(&bucket_, nb_, nb_, 0, 0), false);
+            return std::make_tuple(DenseMatrixView<ValueType>(blockBucket_, nb_, nb_, 0, 0), false);
         }
         // KLU organizes elements in column major order
         // row stride is 1, column stride depends on the column of dense blocks
         auto [row, col] = mep;
+        // Make coordinates 1-based
+        row--;
+        col--;
         return std::make_tuple(
             DenseMatrixView<ValueType>(Ax+nzPosition, nb_, nb_, 1, blockColumnStride[col]), 
             true
@@ -110,7 +105,7 @@ public:
     double* elementPtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) {
         auto [nzPosition, found] = elementIndex(mep, blockMep);
         if (!found) {
-            return reinterpret_cast<double*>(&bucket_);
+            return reinterpret_cast<double*>(blockBucket_);
         }
         // Return pointer
         if constexpr(std::is_same<ValueType, Complex>::value) {
@@ -136,7 +131,6 @@ protected:
     using KluMatrixCore<IndexType, ValueType>::AP;
     using KluMatrixCore<IndexType, ValueType>::AI;
     using KluMatrixCore<IndexType, ValueType>::Ax;
-    using KluMatrixCore<IndexType, ValueType>::bucket_;
     using KluMatrixCore<IndexType, ValueType>::lastError;
     using KluMatrixCore<IndexType, ValueType>::common;
     using KluMatrixCore<IndexType, ValueType>::symbolic;
@@ -163,6 +157,18 @@ protected:
     // when the dense blocks are ordered in a column major ordering. 
     // has n+1 elements where the n+1-th element is the number of dense blocks. 
     IndexType* denseColumnBegin;
+
+    // We need a block bucket because Jacobian load with offset could add an offset to bucket pointer
+    ValueType* blockBucket_;
+
+public:
+    // Matrix binding interface
+    // If blockMep is not given the block origin is returned
+    virtual double* valueArray();
+    virtual Complex* cxValueArray();
+    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const;
+    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
+    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
 };
 
 // Default KLU matrix flavor

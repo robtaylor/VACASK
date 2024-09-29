@@ -81,6 +81,8 @@ typedef struct SimulatorOptions  {
     Real tran_xmu;
     Int tran_trapltefilter;
     Int hb_debug;
+    Int hb_itl;
+    Int hb_itlcont;
     Id rawfile;
     Int strictoutput;
     Int strictsave;

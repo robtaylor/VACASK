@@ -430,7 +430,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
 
     // Do not check here if any core requests a rebuild
     // Because this check may be computationally intensive 
-    // (i.e. HB recomputes the spectrum and transforms). 
+    // (i.e. HB recomputes the set of frequencies and the transforms). 
     // Do it in an.cpp
     
     // Circuit is now in a consistent state

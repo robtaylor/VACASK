@@ -139,8 +139,8 @@ typedef struct EvalSetup {
     };
 
     bool initialize() {
-        DBGCHECK(states && states->size()<2, "States history must have at least two slots.");
-        DBGCHECK(solution && solution->size()<2, "Solution history must have at least two slots.");
+        // DBGCHECK(states && states->size()<2, "States history must have at least two slots.");
+        // DBGCHECK(solution && solution->size()<2, "Solution history must have at least two slots.");
         if (solution) {
             oldSolution = solution->data(oldSolutionSlot);
         }

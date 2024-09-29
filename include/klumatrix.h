@@ -150,7 +150,7 @@ public:
 };
 
 
-template<typename IndexType, typename ValueType> class KluMatrixCore : public MatrixAccess<IndexType> {
+template<typename IndexType, typename ValueType> class KluMatrixCore {
 public: 
     using Common = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_common, klu_l_common>::type;
     using Symbolic = typename std::conditional<std::is_same<int32_t,IndexType>::value, klu_symbolic, klu_l_symbolic>::type;
@@ -178,14 +178,6 @@ public:
     KluMatrixCore& operator=(      KluMatrixCore&&) = delete;
 
     virtual ~KluMatrixCore();
-
-    // Matrix binding interface
-    // Block element position is ignored
-    virtual double* valueArray();
-    virtual Complex* cxValueArray();
-    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const;
-    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) ;
-    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
 
     // Set accounting structure
     void setAccounting(Accounting& accounting) { acct = &accounting; }; 
@@ -327,9 +319,23 @@ protected:
     bool errorNan;
 };
 
+template<typename IndexType, typename ValueType> 
+class KluAtomicMatrix : public KluMatrixCore<IndexType, ValueType>, public MatrixAccess<IndexType> {
+public:
+    // Matrix binding interface
+    // Block element position is ignored
+    virtual double* valueArray();
+    virtual Complex* cxValueArray();
+    virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const;
+    virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
+    virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
+};
+
 // Default KLU matrix flavor
-typedef KluMatrixCore<MatrixEntryIndex, double> KluRealMatrix;
-typedef KluMatrixCore<MatrixEntryIndex, Complex> KluComplexMatrix;
+typedef KluMatrixCore<MatrixEntryIndex, double> KluRealMatrixCore;
+typedef KluMatrixCore<MatrixEntryIndex, Complex> KluComplexMatrixCore;
+typedef KluAtomicMatrix<MatrixEntryIndex, double> KluRealMatrix;
+typedef KluAtomicMatrix<MatrixEntryIndex, Complex> KluComplexMatrix;
 typedef MatrixAccess<MatrixEntryIndex> KluMatrixAccess;
 }
 

@@ -91,7 +91,7 @@ public:
     std::tuple<bool, bool> updateParameterExpressions(Status& s=Status::ignore); 
 
     // Mechanism for requesting a re-bind due to changed analysis parameters
-    // e.g. for HB when the spectrum length changes
+    // e.g. for HB when the set of frequencies changes
     // Return value: ok, rebuild requested
     virtual std::tuple<bool, bool> requestsRebuild(Status& s=Status::ignore) { return std::make_tuple(true, false); };
 

@@ -7,7 +7,7 @@
 namespace NAMESPACE {
 
 template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexType, ValueType>::KluBlockSparseMatrixCore() 
-    : denseColumnBegin(nullptr), blockColumnOrigin(nullptr), blockColumnStride(nullptr) {
+    : denseColumnBegin(nullptr), blockColumnOrigin(nullptr), blockColumnStride(nullptr), blockBucket_(nullptr) {
 }
 
 template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexType, ValueType>::~KluBlockSparseMatrixCore() {
@@ -22,6 +22,10 @@ template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexT
     if (blockColumnStride) {
         delete [] blockColumnStride;
         blockColumnStride = nullptr;
+    }
+    if (blockBucket_) {
+        delete [] blockBucket_;
+        blockBucket_ = nullptr;
     }
 }
 
@@ -66,7 +70,7 @@ Complex* KluBlockSparseMatrixCore<IndexType, ValueType>::cxValuePtr(
         if (found) {
             return Ax+nzPosition;
         } else {
-            return &bucket_;
+            return blockBucket_;
         }
     } else {
         return nullptr;
@@ -117,7 +121,10 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     atCol = 0;
     auto& positions = m.positions();
     for(size_t posNdx=0; posNdx<positions.size(); posNdx++) {
-        auto col = positions[posNdx].second;
+        auto [row, col] = positions[posNdx];
+        // Make column index 0-based
+        col--;
+        // Reached next column
         if (col!=atCol) {
             // Make sure empty columns of blocks are also handled
             for(; atCol<col;) {
@@ -128,11 +135,9 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     }
     // Trailing empty columns
     // n-1<atCol is an internal error!
-    if ((n-1)>atCol) {
-        for(; atCol<n-1;) {
-            atCol++;
-            denseColumnBegin[atCol] = positions.size();
-        }
+    for(; atCol<n-1;) {
+        atCol++;
+        denseColumnBegin[atCol] = positions.size();
     }
     // Number of dense blocks
     denseColumnBegin[n] = positions.size();
@@ -141,11 +146,11 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     atCol = 0;
     // Index of nonzero element
     atNz = 0;
-    // Number of columns of dense blocks, should be n
-    auto blockColCount = denseColumnBegin[n];
+    // Number of dense blocks
+    auto blockCount = denseColumnBegin[n];
     // Iterate through columns of dense blocks
     // This also iterates throuh columns with no dense blocks
-    for(decltype(blockColCount) blockColNdx=0; blockColNdx<blockColCount; blockColNdx++) {
+    for(decltype(n) blockColNdx=0; blockColNdx<n; blockColNdx++) {
         // Beginning and end of a column of blocks
         auto colBeginNdx = denseColumnBegin[blockColNdx];
         auto colEndNdx = denseColumnBegin[blockColNdx+1];
@@ -154,8 +159,13 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
         auto blocksInColumn = colEndNdx-colBeginNdx;
 
         // Add column origin and stride
-        blockColumnOrigin[atCol] = atNz;
-        blockColumnStride[atCol] = blocksInColumn*nb;
+        blockColumnOrigin[blockColNdx] = atNz;
+        blockColumnStride[blockColNdx] = blocksInColumn*nb;
+
+        // No blocks in this block column, nothing to do
+        if (blocksInColumn==0) {
+            continue;
+        }
 
         // Iterate through subcolumns of each dense block
         // This loop runs even if there are no dense blocks in this column of dense blocks
@@ -169,11 +179,13 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
                 // Get block row and column index
                 // We do not need blkCol - it is useful for debugging
                 auto [blkRow, blkCol] = positions[blkPos];
+                // These indices are 1-based, make them 0-based
+                blkRow--;
+                blkCol--;
 
                 // For each row in dense block
-                // KLU sparsity pattern indices are 0-based
-                IndexType rowIndex = (blkRow-1) * nb;
-                for(decltype(nb) subRowNdx=0; subRowNdx<nb; subRowNdx) {
+                IndexType rowIndex = blkRow * nb;
+                for(decltype(nb) subRowNdx=0; subRowNdx<nb; subRowNdx++) {
                     // Write row index
                     AI[atNz] = rowIndex;
 
@@ -195,7 +207,9 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     
     // Allocate array for nozero element values
     Ax = new ValueType[nnz_];
-    if (!Ax) {
+    blockBucket_ = new ValueType[nb_*nb_];
+    if (!Ax || !blockBucket_) {
+        this->~KluBlockSparseMatrixCore();
         this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
         lastError = Error::Memory;
         return false;
@@ -232,9 +246,6 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
 template<typename IndexType, typename ValueType> 
 void KluBlockSparseMatrixCore<IndexType, ValueType>::dumpBlockSparsity(std::ostream& os) {
    for(IndexType row=0; row<n_; row++) {
-        if (row>0) {
-            std::cout << "\n";
-        }
         for(IndexType col=0; col<n_; col++) {
             auto [_, found] = block(MatrixEntryPosition(row+1, col+1));
             if (found) {
@@ -243,6 +254,7 @@ void KluBlockSparseMatrixCore<IndexType, ValueType>::dumpBlockSparsity(std::ostr
                 std::cout << ".";
             }
         }
+        std::cout << "\n";
     } 
 }
 

@@ -14,8 +14,9 @@ namespace NAMESPACE {
 //   Springer, 1990. 
 
 bool HBCore::buildColocation(Status& s) {
-    auto hb_debug = 2;
-
+    auto options = circuit.simulatorOptions().core();
+    auto hb_debug = options.hb_debug;
+    
     // Includes DC
     auto n = freq.size();
 

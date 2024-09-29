@@ -1400,6 +1400,7 @@ void Circuit::dumpSparsity(int indent, std::ostream& os) const {
     sparsityMap_.dump(indent, os);
 }
 
+// TODO: get rid of this
 void Circuit::dumpSolution(std::ostream& os, const double* solution, const char* prefix) const {
     for(NodeIndex i=0; i<nodeOrder.size(); i++) {
         if (i!=0) {
@@ -1409,6 +1410,7 @@ void Circuit::dumpSolution(std::ostream& os, const double* solution, const char*
     }
 }
 
+// TODO: get rid of this
 void Circuit::dumpSolution(std::ostream& os, const Complex* solution, const char* prefix) const {
     for(NodeIndex i=0; i<nodeOrder.size(); i++) {
         if (i!=0) {

@@ -113,54 +113,6 @@ template<typename IndexType, typename ValueType> KluMatrixCore<IndexType, ValueT
     }
 }
 
-template<typename IndexType, typename ValueType> 
-double* KluMatrixCore<IndexType, ValueType>::valueArray() {
-    if constexpr(std::is_same<ValueType, Complex>::value) {
-        return nullptr;
-    } else {
-        return data();
-    }
-} 
-
-template<typename IndexType, typename ValueType> 
-Complex* KluMatrixCore<IndexType, ValueType>::cxValueArray() {
-    if constexpr(std::is_same<ValueType, Complex>::value) {
-        return data();
-    } else {
-        return nullptr;
-    }
-} 
-
-template<typename IndexType, typename ValueType> 
-std::tuple<IndexType, bool> KluMatrixCore<IndexType, ValueType>::valueIndex(
-    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
-) const {
-    return smap->find(mep);
-}
-
-template<typename IndexType, typename ValueType> 
-double* KluMatrixCore<IndexType, ValueType>::valuePtr(
-    const MatrixEntryPosition& mep, Component comp, const std::optional<MatrixEntryPosition>& blockMep
-) {
-    return elementPtr(mep, comp);
-}
-
-template<typename IndexType, typename ValueType> 
-Complex* KluMatrixCore<IndexType, ValueType>::cxValuePtr(
-    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
-) {
-    if constexpr(std::is_same<ValueType, Complex>::value) {
-        auto [entryOffset, found] = smap->find(mep);
-        if (found) {
-            return Ax+entryOffset;
-        } else {
-            return &bucket_;
-        }
-    } else {
-        return nullptr;
-    }
-}
-
 template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, EquationIndex n) {
     clearError();
     
@@ -836,10 +788,62 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
     return true;
 }
 
+template<typename IndexType, typename ValueType> 
+double* KluAtomicMatrix<IndexType, ValueType>::valueArray() {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        return nullptr;
+    } else {
+        return KluMatrixCore<IndexType, ValueType>::data();
+    }
+} 
+
+template<typename IndexType, typename ValueType> 
+Complex* KluAtomicMatrix<IndexType, ValueType>::cxValueArray() {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        return KluMatrixCore<IndexType, ValueType>::data();
+    } else {
+        return nullptr;
+    }
+} 
+
+template<typename IndexType, typename ValueType> 
+std::tuple<IndexType, bool> KluAtomicMatrix<IndexType, ValueType>::valueIndex(
+    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
+) const {
+    return KluMatrixCore<IndexType, ValueType>::smap->find(mep);
+}
+
+template<typename IndexType, typename ValueType> 
+double* KluAtomicMatrix<IndexType, ValueType>::valuePtr(
+    const MatrixEntryPosition& mep, Component comp, const std::optional<MatrixEntryPosition>& blockMep
+) {
+    return KluMatrixCore<IndexType, ValueType>::elementPtr(mep, comp);
+}
+
+template<typename IndexType, typename ValueType> 
+Complex* KluAtomicMatrix<IndexType, ValueType>::cxValuePtr(
+    const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
+) {
+    if constexpr(std::is_same<ValueType, Complex>::value) {
+        auto [entryOffset, found] = KluMatrixCore<IndexType, ValueType>::smap->find(mep);
+        if (found) {
+            return KluMatrixCore<IndexType, ValueType>::Ax+entryOffset;
+        } else {
+            return &(KluMatrixCore<IndexType, ValueType>::bucket_);
+        }
+    } else {
+        return nullptr;
+    }
+}
+
 // Instantiate template class for int32 and int64 indices, double and Complex values
 template class KluMatrixCore<int32_t, double>;
 template class KluMatrixCore<int32_t, Complex>;
 template class KluMatrixCore<int64_t, double>;
 template class KluMatrixCore<int64_t, Complex>;
+template class KluAtomicMatrix<int32_t, double>;
+template class KluAtomicMatrix<int32_t, Complex>;
+template class KluAtomicMatrix<int64_t, double>;
+template class KluAtomicMatrix<int64_t, Complex>;
 
 }

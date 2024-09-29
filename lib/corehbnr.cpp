@@ -8,13 +8,12 @@ namespace NAMESPACE {
 HBNRSolver::HBNRSolver(
     Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
-        Vector<Real>& spectrum, 
         Vector<Real>& timepoints, 
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
         NRSettings& settings
 ) : circuit(circuit), bsjac(bsjac) , 
-    spectrum(spectrum), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), 
+    timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
     resizeForces(0);
 
@@ -22,7 +21,7 @@ HBNRSolver::HBNRSolver(
     evalSetup_ = EvalSetup {
         // Inputs
         .solution = &oldSolutionAtTk, 
-        .states = &dummyStatesRepo, 
+        .dummyStates = &dummyStates, 
 
         // Signal this is not a static DC analysis
         // Evaluation is in time domain so effectively 
@@ -45,7 +44,7 @@ HBNRSolver::HBNRSolver(
     };
 
     loadSetup_ = LoadSetup {
-        .states = &dummyStatesRepo, 
+        .states = nullptr, 
         .loadResistiveJacobian = true, 
         .loadReactiveJacobian = true, 
     };
@@ -59,8 +58,8 @@ bool HBNRSolver::rebuild() {
     }
 
     // Old states at one timepoint (dummy vector of zeros because we do no limiting)
-    dummyStatesRepo.upsize(1, circuit.statesCount());
-    dummyStatesRepo.zero();
+    dummyStates.resize(circuit.statesCount());
+    zero(dummyStates);
     
     // Jacobian is sized in core or analysis.
     // solution is sized in core. 
@@ -70,17 +69,15 @@ bool HBNRSolver::rebuild() {
     // due to different number of frequency components 
     // we size them in initialize() before first iteration. 
     // Analysis asks cores if they request a rebuild. 
-    // HB core replies that it does if the spectrum changes. 
+    // HB core replies that it does if the set of frequencies changes. 
     
     return true;
 }
 
 bool HBNRSolver::initialize(bool continuePrevious) {
     // Number fo frequency components and timepoints
-    auto nf = spectrum.size();
     auto nt = timepoints.size();
-    // nt = 2*nf-1
-
+    
     // DDT, APFT, and IAPFT are already set up
 
     // Number of nodes
@@ -125,7 +122,7 @@ bool HBNRSolver::initialize(bool continuePrevious) {
     loadSetup_.maxResistiveResidualContribution = maxResidualContributionAtTk_.data();
 
     // Zero states
-    dummyStatesRepo.zero();
+    zero(dummyStates);
 
     // Set up tolerance reference value for solution
     auto& options = circuit.simulatorOptions().core();
@@ -206,14 +203,15 @@ bool HBNRSolver::postConvergenceCheck(bool continuePrevious) {
         if (!preventedConvergence) {
             Simulator::dbg() << (iterationConverged ? ", converged" : "");
             if (settings.residualCheck) {
-                ss.str(""); ss << maxResidual;
+                ss.str(""); 
+                ss << maxResidual;
                 Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << (maxResidualNode ? maxResidualNode->name() : "(unknown)")
                                  << ", t" << maxResidualTimepointIndex << "=" << timepoints[maxResidualTimepointIndex];
             }
             if (iteration>1) {
                 ss.str(""); ss << maxDelta;
                 Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << (maxDeltaNode ? maxDeltaNode->name() : "(unknown)")
-                                 << ", f" << maxDeltaFreqIndex << "=" << spectrum[maxDeltaFreqIndex];
+                                 << ", t" << maxDeltaTimepointIndex << "=" << timepoints[maxDeltaTimepointIndex];
             }
         }
         Simulator::dbg() << "\n";
@@ -349,9 +347,9 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         auto [block, found] = bsjac.block(pos);
 
         // Get block position, make position 0-based
-        auto [i, j] = pos;
-        i--;
-        j--;
+        // auto [i, j] = pos;
+        // i--;
+        // j--;
 
         // Get g_ijk and c_ijk columns from block (column elements are indexed by k)
         auto gCol = block.column(0);
@@ -445,10 +443,11 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
     auto nt = timepoints.size();
 
     // Results
-    double maxResidual = 0.0;
-    double maxNormResidual = 0.0;
-    double l2normResidual2 = 0.0;
-    Node* maxResidualNode = nullptr;
+    maxResidual = 0.0;
+    maxNormResidual = 0.0;
+    l2normResidual2 = 0.0;
+    maxResidualNode = nullptr;
+    maxResidualTimepointIndex = 0;
     
     // Assume residual is OK
     bool residualOk = true;
@@ -539,8 +538,8 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
 
     maxDelta = 0.0;
     maxNormDelta = 0.0;
-    Node* maxDeltaNode = nullptr;
-    maxDeltaFreqIndex = 0;
+    maxDeltaNode = nullptr;
+    maxDeltaTimepointIndex = 0;
     
     // Check convergence (see if delta is small enough), 
     // but only if this is iteration 2 or later
@@ -550,7 +549,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
     bool deltaOk = true;
     
     // Get point maximum for each solution nature
-    auto compPtr = solution.data()+1;
+    auto xold = solution.data();
     // Skip bucket
     for(decltype(n) i=1; i<=n; i++) {
         // Representative node, associated potential nature index
@@ -558,21 +557,16 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
         bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
         size_t ndx = isPotential ? 0 : 1;
         for(decltype(nt) k=0; k<nt; k++) {
-            double c = std::fabs(*compPtr);
+            double c = std::fabs(xold[i]);
             // Rows are natures, columns are frequency components (DC, f1, f2, ...)
             if (c>pointMaxSolution_.at(ndx, k)) {
                 pointMaxSolution_.at(ndx, k) = c;
             }
-            compPtr++;
         }
     }
 
     // Use 1-based index (with bucket) because same indexing is used for variables
-    compPtr = solution.data();
-    auto deltaPtr = delta.data();
-    // Skip bucket
-    compPtr++;
-    deltaPtr++;
+    auto xdelta = delta.data();
     for(decltype(n) i=1; i<=n; i++) {
         // Representative node, associated potential nature index
         auto rn = circuit.reprNode(i);
@@ -582,16 +576,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
             // Compute tolerance reference
             // Point local reference by default
             // Compute tolerance reference, start with previous value of the i-th unknown at j-th frequency
-            double tolref;
-            if (j==0) {
-                // DC
-                tolref = std::fabs(*compPtr);
-                compPtr++;
-            } else {
-                // Complex
-                tolref = std::abs(*reinterpret_cast<Complex*>(compPtr));
-                compPtr += 2;
-            }
+            double tolref = xold[i];
             
             // Account for global references, no historic reference because we are in frequency domain
             if (globalSolRef) {
@@ -603,16 +588,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
             double tol = circuit.solutionTolerance(rn, tolref);
 
             // Absolute solution change 
-            double deltaAbs;
-            if (j==0) {
-                // DC
-                deltaAbs = fabs(*deltaPtr);
-                deltaPtr++;
-            } else {
-                // Complex
-                tolref = std::abs(*reinterpret_cast<Complex*>(deltaPtr));
-                deltaPtr += 2;
-            }
+            double deltaAbs = fabs(xdelta[i]);;
 
             if (computeNorms) {
                 double normDelta = deltaAbs/tol;
@@ -620,7 +596,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
                     maxDelta = deltaAbs;
                     maxNormDelta = normDelta;
                     maxDeltaNode = rn;
-                    maxDeltaFreqIndex = j;
+                    maxDeltaTimepointIndex = j;
                 }
             }
 
@@ -640,6 +616,15 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
     return std::make_tuple(true, deltaOk);
 }
 
-
+void HBNRSolver::dumpSolution(std::ostream& os, double* solution, const char* prefix) {
+    auto n = circuit.unknownCount();
+    auto nt = timepoints.size();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        for(decltype(nt) k=0; k<nt; k++) {
+            os << prefix << rn->name() << "@t" << k << " : " << solution[1+(i-1)*nt+k] << "\n";
+        }
+    }
 }
 
+}

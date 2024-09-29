@@ -24,7 +24,7 @@ typedef struct HBParameters {
     IntVector imorder {}; // Intermodulation product order 
                           // (reported for each frequency when raw truncation scheme is used)
     Id truncate {Id()};   // Truncation scheme: 
-                          // raw     .. values in freq are the values in the spectrum
+                          // raw     .. values in freq are the frequencies in the spectrum
                           // box     .. box truncation
                           //   kj = 0..Hj, first nonzero kj must be >0
                           // diamond .. diamond truncation (default)
@@ -124,7 +124,6 @@ private:
     bool firstBuild;
 
     HBParameters& params;
-    Vector<double> spectrum;
     std::vector<SpecFreq> freq;
     DenseMatrix<int> grid;
     Vector<double> timepoints;    

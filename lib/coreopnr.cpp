@@ -378,11 +378,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     //     xprev[1]=1.0;
     // }
 
-    // Simulator::dbg() << "Before loading:\n";
-    // Simulator::dbg() << "  Residual:\n";
-    // circuit.dumpSolution(std::cout, delta.data(), "    ");
-    // Simulator::dbg() << "\n";
-    
     // Init limits if not in continue mode and iteration is 1
     evalSetup_.initializeLimiting = !continuePrevious && (iteration==1);
     // Write value to simulatorInternals
@@ -427,11 +422,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     }
     delta[0] = 0.0;
 
-    // Simulator::dbg() << "After loading:\n";
-    // Simulator::dbg() << "  Residual:\n";
-    // circuit.dumpSolution(std::cout, delta.data(), "    ");
-    // Simulator::dbg() << "\n";
-    
     // Now load gshunt if it is greater than 0.0
     auto gshunt = circuit.simulatorInternals().gshunt;
     if (gshunt>0) {
@@ -453,10 +443,10 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
     auto n = circuit.unknownCount();
 
     // Results
-    double maxResidual = 0.0;
-    double maxNormResidual = 0.0;
-    double l2normResidual2 = 0.0;
-    Node* maxResidualNode = nullptr;
+    maxResidual = 0.0;
+    maxNormResidual = 0.0;
+    l2normResidual2 = 0.0;
+    maxResidualNode = nullptr;
     
     // Assume residual is OK
     bool residualOk = true;
@@ -546,7 +536,7 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
     
     maxDelta = 0.0;
     maxNormDelta = 0.0;
-    Node* maxDeltaNode = nullptr;
+    maxDeltaNode = nullptr;
     
     // Check convergence (see if delta is small enough), 
     // but only if this is iteration 2 or later
@@ -681,7 +671,11 @@ void OpNRSolver::updateMaxima() {
 }
 
 void OpNRSolver::dumpSolution(std::ostream& os, double* solution, const char* prefix) {
-    circuit.dumpSolution(os, solution, prefix);
+    auto n = circuit.unknownCount();
+    for(decltype(n) i=1; i<=n; i++) {
+        auto rn = circuit.reprNode(i);
+        os << prefix << rn->name() << " : " << solution[i] << "\n";
+    }
 }
 
 }

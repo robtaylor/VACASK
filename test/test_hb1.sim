@@ -1,0 +1,97 @@
+Single tone HB of a resistive circuit
+
+ground 0 
+
+load "nl3.va"
+
+model vsource vsource
+model nl3 nl3
+
+v1 (1 0) vsource dc=0 type="sine" sinedc=0.0 ampl=1 freq=1k
+nl1 (1 0) nl3
+
+// sin(x)**3 = 3/4 sin(x) - 1/4 sin(3x)
+//
+// Spectrum: mag   0 0.75 0 0.25
+//           phase 0 -90  0 +90
+
+control
+  abort always
+  
+  alter instance("v1") type="dc"
+  sweep v1 instance="v1" parameter="dc" from=-1 to=1  mode="lin" points=50
+    analysis dc1 op 
+  
+  options hb_debug=5 nr_debug=0
+  alter instance("v1") type="sine"
+  analysis hb1 hb freq=[1k] nharm=6
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "nl3.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module nl3(A,B);
+    // Simplified SPICE diode, used for validation purposes
+    
+    // Terminals and internal nodes
+    inout A, B;
+    electrical A,B;
+    
+    analog begin
+        I(A,B) <+ pow(V(A,B), 3);
+    end
+endmodule
+>>>FILE
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests = []
+
+dc1 = rawread('dc1.raw').get()
+
+v1 = dc1['1']
+i1 = -dc1["v1:flow(br)"]
+
+hb1 = rawread('hb1.raw').get()
+f = hb1['frequency']
+i1s = -hb1['v1:flow(br)']
+i1mag = np.abs(i1s)
+i1ph = np.angle(i1s)*180/np.pi
+
+exactmag = np.array([0, 0.75, 0, 0.25, 0, 0, 0])
+exactph = np.array([0, -90, 0, 90, 0, 0, 0])
+
+exact = exactmag*(np.cos(exactph*np.pi/180)+1j*np.sin(exactph*np.pi/180))
+tests.append(np.abs(i1s-exact).max()<1e-12)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt
+
+    fig1, ax1 = plt.subplots(3, 1, figsize=(5,8), dpi=100, constrained_layout=True)
+    fig1.suptitle('HB of pow(v,3) excited by 1kHz sine, mag=1V')
+    fig1.axes[0].set_title('DC response')
+    fig1.axes[0].set_ylabel('I [A]')
+    fig1.axes[0].set_xlabel('V [V]')
+    fig1.axes[0].plot(v1, v1**3)
+    fig1.axes[0].plot(v1, i1, marker=".", color="red", linestyle="none")
+
+    fig1.axes[1].set_title('I(v1) spectrum')
+    fig1.axes[1].set_ylabel('Magnitude [A]')
+    fig1.axes[1].stem(f/1e3, i1mag)
+    
+    fig1.axes[2].set_ylabel('Phase [deg]')
+    fig1.axes[2].set_xlabel('f [kHz]')
+    fig1.axes[2].stem(f/1e3, i1ph)
+    
+    plt.show()
+>>>FILE
+

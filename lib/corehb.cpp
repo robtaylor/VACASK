@@ -19,11 +19,25 @@ HBParameters::HBParameters() {
     sample = HBCore::sampleRandom;
 }
 
+template<> int Introspection<HBParameters>::setup() {
+    registerMember(freq);
+    registerMember(nharm);
+    registerMember(immax);
+    registerMember(truncate);
+    registerMember(samplefac);
+    registerMember(nper);
+    registerMember(sample);
+    
+    return 0;
+}
+instantiateIntrospection(HBParameters);
+
+
 HBCore::HBCore(
     OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
     KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
 ) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
-    nrSolver(circuit, jacobian, solution, spectrum, timepoints, DDT, DDTcolMajor, nrSettings), 
+    nrSolver(circuit, jacobian, solution, timepoints, DDT, DDTcolMajor, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true) {
 };
 
@@ -96,7 +110,7 @@ bool HBCore::initializeOutputs(Id name, Status& s) {
             (circuit.simulatorOptions().core().rawfile==SimulatorOptions::rawfileBinary ? OutputRawfile::Flags::Binary : OutputRawfile::Flags::None) |
                 OutputRawfile::Flags::Padded | OutputRawfile::Flags::Complex);
         outfile->setTitle(circuit.title());
-        outfile->setPlotname("AC Small Signal Analysis");
+        outfile->setPlotname("Harmonic Balance Analysis");
     }
     outfile->prologue();
 
@@ -126,8 +140,8 @@ bool HBCore::deleteOutputs(Id name, Status& s) {
 }
 
 // Analysis asks cores if they request a rebuild. 
-// HB core replies that it does if the spectrum changes. 
-// Along with changed spectrum this function recomputes
+// HB core replies that it does if the set of frequencies changes. 
+// Along with changed set of frequencies this function recomputes
 // - colocation points
 // - transform matrices
 std::tuple<bool, bool> HBCore::requestsRebuild(Status& s) {
@@ -136,7 +150,7 @@ std::tuple<bool, bool> HBCore::requestsRebuild(Status& s) {
         return std::make_tuple(true, true);
     }
 
-    // Did parameters that affect spectrum and colocation change
+    // Did parameters that affect the set of frequencies and the colocation timepoints change
     bool needsRebuild = 
         oldParams.freq != params.freq ||
         oldParams.nharm != params.nharm ||
@@ -152,7 +166,21 @@ std::tuple<bool, bool> HBCore::requestsRebuild(Status& s) {
 bool HBCore::rebuild(Status& s) {
     clearError();
 
-    // Compute spectrum
+    auto options = circuit.simulatorOptions().core();
+    nrSettings = NRSettings {
+        .debug = options.nr_debug, 
+        .itlim = options.hb_itl, 
+        .itlimCont = options.hb_itlcont, 
+        .convIter = options.nr_conviter, 
+        .residualCheck = bool(options.nr_residualcheck),  
+        .dampingFactor = options.nr_damping, 
+        .matrixCheck = bool(options.matrixcheck), 
+        .rhsCheck = bool(options.rhscheck), 
+        .solutionCheck = bool(options.solutioncheck), 
+        .forceFactor = options.nr_force, 
+    };
+
+    // Compute set of frequencies
     if (!buildGrid(s)) {
         return false;
     }
@@ -185,6 +213,12 @@ bool HBCore::rebuild(Status& s) {
     )) {
         return false;
     }
+
+    // Rebuild NR solver structures
+    if (!nrSolver.rebuild()) {
+        s.set(Status::NonlinearSolver, "Failed to rebuild internal structures of nonlinear solver.");
+        return false;
+    }
     
     firstBuild = false;
     return true;
@@ -198,10 +232,10 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
     converged_ = false;
-    auto debug = options.op_debug;
+    auto debug = options.hb_debug;
     auto n = circuit.unknownCount(); 
     auto nb = timepoints.size();
-    auto nf = spectrum.size();
+    auto nf = freq.size();
 
     // Make sure structures are large enough
     solution.upsize(2, n*nb+1);
@@ -228,22 +262,21 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
         // Collect results
         outputPhasors.upsize(1, n+1);
         auto outvec = outputPhasors.data();
-        for(decltype(nb) k=0; k<nf; k++) {
+        for(decltype(nf) k=0; k<nf; k++) {
             outputFreq = freq[k].f;
-            auto& solv = solution.vector();
             for(decltype(n) i=0; i<n; i++) {
                 if (k==0) {
                     // DC
-                    outvec[i+1] = solv[1+i*nb];
+                    outvec[i+1] = spectra[1+i*nb];
                 } else {
                     // Get real and imaginary part
-                    outvec[i+1] = Complex(solv[1+i*nb+1+2*(k-1)],solv[1+i*nb+1+2*(k-1)+1]);
+                    outvec[i+1] = Complex(spectra[1+i*nb+1+2*(k-1)],spectra[1+i*nb+1+2*(k-1)+1]);
                 }
             }
+            
+            // Dump to output
+            outfile->addPoint();
         }
-
-        // Dump to output
-        outfile->addPoint();
     }
     
     setProgress(1);
@@ -309,8 +342,6 @@ bool HBCore::formatError(Status& s) const {
 
 void HBCore::dump(std::ostream& os) const {
     AnalysisCore::dump(os);
-    // os << "  Results\n";
-    // circuit.dumpSolution(os, acSolution.data(), "    ");
 }
 
 bool HBCore::test() {

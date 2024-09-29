@@ -157,6 +157,8 @@ SimulatorOptions::SimulatorOptions() {
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
     hb_debug = 0; // 0 = none, 1 = solver and homotopy runs, 2 = homotopy and continuation internals
+    hb_itl = 100; // >0, maximal number of iterations in non-continuation mode
+    hb_itlcont = 50; // >0, maximal number of iterations in continuation mode
     rawfile = "binary"; // ascii or binary
     strictoutput = 2; // 0 = leave output files in place after error, 
                       // 1 = delete output files on error
@@ -285,6 +287,8 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(tran_trapltefilter);
 
     registerMember(hb_debug);
+    registerMember(hb_itl);
+    registerMember(hb_itlcont);
     
     registerMember(rawfile);
     registerMember(strictoutput);

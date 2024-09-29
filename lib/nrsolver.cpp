@@ -38,7 +38,7 @@ namespace NAMESPACE {
 // Analysis::setAnalysisOptions() before rebuild() is called. 
 // Slots can be activated/deactivated,. 
 NRSolver::NRSolver(
-    Accounting& acct, KluRealMatrix& jac, 
+    Accounting& acct, KluRealMatrixCore& jac, 
     VectorRepository<double>& solution, 
     NRSettings& settings
 ) : acct(acct), jac(jac), solution(solution), settings(settings), 
@@ -263,7 +263,8 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
         
-        auto [buildOk, preventedConvergence] = buildSystem(continuePrevious);
+        bool buildOk;
+        std::tie(buildOk, preventedConvergence) = buildSystem(continuePrevious);
         if (!buildOk) {
             // Load error or abort
             break;
@@ -328,7 +329,7 @@ bool NRSolver::run(bool continuePrevious) {
         if (settings.debug>=2) {
             Simulator::dbg() << "Linear system at iteration " << iteration << "\n";
             jac.dump(Simulator::dbg(), dataWithoutBucket(delta));
-            Simulator::dbg() << "\n";
+            Simulator::dbg() << "\n\n";
         }
         
         // jac.dumpSparsityTables(std::cout);

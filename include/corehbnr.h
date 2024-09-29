@@ -14,7 +14,6 @@ public:
     HBNRSolver(
         Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
-        Vector<Real>& spectrum, 
         Vector<Real>& timepoints, 
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
@@ -38,11 +37,12 @@ public:
 protected:
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
     
+    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
+    
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
 
     KluBlockSparseRealMatrix& bsjac;
-    Vector<double>& spectrum; 
     Vector<double>& timepoints; 
     DenseMatrix<double>& DDT;
     DenseMatrix<double>& DDTcolMajor;
@@ -53,7 +53,7 @@ protected:
     VectorRepository<double> oldSolutionAtTk;
     Vector<double> resistiveResidualAtTk;
     Vector<double> reactiveResidualAtTk;
-    VectorRepository<double> dummyStatesRepo;
+    Vector<double> dummyStates;
 
     // For all timepoints
     Vector<double> resistiveResidual;
@@ -87,7 +87,7 @@ protected:
     double maxDelta; 
     double maxNormDelta; 
     Node* maxDeltaNode;
-    size_t maxDeltaFreqIndex;
+    size_t maxDeltaTimepointIndex;
 };
 
 }

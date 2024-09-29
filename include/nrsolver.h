@@ -85,7 +85,7 @@ public:
 
     NRSolver(
         Accounting& acct, 
-        KluRealMatrix& jac, VectorRepository<double>& solution, 
+        KluRealMatrixCore& jac, VectorRepository<double>& solution, 
         NRSettings& settings
     );
 
@@ -179,7 +179,7 @@ protected:
     bool highPrecision;
 
     // Passed from outside
-    KluRealMatrix& jac;
+    KluRealMatrixCore& jac;
     VectorRepository<double>& solution;
     NRSettings& settings;
     Accounting& acct;
