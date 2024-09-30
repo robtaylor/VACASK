@@ -1,44 +1,54 @@
-Single tone HB of a resistive circuit
+Multitone tone HB of a resistive circuit
 
 ground 0 
 
-load "nl3.va"
+load "nl2.va"
 
 model vsource vsource
-model nl3 nl3
+model nl2 nl2
 
-v1 (1 0) vsource dc=0 type="sine" sinedc=0.0 ampl=1 freq=1k
-nl1 (1 0) nl3
+v1 (1 0) vsource dc=0 type="am" sinedc=0.0 ampl=4 freq=50k modfreq=5k modindex=0.5
+nl1 (1 0) nl2
 
 // Excitation 
-//   x = sin(t)
-// Nonlinearity 
-//   0.5+x^3
+//   x = 4*sin(2*pi*50k*t)*(1+0.5*sin(2*pi*1k*t))
+// Nonlinearity
+//   x^2
 // Response
-//   0.5 + sin(t)**3 = 0.5 + 3/4 sin(t) - 1/4 sin(3t)
-// Spectrum of response
-//   mag   0.5 0.75 0 0.25
-//   phase 0   -90  0 +90
+//       9
+//      -9   cos(2*pi*100k*t)
+//      -1   cos(2*pi*10k*t)
+//      +0.5 cos(2*pi*90k*t)
+//      +0.5 cos(2*pi*110k*t)
+//      +8   sin(2*pi*5k*t)
+//      +4   sin(2*pi*95k*t)
+//      -4   sin(2*pi*105k*t)
+// Spectrum of Response
+//             s    -c   c     s    -c    -s    c
+//   freq  0   5k   10k  90k   95k  100k  105k  110k
+//   mag   9   8    1    0.5   4    9     4     0.5
+//   phase 0   -90  180  0     -90  180   90    0
 
 control
   abort always
+  print instance("v1")
   
   alter instance("v1") type="dc"
   sweep v1 instance="v1" parameter="dc" from=-1 to=1  mode="lin" points=50
     analysis dc1 op 
   
   options hb_debug=5 nr_debug=0
-  alter instance("v1") type="sine"
-  analysis hb1 hb freq=[1k] nharm=12
+  alter instance("v1") type="am"
+  analysis hb1 hb freq=[5k,50k] nharm=5 immax=5
   
   postprocess(PYTHON, "runme.py")
 endc
 
-embed "nl3.va" <<<FILE
+embed "nl2.va" <<<FILE
 `include "constants.vams"
 `include "disciplines.vams"
 
-module nl3(A,B);
+module nl2(A,B);
     // Simplified SPICE diode, used for validation purposes
     
     // Terminals and internal nodes
@@ -46,7 +56,7 @@ module nl3(A,B);
     electrical A,B;
     
     analog begin
-        I(A,B) <+ 0.5 + pow(V(A,B), 3);
+        I(A,B) <+ pow(V(A,B), 2);
     end
 endmodule
 >>>FILE
@@ -70,15 +80,21 @@ i1s = -hb1['v1:flow(br)']
 i1mag = np.abs(i1s)
 i1ph = np.angle(i1s)*180/np.pi
 
-exactmag = np.zeros(f.size)
-exactph = np.zeros(f.size)
-exactmag[0] = 0.5
-exactmag[1] = 0.75
-exactmag[3] = 0.25
-exactph[1] = -90
-exactph[3] = 90
+exactf   = np.array([0, 5, 10, 90, 95, 100, 105, 110])*1e3
+exactmag = np.array([9, 8, 1, 0.5, 4, 9, 4, 0.5])
+exactph  = np.array([0, -90, 180, 0, -90, 180, 90, 0])
+exactcx  = exactmag*(np.cos(exactph*np.pi/180)+1j*np.sin(exactph*np.pi/180))
 
-exact = exactmag*(np.cos(exactph*np.pi/180)+1j*np.sin(exactph*np.pi/180))
+exact = np.zeros(f.size, dtype=np.complex64)
+for fx, cx in zip(exactf, exactcx):
+    ii = np.where(np.abs(f-fx)<1e-12*fx+1e-12)[0]
+    if ii.size>0:
+        exact[ii[0]] = cx
+
+maxdelta = np.abs(exact-i1s).max()
+print("max delta:", maxdelta)
+tests.append(maxdelta<1e-12)
+
 delta = np.abs(i1s-exact).max()
 print("spectrum max delta:", delta)
 tests.append(delta<1e-12)
@@ -89,11 +105,11 @@ else:
     import matplotlib.pyplot as plt
 
     fig1, ax1 = plt.subplots(3, 1, figsize=(5,8), dpi=100, constrained_layout=True)
-    fig1.suptitle('HB of pow(v,3) excited by 1kHz sine, mag=1V')
+    fig1.suptitle('pow(v,2) of 50kHz carrier AM 5kHz, m=0.5')
     fig1.axes[0].set_title('DC response')
     fig1.axes[0].set_ylabel('I [A]')
     fig1.axes[0].set_xlabel('V [V]')
-    fig1.axes[0].plot(v1, 0.5+v1**3)
+    fig1.axes[0].plot(v1, v1**2)
     fig1.axes[0].plot(v1, i1, marker=".", color="red", linestyle="none")
 
     fig1.axes[1].set_title('I(v1) spectrum')

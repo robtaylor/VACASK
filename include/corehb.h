@@ -110,6 +110,7 @@ protected:
     struct SpecFreq {
         size_t gridIndex;
         double f;
+        bool negated;
         int order;
         bool isHarmonic;
     };

@@ -69,6 +69,10 @@ bool HBCore::buildTransformMatrix(DenseMatrix<double>& XF, Status& s) {
             for(decltype(nBase) k=0; k<nBase; k++) {
                 phase += weights.at(k)*baseFac[k];
             }
+            // If frequency was negated, so must be the phase
+            if (freq[j].negated) {
+                phase = -phase;
+            }
             // Compute cosine and sine component
             row.at(j*2-1) =  std::cos(phase);
             row.at(j*2)   = -std::sin(phase);

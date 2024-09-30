@@ -144,6 +144,9 @@ bool HBCore::buildGrid(Status& s) {
                 order += std::abs(cnt[i]);
                 f += cnt[i]*fundamentals[i];
             }
+            // Need to remember this to correctly compute phase when assembling APFT
+            auto negated = f<0;
+            // Use positive frequencies only
             f = std::abs(f);
 
             // Check immax
@@ -161,7 +164,8 @@ bool HBCore::buildGrid(Status& s) {
                 }
                 freq.push_back({
                     .gridIndex = grid.nRows()-1, 
-                    .f = f, 
+                    .f = f,
+                    .negated = negated,  
                     .order = order, 
                     .isHarmonic = nnz<=1, 
                 });
@@ -310,8 +314,9 @@ bool HBCore::buildGrid(Status& s) {
             std::cout << "  #" << fd.gridIndex << " [";
             auto row = grid.row(fd.gridIndex);
             auto nel = row.n();
+            auto sgn = fd.negated ? -1 : 1;
             for(decltype(nel) j=0; j<nel; j++) {
-                std::cout << row.at(j) << " ";
+                std::cout << row.at(j)*sgn << " ";
             }
             std::cout << "]";
             
