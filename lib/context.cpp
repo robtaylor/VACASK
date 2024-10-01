@@ -10,112 +10,112 @@ namespace NAMESPACE {
 static const double PI = std::numbers::pi;
 
 Context ContextStack::consts{ 
-    { "M_E",         exp(1)                     },  // e or exp(1)
-    { "M_LOG2E",     1/log(2)                   },  // log2(e)
-    { "M_LOG10E",    1/log(10)                  },  // log10(e)
-    { "M_LN2",       log(2)                     },  // ln(2)
-    { "M_LN10",      log(10)                    },  // ln(10)
-    { "M_PI",        PI                         },  // PI
-    { "M_TWO_PI",    2*PI                       },  // 2 PI
-    { "M_PI_2",      PI/2                       },  // PI/2
-    { "M_PI_4",      PI/4                       },  // PI/4
-    { "M_1_PI",      1/PI                       },  // 1/PI
-    { "M_2_PI",      2/PI                       },  // 2/PI
-    { "M_2_SQRTPI",  2/sqrt(PI)                 },  // 2/PI
-    { "M_SQRT2",     sqrt(2)                    },  // 2
-    { "M_SQRT1_2",   1/sqrt(2)                  },  // 1⁄2
-    { "M_DEGPERRAD", 180/PI                     },  // Number of degrees per radian
-    { "P_Q",         1.6021918e-19              },  // Charge of electron in coulombs
-    { "P_C",         2.997924562e8              },  // Speed of light in vacuum in meters/sec
-    { "P_K",         1.3806226e-23              },  // Boltzman’s constant in joules/Kelvin
-    { "P_H",         6.6260755e-34              },  // Planck’s constant in joules times seco
-    { "P_EPS0",      8.85418792394420013968e-12 },  // Permittivity of vacuum in farads/meter
-    { "P_U0",        PI*4.0e-7                  },  // Permeability of vacuum in henrys/meter
-    { "P_CELSIUS0",  273.15                     },  // Zero Celsius in Kelvin
+    { Id::createStatic("M_E"),         exp(1)                     },  // e or exp(1)
+    { Id::createStatic("M_LOG2E"),     1/log(2)                   },  // log2(e)
+    { Id::createStatic("M_LOG10E"),    1/log(10)                  },  // log10(e)
+    { Id::createStatic("M_LN2"),       log(2)                     },  // ln(2)
+    { Id::createStatic("M_LN10"),      log(10)                    },  // ln(10)
+    { Id::createStatic("M_PI"),        PI                         },  // PI
+    { Id::createStatic("M_TWO_PI"),    2*PI                       },  // 2 PI
+    { Id::createStatic("M_PI_2"),      PI/2                       },  // PI/2
+    { Id::createStatic("M_PI_4"),      PI/4                       },  // PI/4
+    { Id::createStatic("M_1_PI"),      1/PI                       },  // 1/PI
+    { Id::createStatic("M_2_PI"),      2/PI                       },  // 2/PI
+    { Id::createStatic("M_2_SQRTPI"),  2/sqrt(PI)                 },  // 2/PI
+    { Id::createStatic("M_SQRT2"),     sqrt(2)                    },  // 2
+    { Id::createStatic("M_SQRT1_2"),   1/sqrt(2)                  },  // 1⁄2
+    { Id::createStatic("M_DEGPERRAD"), 180/PI                     },  // Number of degrees per radian
+    { Id::createStatic("P_Q"),         1.6021918e-19              },  // Charge of electron in coulombs
+    { Id::createStatic("P_C"),         2.997924562e8              },  // Speed of light in vacuum in meters/sec
+    { Id::createStatic("P_K"),         1.3806226e-23              },  // Boltzman’s constant in joules/Kelvin
+    { Id::createStatic("P_H"),         6.6260755e-34              },  // Planck’s constant in joules times seco
+    { Id::createStatic("P_EPS0"),      8.85418792394420013968e-12 },  // Permittivity of vacuum in farads/meter
+    { Id::createStatic("P_U0"),        PI*4.0e-7                  },  // Permeability of vacuum in henrys/meter
+    { Id::createStatic("P_CELSIUS0"),  273.15                     },  // Zero Celsius in Kelvin
 };
 
 ContextStack::Builtins ContextStack::builtins = {
     // One argument, math
-    { "sin",    { 1, 1, true, mathFuncComp1<FwSin> } }, 
-    { "cos",    { 1, 1, true, mathFuncComp1<FwCos> } }, 
-    { "tan",    { 1, 1, true, mathFuncComp1<FwTan> } }, 
-    { "asin",   { 1, 1, true, mathFuncComp1<FwAsin> } }, 
-    { "acos",   { 1, 1, true, mathFuncComp1<FwAcos> } }, 
-    { "atan",   { 1, 1, true, mathFuncComp1<FwAtan> } }, 
-    { "sinh",   { 1, 1, true, mathFuncComp1<FwSinh> } }, 
-    { "cosh",   { 1, 1, true, mathFuncComp1<FwCosh> } }, 
-    { "tanh",   { 1, 1, true, mathFuncComp1<FwTanh> } }, 
-    { "asinh",  { 1, 1, true, mathFuncComp1<FwAsinh> } },  
-    { "acosh",  { 1, 1, true, mathFuncComp1<FwAcosh> } },  
-    { "atanh",  { 1, 1, true, mathFuncComp1<FwAtanh> } }, 
+    { Id::createStatic("sin"),      { 1, 1, true, mathFuncComp1<FwSin> } }, 
+    { Id::createStatic("cos"),      { 1, 1, true, mathFuncComp1<FwCos> } }, 
+    { Id::createStatic("tan"),      { 1, 1, true, mathFuncComp1<FwTan> } }, 
+    { Id::createStatic("asin"),     { 1, 1, true, mathFuncComp1<FwAsin> } }, 
+    { Id::createStatic("acos"),     { 1, 1, true, mathFuncComp1<FwAcos> } }, 
+    { Id::createStatic("atan"),     { 1, 1, true, mathFuncComp1<FwAtan> } }, 
+    { Id::createStatic("sinh"),     { 1, 1, true, mathFuncComp1<FwSinh> } }, 
+    { Id::createStatic("cosh"),     { 1, 1, true, mathFuncComp1<FwCosh> } }, 
+    { Id::createStatic("tanh"),     { 1, 1, true, mathFuncComp1<FwTanh> } }, 
+    { Id::createStatic("asinh"),    { 1, 1, true, mathFuncComp1<FwAsinh> } },  
+    { Id::createStatic("acosh"),    { 1, 1, true, mathFuncComp1<FwAcosh> } },  
+    { Id::createStatic("atanh"),    { 1, 1, true, mathFuncComp1<FwAtanh> } }, 
     
-    { "log",    { 1, 1, true, mathFuncComp1<FwLn> } }, 
-    { "ln",     { 1, 1, true, mathFuncComp1<FwLn> } }, 
-    { "log10",  { 1, 1, true, mathFuncComp1<FwLog10> } },  
-    { Id::createStatic("exp"),    { 1, 1, true, mathFuncComp1<FwExp> } }, 
-    { "sqrt",   { 1, 1, true, mathFuncComp1<FwSqrt> } }, 
+    { Id::createStatic("log"),      { 1, 1, true, mathFuncComp1<FwLn> } }, 
+    { Id::createStatic("ln"),       { 1, 1, true, mathFuncComp1<FwLn> } }, 
+    { Id::createStatic("log10"),    { 1, 1, true, mathFuncComp1<FwLog10> } },  
+    { Id::createStatic("exp"),      { 1, 1, true, mathFuncComp1<FwExp> } }, 
+    { Id::createStatic("sqrt"),     { 1, 1, true, mathFuncComp1<FwSqrt> } }, 
     
-    { "abs",    { 1, 1, true, mathFuncComp1<FwAbs> } }, 
-    { "integer",{ 1, 1, true, mathFuncComp1<FwTrunc> } }, 
-    { "floor",  { 1, 1, true, mathFuncComp1<FwFloor> } },  
-    { "ceil",   { 1, 1, true, mathFuncComp1<FwCeil> } }, 
-    { "round",  { 1, 1, true, mathFuncComp1<FwRound> } }, 
-    { "sgn",    { 1, 1, true, mathFuncComp1<FwSgn> } }, 
+    { Id::createStatic("abs"),      { 1, 1, true, mathFuncComp1<FwAbs> } }, 
+    { Id::createStatic("integer"),  { 1, 1, true, mathFuncComp1<FwTrunc> } }, 
+    { Id::createStatic("floor"),    { 1, 1, true, mathFuncComp1<FwFloor> } },  
+    { Id::createStatic("ceil"),     { 1, 1, true, mathFuncComp1<FwCeil> } }, 
+    { Id::createStatic("round"),    { 1, 1, true, mathFuncComp1<FwRound> } }, 
+    { Id::createStatic("sgn"),      { 1, 1, true, mathFuncComp1<FwSgn> } }, 
 
     // Component-wise check for inf/nan
-    { "isinf",    { 1, 1, true, mathFuncComp1<FwIsInf> } }, 
-    { "isnan",    { 1, 1, true, mathFuncComp1<FwIsNan> } }, 
-    { "isfinite", { 1, 1, true, mathFuncComp1<FwIsFinite> } }, 
+    { Id::createStatic("isinf"),    { 1, 1, true, mathFuncComp1<FwIsInf> } }, 
+    { Id::createStatic("isnan"),    { 1, 1, true, mathFuncComp1<FwIsNan> } }, 
+    { Id::createStatic("isfinite"), { 1, 1, true, mathFuncComp1<FwIsFinite> } }, 
     
     // Two arguments, math
-    { "pow",    { 2, 2, true, mathFuncComp2<FwPower> } },
-    { "hypot",  { 2, 2, true, mathFuncComp2<FwHypot> } }, 
-    { "atan2",  { 2, 2, true, mathFuncComp2<FwAtan2> } },
-    { "sign",   { 2, 2, true, mathFuncComp2<FwSign> } },
-    { "fmod",   { 2, 2, true, mathFuncComp2<FwFmod> } },
+    { Id::createStatic("pow"),      { 2, 2, true, mathFuncComp2<FwPower> } },
+    { Id::createStatic("hypot"),    { 2, 2, true, mathFuncComp2<FwHypot> } }, 
+    { Id::createStatic("atan2"),    { 2, 2, true, mathFuncComp2<FwAtan2> } },
+    { Id::createStatic("sign"),     { 2, 2, true, mathFuncComp2<FwSign> } },
+    { Id::createStatic("fmod"),     { 2, 2, true, mathFuncComp2<FwFmod> } },
 
     // One argument(aggregation) or two arguments (component-wise), math
-    { "min",    { 1, 2, true, minWrapper } },
-    { "max",    { 1, 2, true, maxWrapper } },
+    { Id::createStatic("min"),      { 1, 2, true, minWrapper } },
+    { Id::createStatic("max"),      { 1, 2, true, maxWrapper } },
     
     // Boolean aggregation
-    { "all",    { 1, 1, true, mathAggregateFunc1<FwAll> } },
-    { "any",    { 1, 1, true, mathAggregateFunc1<FwAny> } },
+    { Id::createStatic("all"),      { 1, 1, true, mathAggregateFunc1<FwAll> } },
+    { Id::createStatic("any"),      { 1, 1, true, mathAggregateFunc1<FwAny> } },
 
     // Numerical aggregation
-    { "sum",    { 1, 1, true, mathAggregateNumFunc1<FwSum> } },
-    { "prod",   { 1, 1, true, mathAggregateNumFunc1<FwProd> } },
+    { Id::createStatic("sum"),      { 1, 1, true, mathAggregateNumFunc1<FwSum> } },
+    { Id::createStatic("prod"),     { 1, 1, true, mathAggregateNumFunc1<FwProd> } },
     
     // Type discovery
     // For vectors
-    { "isint",     { 1, 1, true, scalarTypeCheck<Value::Type::Int> } }, 
-    { "isreal",    { 1, 1, true, scalarTypeCheck<Value::Type::Real> } }, 
-    { "isstring",  { 1, 1, true, scalarTypeCheck<Value::Type::String> } }, 
+    { Id::createStatic("isint"),    { 1, 1, true, scalarTypeCheck<Value::Type::Int> } }, 
+    { Id::createStatic("isreal"),   { 1, 1, true, scalarTypeCheck<Value::Type::Real> } }, 
+    { Id::createStatic("isstring"), { 1, 1, true, scalarTypeCheck<Value::Type::String> } }, 
     // Is vector/list
-    { "isvector",  { 1, 1, true, vectorCheck } }, 
-    { "islist",    { 1, 1, true, listCheck } }, 
+    { Id::createStatic("isvector"), { 1, 1, true, vectorCheck } }, 
+    { Id::createStatic("islist"),   { 1, 1, true, listCheck } }, 
     
     // Type conversion
-    { "int",     { 1, 1, true, typeConversion<Value::Type::Int> } }, 
-    { "real",    { 1, 1, true, typeConversion<Value::Type::Real> } }, 
+    { Id::createStatic("int"),      { 1, 1, true, typeConversion<Value::Type::Int> } }, 
+    { Id::createStatic("real"),     { 1, 1, true, typeConversion<Value::Type::Real> } }, 
     // TODO: presently supports only type conversions built into Value class 
     //       in future add conversion of number to string and vice versa
-    { "string",  { 1, 1, true, typeConversion<Value::Type::String> } }, 
+    { Id::createStatic("string"),   { 1, 1, true, typeConversion<Value::Type::String> } }, 
 
     // Vector length
-    { "len",     { 1, 1, true, len} }, 
+    { Id::createStatic("len"),      { 1, 1, true, len} }, 
 
     // Vector construction
-    { "vector",  { 1, 2, true, vectorBuild } }, // length[, value]    type = type(value)
-    { "range",   { 1, 3, true, vectorRange } }, // to | from, to | from, to, step,   type=maxtype(from, to, step)
+    { Id::createStatic("vector"),   { 1, 2, true, vectorBuild } }, // length[, value]    type = type(value)
+    { Id::createStatic("range"),    { 1, 3, true, vectorRange } }, // to | from, to | from, to, step,   type=maxtype(from, to, step)
     
     // String
     /*
-    { "join",    { 1, 2, true, nullptr} }, // string vector[, separator]
-    { "split",   { 1, 2, true, nullptr} }, // string, separator
+    { Id::createStatic("join"),     { 1, 2, true, nullptr} }, // string vector[, separator]
+    { Id::createStatic("split"),    { 1, 2, true, nullptr} }, // string, separator
 
     // Selection 
-    { "where",   { 1, 3, true, nullptr} }, // where(s) -> indices of nonzeros, where(s, x, y) -> x if s nonzero, else y
+    { Id::createStatic("where"),    { 1, 3, true, nullptr} }, // where(s) -> indices of nonzeros, where(s, x, y) -> x if s nonzero, else y
     */
 };
 
