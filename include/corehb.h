@@ -13,28 +13,35 @@
 namespace NAMESPACE {
 
 typedef struct HBParameters {
-    RealVector freq {};   // Fundamental frequencies (f1, f2, ..., fd) 
-    Value nharm {4};      // Number of harmonics for each fundamental frequency 
-                          // (H1, H2, ..., Hd) in box truncation
-                          // If scalar, applies to all frequencies, 
-                          // if vector, components apply to corresponding frequencies. 
-    Int immax {0};        // Maximal order of intermodulation products (IM) in diamond truncation. 
-                          // If <=0, defaults to largest component of nharm. 
-                          // If harmonics is a vector, defaults to its largest component. 
-    IntVector imorder {}; // Intermodulation product order 
-                          // (reported for each frequency when raw truncation scheme is used)
-    Id truncate {Id()};   // Truncation scheme: 
-                          // raw     .. values in freq are the frequencies in the spectrum
-                          // box     .. box truncation
-                          //   kj = 0..Hj, first nonzero kj must be >0
-                          // diamond .. diamond truncation (default)
-                          //   sum abs(kj) <= IM, first nonzero kj must be >0
-    Real samplefac {2};   // Sampling factor in time domain (>=1). 
-    Real nper {3};        // Number of periods across which colocation points are selected
-    Id sample {Id()};     // Sampling mode (uniform, random), default is random. 
+    RealVector freq {};    // Fundamental frequencies (f1, f2, ..., fd) 
+    Value nharm {4};       // Number of harmonics for each fundamental frequency 
+                           // (H1, H2, ..., Hd) in box truncation
+                           // If scalar, applies to all frequencies, 
+                           // if vector, components apply to corresponding frequencies. 
+    Int immax {0};         // Maximal order of intermodulation products (IM) in diamond truncation. 
+                           // If <=0, defaults to largest component of nharm. 
+                           // If harmonics is a vector, defaults to its largest component. 
+    Id truncate {Id()};    // Truncation scheme: 
+                           // raw     .. values in freq are the frequencies in the spectrum
+                           // box     .. box truncation
+                           //   kj = 0..Hj, first nonzero kj must be >0
+                           // diamond .. diamond truncation (default)
+                           //   sum abs(kj) <= immax, first nonzero kj must be >0
+    Real samplefac {2};    // Sampling factor in time domain (>=1). 
+    Real nper {3};         // Number of periods across which colocation points are selected
+    Id sample {Id()};      // Sampling mode (uniform, random), default is random. 
 
-    Int writeOutput {1};  // Do we want to write the results to a file
-                          // Not exposed as analysis parameter. 
+    // These two are for annotation purpuses only, they do not affect HB simulation. 
+    IntVector harmonic {}; // When raw truncation scheme is used this flag indicates 
+                           // a frequency in the freq vector is a harmonic. 
+                           // If not given, assumes frequencies in freq are all harmonics. 
+    IntVector imorder {};  // When raw truncation scheme is used this flag indicates 
+                           // the intermodulation product order of each frequency in the freq vector. 
+                           // If not set, assumes order is -1 for all frequencies. 
+    
+ 
+    Int writeOutput {1};   // Do we want to write the results to a file
+                           // Not exposed as analysis parameter. 
                              
     HBParameters();
 } HBParameters;

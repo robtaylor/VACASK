@@ -47,9 +47,6 @@ public:
 
     // Assign same value to all elements
     VectorView<T>& operator=(const T& from) { 
-        if (n_ != from.n_) {
-            throw std::out_of_range("Vector length mismatch.");
-        }
         T* ptr = start_;
         for(decltype(n_) i=0; i<n_; i++) {
             *ptr = from;
@@ -253,6 +250,16 @@ private:
     size_t n_;
     size_t stride_;
 };
+
+template<typename T> std::ostream& operator<<(std::ostream& os, const VectorView<T>& obj) {
+    for(decltype(obj.n()) i=0; i<obj.n(); i++) {
+        if (i>0) {
+            os << " ";
+        }
+        os << obj[i];
+    }
+    return os;
+}
 
 // Deduction guides for VectorView
 template<typename T> VectorView(std::vector<T>& v) -> VectorView<T>;

@@ -1,0 +1,141 @@
+Single tone HB of a self-heating lighbulb
+
+ground 0 
+
+load "lightbulb.va"
+
+model vsource vsource
+model lightbulb lightbulb rth=(3000-25)/60 ta=25
+
+v1 (1 0) vsource dc=0 type="sine" sinedc=0.0 ampl=325 freq=50
+b1 (1 0) lightbulb
+
+control
+  abort always
+  
+  alter instance("v1") type="dc"
+  sweep v1 instance="v1" parameter="dc" from=0 to=230 mode="lin" points=50
+    analysis dc1 op 
+
+  alter instance("v1") type="sine"
+  analysis tran1 tran stop=2 step=0.01m maxstep=0.05m
+
+  analysis hb1 hb freq=[50] nharm=10
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "lightbulb.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module lightbulb(A, B);
+    // Self-heating lightbulb
+    (*desc = "Thermal resistance", units = "K/W"*) 
+      parameter real Rth = 50 from [0:inf];
+    (*desc = "Thermal capacitance", units = "J/K"*) 
+      parameter real Cth = 10e-3 from [0:inf];
+    (*desc = "Ambient temperature", units = "deg C"*) 
+      parameter real Ta = 25 from [0:inf];
+    (*desc = "Resistance coeff R0", units = "Ohm"*) 
+      parameter real R0 = 8.612 from [0:inf];
+    (*desc = "Resistance coeff p0", units = ""*) 
+      parameter real p0 = 8.612 from [-inf:inf];
+    (*desc = "Resistance coeff p1", units = "K^-1"*) 
+      parameter real p1 = 0.0269 from [-inf:inf];
+    (*desc = "Resistance coeff p1", units = "K^-2"*) 
+      parameter real p2 = 1.914e-6 from [-inf:inf];
+    
+    // Variables
+    real p, i, r;
+
+    // Terminals and internal nodes
+    inout A, B;
+    electrical A, B, T;
+    
+    analog begin
+        r = R0 * (p0 + p1*V(T) + p2*pow(V(T),2));
+        i = V(A,B)/r;
+        p = i*V(A,B);
+        I(T) <+ -p + (V(T)-Ta)/Rth + ddt(Cth*V(T));
+        I(A,B) <+ i;
+    end
+endmodule
+>>>FILE
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests = []
+
+dc1 = rawread('dc1.raw').get()
+v = dc1['1']
+i = -dc1["v1:flow(br)"]
+T = dc1['b1:t']
+
+tran1 = rawread('tran1.raw').get()
+time = tran1['time']
+Tt = tran1['b1:t']
+
+hb1 = rawread('hb1.raw').get()
+f = np.real(hb1['frequency'])
+Ts = hb1['b1:t']
+Tmag = np.abs(Ts)
+
+t = np.linspace(0, 1.0/50, 1000)
+y = np.zeros(t.size)
+for f1, Ts1 in zip(f, Ts):
+    y += np.real(Ts1)*np.cos(2*np.pi*f1*t)
+    y += -np.imag(Ts1)*np.sin(2*np.pi*f1*t)
+
+ytran = np.interp(time[-1]-1.0/50+t, time, Tt)
+
+expectedMag = [
+    2.92426055e+03, 6.71950764e-11, 9.41683136e+00, 1.66592923e-11, 
+    8.14844544e-03, 1.05502365e-11, 1.28166335e-05, 6.67716634e-12, 
+    2.49482776e-08, 3.05053797e-12, 5.28608343e-11,
+]
+delta = np.abs(np.log10(Tmag)-np.log10(expectedMag)).max()
+print("delta (magnitudes):", delta)
+tests.append(delta<1e-3)
+
+delta = np.abs(y-ytran).max()
+print("delta (HB-tran):", delta)
+tests.append(delta<1)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt
+
+    fig1, ax1 = plt.subplots(4, 1, figsize=(5,8), dpi=100, constrained_layout=True)
+    fig1.suptitle('HB analysis of self-heating lightbulb')
+    fig1.axes[0].set_title('DC response')
+    fig1.axes[0].set_ylabel('T [deg C]')
+    fig1.axes[0].set_xlabel('V [V]')
+    fig1.axes[0].plot(v, T)
+
+    fig1.axes[1].set_title('Transient response')
+    fig1.axes[1].set_ylabel('T [deg C]')
+    fig1.axes[1].set_xlabel('time [s]')
+    fig1.axes[1].plot(time, Tt)
+
+    fig1.axes[2].set_title('Steady-state magnitude spectrum')
+    fig1.axes[2].set_ylabel('T magnitude [deg C]')
+    fig1.axes[2].set_xlabel('frequency [Hz]')
+    fig1.axes[2].set_yscale("log")
+    fig1.axes[2].stem(f, Tmag, markerfmt='.')
+
+    fig1.axes[3].set_title('Steady-state response')
+    fig1.axes[3].set_ylabel('T [deg C]')
+    fig1.axes[3].set_xlabel('time [ms]')
+    fig1.axes[3].plot(t*1e3, y, color="blue", label="HB")
+    fig1.axes[3].plot(t*1e3, ytran, color="red", label="tran")
+    fig1.axes[3].legend(loc="upper left")
+
+    plt.show()
+>>>FILE
+

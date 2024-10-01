@@ -214,7 +214,7 @@ typedef struct LoadSetup {
     // Add reactive Jacobian to bound locations
     // Multiplies Jacobian entries with reactiveJacobianFactor before adding them. 
     bool loadReactiveJacobian {};
-    double reactiveJacobianFactor {};
+    double reactiveJacobianFactor { 1.0 };
 
     // Add to bound locations
     // - resistive Jacobian 

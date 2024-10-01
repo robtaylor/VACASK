@@ -72,11 +72,17 @@ bool HBCore::buildGrid(Status& s) {
     // Build grid
     if (params.truncate==HBCore::truncateRaw) {
         // Raw
+        // Check harmonic
+        if (params.harmonic.size()!=0 && params.harmonic.size()!=n) {
+            s.set(Status::BadArguments, "If given harmonic must match freq in size.");
+            return false;
+        }
         // Check imorder
         if (params.imorder.size()!=0 && params.imorder.size()!=n) {
             s.set(Status::BadArguments, "If given imorder must match freq in size.");
             return false;
         }
+
         grid.resize(n+1, n); // first entry is DC (0Hz)
         grid.zero();
         freq.push_back({
@@ -87,7 +93,11 @@ bool HBCore::buildGrid(Status& s) {
         });
         for(decltype(n) i=0; i<n; i++) {
             grid.at(i+1, i) = 1.0;
+            bool harmonic = true;
             Int order = -1;
+            if (params.harmonic.size()>0) {
+                harmonic = params.harmonic[i]!=0;
+            }
             if (params.imorder.size()>0) {
                 order = params.imorder[i];
                 if (order<0) {
@@ -99,7 +109,7 @@ bool HBCore::buildGrid(Status& s) {
                 .gridIndex = i+1, 
                 .f = fundamentals[i], 
                 .order = order, 
-                .isHarmonic = false, 
+                .isHarmonic = harmonic, 
             });
         }
     } else if (params.truncate==HBCore::truncateBox || params.truncate==HBCore::truncateDiamond) {

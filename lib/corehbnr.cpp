@@ -50,6 +50,8 @@ HBNRSolver::HBNRSolver(
         .states = nullptr, 
         .loadResistiveJacobian = true, 
         .loadReactiveJacobian = true, 
+        // Used for loading with offset 0
+        .reactiveJacobianFactor = 1.0, 
     };
 }
 
@@ -209,12 +211,12 @@ bool HBNRSolver::postConvergenceCheck(bool continuePrevious) {
                 ss.str(""); 
                 ss << maxResidual;
                 Simulator::dbg() << ", worst residual=" << ss.str() << " @ " << (maxResidualNode ? maxResidualNode->name() : "(unknown)")
-                                 << ", t" << maxResidualTimepointIndex << "=" << timepoints[maxResidualTimepointIndex];
+                                 << "~t" << maxResidualTimepointIndex << "=" << timepoints[maxResidualTimepointIndex];
             }
             if (iteration>1) {
                 ss.str(""); ss << maxDelta;
                 Simulator::dbg() << ", worst delta=" << ss.str() << " @ " << (maxDeltaNode ? maxDeltaNode->name() : "(unknown)")
-                                 << ", t" << maxDeltaTimepointIndex << "=" << timepoints[maxDeltaTimepointIndex];
+                                 << "~t" << maxDeltaTimepointIndex << "=" << timepoints[maxDeltaTimepointIndex];
             }
         }
         Simulator::dbg() << "\n";
@@ -367,15 +369,17 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
             VectorView(maxResidualContributionAtTk_, 1, n, 1);
     }
 
+    
+
     // For each block (ordered in column major order)
     for(auto& pos : circuit.sparsityMap().positions()) {
         // Get dense block
         auto [block, found] = bsjac.block(pos);
 
-        // Get block position, make position 0-based
-        // auto [i, j] = pos;
-        // i--;
-        // j--;
+        // Get block position (for debugging), make position 0-based
+        auto [i, j] = pos;
+        i--;
+        j--;
 
         // Get g_ijk and c_ijk columns from block (column elements are indexed by k)
         auto gCol = block.column(0);
@@ -433,7 +437,6 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
                 if (c>maxRes[k]) {
                     maxRes[k] = c;
                 }
-
             }
 
             // Add resistive residual to block
