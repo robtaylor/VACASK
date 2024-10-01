@@ -20,7 +20,7 @@ namespace NAMESPACE {
 // Blocks of size nb x nb
 // mep          .. coordinates of the block
 // blockMep     .. element coordinates within the block
-// block origin .. element with blockMep=(1,1)
+// block origin .. element with blockMep=(0,0)
 template<typename IndexType, typename ValueType> 
 class KluBlockSparseMatrixCore : public KluMatrixCore<IndexType, ValueType>, public MatrixAccess<IndexType> {
 public: 
@@ -41,7 +41,7 @@ public:
     // Column stride depends on the number of dense blocks in a column of dense blocks. 
     //   column stride = number of dense blocks in the column x nb
     // Returns DenseMatrixView of block, found flag
-    // If the block is not found the dense matrix view has row and column stride 0. 
+    // If the block is not found the dense matrix view of the blockBucket_ is returned. 
     // All elements refer to the bucket. 
     std::tuple<DenseMatrixView<ValueType>, bool> block(const MatrixEntryPosition& mep) {
         auto [nzPosition, found] = elementIndex(mep);
@@ -50,8 +50,8 @@ public:
         }
         // KLU organizes elements in column major order
         // row stride is 1, column stride depends on the column of dense blocks
+        // Get 0-based block position
         auto [row, col] = mep;
-        // Make coordinates 1-based
         row--;
         col--;
         return std::make_tuple(
@@ -66,8 +66,8 @@ public:
     bool rebuild(SparsityMap& m, EquationIndex n, EquationIndex nb);
 
     // Returns the linear nonzero element index coresponding to dense block
-    // at block position mep (1-based), block element position blockMep (1-based). 
-    // If blockMep is not given assumes (1, 1), i.e. block origin. 
+    // at block position mep (0-based), block element position blockMep (1-based). 
+    // If blockMep is not given assumes (0, 0), i.e. block origin. 
     // Returns index, found. found=true if element exists. 
     std::tuple<IndexType, bool> elementIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const {
         auto [entryOffset, found] = smap->find(mep);
@@ -90,8 +90,6 @@ public:
         if (blockMep.has_value()) {
             // Get 0-based dense block element position
             auto [brow, bcol] = blockMep.value();
-            brow--;
-            bcol--;
             // Compute element position
             nzPosition += bcol * blockColumnStride[col] + brow;
         }

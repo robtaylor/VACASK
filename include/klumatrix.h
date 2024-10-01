@@ -52,6 +52,8 @@ typedef std::pair<EquationIndex,UnknownIndex> MatrixEntryPosition;
 
 
 // Sparsity map - maps MatrixEntyPosition to an index in a linear array
+// MatrixEntryPosition of a sparsity map entry uses 1-based indices
+// Index 0 is reserved for the reference node (i.e. ground). 
 class SparsityMap {
 public:
     SparsityMap() {};
@@ -127,23 +129,23 @@ public:
 
     // Return index into element array corresponding to row, column given by mep (1-based)
     // For block matrices, mep is the block position (1-based) and 
-    // blockMep is the position of the element within the block (1-based). 
-    // If blockMep is not given, (1,1) is assumed. 
+    // blockMep is the position of an element within the block (0-based). 
+    // If blockMep is not given, (0,0) is assumed. 
     // Return value: index, found
     virtual std::tuple<IndexType, bool> valueIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const = 0;
 
     // Return pointer to element's component
     // For block matrices, mep is the block position (1-based) and 
-    // blockMep is the position of the element within the block (1-based). 
-    // If blockMep is not given, (1,1) is assumed. 
+    // blockMep is the position of the element within the block (0-based). 
+    // If blockMep is not given, (0,0) is assumed. 
     // Returns bucket if element is not found 
     // Returns nullptr if imaginary part is requested from a real matrix
     virtual double* valuePtr(const MatrixEntryPosition& mep, Component comp=Component::Real, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
 
     // Return pointer to element's component (complex matrix)
     // For block matrices, mep is the block position (1-based) and 
-    // blockMep is the position of the element within the block (1-based). 
-    // If blockMep is not given, (1,1) is assumed. 
+    // blockMep is the position of the element within the block (0-based). 
+    // If blockMep is not given, (0,0) is assumed. 
     // Returns complex bucket if element is not found 
     // Returns nullptr if matrix is real 
     virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) = 0;
@@ -319,6 +321,10 @@ protected:
     bool errorNan;
 };
 
+// KluMatrixCore does not include a MatrixAcces interface
+// It can be used to derive more advanced classes (e.g. block-sparse matrix). 
+// KluAtomicMatrix includes a MatrixAcces interface. 
+// It should not be used as the base class for new matrix classes. 
 template<typename IndexType, typename ValueType> 
 class KluAtomicMatrix : public KluMatrixCore<IndexType, ValueType>, public MatrixAccess<IndexType> {
 public:
@@ -331,11 +337,15 @@ public:
     virtual Complex* cxValuePtr(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt);
 };
 
-// Default KLU matrix flavor
+// KLU matrix classes (used as base for more advanced classes)
 typedef KluMatrixCore<MatrixEntryIndex, double> KluRealMatrixCore;
 typedef KluMatrixCore<MatrixEntryIndex, Complex> KluComplexMatrixCore;
+
+// KLU matrix classes with a MatrixAcces interface
 typedef KluAtomicMatrix<MatrixEntryIndex, double> KluRealMatrix;
 typedef KluAtomicMatrix<MatrixEntryIndex, Complex> KluComplexMatrix;
+
+// MatrixAccess interface class
 typedef MatrixAccess<MatrixEntryIndex> KluMatrixAccess;
 }
 

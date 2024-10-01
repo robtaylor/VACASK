@@ -201,14 +201,14 @@ bool HBCore::rebuild(Status& s) {
         return false;
     }
 
-    // Bind resistive residuals to 1-based subelement (1,1) 
-    // Bind reactive residuals to 1-based subelement (1,2) 
+    // Bind resistive residuals to 0-based subelement (0,0) 
+    // Bind reactive residuals to 0-based subelement (0,1) 
     
     // Resistive Jacobian entries remain bound to OP Jacobian, 
     // reactive parts will be bound to imaginary entries of acMatrix
     if (!circuit.bind(
-        &bsjac, Component::Real, MatrixEntryPosition(1, 1), 
-        &bsjac, Component::Real, MatrixEntryPosition(1, 2), 
+        &bsjac, Component::Real, MatrixEntryPosition(0, 0), 
+        &bsjac, Component::Real, MatrixEntryPosition(0, 1), 
         s
     )) {
         return false;

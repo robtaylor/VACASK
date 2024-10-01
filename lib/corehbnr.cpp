@@ -286,8 +286,8 @@ bool HBNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) 
 }
 
 std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
-    // Resistive Jacobian is bound to 1-based subentry (1, 1) of each dense block. 
-    // Reactive Jacobian is bound to 1-based subentry (1, 2) of each dense block. 
+    // Resistive Jacobian is bound to 0-based subentry (0, 0) of each dense block. 
+    // Reactive Jacobian is bound to 0-based subentry (0, 1) of each dense block. 
     // As Jacobian load offset goes from 0..nb-1 (nb=ntimepoints)
     // the first two columns of each block are loaded with Jacobian values, 
     // i.e. (k+1, 1) with resistive and (k+1, 2) with reactive Jacobian values 
