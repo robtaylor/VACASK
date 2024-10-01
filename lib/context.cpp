@@ -52,7 +52,7 @@ ContextStack::Builtins ContextStack::builtins = {
     { "log",    { 1, 1, true, mathFuncComp1<FwLn> } }, 
     { "ln",     { 1, 1, true, mathFuncComp1<FwLn> } }, 
     { "log10",  { 1, 1, true, mathFuncComp1<FwLog10> } },  
-    { "exp",    { 1, 1, true, mathFuncComp1<FwExp> } }, 
+    { Id::createStatic("exp"),    { 1, 1, true, mathFuncComp1<FwExp> } }, 
     { "sqrt",   { 1, 1, true, mathFuncComp1<FwSqrt> } }, 
     
     { "abs",    { 1, 1, true, mathFuncComp1<FwAbs> } }, 

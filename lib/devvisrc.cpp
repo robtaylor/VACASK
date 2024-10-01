@@ -20,17 +20,26 @@ template<> int Introspection<DevSourceInstanceParams>::setup() {
     registerNamedMember(mfactor, "$mfactor");
     registerMember(type);
     registerMember(delay);
+    
     registerMember(dc);
+    
     registerMember(val0);
     registerMember(val1);
     registerMember(period);
     registerMember(rise);
     registerMember(fall);
     registerMember(width);
+    
     registerMember(sinedc);
     registerMember(ampl);
     registerMember(freq);
     registerMember(sinephase);
+    registerMember(theta);
+
+    registerMember(td2);
+    registerMember(tau1);
+    registerMember(tau2);
+    
     registerMember(wave);
     registerMember(offset);
     registerMember(scale);
@@ -40,9 +49,11 @@ template<> int Introspection<DevSourceInstanceParams>::setup() {
     registerMember(allbrkpts);
     registerMember(slopetol);
     registerMember(reltol);
+    
     registerMember(modfreq);
     registerMember(modphase);
     registerMember(modindex);
+    
     registerMember(mag);
     registerMember(phase);
     return 0;
@@ -71,6 +82,12 @@ DevSourceInstanceParams::DevSourceInstanceParams() {
     ampl = 1.0;
     freq = 1e3;
     sinephase = 0.0;
+    theta = 0.0;
+
+    // type="exp"
+    td2 = 0.0;
+    tau1 = 0.0;
+    tau2 = 0.0;
 
     // type="pwl"
     wave = RealVector();
@@ -118,6 +135,7 @@ DevISourceInstanceData::DevISourceInstanceData() {
 
 static Id typeSine = Id::createStatic("sine");
 static Id typePulse = Id::createStatic("pulse");
+static Id typeExp = Id::createStatic("exp");
 static Id typeDc = Id::createStatic("dc");
 static Id typePwl = Id::createStatic("pwl");
 static Id typeAm = Id::createStatic("am");
@@ -185,6 +203,13 @@ std::tuple<bool, bool, bool> sourceSetup(InstanceParams& params, InstanceData& d
         // Check slopetol and reltol
 
         // Breakpoint handling mechanism
+    } else if (p.type == typeExp) {
+        d.typeCode = IndependentSourceType::Exp;
+        if (p.td2<=0) {
+            s.set(Status::BadArguments, "Parameter td2 of exponential transient must be greater than 0.");
+            s.extend(loc);
+            return std::make_tuple(false, false, false);
+        }
     } else if (p.type == typeAm) {
         d.typeCode = IndependentSourceType::Am;
     } else if (p.type == typeFm) {
@@ -219,7 +244,30 @@ std::tuple<double, double> sourceCompute(const InstanceParams& params, InstanceD
             nextBreak = params.delay;
         } else {
             // For t >= delay start sine at given phase
-            val = params.sinedc+params.ampl*std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180);
+            val = params.sinedc+
+                  params.ampl
+                    *std::sin(2*PI*params.freq*(time-params.delay)+params.phase*PI/180)
+                    *std::exp(-params.theta*(time-params.delay));
+        }
+        break;
+    case IndependentSourceType::Exp:
+        if (time<params.delay) {
+            // For t < delay the value is equal to value at t=delay
+            val = params.val0;
+            nextBreak = params.delay;
+        } else {
+            auto t1 = params.delay + params.td2; // start of fall
+            if (time<t1) {
+                // Rising exponential
+                val = params.val0 
+                      + (params.val1-params.val0)*(1-std::exp(-(time-params.delay)/params.tau1));
+                nextBreak = t1;
+            } else {
+                // Falling exponential
+                val = params.val0 
+                      + (params.val1-params.val0)*(1-std::exp(-(time-params.delay)/params.tau1))
+                      + (params.val0-params.val1)*(1-std::exp(-(time-t1)/params.tau2));
+            }
         }
         break;
     case IndependentSourceType::Am:

@@ -33,12 +33,12 @@ struct DevSourceInstanceParams {
     Real ampl;
     Real freq;
     Real sinephase; // degrees
+    Real theta;
     // Exp
-    Real td1;
-    Real tau1;
+    // val0, val1, delay
     Real td2;
+    Real tau1;
     Real tau2;
-    Real expperiod;
     // Pwl
     RealVector wave;
     Real offset;

@@ -9,7 +9,7 @@ model vsource vsource
 model isource isource
 
 // Sine
-i1 (0 1) isource type="sine" sinedc=0.5 ampl=2.0 freq=50.0 phase=-90
+i1 (0 1) isource type="sine" sinedc=0.5 ampl=2.0 freq=1k phase=-90 theta=100
 r1 (1 0) resistor r=1
 
 // Step
@@ -31,6 +31,10 @@ r5 (5 0) resistor r=1
 // FM
 i6 (0 6) isource type="fm" sinedc=0.5 ampl=2.0 freq=1000 phase=-90 modfreq=50 modphase=90 modindex=10
 r6 (6 0) resistor r=1
+
+// Exponential
+i7 (0 7) isource type="exp" val0=1 val1=2 delay=5m td2=10m tau1=2m tau2=10m 
+r7 (7 0) resistor r=1
 
 control
   abort always
@@ -94,7 +98,7 @@ tran1 = rawread('tran1.raw').get()
 time = tran1['time']
 
 vsin = tran1["1"]
-exact = 0.5+2.0*np.sin(2*np.pi*50.0*time-np.pi/2)
+exact = 0.5+2.0*np.sin(2*np.pi*1e3*time-np.pi/2)*np.exp(-time*100.0)
 status = (relDiff(vsin, exact, 1e-6) < 1e-3).all()
 print("Sinusoidal", status)
 tests.append(status)
@@ -129,12 +133,22 @@ status = (relDiff(vfm, exact, 1e-9) < 1e-3).all()
 print("FM", status)
 tests.append(status)
 
+vexp = tran1["7"]
+exact = 1.0 + (
+      (2.0-1.0)*(1-np.exp(-(time-5e-3)/2e-3))*(time>5e-3)
+    + (1.0-2.0)*(1-np.exp(-(time-15e-3)/10e-3))*(time>15e-3)
+)
+status = (relDiff(vexp, exact, 1e-9) < 1e-3).all()
+print("Exponential", status)
+tests.append(status)
+
+
 if isTest():
     sys.exit(not all(tests))
 else:
     import matplotlib.pyplot as plt 
 
-    fig1, ax1 = plt.subplots(6, 1, figsize=(6,9), dpi=100, constrained_layout=True)
+    fig1, ax1 = plt.subplots(7, 1, figsize=(6,9), dpi=100, constrained_layout=True)
     fig1.suptitle("Transient excitations")
 
     fig1.axes[0].set_title('Sine')
@@ -151,18 +165,20 @@ else:
     
     fig1.axes[3].set_title('Pulse train')
     fig1.axes[3].set_ylabel('V [V]')
-    fig1.axes[3].set_xlabel('time [ms]')
     fig1.axes[3].plot(time*1000, vtrain, marker=".")
 
     fig1.axes[4].set_title('AM')
     fig1.axes[4].set_ylabel('V [V]')
-    fig1.axes[4].set_xlabel('time [ms]')
     fig1.axes[4].plot(time*1000, vam, marker=".")
 
     fig1.axes[5].set_title('FM')
     fig1.axes[5].set_ylabel('V [V]')
-    fig1.axes[5].set_xlabel('time [ms]')
     fig1.axes[5].plot(time*1000, vfm, marker=".")
+
+    fig1.axes[6].set_title('Exponential')
+    fig1.axes[6].set_ylabel('V [V]')
+    fig1.axes[6].set_xlabel('time [ms]')
+    fig1.axes[6].plot(time*1000, vexp, marker=".")
 
     plt.show()
 >>>FILE
