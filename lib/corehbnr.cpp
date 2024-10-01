@@ -353,6 +353,19 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         // Set time and offset
         evalSetup_.time = timepoints[k];
         loadSetup_.jacobianLoadOffset = k;
+
+        // This is a kludge, implement real source stepping
+        decltype(settings.itlim) ramp;
+        if (continuePrevious) {
+            ramp = settings.itlimCont*0.1;
+        } else {
+            ramp = settings.itlim*0.1;
+        }
+        if (ramp<1) {
+            ramp = 1;
+        }
+        // NR starts with iteration=1
+        circuit.simulatorInternals().sourcescalefactor = (iteration-1)<ramp ? (iteration-1)*1.0/ramp : 1.0;
     
         // For k-th timepoint (t_k) load 
         // - resistive and reactive Jacobian at t_k with offset i, 

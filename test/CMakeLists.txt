@@ -22,7 +22,7 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${simfile}")
         "${simfile}" PROPERTIES 
         ENVIRONMENT 
         "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR};SIM_TEST=yes"
-        TIMEOUT 5
+        TIMEOUT 10
     )
 endmacro()
 
@@ -57,6 +57,7 @@ prepare_netlist_test(test_noise.sim)
 prepare_netlist_test(test_hb1.sim)
 prepare_netlist_test(test_hb2.sim)
 prepare_netlist_test(test_hb3.sim)
+prepare_netlist_test(test_hb4.sim)
 prepare_netlist_test(test_build.sim)
 prepare_netlist_test(test_visrc.sim)
 prepare_netlist_test(test_viwfm.sim)

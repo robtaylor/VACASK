@@ -77,7 +77,7 @@ std::tuple<bool, std::string, std::string> runProcess(
 
         bool ok = c.exit_code()==0;
         if (!ok) {
-            s.set(Status::Process, "Error running '"+prog+"'.");
+            s.set(Status::Process, "Error running '"+prog+"', exit code="+std::to_string(c.exit_code())+".");
         }
 
         return std::make_tuple(ok, fout.get(), ferr.get()); 
@@ -91,7 +91,7 @@ std::tuple<bool, std::string, std::string> runProcess(
         
         bool ok = c.exit_code()==0;
         if (!ok) {
-            s.set(Status::Process, "Error running '"+prog+"'.");
+            s.set(Status::Process, "Error running '"+prog+"', exit code="+std::to_string(c.exit_code())+".");
         }
 
         return std::make_tuple(ok, "", "");
