@@ -115,32 +115,61 @@ protected:
     bool converged_;
     
     struct SpecFreq {
+        // Index of the frequency grid entry
         size_t gridIndex;
+        // Abslute frequency
         double f;
+        // If the grid entry results in a negative frequency, this is true
         bool negated;
+        // Intermodulation product order
+        // For harmonics this is the order of the harmonic. 
         int order;
+        // Flag indicating that this frequency is a harmonic 
+        // (i.e. all grid coordinates, but one, are 0)
         bool isHarmonic;
     };
 
 private:
     NRSettings nrSettings;
     HBNRSolver nrSolver;
+
+    // Temporary structures for collecting the phasors at a single frequency
+    // before they are dumped. This vector has a bucket so that the output 
+    // source code is the same as with other analyses. 
     VectorRepository<Complex> outputPhasors;
     Complex outputFreq;
 
+    // Solution in frequency domain, nf phasors for each on of the n unknowns
+    // NR solver resiszes this vector. This vector has no bucket. 
     Vector<Complex> solutionFD;
 
+    // Previous HB parameters to check if we need to rebuild()
     HBParameters oldParams;
+    // Flag indicating rebuild() has not been called yet
     bool firstBuild;
 
+    // HB parameters
     HBParameters& params;
-    std::vector<SpecFreq> freq;
-    std::vector<double> frequencies;
+
+    // Vectors and matrices without a bucket
+    // Gridpoints in the frequency grid
+    // Rows are gridpoints, columns are fundamental frequency factors
     DenseMatrix<int> grid;
-    Vector<double> timepoints;    
+    // Details on each frequency in the spectrum (sorted), references grid entries
+    std::vector<SpecFreq> freq;
+    // Vector of frequencies including DC (sorted)
+    std::vector<double> frequencies;
+    // Colocation timepoints (sorted)
+    Vector<double> timepoints; 
+    // Almost periodic Fourier transform
     DenseMatrix<double> APFT;
+    // Inverse almost periodic Fourier transform
     DenseMatrix<double> IAPFT;
+    // Derivative wrt time operator for time-domain vectors
+    // Results in a time domain vector
+    // Computed as IAPFT Omega APFT
     DenseMatrix<double> DDT;
+    // DDT operator in column-major order (for cache locality)
     DenseMatrix<double> DDTcolMajor;
 };
 

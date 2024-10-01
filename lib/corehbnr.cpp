@@ -92,10 +92,8 @@ bool HBNRSolver::initialize(bool continuePrevious) {
     auto nb = bsjac.nBlockElementRows();
 
     // Old solution and derivative wrt time at all timepoints
-    // Bucket for ground node is needed because these vectors 
-    // are used by NRSolver which assumes a bucket of length 1. 
-    resistiveResidual.resize(n*nt+1);
-    reactiveResidual.resize(n*nt+1);
+    resistiveResidual.resize(n*nt);
+    reactiveResidual.resize(n*nt);
 
     // Old solution and resistive residual at one timepoint
     // Includes ground node because it is used by evalAndLoad()
@@ -107,7 +105,7 @@ bool HBNRSolver::initialize(bool continuePrevious) {
     maxResidualContributionAtTk_.resize(n+1);
 
     // Maximum residual contribution for each equation at each timepoint
-    maxResidualContribution_.resize(n*nt+1);
+    maxResidualContribution_.resize(n*nt);
 
     // Maximum across all equations at given timepoint for each nature
     // Computed in checkResidual()
@@ -374,11 +372,11 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         auto ok = evalAndLoadWrapper(evalSetup_, loadSetup_);
 
         // Put resistive residuals at t_k in the residuals vector
-        VectorView(resistiveResidual, 1+k, n, nb) = VectorView(resistiveResidualAtTk, 1, n, 1);
-        VectorView(reactiveResidual, 1+k, n, nb) = VectorView(reactiveResidualAtTk, 1, n, 1);
+        VectorView(resistiveResidual, k, n, nb) = VectorView(resistiveResidualAtTk, 1, n, 1);
+        VectorView(reactiveResidual, k, n, nb) = VectorView(reactiveResidualAtTk, 1, n, 1);
 
         // Put maximal resistive residual contribution at t_k into maxResidualContribution_
-        VectorView(maxResidualContribution_, 1+k, n, nb) = 
+        VectorView(maxResidualContribution_, k, n, nb) = 
             VectorView(maxResidualContributionAtTk_, 1, n, 1);
     }
 
@@ -429,11 +427,11 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         // delta is zeroed at the beginning of each iteration by NRSolver
 
         // Block-transform reactive residual with DDT, store it in delta
+        auto resPtr = resistiveResidual.data();
+        auto reacPtr = reactiveResidual.data();
+        auto maxResPtr = maxResidualContribution_.data();
         // Skip bucket
-        auto resPtr = resistiveResidual.data()+1;
-        auto reacPtr = reactiveResidual.data()+1;
         auto deltaPtr = delta.data()+1;
-        auto maxResPtr = maxResidualContribution_.data()+1;
         for(decltype(n) i=0; i<n; i++) {
             // Perform DDT on reactive residual block
             VectorView dest(deltaPtr, nb, 1);
@@ -464,7 +462,6 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
 
         // Bucket
         delta[0] = 0.0;
-        maxResidualContribution_[0] = 0;
     }
 
     // OK, do not prevent convergence
@@ -478,7 +475,7 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
     // In residual we have the residual at previous solution
     // We are going to check that residual
     
-    // Number of unknowns (vector length includes a bucket at index 0)
+    // Number of unknowns excluding ground
     auto n = circuit.unknownCount();
 
     // Number of timepoints
@@ -497,7 +494,7 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
     // Get point maximum for each residual nature
     pointMaxResidualContribution_.zero(); 
     // Loop through all nodes
-    auto compPtr = maxResidualContribution_.data()+1;
+    auto compPtr = maxResidualContribution_.data();
     for(decltype(n) i=0; i<n; i++) {
         // Get representative node (1-based index) and nature index
         auto rn = circuit.reprNode(i+1);
@@ -525,7 +522,7 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
             // Compute tolerance reference
             // Point local reference by default
             // Compute tolerance reference, start with previous value of the i-th unknown
-            double tolref = std::fabs(maxResidualContribution_[1+(i-1)*nt+k]);
+            double tolref = std::fabs(maxResidualContribution_[(i-1)*nt+k]);
             
             // Account for global references
             if (globalResRef) {

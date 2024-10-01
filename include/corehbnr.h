@@ -46,29 +46,35 @@ protected:
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
 
+    // HB Jacobian
     KluBlockSparseRealMatrix& bsjac;
+    
+    // Vectors and matrices without a bucket
     std::vector<double>& frequencies;
     Vector<double>& timepoints; 
     DenseMatrix<double>& DDT;
     DenseMatrix<double>& DDTcolMajor;
     DenseMatrix<double>& APFT;
-    Vector<Complex>& solutionFD;
+    Vector<Complex>& solutionFD; 
     Circuit& circuit;
 
-    // Internal structures
-    // At t_k
+    // Internal structures computed at t_k
+    // These structures have a bucket because they communicate with 
+    // evalAndLoad() which requires vectors to have a bucket. 
     VectorRepository<double> oldSolutionAtTk;
     Vector<double> resistiveResidualAtTk;
     Vector<double> reactiveResidualAtTk;
+    Vector<double> maxResidualContributionAtTk_; // maximal residual contribution for all equations at a given timepoint
+                                                 // filled with maximal resistive contribution in evalAndLoadWrapper()
+    // No bucket, just a dummy
     Vector<double> dummyStates;
 
-    // For all timepoints
+    // For all timepoints, no bucket
     Vector<double> resistiveResidual;
     Vector<double> reactiveResidual;
     
     // Internal structure for max residual contribution
-    Vector<double> maxResidualContributionAtTk_; // maximal residual contribution for all equations at a given timepoint
-                                                 // filled with maximal resistive contribution in evalAndLoadWrapper()
+    // Has no bucket because it does not communicate with evalAndLoad(). 
     Vector<double> maxResidualContribution_; // maximal residual contribution for each equation at each timepoint
     
     // What kind of tolerance reference to use
