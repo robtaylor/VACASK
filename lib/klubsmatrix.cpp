@@ -6,8 +6,8 @@
 
 namespace NAMESPACE {
 
-template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexType, ValueType>::KluBlockSparseMatrixCore() 
-    : denseColumnBegin(nullptr), blockColumnOrigin(nullptr), blockColumnStride(nullptr), blockBucket_(nullptr) {
+template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexType, ValueType>::KluBlockSparseMatrixCore(bool largeBucket) 
+    : denseColumnBegin(nullptr), blockColumnOrigin(nullptr), blockColumnStride(nullptr), blockBucket_(nullptr), largeBucket_(largeBucket) {
 }
 
 template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexType, ValueType>::~KluBlockSparseMatrixCore() {
@@ -23,7 +23,7 @@ template<typename IndexType, typename ValueType> KluBlockSparseMatrixCore<IndexT
         delete [] blockColumnStride;
         blockColumnStride = nullptr;
     }
-    if (blockBucket_) {
+    if (blockBucket_ && largeBucket_) {
         delete [] blockBucket_;
         blockBucket_ = nullptr;
     }
@@ -78,22 +78,23 @@ Complex* KluBlockSparseMatrixCore<IndexType, ValueType>::cxValuePtr(
 }
 
 template<typename IndexType, typename ValueType> 
-bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, EquationIndex n, EquationIndex nb) {
+bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, EquationIndex n, EquationIndex nbRow, UnknownIndex nbCol) {
     KluMatrixCore<IndexType, ValueType>::clearError();
     
     this->~KluBlockSparseMatrixCore();
     this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
 
     n_ = n;
-    nb_ = nb;
+    nbRow_ = nbRow;
+    nbCol_ = nbCol;
 
     smap = &m;
     
     // Set number of columns of elements
-    AN = n*nb;
+    AN = n_*nbCol_;
 
-    // Number of nonzeros
-    auto nnz_ = m.size()*nb*nb;
+    // Number of nonzeros (for now, assume all dense blocks are fully dense)
+    auto nnz_ = m.size()*nbRow_*nbCol_;
 
     // Allocate arrays
     AP = new IndexType[AN+1];
@@ -160,7 +161,7 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
 
         // Add column origin and stride
         blockColumnOrigin[blockColNdx] = atNz;
-        blockColumnStride[blockColNdx] = blocksInColumn*nb;
+        blockColumnStride[blockColNdx] = blocksInColumn*nbRow_;
 
         // No blocks in this block column, nothing to do
         if (blocksInColumn==0) {
@@ -170,7 +171,7 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
         // Iterate through subcolumns of each dense block
         // This loop runs even if there are no dense blocks in this column of dense blocks
         // Therefore AP is filled with indices correctly even in this case
-        for(decltype(nb) subColNdx=0; subColNdx<nb; subColNdx++) {
+        for(decltype(nbCol_) subColNdx=0; subColNdx<nbCol_; subColNdx++) {
             // Add index of first nonzero element in column
             AP[atCol] = atNz;
 
@@ -184,8 +185,8 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
                 blkCol--;
 
                 // For each row in dense block
-                IndexType rowIndex = blkRow * nb;
-                for(decltype(nb) subRowNdx=0; subRowNdx<nb; subRowNdx++) {
+                IndexType rowIndex = blkRow * nbRow_;
+                for(decltype(nbRow_) subRowNdx=0; subRowNdx<nbRow_; subRowNdx++) {
                     // Write row index
                     AI[atNz] = rowIndex;
 
@@ -207,8 +208,12 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     
     // Allocate array for nozero element values
     Ax = new ValueType[nnz_];
-    blockBucket_ = new ValueType[nb_*nb_];
-    if (!Ax || !blockBucket_) {
+    if (largeBucket_) {
+        blockBucket_ = new ValueType[nbRow_*nbCol_];
+    } else {
+        blockBucket_ = &bucket_;
+    }
+    if (!Ax || (largeBucket_ && !blockBucket_)) {
         this->~KluBlockSparseMatrixCore();
         this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
         lastError = Error::Memory;

@@ -24,7 +24,8 @@ namespace NAMESPACE {
 template<typename IndexType, typename ValueType> 
 class KluBlockSparseMatrixCore : public KluMatrixCore<IndexType, ValueType>, public MatrixAccess<IndexType> {
 public: 
-    KluBlockSparseMatrixCore();
+    // Large bucket is needed if we are going to use Jacobian loading with offsets
+    KluBlockSparseMatrixCore(bool largeBucket=true);
     
     KluBlockSparseMatrixCore           (const KluBlockSparseMatrixCore&)  = delete;
     KluBlockSparseMatrixCore           (      KluBlockSparseMatrixCore&&) = delete;
@@ -46,7 +47,7 @@ public:
     std::tuple<DenseMatrixView<ValueType>, bool> block(const MatrixEntryPosition& mep) {
         auto [nzPosition, found] = elementIndex(mep);
         if (!found) {
-            return std::make_tuple(DenseMatrixView<ValueType>(blockBucket_, nb_, nb_, 0, 0), false);
+            return std::make_tuple(DenseMatrixView<ValueType>(blockBucket_, nbRow_, nbCol_, 0, 0), false);
         }
         // KLU organizes elements in column major order
         // row stride is 1, column stride depends on the column of dense blocks
@@ -55,7 +56,7 @@ public:
         row--;
         col--;
         return std::make_tuple(
-            DenseMatrixView<ValueType>(Ax+nzPosition, nb_, nb_, 1, blockColumnStride[col]), 
+            DenseMatrixView<ValueType>(Ax+nzPosition, nbRow_, nbCol_, 1, blockColumnStride[col]), 
             true
         );
     };
@@ -63,7 +64,7 @@ public:
     // Rebuild it based on the given sparsity map of dense blocks, 
     // n x n dense blocks with nb x nb elements
     // Set elements to zero, clear error
-    bool rebuild(SparsityMap& m, EquationIndex n, EquationIndex nb);
+    bool rebuild(SparsityMap& m, EquationIndex n, EquationIndex nbRow, UnknownIndex nbCol);
 
     // Returns the linear nonzero element index coresponding to dense block
     // at block position mep (0-based), block element position blockMep (1-based). 
@@ -84,7 +85,7 @@ public:
         // Which block in column is this
         auto blockInColumn = entry->index - firstBlockInColumn;
         // Compute element index of block origin
-        auto nzPosition = blockColumnOrigin[col] + nb_*blockInColumn;
+        auto nzPosition = blockColumnOrigin[col] + nbRow_*blockInColumn;
 
         // Do we have a blockMep
         if (blockMep.has_value()) {
@@ -117,8 +118,8 @@ public:
 
     IndexType nBlockRows() const { return n_; };
     IndexType nBlockCols() const { return n_; };
-    IndexType nBlockElementRows() const { return nb_; };
-    IndexType nBlockElementCols() const { return nb_; };
+    IndexType nBlockElementRows() const { return nbRow_; };
+    IndexType nBlockElementCols() const { return nbCol_; };
     
     void dumpBlockSparsity(std::ostream& os);
 
@@ -132,12 +133,19 @@ protected:
     using KluMatrixCore<IndexType, ValueType>::lastError;
     using KluMatrixCore<IndexType, ValueType>::common;
     using KluMatrixCore<IndexType, ValueType>::symbolic;
+    using KluMatrixCore<IndexType, ValueType>::bucket_;
 
     // Number of blocks in row/column
+    // Blocks structure is square
     IndexType n_;
 
     // Number of rows/columns in a dense block
-    IndexType nb_;
+    // Internal structure of a block can be rectangular. 
+    // Of course, such matrices cannot be LU decomposed, 
+    // but hey can be useful for storing block-sparse data, 
+    // e.g. in HB analysis. 
+    IndexType nbRow_;
+    IndexType nbCol_;
 
     // Origin of dense block column (origin of topmost dense block).
     // This is the linear index of the nonzero element at the topmost block's origin. 
@@ -157,8 +165,9 @@ protected:
     IndexType* denseColumnBegin;
 
     // We need a block bucket because Jacobian load with offset could add an offset to bucket pointer
+    bool largeBucket_;
     ValueType* blockBucket_;
-
+    
 public:
     // Matrix binding interface
     // If blockMep is not given the block origin is returned

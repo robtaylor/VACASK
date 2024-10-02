@@ -196,7 +196,8 @@ bool HBCore::rebuild(Status& s) {
     }
 
     // HB Jacobian
-    if (!bsjac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), timepoints.size())) {
+    auto nt = timepoints.size();
+    if (!bsjac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), nt, nt)) {
         setError(HBError::MatrixError);
         return false;
     }
