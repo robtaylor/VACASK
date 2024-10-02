@@ -11,7 +11,9 @@ namespace NAMESPACE {
 
 HB::HB(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      core(*this, params.core(), circuit, jac, solution) {
+      jacColoc(true), // need a large bucket for loading with offsets
+      jac(false), // a small bucket will do 
+      core(*this, params.core(), circuit, jacColoc, jac, solution) {
 };
 
 HB::~HB() {

@@ -6,7 +6,9 @@
 namespace NAMESPACE {
 
 HBNRSolver::HBNRSolver(
-    Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
+        Circuit& circuit, 
+        KluBlockSparseRealMatrix& jacColoc, 
+        KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
         Vector<Complex>& solutionFD, 
         Vector<Real>& frequencies, 
@@ -15,7 +17,7 @@ HBNRSolver::HBNRSolver(
         DenseMatrix<Real>& DDTcolMajor, 
         DenseMatrix<double>& APFT, 
         NRSettings& settings
-) : circuit(circuit), bsjac(bsjac), solutionFD(solutionFD), 
+) : circuit(circuit), jacColoc(jacColoc), bsjac(bsjac), solutionFD(solutionFD), 
     frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), APFT(APFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
     resizeForces(0);
@@ -284,18 +286,21 @@ bool HBNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) 
 }
 
 std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
+    // Jacobian values at colocation points are stored in jacColoc with dense 
+    // blocks of size nt x 2, where nt is the number of colocation points. 
     // Resistive Jacobian is bound to 0-based subentry (0, 0) of each dense block. 
     // Reactive Jacobian is bound to 0-based subentry (0, 1) of each dense block. 
     // As Jacobian load offset goes from 0..nb-1 (nb=ntimepoints)
     // the first two columns of each block are loaded with Jacobian values, 
-    // i.e. (k+1, 1) with resistive and (k+1, 2) with reactive Jacobian values 
+    // i.e. (k, 0) with resistive and (k, 1) with reactive Jacobian values 
     // at times coresponding to timepoints tk, k=0..nb-1 because KLU matrices are 
     // stored in column major order. 
+    // 
     // Let Jr_ijk and Jc_ijk denote the resistive and reactive Jacobian value 
     // from block with 1-based position (i+1, j+1) at timepoint with index k. 
     // i, j and k are all 0-based. 
-    // After evalAndLoad() the first column of each block is filled Jr_ijk 
-    // and the second column of each block is filled with Jc_ijk. thin the block. 
+    // After nt evalAndLoad() calls the two columns of each block in jacColoc 
+    // are filled with Jr_ijk and Jc_ijk. 
     // 
     // The unknowns and the equations are in time domain, i.e. we formulate 
     // HB in time domain. Let Gij denote the diagonal nb x nb matrix holding 
@@ -311,16 +316,8 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
     // of DDT with reactive Jacobian values Jc_ijk and then adding the 
     // resistive Jacoban values Jr_ijk to the diagonal. 
     // 
-    // Construction is performed by first constructing columns k=2..nb-1. 
-    // This leaves the frist two columns holding Jr_ijk and Jc_ijk unchanged. 
-    // Next, Jr_ij0, Jr_ij1, Jc_ij0, and Jc_ij1 are stored and, finally, the 
-    // first two columns are constructed and stored in place of Jr_ijk and 
-    // Jc_ijk values in the block. 
-    // 
-    // Because blocks are stored in column major order the ineermost loop 
-    // iterates over values of k. The columns are scaled in order k=2..nb-1. 
-    // The first two columns (k=0,1) are handled outside the innermost loop. 
-    // This way good cache locality is achieved. 
+    // Because blocks are stored in column major order the innermost loop 
+    // iterates over values of k. In this way good cache locality is achieved. 
     
     // Get sizes
     auto n = bsjac.nBlockRows();
@@ -331,6 +328,9 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
 
     // Old solution is in time domain. Get it. 
     auto solTD = solution.data();
+
+    // Clear Jacobian at colocation points
+    jacColoc.zero();
     
     // Loop through timepoints 0..nb-1
     for(decltype(nb) k=0; k<nb; k++) {
@@ -369,6 +369,7 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         // - resistive and reactive Jacobian at t_k with offset i, 
         // - resistive residuals for all equations at t_k
         // - reactive residuals for all equations at t_k
+        // Values are stored in jacColoc. 
         auto ok = evalAndLoadWrapper(evalSetup_, loadSetup_);
 
         // Put resistive residuals at t_k in the residuals vector
@@ -380,28 +381,25 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
             VectorView(maxResidualContributionAtTk_, 1, n, 1);
     }
 
-    
-
     // For each block (ordered in column major order)
     for(auto& pos : circuit.sparsityMap().positions()) {
-        // Get dense block
-        auto [block, found] = bsjac.block(pos);
-
         // Get block position (for debugging), make position 0-based
         auto [i, j] = pos;
         i--;
         j--;
 
-        // Get g_ijk and c_ijk columns from block (column elements are indexed by k)
-        auto gCol = block.column(0);
-        auto cCol = block.column(1);
+        // Get dense block with Jacobian values at colocation points
+        auto [colocBlock, found1] = jacColoc.block(pos);
 
-        // Get the first two values in each column
-        double ghead[] = { gCol[0], gCol[1] };
-        double chead[] = { cCol[0], cCol[1] };
-        
+        // Get HB Jacobian dense block
+        auto [block, found2] = bsjac.block(pos);
+
+        // Get g_ijk and c_ijk columns from block (column elements are indexed by k)
+        auto gCol = colocBlock.column(0);
+        auto cCol = colocBlock.column(1);
+
         // Scan columns in block in from 2 to nb-1 
-        for(decltype(nb) l=2; l<nb; l++) {   
+        for(decltype(nb) l=0; l<nb; l++) {   
             // Get target column
             auto targetColumn = block.column(l);
 
@@ -413,14 +411,6 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
 
             // Add diagonal Jr_ijk
             targetColumn[l] += gCol[l];
-        }
-
-        // Handle first two columns in an extra loop
-        for(decltype(nb) l=0; l<2; l++) {
-            auto targetColumn = block.column(l);
-            auto ddtColumn = DDTcolMajor.column(l);
-            targetColumn.writeScaled(ddtColumn, chead[l]);
-            targetColumn[l] += ghead[l];
         }
 
         // Now handle residuals

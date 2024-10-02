@@ -35,9 +35,9 @@ instantiateIntrospection(HBParameters);
 
 HBCore::HBCore(
     OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
-    KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
-    nrSolver(circuit, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, nrSettings), 
+    KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
+) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), jacColoc(jacColoc), 
+    nrSolver(circuit, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true) {
 };
 
@@ -195,8 +195,13 @@ bool HBCore::rebuild(Status& s) {
         return false;
     }
 
-    // HB Jacobian
+    // Number of colocation points
     auto nt = timepoints.size();
+
+    // Jacobian entries at colocation points
+    jacColoc.rebuild(circuit.sparsityMap(), circuit.unknownCount(), nt, 2);
+
+    // HB Jacobian
     if (!bsjac.rebuild(circuit.sparsityMap(), circuit.unknownCount(), nt, nt)) {
         setError(HBError::MatrixError);
         return false;
@@ -208,8 +213,8 @@ bool HBCore::rebuild(Status& s) {
     // Resistive Jacobian entries remain bound to OP Jacobian, 
     // reactive parts will be bound to imaginary entries of acMatrix
     if (!circuit.bind(
-        &bsjac, Component::Real, MatrixEntryPosition(0, 0), 
-        &bsjac, Component::Real, MatrixEntryPosition(0, 1), 
+        &jacColoc, Component::Real, MatrixEntryPosition(0, 0), 
+        &jacColoc, Component::Real, MatrixEntryPosition(0, 1), 
         s
     )) {
         return false;
@@ -359,12 +364,13 @@ bool HBCore::test() {
 
     // Dummy strutures
     OutputDescriptorResolver dummyResolver;
+    KluBlockSparseRealMatrix jacColoc;
     KluBlockSparseRealMatrix bsjac;
     VectorRepository<double> sol;
     ParserTables tab;
     Circuit dummyCircuit(tab);
 
-    HBCore hb(dummyResolver, p, dummyCircuit, bsjac, sol);
+    HBCore hb(dummyResolver, p, dummyCircuit, jacColoc, bsjac, sol);
 
     if (ok && !hb.buildGrid(s)) {
         ok = false;

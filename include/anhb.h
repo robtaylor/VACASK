@@ -70,7 +70,8 @@ private:
     IStruct<HBParameters> params;
     HBCore core;
 
-    KluBlockSparseRealMatrix jac; // Jacobian
+    KluBlockSparseRealMatrix jacColoc; // Jacobian entries at colocation points
+    KluBlockSparseRealMatrix jac; // HB Jacobian
     VectorRepository<double> solution; // Solution history
 };
 

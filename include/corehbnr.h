@@ -12,7 +12,9 @@ class HBNRSolver : public NRSolver {
 public:
     // No forces. 
     HBNRSolver(
-        Circuit& circuit, KluBlockSparseRealMatrix& bsjac, 
+        Circuit& circuit, 
+        KluBlockSparseRealMatrix& jacColoc, 
+        KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
         Vector<Complex>& solutionFD,
         Vector<Real>& frequencies, 
@@ -45,6 +47,9 @@ protected:
     
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
+
+    // Jacobian entries at colocation points
+    KluBlockSparseRealMatrix& jacColoc;
 
     // HB Jacobian
     KluBlockSparseRealMatrix& bsjac;

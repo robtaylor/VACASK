@@ -58,7 +58,7 @@ public:
 
     HBCore(
         OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
-        KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
+        KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
     );
     ~HBCore();
     
@@ -107,7 +107,12 @@ protected:
 
     HBError lastHbError;
 
-    KluBlockSparseRealMatrix& bsjac; // Jacobian
+    // Block-sparse matrix with rectangular blocks for 
+    // storing Jacobian values at colocation timepoints
+    KluBlockSparseRealMatrix& jacColoc;
+
+    // HB Jacobian
+    KluBlockSparseRealMatrix& bsjac; 
     VectorRepository<Real>& solution; // Solution history
     
     OutputRawfile* outfile;
