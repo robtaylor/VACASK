@@ -427,8 +427,16 @@ bool OsdiInstance::populateStructuresCore(Circuit& circuit, Status& s) {
         auto& entry = model()->device()->jacobianEntry(i);
         auto ne = nodes_[entry.nodes.node_1];
         auto nu = nodes_[entry.nodes.node_2];
-        auto [ptr, ok] = circuit.createJacobianEntry(ne, nu, s);
-        if (!ok) {
+        
+        EntryFlags f = EntryFlags::NoFlags;
+        if (entry.flags & JACOBIAN_ENTRY_RESIST) {
+            f = f | EntryFlags::Resistive;
+        }
+        if (entry.flags & JACOBIAN_ENTRY_REACT) {
+            f = f | EntryFlags::Reactive;
+        }
+
+        if (auto [_, ok] = circuit.createJacobianEntry(ne, nu, f, s); !ok) {
             return false;
         }
     }

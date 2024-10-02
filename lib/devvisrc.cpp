@@ -558,16 +558,16 @@ template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circ
 
 template<> bool BuiltinVSourceInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[0], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[0], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[1], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[1], EntryFlags::Resistive, s); !ok) {
         return false;
     }
     // No states to reserve

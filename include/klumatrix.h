@@ -50,6 +50,14 @@ typedef std::pair<EquationIndex,UnknownIndex> MatrixEntryPosition;
     }
 } MatrixEntryPositionHash;
 
+// Sparsity map entry flags
+enum class EntryFlags : uint8_t {
+    NoFlags = 0,
+    Resistive = 1,
+    Reactive = 2,
+    ResistiveReactive = 3, 
+};
+DEFINE_FLAG_OPERATORS(EntryFlags);
 
 // Sparsity map - maps MatrixEntyPosition to an index in a linear array
 // MatrixEntryPosition of a sparsity map entry uses 1-based indices
@@ -63,8 +71,13 @@ public:
     SparsityMap& operator=(const SparsityMap&)  = delete;
     SparsityMap& operator=(      SparsityMap&&) = delete;
 
+    typedef struct {
+        MatrixEntryIndex index;
+        EntryFlags flags { EntryFlags::NoFlags };
+    } Entry;
+
     // Type of map from MatrixEntryPosition into a linear array index
-    typedef std::unordered_map<MatrixEntryPosition, MatrixEntryIndex, MatrixEntryPositionHash> Map;
+    typedef std::unordered_map<MatrixEntryPosition, Entry, MatrixEntryPositionHash> Map;
 
     // Clear
     void clear();
@@ -74,19 +87,23 @@ public:
 
     // Insert, the returned pointer points to an integer that 
     // will containt the entry index after enumerate() is called
-    // bool value indicates if a pre-existing entry was found
-    std::tuple<MatrixEntryIndex*, bool> insert(EquationIndex e, UnknownIndex u) {
-        auto [it, inserted] = smap.insert({std::make_pair(e, u), 0});
-        return std::make_tuple(&(it->second), true);
+    // Returns flag indicating new entry created, ok
+    std::tuple<bool, bool> insert(EquationIndex e, UnknownIndex u, EntryFlags f=EntryFlags::NoFlags) {
+        auto [it, inserted] = smap.insert({std::make_pair(e, u), { 0, f }});
+        if (!inserted) {
+            // Not inserted because it is already there, update flags
+            it->second.flags = it->second.flags | f;
+        }
+        return std::make_tuple( inserted, true);
     };
 
     // Find, bool value indicates if an entry was found
-    std::tuple<MatrixEntryIndex, bool> find(const MatrixEntryPosition& mep) const {
+    const Entry* find(const MatrixEntryPosition& mep) const {
         auto it = smap.find(mep);
         if (it==smap.end()) {
-            return std::make_tuple(0, false);
+            return nullptr;
         }
-        return std::make_tuple(it->second, true);
+        return &(it->second);
     };
     
     // Get vector of sorted matrix entry positions
@@ -216,16 +233,17 @@ public:
     // Assumes the undelying type is double or std::complex<double> (Complex)
     // This method is used when the type of the matrix is known. 
     double* elementPtr(const MatrixEntryPosition& mep, Component comp=Component::Real) {
-        auto [entryOffset, found] = smap->find(mep);
-        if (!found) {
+        auto entry = smap->find(mep);
+        if (!entry) {
             return reinterpret_cast<double*>(&bucket_);
         }
+        auto offset = entry->index;
         if constexpr(std::is_same<ValueType, Complex>::value) {
             return (comp==Component::Imaginary) ? 
-                reinterpret_cast<double*>(Ax+entryOffset)+1 : 
-                reinterpret_cast<double*>(Ax+entryOffset);
+                reinterpret_cast<double*>(Ax+offset)+1 : 
+                reinterpret_cast<double*>(Ax+offset);
         } else {
-            return (comp==Component::Imaginary) ? nullptr : (Ax+entryOffset);
+            return (comp==Component::Imaginary) ? nullptr : (Ax+offset);
         }
     };
 

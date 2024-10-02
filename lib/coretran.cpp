@@ -348,12 +348,13 @@ bool TranCore::populateStructures(Status& s) {
             // One of the two nodes was not found, ignore pair
             continue;
         }
-        auto [ptr1, ok1] = circuit.createJacobianEntry(node1, node2, s);
-        if (!ok1) {
+        
+        // IC forces are all resistive
+        if (auto [_, ok] = circuit.createJacobianEntry(node1, node2, EntryFlags::Resistive, s); !ok) {
             return false;
         }
-        auto [ptr2, ok2] = circuit.createJacobianEntry(node2, node1, s);
-        if (!ok2) {
+        
+        if (auto [_, ok] = circuit.createJacobianEntry(node2, node1, EntryFlags::Resistive, s); ok) {
             return false;
         }
     }

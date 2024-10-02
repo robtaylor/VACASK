@@ -38,7 +38,7 @@ void SparsityMap::enumerate() {
     for(auto it=ordering.begin(); it!=ordering.end(); ++it) {
         auto e = it->first;
         auto u = it->second;
-        smap[*it] = num;
+        smap[*it].index = num;
         num++;
     }
 }
@@ -46,11 +46,11 @@ void SparsityMap::enumerate() {
 void SparsityMap::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     for(auto& it : ordering) {
-        auto [offs, found] = find(it);
+        auto entry = find(it);
         auto [e, u] = it;
         os << pfx << "(" << e << ", " << u << ") : ";
-        if (found) {
-            os << offs;
+        if (entry) {
+            os << entry->index;
         } else {
             os << "?";
         }
@@ -810,7 +810,12 @@ template<typename IndexType, typename ValueType>
 std::tuple<IndexType, bool> KluAtomicMatrix<IndexType, ValueType>::valueIndex(
     const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
 ) const {
-    return KluMatrixCore<IndexType, ValueType>::smap->find(mep);
+    auto entry = KluMatrixCore<IndexType, ValueType>::smap->find(mep);
+    if (entry) {
+        return std::make_tuple(entry->index, true);
+    } else {
+        return std::make_tuple(0, false);
+    }
 }
 
 template<typename IndexType, typename ValueType> 
@@ -825,9 +830,9 @@ Complex* KluAtomicMatrix<IndexType, ValueType>::cxValuePtr(
     const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep
 ) {
     if constexpr(std::is_same<ValueType, Complex>::value) {
-        auto [entryOffset, found] = KluMatrixCore<IndexType, ValueType>::smap->find(mep);
-        if (found) {
-            return KluMatrixCore<IndexType, ValueType>::Ax+entryOffset;
+        auto entry = KluMatrixCore<IndexType, ValueType>::smap->find(mep);
+        if (entry) {
+            return KluMatrixCore<IndexType, ValueType>::Ax+entry->index;
         } else {
             return &(KluMatrixCore<IndexType, ValueType>::bucket_);
         }

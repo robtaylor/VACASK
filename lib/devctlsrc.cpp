@@ -182,16 +182,16 @@ template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource
 
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[3], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[3], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[3], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[3], EntryFlags::Resistive, s); !ok) {
         return false;
     }
     // No states to reserve
@@ -332,22 +332,22 @@ template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource
 
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[4], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[4], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[4], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[4], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[0], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[0], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[1], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[1], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[3], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[4], nodes_[3], EntryFlags::Resistive, s); !ok) {
         return false;
     }
     // No states to reserve
@@ -493,10 +493,10 @@ template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, St
     data.core().uCtl = ctlNode->unknownIndex();
 
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], ctlNode, s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], ctlNode, EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], ctlNode, s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], ctlNode, EntryFlags::Resistive, s); !ok) {
         return false;
     }
     // No states to reserve
@@ -637,19 +637,19 @@ template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, St
     data.core().uCtl = ctlNode->unknownIndex();
 
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[1], nodes_[2], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[0], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[0], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[1], s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[2], nodes_[1], EntryFlags::Resistive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(nodes_[2], ctlNode, s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(nodes_[2], ctlNode, EntryFlags::Resistive, s); !ok) {
         return false;
     }
     // No states to reserve
@@ -934,10 +934,10 @@ template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, 
 
     // Find controlling node
     // Create Jacobian entries
-    if (auto [ptr, ok] = circuit.createJacobianEntry(d.ctlNode1, d.ctlNode2, s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(d.ctlNode1, d.ctlNode2, EntryFlags::Reactive, s); !ok) {
         return false;
     }
-    if (auto [ptr, ok] = circuit.createJacobianEntry(d.ctlNode2, d.ctlNode1, s); !ok) {
+    if (auto [_, ok] = circuit.createJacobianEntry(d.ctlNode2, d.ctlNode1, EntryFlags::Reactive, s); !ok) {
         return false;
     }
 

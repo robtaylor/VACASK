@@ -70,8 +70,8 @@ public:
     // If blockMep is not given assumes (0, 0), i.e. block origin. 
     // Returns index, found. found=true if element exists. 
     std::tuple<IndexType, bool> elementIndex(const MatrixEntryPosition& mep, const std::optional<MatrixEntryPosition>& blockMep=std::nullopt) const {
-        auto [entryOffset, found] = smap->find(mep);
-        if (!found) {
+        auto entry = smap->find(mep);
+        if (!entry) {
             return std::make_tuple(0, false);
         }
         
@@ -82,7 +82,7 @@ public:
         // Get index of the first dense block in column
         auto firstBlockInColumn = denseColumnBegin[col];
         // Which block in column is this
-        auto blockInColumn = entryOffset - firstBlockInColumn;
+        auto blockInColumn = entry->index - firstBlockInColumn;
         // Compute element index of block origin
         auto nzPosition = blockColumnOrigin[col] + nb_*blockInColumn;
 

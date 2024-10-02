@@ -1000,7 +1000,7 @@ bool Circuit::collapseNodes(Node* n1, Node* n2, Status& s) {
     return true;
 }
 
-std::tuple<MatrixEntryIndex*, bool> Circuit::createJacobianEntry(Node* ne, Node* nu, Status& s) {
+std::tuple<bool, bool> Circuit::createJacobianEntry(Node* ne, Node* nu, EntryFlags f, Status& s) {
     // Map nodes to equation, unknown pair
     auto e = ne->unknownIndex();
     auto u = nu->unknownIndex();
@@ -1008,16 +1008,16 @@ std::tuple<MatrixEntryIndex*, bool> Circuit::createJacobianEntry(Node* ne, Node*
     // if e or u correspond to ground, create no entry, 
     // but indicate everything is OK
     if (!e || !u) {
-        return std::make_tuple(nullptr, true);
+        return std::make_tuple(false, true);
     }
 
     // Create entry
-    auto [ptr, ok] = sparsityMap_.insert(e, u);
+    auto [newEntry, ok] = sparsityMap_.insert(e, u, f);
     if (!ok) {
         s.set(Status::CreationFailed, "Failed to create matrix entry.");
     }
 
-    return std::make_tuple(ptr, ok);
+    return std::make_tuple(newEntry, ok);
 }
 
 GlobalStorageIndex Circuit::allocateStates(LocalStorageIndex n) {
@@ -1183,10 +1183,10 @@ bool Circuit::buildSparsityAndStates(Status& s) {
         }
     }
 
-    // Add diagonal entries
+    // Add diagonal entries, assume diagonal entries are all resistive
     for(decltype(unknownCountExcludingGround) i=1; i<=unknownCountExcludingGround; i++) {
         Node* node = unknownToReprNode[i];
-        auto [ptr, ok] = createJacobianEntry(node, node, s);
+        auto [ptr, ok] = createJacobianEntry(node, node, EntryFlags::Resistive, s);
         if (!ok) {
             return false;
         }

@@ -290,8 +290,11 @@ public:
     // Collapse two nodes, if second node is nullptr, the first node is collapsed to ground
     bool collapseNodes(Node* n1, Node* n2, Status& s=Status::ignore);
     // Allocate Jacobian entry at row and column corresponding to nodes ne and nu
-    // Returns pointer to integer where matrix entry index will be found and whether function succeeded
-    std::tuple<MatrixEntryIndex*, bool> createJacobianEntry(Node* ne, Node* nu, Status& s=Status::ignore);
+    // Returns 
+    // - pointer to integer where matrix entry index will be found 
+    // - a new entry has been created
+    // - ok
+    std::tuple<bool, bool> createJacobianEntry(Node* ne, Node* nu, EntryFlags f = EntryFlags::ResistiveReactive, Status& s=Status::ignore);
     // Allocate n entries in state vector, return global state index of first allocated entry
     GlobalStorageIndex allocateStates(LocalStorageIndex n);
     GlobalStorageIndex allocateDeviceStates(LocalStorageIndex n);
