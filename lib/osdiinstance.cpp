@@ -242,8 +242,9 @@ std::tuple<UnknownIndex,UnknownIndex> OsdiInstance::sourceResponse(Circuit& circ
 
 std::tuple<EquationIndex, EquationIndex> OsdiInstance::noiseExcitation(Circuit& cir, ParameterIndex ndx) const {
     auto [n1, n2] = model()->device()->noiseExcitation(ndx);
-    auto e1 = nodes_[n1]->unknownIndex();
-    auto e2 = nodes_[n2]->unknownIndex();
+    // If n1, n2 is UINT32_MAX it refers to global ground
+    auto e1 = n1==UINT32_MAX ? 0 : nodes_[n1]->unknownIndex();
+    auto e2 = n2==UINT32_MAX ? 0 : nodes_[n2]->unknownIndex();
     return std::make_tuple(e1, e2);
 }
 

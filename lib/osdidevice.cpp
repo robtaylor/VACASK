@@ -750,7 +750,10 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
     if (noiseSourceCount()>0) {
         os << pfx << "  Noise contributions:\n";
         for(ParameterIndex i=0; i<noiseSourceCount(); i++) {
-            os << pfx << "    " << std::string(noiseSourceName(i)) << "\n";
+            auto [n1, n2] = noiseExcitation(i);
+            os << pfx << "    " << std::string(noiseSourceName(i)) << " : "
+               << ((n1!=UINT32_MAX) ? nodeName(n1) : "(ground)") << " - "
+               << ((n2!=UINT32_MAX) ? nodeName(n2) : "(ground)") << "\n";
         }
     }
 }

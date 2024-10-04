@@ -393,7 +393,14 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
             error = true;
             break;
         }
-        
+
+        // TODO: do this in all small signal analyses - print just the matrix before factorization
+        if (debug>=100) {
+            Simulator::dbg() << "Linear system matrix\n";
+            acMatrix.dump(Simulator::dbg()); 
+            Simulator::dbg() << "\n";
+        }
+
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)
         if (options.matrixcheck && !acMatrix.isFinite(true, true)) {
