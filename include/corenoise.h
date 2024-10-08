@@ -88,7 +88,7 @@ public:
     
     NoiseCore(
         OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
-        std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset, 
+        std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
         Circuit& circuit, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
@@ -139,7 +139,7 @@ protected:
     Vector<Complex>& acSolution;
 
     // second Id is Id() -> total instance contribution
-    std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset; 
+    std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset; 
     // noise contributions
     Vector<double>& results;  
     double& powerGain;

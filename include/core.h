@@ -18,12 +18,6 @@ enum class CoreState { Uninitilized=0, Aborted, Stopped, Finished };
 typedef Generator<CoreState> CoreCoroutine;
 
 
-typedef struct IdPairHash {
-    size_t operator()(const std::pair<Id,Id> &x) const {
-        return hash_val(x.first.id(), x.second.id());
-    }
-} IdPairHash;
-
 class OutputDescriptorResolver {
 public:
     // Resolves output descriptor, adds output sorce to srcs
@@ -99,20 +93,34 @@ public:
 
     // Runs the core
     bool run(bool continuePrevious) { return true; };
-
-
+    
     // Called after core is run (and once per sweep) to finalieze and close output files
     bool finalizeOutputs(Status& s=Status::ignore) { return true; };
 
     // Called if analysis fails to remove output files
     bool deleteOutputs(Id name, Status& s=Status::ignore) { return true; };
 
-    // Core state storage (used by continuation in sweeps), do nothing by default
-    size_t stateStorageSize() const { return 0; };
-    void resizeStateStorage(size_t n) { return; };
-    bool storeState(size_t ndx) { return true; };
-    bool restoreState(size_t ndx) { return true; };
-    void makeStateIncoherent(size_t ndx) { return; };
+    // Core state storage (used by continuation in sweeps and homotopy), do nothing by default
+    // Return number of state slots
+    virtual size_t stateStorageSize() const { return 0; };
+    // Allocate n slots, mark them as incoherent, return the number of first allocated slot
+    virtual size_t allocateStateStorage(size_t n) { return 0; };
+    // Deallocate n slots. If n>slots count or n=0, deallocate all
+    virtual void deallocateStateStorage(size_t n=0) { return; };
+    // Store state in slot ndx, mark as coherent
+    virtual bool storeState(size_t ndx, bool storeDetails=true) { return true; };
+    // Restore state from slot ndx
+    virtual bool restoreState(size_t ndx) { return true; };
+    // Make state in slot ndx incoherent
+    virtual void makeStateIncoherent(size_t ndx) { return; };
+
+    // Homotopy interface
+    // Return value: coverged, abort
+    virtual std::tuple<bool, bool> runSolver(bool continuePrevious) { return std::make_tuple(true, false); };
+    // Return the number of solver iterations in last solver run
+    virtual Int iterations() const { return 0; };
+    // Maximal number of allowed solver iterations
+    virtual Int iterationLimit(bool continuePrevious) const { return 0; };
 
     // Dump internals
     void dump(std::ostream& os) const;
@@ -136,7 +144,7 @@ public:
     bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution);
     bool addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution);
     bool addOpvarOutputSource(bool strict, Id instance, Id opvar);
-    
+
 protected:
     // Clear error
     void clearError() { lastError = Error::OK; }; 

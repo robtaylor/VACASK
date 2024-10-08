@@ -1292,23 +1292,31 @@ bool Circuit::converged(ConvSetup& convSetup) {
     return true; 
 }
 
-bool Circuit::storeDcSolution(Id name, Vector<double>& solution, Status& s) {
-    auto [it, inserted] = dcSolutionRepository.insert({name, AnnotatedSolution()});
-    auto& repo = it->second;
-    repo.set(*this, solution);
-
-    return true;
-}
-
-const AnnotatedSolution* Circuit::retrieveDcSolution(Id name, Status& s) const {
-    auto it = dcSolutionRepository.find(name);
-    if (it==dcSolutionRepository.cend()) {
-        s.set(Status::NotFound, "DC solution with label '"+std::string(name)+"' not found.");
-        return nullptr;
+AnnotatedSolution* Circuit::newStoredSolution(Id typeCode, Id name) {
+    AnnotatedSolution* ptr;
+    auto it = solutionRepository.find({typeCode, name});
+    if (it==solutionRepository.cend()) {
+        // Not there, create
+        auto key = std::make_pair(typeCode, name);
+        auto [it, inserted] = solutionRepository.insert({key, AnnotatedSolution()});
+        ptr = &(it->second);
+    } else {
+        // Already there
+        ptr = &(it->second);
     }
-    return &(it->second);
+
+    return ptr;
 }
 
+AnnotatedSolution* Circuit::storedSolution(Id typeCode, Id name) {
+    AnnotatedSolution* ptr;
+    auto it = solutionRepository.find({typeCode, name});
+    if (it==solutionRepository.cend()) {
+        return nullptr;
+    } else {
+        return &(it->second);
+    }
+}
 
 Id UnknownNameResolver::operator()(MatrixEntryIndex u) {
     return circuit.reprNode(u+1)->name();

@@ -8,10 +8,9 @@ namespace NAMESPACE {
 AnnotatedSolution::AnnotatedSolution() {
 }
 
-void AnnotatedSolution::set(Circuit& circuit, Vector<double>& vec) {
+void AnnotatedSolution::setNames(Circuit& circuit) {
     names_.clear();
-    values_.clear();
-    auto n = vec.size();
+    auto n = circuit.unknownCount();
     // Store all nodes (also ground). Later in Forces::set() we ignore it. 
     // In OperatingPointCore::runSolver() we check if the stored solution is 
     // consistent with the current circuit by comparing solution length 
@@ -21,10 +20,9 @@ void AnnotatedSolution::set(Circuit& circuit, Vector<double>& vec) {
     // Also, we should change the code in OperatingPointCore::runSolver() 
     // that copies the annotated solution to solution vector in 
     // ordinary continue mode . 
-    for(decltype(n) i=0; i<n; i++) {
+    for(decltype(n) i=0; i<=n; i++) {
         auto node = circuit.reprNode(i);
         names_.push_back(node->name());
-        values_.push_back(vec[i]);
     }
 }
 
@@ -179,6 +177,8 @@ bool Forces::set(Circuit& circuit, const AnnotatedSolution& solution, bool abort
 
     // Go through all solution components, excluding ground
     auto nSol = solution.values().size();
+    // Ignore components that do not have a name
+    nSol = std::min(nSol, solution.names().size());
     for(decltype(nSol) i=1; i<nSol; i++) {
         // Node
         auto name = solution.names()[i];

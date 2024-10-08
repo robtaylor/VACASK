@@ -184,14 +184,19 @@ size_t Tran::analysisStateStorageSize() const {
     return opCore.stateStorageSize();
 }
 
-void Tran::resizeAnalysisStateStorage(size_t n) { 
+size_t Tran::allocateAnalysisStateStorage(size_t n) { 
     // Only op core has storage
-    opCore.resizeStateStorage(n);
+    return opCore.allocateStateStorage(n);
 }
 
-bool Tran::storeState(size_t ndx) {
+void Tran::deallocateAnalysisStateStorage(size_t n) { 
     // Only op core has storage
-    return opCore.storeState(ndx);
+    opCore.deallocateStateStorage(n);
+}
+
+bool Tran::storeState(size_t ndx, bool storeDetails) {
+    // Only op core has storage
+    return opCore.storeState(ndx, storeDetails);
 }
 
 bool Tran::restoreState(size_t ndx) {

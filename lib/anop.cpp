@@ -115,12 +115,16 @@ size_t OperatingPoint::analysisStateStorageSize() const {
     return core.stateStorageSize();
 }
 
-void OperatingPoint::resizeAnalysisStateStorage(size_t n) { 
-    core.resizeStateStorage(n);
+size_t OperatingPoint::allocateAnalysisStateStorage(size_t n) { 
+    return core.allocateStateStorage(n);
 }
 
-bool OperatingPoint::storeState(size_t ndx) {
-    return core.storeState(ndx);
+void OperatingPoint::deallocateAnalysisStateStorage(size_t n) { 
+    core.deallocateStateStorage(n);
+}
+
+bool OperatingPoint::storeState(size_t ndx, bool storeDetails) {
+    return core.storeState(ndx, storeDetails);
 }
 
 bool OperatingPoint::restoreState(size_t ndx) {

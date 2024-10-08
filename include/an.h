@@ -200,23 +200,23 @@ protected:
     // If not sweeping, call setAnalysisOptions() 
 
     // Analysis state repository size/resize
-    // Used for homotopy in sweeps
-    virtual size_t analysisStateStorageSize() const = 0;
-    virtual void resizeAnalysisStateStorage(size_t n) = 0;
+    // Used for homotopy and sweeps
+    virtual size_t analysisStateStorageSize() const { return 0; };
+    virtual size_t allocateAnalysisStateStorage(size_t n=0) { return 0; };
     
     // Store analysis state in internal repository 
-    // Used for homotopy in sweeps
-    virtual bool storeState(size_t ndx) = 0;
+    // Used for homotopy and sweeps
+    virtual bool storeState(size_t ndx, bool storeDetails=true) { return true; };
 
     // Restore analysis state from internal repository 
-    // Used for homotopy in sweeps
-    virtual bool restoreState(size_t ndx) = 0;
+    // Used for homotopy and sweeps
+    virtual bool restoreState(size_t ndx) { return true; };
 
     // Make analysis state incoherent with current topology
-    // Used for homotopy in sweeps
+    // Used for homotopy and sweeps
     // In OP analysis sweeps this forces the use of nodesets 
     // instead of previous solution. 
-    virtual void makeStateIncoherent(size_t ndx) = 0;
+    virtual void makeStateIncoherent(size_t ndx) {};
 
     PTParameterMap parameterizedOptions;
 

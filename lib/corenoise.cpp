@@ -35,7 +35,7 @@ instantiateIntrospection(NoiseParameters);
 
 NoiseCore::NoiseCore(
     OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
-    std::unordered_map<std::pair<Id, Id>, size_t, IdPairHash>& contributionOffset, 
+    std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
     Circuit& circuit, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
@@ -394,8 +394,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
             break;
         }
 
-        // TODO: do this in all small signal analyses - print just the matrix before factorization
-        if (debug>=100) {
+        if (debug>=101) {
             Simulator::dbg() << "Linear system matrix\n";
             acMatrix.dump(Simulator::dbg()); 
             Simulator::dbg() << "\n";

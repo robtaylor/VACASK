@@ -45,16 +45,6 @@ typedef struct OperatingPointParameters {
     OperatingPointParameters(); 
 } OperatingPointParameters;
 
-enum class OpRunType { 
-    OrdinaryOp=0, 
-    GshuntStepping=1, 
-    GminStepping=2, 
-    Spice3GminStepping=3, // Mask = 3, result!=0 for gmin stepping
-    SourceStepping=4, // Can be combined with any gmin stepping
-    Spice3SourceStepping=8, 
-    GSteppingMask=3, 
-};
-DEFINE_FLAG_OPERATORS(OpRunType);
 
 typedef struct OperatingPointState {
     OperatingPointState() {};
@@ -68,9 +58,12 @@ typedef struct OperatingPointState {
     AnnotatedSolution solution;
     // Solution vector with bucket
     Vector<double> stateVector;
-    // Is state coherent with current topology
+    // Is state coherent with current topology 
+    // Becomes coherent when it is written, 
+    // stops being coherent when makeStateIncoherent() is called.
     bool coherent;
-    // Is state valid
+    // Is state valid 
+    // Becomes valid as soon as something is written into the slot. 
     bool valid;
 } OperatingPointState;
 
@@ -78,13 +71,11 @@ typedef struct OperatingPointState {
 // This core uses no other core
 class OperatingPointCore : public AnalysisCore {
 public:
-    using RunType = OpRunType;
     typedef OperatingPointParameters Parameters;
     enum class OperatingPointError {
         OK, 
         InitialOp, 
-        SteppingSolver, 
-        SteppingSteps, 
+        Homotopy, 
         NoAlgorithm, 
     };
     
@@ -115,11 +106,16 @@ public:
     bool finalizeOutputs(Status& s=Status::ignore);
     bool deleteOutputs(Id name, Status& s=Status::ignore);
 
-    size_t stateStorageSize() const;
-    void resizeStateStorage(size_t n);
-    bool storeState(size_t ndx);
-    bool restoreState(size_t ndx);
-    void makeStateIncoherent(size_t ndx);
+    virtual size_t stateStorageSize() const;
+    virtual size_t allocateStateStorage(size_t n);
+    virtual void deallocateStateStorage(size_t n=0);
+    virtual bool storeState(size_t ndx, bool storeDetails=true);
+    virtual bool restoreState(size_t ndx);
+    virtual void makeStateIncoherent(size_t ndx);
+    
+    virtual std::tuple<bool, bool> runSolver(bool continuePrevious);
+    virtual Int iterations() const;
+    virtual Int iterationLimit(bool continuePrevious) const;
 
     // Get solver
     OpNRSolver& solver() { return nrSolver; }; 
@@ -133,11 +129,8 @@ protected:
     void setError(OperatingPointError e) { lastOpError = e; lastError = Error::OK; };
     
     OperatingPointError lastOpError;
-    RunType errorRunType; 
     Int errorHomotopyIterations;
 
-    bool runSolver(bool continuePrevious);
-    
     KluRealMatrix& jac; // Resistive Jacobian
     VectorRepository<double>& solution; // Solution history
     VectorRepository<double>& states; // Circuit states
@@ -151,20 +144,13 @@ protected:
 
     OutputRawfile* outfile;
     std::vector<OperatingPointState> analysisStateRepository;
-    RunType runType;
-
+    
     PreprocessedUserForces preprocessedNodeset;
 
 private:
     NRSettings nrSettings;
     OpNRSolver nrSolver;
 
-    bool gminStepping(RunType type);
-    bool spice3GminStepping();
-    bool sourceStepping();
-    bool spice3SourceStepping();
-    std::string homotopyProgress() const;
-    
     OperatingPointParameters& params;
 };
 

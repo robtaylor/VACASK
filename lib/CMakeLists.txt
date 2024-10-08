@@ -47,6 +47,9 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/outrawfile.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/densematrix.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/nrsolver.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/homotopy.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/hmtpgmin.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/hmtpsrc.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/progress.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/core.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/coreop.h 
@@ -116,11 +119,13 @@ add_library(simlib STATIC
     outrawfile.cpp
     densematrix.cpp
     nrsolver.cpp 
+    homotopy.cpp 
+    hmtpgmin.cpp
+    hmtpsrc.cpp
     progress.cpp
     core.cpp 
     coreop.cpp 
     coreopnr.cpp 
-    coreophomotopy.cpp 
     coredcinc.cpp 
     coredcxf.cpp 
     coreac.cpp 

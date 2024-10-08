@@ -60,8 +60,9 @@ protected:
     virtual bool deleteOutputs(Status& s=Status::ignore);
     
     virtual size_t analysisStateStorageSize() const;
-    virtual void resizeAnalysisStateStorage(size_t n);
-    virtual bool storeState(size_t ndx);
+    virtual size_t allocateAnalysisStateStorage(size_t n);
+    virtual void deallocateAnalysisStateStorage(size_t n=0);
+    virtual bool storeState(size_t ndx, bool storeDetails=true);
     virtual bool restoreState(size_t ndx);
     virtual void makeStateIncoherent(size_t ndx);
 

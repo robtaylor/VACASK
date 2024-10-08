@@ -95,8 +95,9 @@ protected:
     // Analysis state storage for continuation in sweeps
     // Only op core has state storage
     virtual size_t analysisStateStorageSize() const;
-    virtual void resizeAnalysisStateStorage(size_t n);
-    virtual bool storeState(size_t ndx);
+    virtual size_t allocateAnalysisStateStorage(size_t n);
+    virtual void deallocateAnalysisStateStorage(size_t n=0);
+    virtual bool storeState(size_t ndx, bool storeDetails=true);
     virtual bool restoreState(size_t ndx);
     virtual void makeStateIncoherent(size_t ndx);
 
@@ -298,15 +299,21 @@ size_t SmallSignal<CoreClass, DataMixin>::analysisStateStorageSize() const {
 }
 
 template<typename CoreClass, typename DataMixin> 
-void SmallSignal<CoreClass, DataMixin>::resizeAnalysisStateStorage(size_t n) { 
+size_t SmallSignal<CoreClass, DataMixin>::allocateAnalysisStateStorage(size_t n) { 
     // Only op core has storage
-    opCore.resizeStateStorage(n);
+    return opCore.allocateStateStorage(n);
 }
 
 template<typename CoreClass, typename DataMixin> 
-bool SmallSignal<CoreClass, DataMixin>::storeState(size_t ndx) {
+void SmallSignal<CoreClass, DataMixin>::deallocateAnalysisStateStorage(size_t n) { 
     // Only op core has storage
-    return opCore.storeState(ndx);
+    opCore.deallocateStateStorage(n);
+}
+
+template<typename CoreClass, typename DataMixin> 
+bool SmallSignal<CoreClass, DataMixin>::storeState(size_t ndx, bool storeDetails) {
+    // Only op core has storage
+    return opCore.storeState(ndx, storeDetails);
 }
 
 template<typename CoreClass, typename DataMixin> 

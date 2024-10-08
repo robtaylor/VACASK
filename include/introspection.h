@@ -200,9 +200,16 @@ template<typename T> std::tuple<bool,bool> Introspection<T>::set(T& st, size_t n
         case StructMember::Type::IdVec: {
             auto& ref = Introspection<T>::memberRef<std::vector<Id>>(st, ndx);
             auto& srcRef = vwrite->val<const StringVector>();
-            auto n = ref.size();
-            for(decltype(n) i=0; i<n; i++) {
-                changed |= ref[i] != srcRef[i];
+            auto refLen = ref.size();
+            auto srcLen = srcRef.size();
+            if (refLen!=srcLen) {
+                ref.resize(srcLen);
+                changed = true;
+            }
+            for(decltype(srcLen) i=0; i<srcLen; i++) {
+                if (!changed) {
+                    changed |= ref[i] != srcRef[i];
+                }
                 ref[i] = srcRef[i];
             }
             break;

@@ -166,7 +166,7 @@ std::tuple<bool, bool> HBCore::requestsRebuild(Status& s) {
 bool HBCore::rebuild(Status& s) {
     clearError();
 
-    auto options = circuit.simulatorOptions().core();
+    auto& options = circuit.simulatorOptions().core();
     nrSettings = NRSettings {
         .debug = options.nr_debug, 
         .itlim = options.hb_itl, 

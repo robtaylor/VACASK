@@ -627,7 +627,8 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
-    auto sourceFactor = internals.sourcescalefactor;
+    auto& options = circuit.simulatorOptions().core();
+    auto sourceFactor = internals.sourcescalefactor*options.homotopy_sourcefactor;
     
     // Evaluate, placeholder for bypass implementation
     auto [val, nextBreakpoint] = sourceCompute(p, d, evalSetup.time);
@@ -662,7 +663,8 @@ template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& lo
     auto& p = params.core();
     auto& d = data.core();
     auto& internals = circuit.simulatorInternals();
-    auto sourceFactor = internals.sourcescalefactor;
+    auto& options = circuit.simulatorOptions().core();
+    auto sourceFactor = internals.sourcescalefactor*options.homotopy_sourcefactor;
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {

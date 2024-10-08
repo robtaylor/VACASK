@@ -352,6 +352,12 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
             error = true;
             break;
         }
+
+        if (debug>=101) {
+            Simulator::dbg() << "Linear system matrix\n";
+            acMatrix.dump(Simulator::dbg()); 
+            Simulator::dbg() << "\n";
+        }
         
         // Check if matrix entries are finite, no need to check RHS 
         // since we loaded it without any computation (i.e. we only used mag and phase)

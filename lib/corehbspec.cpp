@@ -15,7 +15,7 @@ namespace NAMESPACE {
 bool HBCore::buildGrid(Status& s) {
     auto n = params.freq.size();
 
-    auto options = circuit.simulatorOptions().core();
+    auto& options = circuit.simulatorOptions().core();
     auto hb_debug = options.hb_debug;
     auto hb_freqtol = 1e-14;
     

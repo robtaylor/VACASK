@@ -72,7 +72,8 @@ Analysis* Analysis::create(
     an->simOptions.core() = an->originalSimOptions.core();
     
     // Build analysis state repository
-    an->resizeAnalysisStateStorage(an->sweepCount());
+    // This is the first allocation so states will be allocated startign at slot 0
+    an->allocateAnalysisStateStorage(an->sweepCount());
 
     return an;
 }
@@ -165,7 +166,8 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     circuit.simulatorInternals() = internals;
     
     // Are we in debug mode
-    auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || options.tran_debug || options.hb_debug || options.nr_debug;
+    auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || 
+        options.tran_debug || options.hb_debug || options.nr_debug || options.homotopy_debug;
     if (debugMode && progressReporter) {
         progressReporter->disable();
     }
@@ -267,7 +269,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             circuit.simulatorInternals().allowContinueStateBypass = false;
 
             // If outputs not bound yet or core needs rebuilding, bind them to actual quantities
-            bool coreRebuilt = false;
+            bool systemChanged = false;
             if (!outputsBound || needsCoreRebuild || rebuildRequested) {
                 if (sweepDebug>1) {
                     Simulator::dbg() << "Rebuilding analysis internals and invalidating stored analysis states.\n";
@@ -295,7 +297,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                     co_yield AnalysisState::Aborted;
                 }
                 outputsBound = true;
-                coreRebuilt = true;
+                systemChanged = true;
 
                 // After core rebuild device history is invalidated
                 circuit.applyInstanceFlags(
@@ -334,6 +336,9 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
 
             // Restore analysis state of the sweep whose index increased 
             // during the last call to advance()
+            // We do a restore even after system change because the names of solution components 
+            // are stored with the state. 
+            // This makes a remap of the old solution to the new system possible. 
             bool restoredState = false;
             restoredState = restoreState(advancedSweepIndex);
             

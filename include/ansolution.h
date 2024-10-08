@@ -20,14 +20,27 @@ public:
     AnnotatedSolution& operator=(const AnnotatedSolution&)  = delete;
     AnnotatedSolution& operator=(      AnnotatedSolution&&) = default;
 
-    void set(Circuit& circuit, Vector<double>& vec);
+    void setNames(Circuit& circuit);
     
     const Vector<double>& values() const { return values_; };
+    Vector<double>& values() { return values_; };
+    
     const std::vector<Id>& names() const { return names_; };
+    std::vector<Id>& names() { return names_; };
 
 private:
+    // Solution vector
+    // - dc: one component per unknown, index 0 is ground (bucket)
+    // - hb: nt components per unknown (1 for DC, 2 for each frequency), 
+    //       no bucket - index 0 is first unknown
     Vector<double> values_;
+
+    // Names of unknowns for cross matching across slightly different circuits
     std::vector<Id> names_;
+
+    // Vector of auxiliary data
+    // - hb: list of frequencies including DC (first component)
+    Vector<double> auxData_;
 };
 
 struct PreprocessedUserForces {

@@ -405,7 +405,7 @@ bool TranCore::rebuild(Status& s) {
         String& solutionName = icParam.val<String>();
         if (solutionName.length()>0) {
             // Get solution from repository
-            auto solPtr = circuit.retrieveDcSolution(solutionName);
+            auto solPtr = circuit.storedSolution("dc", solutionName);    
             if (!solPtr) {
                 // No initial conditions 
                 opCore_.solver().forces(2).clear();
@@ -478,8 +478,9 @@ bool TranCore::finalizeOutputs(Status& s) {
     
     // Write DC solution to repository if analysis is OK
     if (finished && params.store.length()>0) {
-        Id label = params.store;
-        circuit.storeDcSolution(params.store, solution.vector());
+        auto sol = circuit.newStoredSolution("dc", params.store);
+        sol->setNames(circuit);
+        sol->values() = solution.vector();
     }
 
     return true;

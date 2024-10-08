@@ -3,6 +3,8 @@
 #include <filesystem>
 #include "coreop.h"
 #include "simulator.h"
+#include "hmtpgmin.h"
+#include "hmtpsrc.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -99,8 +101,9 @@ bool OperatingPointCore::finalizeOutputs(Status &s) {
 
     // Write DC solution to repository if analysis is OK
     if (converged_ && params.store.length()>0) {
-        Id label = params.store;
-        circuit.storeDcSolution(params.store, solution.vector());
+        auto sol = circuit.newStoredSolution("dc", params.store);
+        sol->setNames(circuit);
+        sol->values() = solution.vector();
     }
 
     return true;
@@ -123,19 +126,34 @@ size_t OperatingPointCore::stateStorageSize() const {
     return analysisStateRepository.size(); 
 }
 
-void OperatingPointCore::resizeStateStorage(size_t n) { 
-    analysisStateRepository.resize(n); 
+size_t OperatingPointCore::allocateStateStorage(size_t n) { 
+    auto nOld = analysisStateRepository.size();
+    analysisStateRepository.resize(nOld+n); 
+    
     // Initially no state is coherent nor valid
-    for(auto& it : analysisStateRepository) {
-        it.coherent = false;
-        it.valid = false;
+    for(decltype(nOld) i=nOld; i<nOld+n; i++) {
+        analysisStateRepository[i].coherent = false;
+        analysisStateRepository[i].valid = false;
     }
+    
+    return nOld;
 }
 
-bool OperatingPointCore::storeState(size_t ndx) {
+void OperatingPointCore::deallocateStateStorage(size_t n) {
+    auto nOld = analysisStateRepository.size();
+    if (n==0 || n>nOld) {
+        n = nOld;
+    }
+    analysisStateRepository.resize(nOld-n);
+}
+
+bool OperatingPointCore::storeState(size_t ndx, bool storeDetails) {
     auto& repo = analysisStateRepository.at(ndx);
     // Store current solution as annotated solution
-    repo.solution.set(circuit, solution.vector());
+    if (storeDetails) {
+        repo.solution.setNames(circuit);
+    }
+    repo.solution.values() = solution.vector();
     // Store current state
     repo.stateVector = states.vector();
     // Stored state is coherent and valid
@@ -243,7 +261,7 @@ bool OperatingPointCore::rebuild(Status& s) {
         String& solutionName = params.nodeset.val<String>();
         if (solutionName.length()>0) {
             // Get solution from repository
-            auto solPtr = circuit.retrieveDcSolution(solutionName);
+            auto solPtr = circuit.storedSolution("dc", solutionName);
             if (!solPtr) {
                 // No nodesets
                 nrSolver.forces(1).clear();
@@ -286,7 +304,7 @@ bool OperatingPointCore::rebuild(Status& s) {
     return true;
 }
 
-bool OperatingPointCore::runSolver(bool continuePrevious) {
+std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     bool hasInitialStates;
     // Handle continuation
@@ -312,9 +330,8 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
             // Use forced bypass if allowed
             circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
         } else if (continueState && continueState->valid) {
-            // Stored analysis state is not coherent with current circuit, 
-            // its lengths may not match those of the solver vectors, 
-            // but it is valid. 
+            // Stored analysis state is valid, but not coherent with current circuit, 
+            // its lengths may not match those of the solver vectors. 
             // Use nodesets to continue, but set no initial states vector nor initial solution. 
             // Ignore nodeset conflicts arising from stored solution. 
             // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
@@ -333,7 +350,7 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
             // No nodesets applied
             nrSolver.enableForces(0, false);
             nrSolver.enableForces(1, false);
-            if (options.op_debug>2) {
+            if (options.op_debug>1) {
                 Simulator::dbg() << "OP using ordinary continue mode with previous solution.\n";
             }
             // Forced bypass is allowed if set outside
@@ -356,7 +373,17 @@ bool OperatingPointCore::runSolver(bool continuePrevious) {
         }
     }
 
-    return nrSolver.run(hasInitialStates);
+    auto converged = nrSolver.run(hasInitialStates);
+    auto abort = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
+    return std::make_tuple(converged, abort);
+}
+
+Int OperatingPointCore::iterations() const {
+    return nrSolver.iterations();
+}
+
+Int OperatingPointCore::iterationLimit(bool continuePrevious) const {
+    return continuePrevious ? nrSettings.itlimCont : nrSettings.itlim;
 }
 
 // System of equations is 
@@ -403,7 +430,6 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
     converged_ = false;
-    runType = RunType::OrdinaryOp;
     auto debug = options.op_debug;
     bool leave = false;
     bool tried = false;
@@ -420,11 +446,10 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     auto skipinitial = options.op_skipinitial;
     if (!skipinitial) {    
         tried = true;
-        converged_ = runSolver(continuePrevious);
+        std::tie(converged_, leave) = runSolver(continuePrevious);
         if (!converged_) {
             setError(OperatingPointError::InitialOp);
         }
-        leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
         if (debug>0) {
             if (converged_) {
                 Simulator::dbg() << "OP core algorithm converged in " << std::to_string(nrSolver.iterations()) << " NR iteration(s).\n";
@@ -434,58 +459,60 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
         }
     }
 
-    auto skiphomotopy = options.op_skiphomotopy;
-
-    // Try gmin stepping
-    auto skipgmin = options.op_skipgmin;
-    auto gminsteps = options.op_gminsteps;
-    auto spice3gmin = options.op_spice3gmin;
-    if (!converged_ && !leave && !skipgmin && !skiphomotopy && gminsteps>1) {
-        tried = true;
-        if (!spice3gmin) {
-            // New algorithms
-            // Device gmin first
-            converged_ = gminStepping(RunType::GminStepping);
-            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
-            if (debug>0) {
-                Simulator::dbg() << "Gmin stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
-            }
-            if (!converged_ && !leave && options.op_gshuntalg) {
-                // Diagonal gshunt second
-                converged_ = gminStepping(RunType::GshuntStepping);
-                leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
+    // Try homotopy
+    if (!converged_ && !leave) {
+        Homotopy* homotopy;
+        for(auto it : options.op_homotopy) {
+            if (it==Homotopy::gdev) {
                 if (debug>0) {
-                    Simulator::dbg() << "Gshunt stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
+                    Simulator::dbg() << "Trying gdev stepping.\n";
+                }
+                homotopy = new GminStepping(circuit, *this, true);
+            } else if (it==Homotopy::gshunt) {
+                if (debug>0) {
+                    Simulator::dbg() << "Trying gshunt stepping.\n";
+                }
+                homotopy = new GminStepping(circuit, *this, false);
+            } else if (it==Homotopy::spice3Gmin) {
+                if (debug>0) {
+                    Simulator::dbg() << "Trying SPICE3 gmin stepping.\n";
+                }
+                homotopy = new Spice3GminStepping(circuit, *this);
+            } else if (it==Homotopy::src) {
+                if (debug>0) {
+                    Simulator::dbg() << "Trying source stepping.\n";
+                }
+                homotopy = new SourceStepping(circuit, *this);
+            } else if (it==Homotopy::spice3Src) {
+                if (debug>0) {
+                    Simulator::dbg() << "Trying SPICE3 source stepping.\n";
+                }
+                homotopy = new Spice3SourceStepping(circuit, *this);
+            } else {
+                if (debug>0) {
+                    Simulator::dbg() << "Unknown homotopy '"+std::string(it)+"'.\n";
+                }
+                homotopy = nullptr;
+            }
+            if (!homotopy) {
+                continue;
+            }
+            // Run
+            std::tie(converged_, leave) = homotopy->run();
+            if (debug>0) {
+                if (converged_) {
+                    Simulator::dbg() << "Homotopy converged in " << std::to_string(homotopy->stepCount()) << " step(s).\n";
+                } else {
+                    Simulator::dbg() << "Homotopy failed to converge in " << std::to_string(homotopy->stepCount()) << " step(s).\n";
                 }
             }
-        } else {
-            // Spice3 gmin stepping
-            converged_ = spice3GminStepping();
-            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
-            if (debug>0) {
-                Simulator::dbg() << "Spice3 Gmin stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
+            delete homotopy;
+            if (leave || converged_) {
+                break;
             }
         }
-    }
-
-    // Try source stepping
-    auto skipsrc = options.op_skipsrc;
-    auto srcsteps = options.op_srcsteps;
-    auto spice3src = options.op_spice3src;
-    if (!converged_ && !leave && !skipsrc && !skiphomotopy && srcsteps>1) { 
-        tried = true;
-        if (!spice3src) {
-            converged_ = sourceStepping();
-            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
-            if (debug>0) {
-                Simulator::dbg() << "Source stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
-            }
-        } else {
-            converged_ = spice3SourceStepping();
-            leave = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
-            if (debug>0) {
-                Simulator::dbg() << "Spice3 source stepping " << (converged_ ? "succeeded" : "failed") << ".\n";
-            }
+        if (!converged_) {
+            setError(OperatingPointError::Homotopy);
         }
     }
 
@@ -547,37 +574,8 @@ bool OperatingPointCore::formatError(Status& s) const {
         case OperatingPointError::InitialOp:
             s.extend("Initial OP analysis failed.");
             return false;
-        case OperatingPointError::SteppingSolver:
-        case OperatingPointError::SteppingSteps:
-            if (lastOpError==OperatingPointError::SteppingSteps) {
-                s.set(Status::Analysis, "Homotopy reached step limit.");
-            }
-            switch (errorRunType) {
-                case RunType::GminStepping:
-                    s.extend(
-                        homotopyProgress()+", dynamic "+(errorRunType==RunType::GminStepping ? "gmin" : "gsunt")+
-                        " stepping failed after "+std::to_string(errorHomotopyIterations)+" step(s)."
-                    );
-                    break;
-                case RunType::Spice3GminStepping:
-                    s.extend(
-                        homotopyProgress()+", SPICE3 gmin stepping failed after "+
-                        std::to_string(errorHomotopyIterations)+" step(s)."
-                    );
-                    break;
-                case RunType::SourceStepping:
-                    s.extend(
-                        homotopyProgress()+", dynamic source stepping failed after "+
-                        std::to_string(errorHomotopyIterations)+" step(s)."
-                    );
-                    break;
-                case RunType::Spice3SourceStepping:
-                    s.extend(
-                        homotopyProgress()+", SPICE3 source stepping failed after "+
-                        std::to_string(errorHomotopyIterations)+" step(s)."
-                    );
-                    break;
-            }
+        case OperatingPointError::Homotopy:
+            s.set(Status::Analysis, "Homotopy failed.");
             return false;
         case OperatingPointError::NoAlgorithm:
             s.set(Status::Analysis, "No operating point algorithm tried."); 

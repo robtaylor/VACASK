@@ -110,12 +110,16 @@ size_t HB::analysisStateStorageSize() const {
     return core.stateStorageSize();
 }
 
-void HB::resizeAnalysisStateStorage(size_t n) { 
-    core.resizeStateStorage(n);
+size_t HB::allocateAnalysisStateStorage(size_t n) { 
+    return core.allocateStateStorage(n);
 }
 
-bool HB::storeState(size_t ndx) {
-    return core.storeState(ndx);
+void HB::deallocateAnalysisStateStorage(size_t n) { 
+    core.deallocateStateStorage(n);
+}
+
+bool HB::storeState(size_t ndx, bool storeDetails) {
+    return core.storeState(ndx, storeDetails);
 }
 
 bool HB::restoreState(size_t ndx) {

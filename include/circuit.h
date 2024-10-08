@@ -377,9 +377,12 @@ public:
         return tol;
     };
 
-    // Storing/restoring a solution
-    bool storeDcSolution(Id name, Vector<double>& solution, Status& s=Status::ignore);
-    const AnnotatedSolution* retrieveDcSolution(Id name, Status& s=Status::ignore) const;
+    // Create a new stored solution, if exists, return existing solution
+    AnnotatedSolution* newStoredSolution(Id typeCode, Id name);
+
+    // Return existing solution, if not found return nullptr
+    AnnotatedSolution* storedSolution(Id typeCode, Id name);
+    
 
     // Sets swept values, 
     // Applies common options expressions, analysis parameter expressions, and analysis options expressions
@@ -492,8 +495,8 @@ private:
     // Simulator internals
     SimulatorInternals simInternals;
     
-    // Annotated solutions (for nodesets and ics)
-    std::unordered_map<Id, AnnotatedSolution> dcSolutionRepository;
+    // Annotated solutions (for nodesets, ics, and hb-assisted hb)
+    std::unordered_map<std::pair<Id, Id>, AnnotatedSolution> solutionRepository;
 };
 
 

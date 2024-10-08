@@ -1,6 +1,7 @@
 #include "options.h"
 #include "introspection.h"
 #include "simulator.h"
+#include "homotopy.h"
 #include "common.h"
 
 
@@ -56,9 +57,11 @@ SimulatorOptions::SimulatorOptions() {
                          // its state to the initial state at t=0. 
     sweep_debug = 0; // 1 = debug sweep, >=2 print details
     
-    op_debug = 0; // 0 = none, 1 = NRSolver and homotopy runs, 2 = homotopy and continuation internals, 
-
-    nr_debug = 0;  // >0 enables nonlinear solver debugging
+    nr_debug = 0;  // >0  enables nonlinear solver debugging
+                   // >=1 print messages
+                   // >=2 print linear system
+                   // >=3 print new solution
+                   // >=4 print old solution
     nr_bypass = 0; // 1 = disable core evaluation for bypassed instances 
                    // To be bypassed an instance must converge and 
                    // the instance inputs change between iterations must be within tolerances. 
@@ -74,43 +77,42 @@ SimulatorOptions::SimulatorOptions() {
     nr_contbypass = 1; // allow forced bypass of instance evaluation 
                        // in the first NR iteration when continuation mode is enabled
 
+    homotopy_debug = 0; // >0 enables homotopy debugging
+    homotopy_gminsteps = 100; // >1, <=0 disables gmin stepping
+    homotopy_srcsteps = 100; // >1, <=0 disables source stepping
+    homotopy_gminfactor = 10.0; // >0, initial gmin stepping factor for dynamic gmin stepping
+    homotopy_maxgminfactor = 10.0; // >=op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
+    homotopy_mingminfactor = 1.00005; // 1<x<op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
+                                      // give up when gmin step fails and factor falls below this value
+    homotopy_startgmin = 1e-3; // >mingmin, value at which dynamic gmin stepping starts
+    homotopy_maxgmin = 1e2;   // >mingmin, if op dynamic gmin stepping failes to solve the circuit above this value of gmin, it fails
+    homotopy_mingmin = 1e-15; // >0, value where dynamic gmin stepping stops if gmin/gshunt are set to 0
+    homotopy_srcstep = 0.001; // >0, initial source step for dynamic source stepping
+    homotopy_minsrcstep = 1e-7; // 0<x<srcstep, source step at which dynamic source stepping gives up
+    homotopy_sourcefactor = 1.0; // x = homotopy_sourcefactor * sourcescalefactor where sourcescalefactor is set by 
+                                 // the source stepping homotopy algorithm is the scaling factor for all independent sources. 
+                                 // This option makes it possible to set up manual homotopy via dc sweep. 
+                                 // For normal simulation this should be 1.0. 
+    
+    op_debug = 0; // >0 enables op analysis debugging
+                  // >=1 print iteration type, homotopy information, convergence report
+                  // >=2 print continuation mode information
     op_itl = 100;  // >0, maximal number of iterations in non-continuation mode
     op_itlcont = 50; // >0, maximal number of iterations in continuation mode
 
     op_skipinitial = 0; // 1 = no initial op, go straight to gmin stepping
-    op_skipgmin = 0; // 1 = skip gmin stepping and go straight to source stepping
-    op_skipsrc = 0;  // 1 = skip source stepping
-    op_skiphomotopy = 0; // 1 = skip homotopy methods (gmin and source stepping)
-                         // at least one of the methods must be enabled (initial, gmin stepping, source stepping)
-    op_spice3gmin = 0; // 1 = use spice3-style gmin stepping
-    op_spice3src = 0; // 1 = use spice3-style source stepping
-    op_sourcefactor = 1.0; // x = op_sourcefactor * sourcescalefactor where sourcescalefactor is set by 
-                           // the source stepping homotopy algorithm is the scaling factor for all independent sources. 
-                           // The product (x) is available in the SimulatorInternals data structure as sourcescalefactor 
-                           // and should be used for computing the resistive residual of all independent sources. 
-                           // This option makes it possible to set up manual homotopy via dc sweep. 
-                           // For normal simulation this should be 1.0. 
-    op_gshuntalg = 1; // 1= in non-spice3 mode do device gmin stepping followed by gshunt stepping, 
-                   // 0= device gmin stepping only
-    op_gminfactor = 10.0; // >0, initial gmin stepping factor for dynamic gmin stepping
-    op_maxgminfactor = 10.0; // >=op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
-    op_mingminfactor = 1.00005; // 1<x<op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
-                                // give up when gmin step fails and factor falls below this value
-    op_startgmin = 1e-3; // >mingmin, value at which dynamic gmin stepping starts
-    op_maxgmin = 1e2;   // >mingmin, if op dynamic gmin stepping failes to solve the circuit above this value of gmin, it fails
-    op_mingmin = 1e-15; // >0, value where dynamic gmin stepping stops if gmin/gshunt are set to 0
-    op_gminsteps = 100; // >1, <=0 is equivalent to op_skipgmin=1
+    op_homotopy = { "gdev", "gshunt", "src" };
+                        // list of homotopy algorithms to apply in operating point analysis
+    op_srchomotopy = { "gdev", "gshunt" };
+                        // list of homotopy algorithms to apply in operating point analysis
+                        // when source stepping fails at sourcefactor=0
     
-    op_srcstep = 0.001; // >0, initial source step for dynamic source stepping
-    op_minsrcstep = 1e-7; // 0<x<srcstep, source step at which dynamic source stepping gives up
-    op_gminsteps = 100; // >1, <=0 is equivalent to op_skipgmin=1
-    op_srcsteps = 100; // >1, <=0 is equvalent to op_skipsrc=1
-
     op_nsiter = 1; // Number of iterations during which nodesets are applied
 
 
     smsig_debug = 0; // 1=debug small signal analyses (dcinc, dcxf, ac, acxf, noise), 
                      // >=100 print linear system
+                     // >=101 print matrix before matrix checks are performed
     
     tran_debug = 0; // 1 = debug steps, 2 = debug solver
     tran_method = "trap"; // am, bdf, gear - Adams-Moulton, backward differentiation (Gear)
@@ -243,28 +245,26 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(nr_damping);
     registerMember(nr_force);
     registerMember(nr_contbypass);
+
+    registerMember(homotopy_debug);
+    registerMember(homotopy_gminsteps);
+    registerMember(homotopy_srcsteps);
+    registerMember(homotopy_gminfactor);
+    registerMember(homotopy_maxgminfactor);
+    registerMember(homotopy_mingminfactor);
+    registerMember(homotopy_startgmin);
+    registerMember(homotopy_maxgmin);
+    registerMember(homotopy_mingmin);
+    registerMember(homotopy_srcstep);
+    registerMember(homotopy_minsrcstep);
+    registerMember(homotopy_sourcefactor);
     
     registerMember(op_debug);
     registerMember(op_itl);
     registerMember(op_itlcont);
     registerMember(op_skipinitial);
-    registerMember(op_skipgmin);
-    registerMember(op_skipsrc);
-    registerMember(op_skiphomotopy);
-    registerMember(op_spice3gmin);
-    registerMember(op_spice3src);
-    registerMember(op_sourcefactor);
-    registerMember(op_gshuntalg);
-    registerMember(op_gminfactor);
-    registerMember(op_maxgminfactor);
-    registerMember(op_mingminfactor);
-    registerMember(op_startgmin);
-    registerMember(op_maxgmin);
-    registerMember(op_mingmin);
-    registerMember(op_srcstep);
-    registerMember(op_minsrcstep);
-    registerMember(op_gminsteps);
-    registerMember(op_srcsteps);
+    registerMember(op_homotopy);
+    registerMember(op_srchomotopy);
     registerMember(op_nsiter);
 
     registerMember(smsig_debug);

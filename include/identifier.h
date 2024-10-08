@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iostream>
 #include "pool.h"
+#include "hash.h"
 #include "common.h"
 
 
@@ -134,7 +135,12 @@ namespace std {
             return hash<NAMESPACE::IdentifierIndex>()(k.id());
         };
     };
-}
 
+    template<> struct hash<std::pair<NAMESPACE::Id, NAMESPACE::Id>> {
+        size_t operator()(const std::pair<NAMESPACE::Id, NAMESPACE::Id> &x) const {
+            return NAMESPACE::hash_val(x.first.id(), x.second.id());
+        }
+    };
+}
 
 #endif
