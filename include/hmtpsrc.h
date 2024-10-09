@@ -11,6 +11,11 @@ class SourceStepping : public Homotopy {
 public:
     SourceStepping(Circuit& circuit, AnalysisCore& core, const std::vector<Id>& alternativeHomotopy={});
 
+    SourceStepping           (const SourceStepping&)  = delete;
+    SourceStepping           (      SourceStepping&&) = delete;
+    SourceStepping& operator=(const SourceStepping&)  = delete;
+    SourceStepping& operator=(      SourceStepping&&) = delete;
+
     std::tuple<bool, bool> run();
     
     std::string formatProgress() const;
@@ -24,6 +29,11 @@ private:
 class Spice3SourceStepping : public Homotopy {
 public:
     Spice3SourceStepping(Circuit& circuit, AnalysisCore& core);
+
+    Spice3SourceStepping           (const Spice3SourceStepping&)  = delete;
+    Spice3SourceStepping           (      Spice3SourceStepping&&) = delete;
+    Spice3SourceStepping& operator=(const Spice3SourceStepping&)  = delete;
+    Spice3SourceStepping& operator=(      Spice3SourceStepping&&) = delete;
 
     std::tuple<bool, bool> run();
     

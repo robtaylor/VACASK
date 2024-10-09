@@ -20,7 +20,9 @@ HBNRSolver::HBNRSolver(
 ) : circuit(circuit), jacColoc(jacColoc), bsjac(bsjac), solutionFD(solutionFD), 
     frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), APFT(APFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
-    resizeForces(0);
+    // Slot 0 is for sweep continuation and homotopy
+    // Do not need slot 1 as we do not support explicit nodesets
+    resizeForces(1);
 
     // For constructing the linearized system in NR loop
     evalSetup_ = EvalSetup {
@@ -55,6 +57,117 @@ HBNRSolver::HBNRSolver(
         // Used for loading with offset 0
         .reactiveJacobianFactor = 1.0, 
     };
+}
+
+bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
+    // Get forces
+    auto& f = forces(ndx);
+
+    // Clear forced values
+    f.clear();
+    
+    // Number of unknowns
+    auto n = circuit.unknownCount();
+
+    // Number of components per unknown
+    auto nt = timepoints.size();
+
+    // Make space for variable forces (also include bucket)
+    f.resizeUnknownForces(n*nt+1);
+
+    // Number of frequencies in solution and solver
+    auto nfSolution = solution.auxData().size();
+    auto nfSolver = frequencies.size();
+
+    // Prepare frequency translator between solution and solver
+    // Translator stores the solver frequency index for each solutiuon frequency index
+    std::vector<int> xlat;
+    // Assume no frequency can be trasnlated (negative index)
+    xlat.resize(nfSolution, -1);
+
+    // Translate DC (it is always present)
+    if (nfSolver>0 && nfSolution>0) {
+        xlat[0] = 0;
+    }
+
+    // Translate the rest
+    decltype(nfSolver) ndxSolver = 1;
+    decltype(nfSolution) ndxSolution = 1;
+    for(; ndxSolver<nfSolver && ndxSolution<nfSolution;) {
+        auto fSolver = frequencies[ndxSolver];
+        auto fSolution = solution.auxData()[ndxSolution];
+        if (std::abs(fSolver-fSolution)<=std::max(std::abs(fSolver), std::abs(fSolution))*1e-14) {
+            // Frequencies are almost the same, store translator
+            xlat[ndxSolution] = ndxSolver;
+            // Advance both indices
+            ndxSolver++;
+            ndxSolution++;
+        } else if (fSolver<fSolution) {
+            // Solver frequency is lower, advance solver index
+            ndxSolver++;
+        } else {
+            // Solution frequency is lower, advance solution index
+            ndxSolution++;
+        }
+    }
+
+    bool error = false;
+
+    // Go hrough annotated solution. fill APFT spectrum 
+    // Use resistive residual vector for APFT spectrum
+    auto& forcesFD = resistiveResidual;
+    // Set APFT spectrum to 0
+    forcesFD.resize(n*nt, 0);
+
+    // Force values at colocation points are stored in reactive residual vector
+    auto& forcesTD = reactiveResidual;
+    forcesTD.resize(n*nt);
+
+    // Solution spectrum
+    auto& solSpec = solution.values();
+
+    // Copy matching frequency components
+    if (nfSolution>0) {
+        // Copy DC from APFT spectrum of stored solution
+        forcesFD[0] = solSpec[0];
+        // Copy the rest
+        for(decltype(nfSolution) i=1; i<nfSolution; i++) {
+            auto xlfi = xlat[i];
+            if (xlfi>=0) {
+                // Translation exists
+                auto ndx = (i-1)*2+1;
+                auto destNdx = (xlfi-1)*2+1;
+                forcesFD[destNdx] = solSpec[ndx];
+                forcesFD[destNdx+1] = solSpec[ndx+1];
+            }
+        }
+    }
+
+    // Perform inverse APFT
+    
+    // Go through all solution components, excluding ground
+    auto nSol = solution.values().size();
+    // Ignore components that do not have a name
+    nSol = std::min(nSol, solution.names().size());
+    for(decltype(nSol) i=1; i<nSol; i++) {
+        // Node
+        auto name = solution.names()[i];
+        auto value = solution.values()[i];
+        Node* node = circuit.findNode(name);
+        if (!node) {
+            // Node not found
+            continue;
+        }
+
+        if (!f.setForceOnUnknown(node, value)) {
+            error = true;
+            if (abortOnError) {
+                return false;
+            }
+        }
+    }
+
+    return !error;
 }
 
 bool HBNRSolver::rebuild() {

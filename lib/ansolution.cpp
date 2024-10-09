@@ -139,7 +139,7 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
 Forces::Forces() {
 }
 
-bool Forces::setForceOnUnknown(Circuit& circuit, Node* node, double value) {
+bool Forces::setForceOnUnknown(Node* node, double value) {
     // Unknown
     auto u = node->unknownIndex();
     // Is it a ground node? 
@@ -157,47 +157,6 @@ bool Forces::setForceOnUnknown(Circuit& circuit, Node* node, double value) {
     unknownForced_[u] = true;
 
     return true;
-}
-
-bool Forces::set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError) {
-    // Clear forced values
-    unknownValue_.clear();
-    unknownForced_.clear();
-    deltaValue_.clear();
-    deltaIndices_.clear();
-
-    // Number of unknowns
-    auto n = circuit.unknownCount();
-
-    // Make space for variable forces
-    unknownValue_.resize(n+1);
-    unknownForced_.resize(n+1, false);
-
-    bool error = false;
-
-    // Go through all solution components, excluding ground
-    auto nSol = solution.values().size();
-    // Ignore components that do not have a name
-    nSol = std::min(nSol, solution.names().size());
-    for(decltype(nSol) i=1; i<nSol; i++) {
-        // Node
-        auto name = solution.names()[i];
-        auto value = solution.values()[i];
-        Node* node = circuit.findNode(name);
-        if (!node) {
-            // Node not found
-            continue;
-        }
-
-        if (!setForceOnUnknown(circuit, node, value)) {
-            error = true;
-            if (abortOnError) {
-                return false;
-            }
-        }
-    }
-
-    return !error;
 }
 
 bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, bool uicMode, bool abortOnError) {
@@ -222,7 +181,7 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         // Check if node was found
         auto node = preprocessed.nodes[i];
         auto value = preprocessed.nodeValues[i];
-        if (!setForceOnUnknown(circuit, node, value)) {
+        if (!setForceOnUnknown(node, value)) {
             error = true;
             if (abortOnError) {
                 return false;
@@ -249,7 +208,7 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
         } else if (u1==0) {
             // Check if first node is ground, convert it to a force on an unknown
             // v(0,x) = value -> v(x)=-value
-            if (!setForceOnUnknown(circuit, node2, -value)) {
+            if (!setForceOnUnknown(node2, -value)) {
                 error = true;
                 if (abortOnError) {
                     return false;
@@ -257,7 +216,7 @@ bool Forces::set(Circuit& circuit, const PreprocessedUserForces& preprocessed, b
             }
         } else if (u2==0) {
             // v(x,0) = value -> v(x)=value
-            if (!setForceOnUnknown(circuit, node1, value)) {
+            if (!setForceOnUnknown(node1, value)) {
                 error = true;
                 if (abortOnError) {
                     return false;
@@ -342,6 +301,11 @@ void Forces::clear() {
     unknownForced_.clear();
     deltaValue_.clear();
     deltaIndices_.clear();
+}
+
+void Forces::resizeUnknownForces(size_t n) {
+    unknownValue_.resize(n);
+    unknownForced_.resize(n, false);
 }
 
 bool Forces::formatError(Status& s) const {

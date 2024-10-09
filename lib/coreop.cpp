@@ -268,7 +268,7 @@ bool OperatingPointCore::rebuild(Status& s) {
                 Simulator::wrn() << "Warning, solution '"+solutionName+"' not found. No user nodesets applied.\n";
             } else {
                 // Nodesets from solution repository
-                if (!nrSolver.forces(1).set(circuit, *solPtr, strictforce)) {
+                if (!nrSolver.setForces(1, *solPtr, strictforce)) {
                     // Abort if strictforce is set
                     if (strictforce) {
                         nrSolver.forces(1).formatError(s);
@@ -306,6 +306,7 @@ bool OperatingPointCore::rebuild(Status& s) {
 
 std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
+    auto strictforce = options.strictforce; 
     bool hasInitialStates;
     // Handle continuation
     if (continuePrevious) {
@@ -333,9 +334,17 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
             // Stored analysis state is valid, but not coherent with current circuit, 
             // its lengths may not match those of the solver vectors. 
             // Use nodesets to continue, but set no initial states vector nor initial solution. 
-            // Ignore nodeset conflicts arising from stored solution. 
+            // Ignore nodeset conflicts arising from stored solution. Slot 0 is for sweep continuation and homotopy. 
             // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
-            nrSolver.forces(0).set(circuit, continueState->solution, false);
+            strictforce = false;
+            if (!nrSolver.setForces(0, continueState->solution, strictforce)) {
+                if (strictforce) {
+                    // Failed, strictforce set
+                    errorForce = 0;
+                    setError(OperatingPointError::Forces);
+                    return std::make_tuple(false, false);
+                }
+            }
             nrSolver.enableForces(0, true);
             // Disable user-specified nodesets
             nrSolver.enableForces(1, false);
@@ -482,7 +491,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
                 if (debug>0) {
                     Simulator::dbg() << "Trying source stepping.\n";
                 }
-                homotopy = new SourceStepping(circuit, *this);
+                homotopy = new SourceStepping(circuit, *this, options.op_srchomotopy);
             } else if (it==Homotopy::spice3Src) {
                 if (debug>0) {
                     Simulator::dbg() << "Trying SPICE3 source stepping.\n";
@@ -571,6 +580,9 @@ bool OperatingPointCore::formatError(Status& s) const {
     
     // Then handle OperatingPointCore errors
     switch (lastOpError) {
+        case OperatingPointError::Forces:
+            nrSolver.forces(errorForce).formatError(s);
+            return false;
         case OperatingPointError::InitialOp:
             s.extend("Initial OP analysis failed.");
             return false;

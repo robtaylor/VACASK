@@ -28,6 +28,9 @@ public:
     const std::vector<Id>& names() const { return names_; };
     std::vector<Id>& names() { return names_; };
 
+    const Vector<double>& auxData() const { return auxData_; };
+    Vector<double>& auxData() { return auxData_; };
+    
 private:
     // Solution vector
     // - dc: one component per unknown, index 0 is ground (bucket)
@@ -98,15 +101,19 @@ public:
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
 
-    // Create from stored solution, check for conflicts
-    bool set(Circuit& circuit, const AnnotatedSolution& solution, bool abortOnError);
-    
     // Resolve to actual forces, check for conflicts
     // This is phase 2 of user forces processing. 
+    // Applies only to OP analysis (nodeset vector) and transient analysis (ic vector). 
     bool set(Circuit& circuit, const PreprocessedUserForces& userForces, bool uicMode, bool abortOnError);
 
     // Clear forces
     void clear();
+
+    // Scale forces
+    void resizeUnknownForces(size_t n);
+    
+    // Set a force on an unknown
+    bool setForceOnUnknown(Node* node, double value);
     
     // Get forces for unknowns
     const Vector<double>& unknownValue() const { return unknownValue_; }; 
@@ -119,8 +126,6 @@ public:
     void dump(Circuit& circuit, std::ostream& os) const;
     
 private:
-    bool setForceOnUnknown(Circuit& circuit, Node* node, double value);
-    
     Vector<double> unknownValue_;
     Vector<bool> unknownForced_;
     Vector<double> deltaValue_;

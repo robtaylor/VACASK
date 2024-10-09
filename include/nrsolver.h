@@ -140,6 +140,7 @@ public:
 
     // Get forces from a forces slot
     Forces& forces(Int ndx);
+    const Forces& forces(Int ndx) const;
 
     // Enable/disable forces slot
     bool enableForces(Int ndx, bool enable) {

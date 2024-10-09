@@ -56,7 +56,7 @@ typedef struct OperatingPointState {
 
     // Annotated solution
     AnnotatedSolution solution;
-    // Solution vector with bucket
+    // States vector
     Vector<double> stateVector;
     // Is state coherent with current topology 
     // Becomes coherent when it is written, 
@@ -74,6 +74,7 @@ public:
     typedef OperatingPointParameters Parameters;
     enum class OperatingPointError {
         OK, 
+        Forces, 
         InitialOp, 
         Homotopy, 
         NoAlgorithm, 
@@ -112,7 +113,7 @@ public:
     virtual bool storeState(size_t ndx, bool storeDetails=true);
     virtual bool restoreState(size_t ndx);
     virtual void makeStateIncoherent(size_t ndx);
-    
+
     virtual std::tuple<bool, bool> runSolver(bool continuePrevious);
     virtual Int iterations() const;
     virtual Int iterationLimit(bool continuePrevious) const;
@@ -129,7 +130,7 @@ protected:
     void setError(OperatingPointError e) { lastOpError = e; lastError = Error::OK; };
     
     OperatingPointError lastOpError;
-    Int errorHomotopyIterations;
+    Int errorForce;
 
     KluRealMatrix& jac; // Resistive Jacobian
     VectorRepository<double>& solution; // Solution history

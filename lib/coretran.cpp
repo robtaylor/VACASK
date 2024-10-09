@@ -416,7 +416,8 @@ bool TranCore::rebuild(Status& s) {
                 }
             } else {
                 // Initial conditions from solution repository
-                if (!opCore_.solver().forces(2).set(circuit, *solPtr, strictforce)) {
+                // if (!opCore_.solver().forces(2).set(circuit, *solPtr, strictforce)) {
+                if (!opCore_.solver().setForces(2, *solPtr, strictforce)) {
                     // Abort on error if strictforce is set
                     if (strictforce) {
                         opCore_.solver().forces(2).formatError(s);

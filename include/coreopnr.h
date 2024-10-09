@@ -26,6 +26,9 @@ public:
         NRSettings& settings, Int forcesSize=2
     ); 
 
+    // Set forces based on an annotated solution
+    bool setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError);
+    
     virtual bool rebuild();
     virtual bool initialize(bool continuePrevious);
     virtual bool preIteration(bool continuePrevious);
@@ -105,7 +108,7 @@ protected:
     // Flags indicating nodes are flow nodes
     Vector<bool> isFlow;
 
-    // Flag that forces skipping of device convergence check
+    // Flag that skipping of device convergence check
     bool skipConvergenceCheck;
 
     // Solution natures and residual natures are currently limited to 

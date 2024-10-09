@@ -174,6 +174,10 @@ Forces& NRSolver::forces(Int ndx) {
     return forcesList.at(ndx);
 } 
 
+const Forces& NRSolver::forces(Int ndx) const {
+    return forcesList.at(ndx);
+} 
+
 bool NRSolver::run(bool continuePrevious) {
     auto t0 = Accounting::wclk();
     acct.acctNew.nrcall++;

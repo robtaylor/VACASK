@@ -85,6 +85,46 @@ OpNRSolver::OpNRSolver(
     };
 }
 
+bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
+    // Get forces
+    auto& f = forces(ndx);
+
+    // Clear forced values
+    f.clear();
+    
+    // Number of unknowns
+    auto n = circuit.unknownCount();
+
+    // Make space for variable forces (also include bucket)
+    f.resizeUnknownForces(n+1);
+
+    bool error = false;
+
+    // Go through all solution components, excluding ground
+    auto nSol = solution.values().size();
+    // Ignore components that do not have a name
+    nSol = std::min(nSol, solution.names().size());
+    for(decltype(nSol) i=1; i<nSol; i++) {
+        // Node
+        auto name = solution.names()[i];
+        auto value = solution.values()[i];
+        Node* node = circuit.findNode(name);
+        if (!node) {
+            // Node not found
+            continue;
+        }
+
+        if (!f.setForceOnUnknown(node, value)) {
+            error = true;
+            if (abortOnError) {
+                return false;
+            }
+        }
+    }
+
+    return !error;
+}
+
 bool OpNRSolver::rebuild() {
     // Call parent's rebuild
     if (!NRSolver::rebuild()) {

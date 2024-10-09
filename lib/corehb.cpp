@@ -139,6 +139,76 @@ bool HBCore::deleteOutputs(Id name, Status& s) {
     return true;
 }
 
+size_t HBCore::stateStorageSize() const { 
+    return analysisStateRepository.size(); 
+}
+
+size_t HBCore::allocateStateStorage(size_t n) { 
+    auto nOld = analysisStateRepository.size();
+    analysisStateRepository.resize(nOld+n); 
+    
+    // Initially no state is coherent nor valid
+    for(decltype(nOld) i=nOld; i<nOld+n; i++) {
+        analysisStateRepository[i].coherent = false;
+        analysisStateRepository[i].valid = false;
+    }
+    
+    return nOld;
+}
+
+void HBCore::deallocateStateStorage(size_t n) {
+    auto nOld = analysisStateRepository.size();
+    if (n==0 || n>nOld) {
+        n = nOld;
+    }
+    analysisStateRepository.resize(nOld-n);
+}
+
+bool HBCore::storeState(size_t ndx, bool storeDetails) {
+    auto& repo = analysisStateRepository.at(ndx);
+    // Store current solution as annotated solution
+    if (storeDetails) {
+        repo.solution.setNames(circuit);
+    }
+    
+    // solutionFD is a complex spectrum, we need to convert it to an APFT spectrum
+    auto nt = timepoints.size();
+    auto& sol = repo.solution.values();
+    sol.resize(nt);
+    // DC
+    sol[0] = solutionFD[0].real();
+    // f>0
+    auto nf = solutionFD.size();
+    for(decltype(nf) i=1; i<nf; i++) {
+        sol[1+2*(i-1)] = solutionFD[i].real();
+        sol[1+2*(i-1)+1] = solutionFD[i].imag();
+    }
+    
+    // Store frequencies
+    repo.solution.auxData() = frequencies;
+    
+    // Stored state is coherent and valid
+    repo.coherent = true;
+    repo.valid = true;
+    return true;
+}
+
+bool HBCore::restoreState(size_t ndx) {
+    auto& state = analysisStateRepository.at(ndx);
+    if (state.valid) {
+        // State is valid
+        continueState = &state;
+        return true;
+    } else { 
+        // Nothing to restore, do not use continuation mode
+        return false;
+    }
+}
+
+void HBCore::makeStateIncoherent(size_t ndx) {
+    analysisStateRepository.at(ndx).coherent = false;
+}
+
 // Analysis asks cores if they request a rebuild. 
 // HB core replies that it does if the set of frequencies changes. 
 // Along with changed set of frequencies this function recomputes
@@ -228,6 +298,87 @@ bool HBCore::rebuild(Status& s) {
     
     firstBuild = false;
     return true;
+}
+
+std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
+    auto& options = circuit.simulatorOptions().core();
+    bool hasInitialStates;
+    // Handle continuation
+    if (continuePrevious) {
+        // Continue mode
+        if (continueState &&
+            continueState->valid && continueState->coherent &&
+            continueState->solution.values().size()==circuit.unknownCount()*timepoints.size() && 
+            continueState->solution.auxData().size()==freq.size()
+        ) {
+            // Continue a state
+            // State is valid, coherent, and its lengths match those of the solver vectors
+            // Restore current state
+            solution.vector() = continueState->solution.values();
+            hasInitialStates = true;
+            // No nodesets applied
+            nrSolver.enableForces(0, false);
+            nrSolver.enableForces(1, false);
+            if (options.op_debug>1) {
+                Simulator::dbg() << "OP using ordinary continue mode with stored state.\n";
+            }
+            // Use forced bypass if allowed
+            circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
+        } else if (continueState && continueState->valid) {
+            // Stored analysis state is valid, but not coherent with current circuit, 
+            // its lengths may not match those of the solver vectors. 
+            // Use nodesets to continue, but set no initial states vector nor initial solution. 
+            // Ignore nodeset conflicts arising from stored solution. 
+            // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
+            // TODO: nrSolver.forces(0).set(circuit, continueState->solution, false);
+            nrSolver.enableForces(0, true);
+            // Disable user-specified nodesets
+            nrSolver.enableForces(1, false);
+            if (options.op_debug>1) {
+                Simulator::dbg() << "OP using nodeset continue mode with stored state.\n";
+            }
+            // Forced bypass is not allowed
+            circuit.simulatorInternals().requestForcedBypass = false;
+        } else {
+            // No valid state, continue with whatever is in solution and states vector
+            hasInitialStates = true;
+            // No nodesets applied
+            nrSolver.enableForces(0, false);
+            nrSolver.enableForces(1, false);
+            if (options.op_debug>1) {
+                Simulator::dbg() << "OP using ordinary continue mode with previous solution.\n";
+            }
+            // Forced bypass is allowed if set outside
+        }
+
+        // Continue state is spent after first use
+        continueState = nullptr;
+    } else {
+        // No initial state given, start with standard initial point
+        hasInitialStates = false;
+        
+        // Disable continuation nodesets in slot 0
+        nrSolver.enableForces(0, false);
+
+        // Apply nodesets specified by user in slot 1
+        nrSolver.enableForces(1, true); 
+        
+        if (options.op_debug>1) {
+            Simulator::dbg() << "OP using standard initial solution and state.\n";
+        }
+    }
+
+    auto converged = nrSolver.run(hasInitialStates);
+    auto abort = nrSolver.checkFlags(HBNRSolver::Flags::Abort);
+    return std::make_tuple(converged, abort);
+}
+
+Int HBCore::iterations() const {
+    return nrSolver.iterations();
+}
+
+Int HBCore::iterationLimit(bool continuePrevious) const {
+    return continuePrevious ? nrSettings.itlimCont : nrSettings.itlim;
 }
 
 CoreCoroutine HBCore::coroutine(bool continuePrevious) {

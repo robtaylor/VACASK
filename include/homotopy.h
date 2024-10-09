@@ -17,6 +17,11 @@ public:
     Homotopy(Circuit& circuit, AnalysisCore& core)
         : circuit(circuit), core(core) {};
 
+    Homotopy           (const Homotopy&)  = delete;
+    Homotopy           (      Homotopy&&) = delete;
+    Homotopy& operator=(const Homotopy&)  = delete;
+    Homotopy& operator=(      Homotopy&&) = delete;
+
     // Run homotopy
     // Return value: coverged, abort
     virtual std::tuple<bool, bool> run() { return std::make_tuple(false, false); };
