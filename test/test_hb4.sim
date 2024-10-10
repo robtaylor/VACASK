@@ -24,10 +24,11 @@ control
   
   analysis tran1 tran stop=5m step=1u maxstep=0.1u
 
-  options hb_debug=2 nr_debug=1
-  options hb_itl=100 // reltol=1e-8
+  options homotopy_debug=1 hb_debug=2 nr_debug=1
+  options hb_itl=100 homotopy_srcscale=2 // reltol=1e-8
   analysis hb1 hb freq=[1k, 50k] truncate="box" nharm=[2, 20]
-  // analysis hb1 hb freq=[1k, 50k] nharm=10 immax=7
+  // analysis hb1 hb freq=[1k, 50k] truncate="box" nharm=[2, 4]
+  // analysis hb1 hb freq=[1k, 50k] nharm=20 immax=10
   
   postprocess(PYTHON, "runme.py")
 endc

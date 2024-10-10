@@ -87,7 +87,8 @@ SimulatorOptions::SimulatorOptions() {
     homotopy_startgmin = 1e-3; // >mingmin, value at which dynamic gmin stepping starts
     homotopy_maxgmin = 1e2;   // >mingmin, if op dynamic gmin stepping failes to solve the circuit above this value of gmin, it fails
     homotopy_mingmin = 1e-15; // >0, value where dynamic gmin stepping stops if gmin/gshunt are set to 0
-    homotopy_srcstep = 0.001; // >0, initial source step for dynamic source stepping
+    homotopy_srcstep = 0.01; // >0, initial source step for dynamic source stepping
+    homotopy_srcscale = 3.0;  // >1, source step scaling factor (mutliply on success, divide on failure)
     homotopy_minsrcstep = 1e-7; // 0<x<srcstep, source step at which dynamic source stepping gives up
     homotopy_sourcefactor = 1.0; // x = homotopy_sourcefactor * sourcescalefactor where sourcescalefactor is set by 
                                  // the source stepping homotopy algorithm is the scaling factor for all independent sources. 
@@ -162,7 +163,7 @@ SimulatorOptions::SimulatorOptions() {
     hb_debug = 0; // 0 = none, 1 = solver and homotopy runs, 2 = homotopy and continuation internals
     hb_itl = 100; // >0, maximal number of iterations in non-continuation mode
     hb_itlcont = 50; // >0, maximal number of iterations in continuation mode
-    hb_skipinitial = 0; // 1 = no initial hb, go straight to homotopy
+    hb_skipinitial = 1; // 1 = no initial hb, go straight to homotopy
     hb_homotopy = { "src" }; // list of homotopy algorithms to apply in hb analysis
     
     rawfile = "binary"; // ascii or binary
@@ -260,6 +261,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(homotopy_maxgmin);
     registerMember(homotopy_mingmin);
     registerMember(homotopy_srcstep);
+    registerMember(homotopy_srcscale);
     registerMember(homotopy_minsrcstep);
     registerMember(homotopy_sourcefactor);
     

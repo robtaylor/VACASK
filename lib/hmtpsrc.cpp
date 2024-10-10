@@ -133,11 +133,11 @@ std::tuple<bool, bool> SourceStepping::run() {
                 }
                 
                 if (core.iterations() <= core.iterationLimit(true)/4) {
-                    raise = raise*1.5;
+                    raise = raise*options.homotopy_srcscale;
                 }
 
                 if (core.iterations() > core.iterationLimit(true)*3/4) {
-                    raise = raise*0.5;
+                    raise = raise/options.homotopy_srcscale;
                     if (raise < options.homotopy_minsrcstep) {
                         raise = options.homotopy_minsrcstep;
                     }

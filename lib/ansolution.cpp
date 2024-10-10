@@ -1,3 +1,4 @@
+#include <variant>
 #include "ansolution.h"
 #include "circuit.h"
 #include "common.h"

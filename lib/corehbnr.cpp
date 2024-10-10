@@ -126,12 +126,34 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     auto& solSpec = solution.cxValues();
     auto& solNames = solution.names();
 
+    // Check if there are solution name annotations available
+    // with matching length
+    bool checkNames;
+    if (solNames.size()==n+1) {
+        // Yes, check names
+        checkNames = true;
+    } else if (solNames.size()==0 && solSpec.size()==nfSolver*n) {
+        // No annotations, solutions vector has correct length
+        checkNames = false;
+    } else {
+        // Cannot apply stored solution
+        lastError = Error::ForcesError;
+        return false;
+    }
+
     // Go through all unknowns. 
     for(decltype(n) i=1; i<=n; i++) {
-        // Get name
-        Node* node = circuit.findNode(solNames[i]);
+        Node* node;
+        if (checkNames) {
+            // Stored solution has name annotations
+            node = circuit.findNode(solNames[i]);
+        } else {
+            // Stored solution is coherent
+            node = circuit.reprNode(i);
+        }
         if (!node) {
-            // Node not found, forces were marked as disabled by f.clear()
+            // Node not found, forces were initially marked as disabled by f.clear()
+            // Nothig further to do. 
             continue;
         }
         // Copy spectrum
@@ -170,6 +192,8 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     }
     
     // Ignore errors (conflicting forces are overwritten by newer value)
+    // Error checking makes sense in case of manual forces (nodeset, ic). 
+    // Therefore we ignore abortOnError. 
     return error; 
 }
 
@@ -468,6 +492,7 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         evalSetup_.time = timepoints[k];
         loadSetup_.jacobianLoadOffset = k;
 
+        /*
         // This is a kludge, implement real source stepping
         decltype(settings.itlim) ramp;
         if (continuePrevious) {
@@ -480,6 +505,7 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         }
         // NR starts with iteration=1
         circuit.simulatorInternals().sourcescalefactor = (iteration-1)<ramp ? (iteration-1)*1.0/ramp : 1.0;
+        */
     
         // For k-th timepoint (t_k) load 
         // - resistive and reactive Jacobian at t_k with offset i, 
@@ -721,7 +747,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
             // Compute tolerance reference
             // Point local reference by default
             // Compute tolerance reference, start with previous value of the i-th unknown at j-th frequency
-            double tolref = xold[i];
+            double tolref = xold[1+(i-1)*nt+j];
             
             // Account for global references, no historic reference because we are in frequency domain
             if (globalSolRef) {
@@ -733,11 +759,11 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
             double tol = circuit.solutionTolerance(rn, tolref);
 
             // Absolute solution change 
-            double deltaAbs = fabs(xdelta[i]);;
+            double deltaAbs = std::fabs(xdelta[1+(i-1)*nt+j]);;
 
             if (computeNorms) {
                 double normDelta = deltaAbs/tol;
-                if (i==1 || normDelta>maxNormDelta) {
+                if ((i==1 && j==0) || normDelta>maxNormDelta) {
                     maxDelta = deltaAbs;
                     maxNormDelta = normDelta;
                     maxDeltaNode = rn;

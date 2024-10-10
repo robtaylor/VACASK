@@ -39,7 +39,7 @@ HBCore::HBCore(
     KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
 ) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), jacColoc(jacColoc), 
     nrSolver(circuit, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, IAPFT, nrSettings), 
-    bsjac(jacobian), solution(solution), firstBuild(true) {
+    bsjac(jacobian), solution(solution), firstBuild(true), continueState(nullptr) {
 };
 
 HBCore::~HBCore() {
@@ -145,10 +145,12 @@ bool HBCore::storeState(size_t ndx, bool storeDetails) {
     // Store current solution as annotated solution
     if (storeDetails) {
         repo.solution.setNames(circuit);
+    } else {
+        repo.solution.clearNames();
     }
     
     // solutionFD is a complex spectrum, we need to convert it to an APFT spectrum
-    repo.solution.cxValues() = solutionFD;
+    repo.solution.setCxValues(solutionFD);
     
     // Store frequencies
     repo.solution.auxData() = frequencies;
@@ -274,7 +276,7 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
         // Continue mode
         if (continueState &&
             continueState->valid && continueState->coherent &&
-            continueState->solution.values().size()==circuit.unknownCount()*timepoints.size() && 
+            continueState->solution.cxValues().size()==circuit.unknownCount()*timepoints.size() && 
             continueState->solution.auxData().size()==freq.size()
         ) {
             // Continue a state
@@ -400,6 +402,7 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
                 continue;
             }
             // Run
+            tried = true;
             std::tie(converged_, leave) = homotopy->run();
             if (debug>0) {
                 if (converged_) {

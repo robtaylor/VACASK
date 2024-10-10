@@ -27,7 +27,7 @@ control
   sweep v1 instance="v1" parameter="dc" from=-1 to=1  mode="lin" points=50
     analysis dc1 op 
   
-  options hb_debug=5 nr_debug=0
+  options homotopy_debug=1 hb_debug=5 nr_debug=1
   alter instance("v1") type="sine"
   analysis hb1 hb freq=[1k] nharm=12
   
@@ -70,6 +70,7 @@ i1s = -hb1['v1:flow(br)']
 i1mag = np.abs(i1s)
 i1ph = np.angle(i1s)*180/np.pi
 
+print(f)
 exactmag = np.zeros(f.size)
 exactph = np.zeros(f.size)
 exactmag[0] = 0.5

@@ -103,7 +103,7 @@ bool OperatingPointCore::finalizeOutputs(Status &s) {
     if (converged_ && params.store.length()>0) {
         auto sol = circuit.newStoredSolution("dc", params.store);
         sol->setNames(circuit);
-        sol->values() = solution.vector();
+        sol->setValues(solution.vector());
     }
 
     return true;
@@ -127,8 +127,10 @@ bool OperatingPointCore::storeState(size_t ndx, bool storeDetails) {
     // Store current solution as annotated solution
     if (storeDetails) {
         repo.solution.setNames(circuit);
+    } else {
+        repo.solution.clearNames();
     }
-    repo.solution.values() = solution.vector();
+    repo.solution.setValues(solution.vector());
     // Store current state
     repo.solution.auxData() = states.vector();
     // Stored state is coherent and valid
@@ -479,6 +481,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
                 continue;
             }
             // Run
+            tried = true;
             std::tie(converged_, leave) = homotopy->run();
             if (debug>0) {
                 if (converged_) {

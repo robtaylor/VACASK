@@ -540,6 +540,12 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
         case Error::ForcesIndex:
             s.set(Status::Range, "Force index out of range.");
             return false;
+        case Error::InternalForcesError:
+            forcesList[errorForcesIndex].formatError(s);
+            return false;
+        case Error::ForcesError:
+            s.set(Status::Range, "Failed to apply forces.");
+            return false;
         case Error::EvalAndLoad:
             s.set(Status::NonlinearSolver, "Evaluation/load error.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 

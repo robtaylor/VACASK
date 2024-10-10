@@ -51,6 +51,7 @@ typedef struct SimulatorOptions  {
     Real homotopy_maxgminfactor;
     Real homotopy_mingminfactor;
     Real homotopy_srcstep;
+    Real homotopy_srcscale;
     Real homotopy_minsrcstep;
     Real homotopy_sourcefactor;
     Int op_debug; 

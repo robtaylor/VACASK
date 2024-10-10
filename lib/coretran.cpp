@@ -481,7 +481,7 @@ bool TranCore::finalizeOutputs(Status& s) {
     if (finished && params.store.length()>0) {
         auto sol = circuit.newStoredSolution("dc", params.store);
         sol->setNames(circuit);
-        sol->values() = solution.vector();
+        sol->setValues(solution.vector());
     }
 
     return true;

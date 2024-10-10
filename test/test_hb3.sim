@@ -19,7 +19,8 @@ control
 
   alter instance("v1") type="sine"
   analysis tran1 tran stop=2 step=0.01m maxstep=0.05m
-
+  
+  options homotopy_debug=1 hb_debug=1 nr_debug=1
   analysis hb1 hb freq=[50] nharm=10
   
   postprocess(PYTHON, "runme.py")

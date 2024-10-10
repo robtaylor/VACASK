@@ -87,6 +87,11 @@ OpNRSolver::OpNRSolver(
     };
 }
 
+// TODO: refactor Forces so that setting forces from PreprocessedUserForces will take place here
+//       also make sure all error messages are generated here
+//       remove error handling from Forces
+//       It is NRSolver's job to know how to set forces 
+//       because different solver handle forces differently. 
 bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
     // Get forces
     auto& f = forces(ndx);
@@ -119,6 +124,8 @@ bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
         if (!f.setForceOnUnknown(node, value)) {
             error = true;
             if (abortOnError) {
+                errorForcesIndex = ndx;
+                lastError = Error::InternalForcesError;
                 return false;
             }
         }

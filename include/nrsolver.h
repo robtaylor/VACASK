@@ -74,6 +74,8 @@ public:
     enum class Error {
         OK, 
         ForcesIndex, 
+        InternalForcesError, 
+        ForcesError, 
         EvalAndLoad, 
         ConvergenceCheck, 
         LinearSolver, 
@@ -216,6 +218,7 @@ protected:
     // Error information
     Error lastError;
     Int errorIteration;
+    Int errorForcesIndex;
 };
 
 }

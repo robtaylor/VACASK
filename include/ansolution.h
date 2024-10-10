@@ -24,13 +24,14 @@ public:
     
     // Actual data
     const Vector<double>& values() const { return std::get<std::vector<double>>(values_); };
-    Vector<double>& values() { return std::get<std::vector<double>>(values_); };
     const Vector<Complex>& cxValues() const { return std::get<std::vector<Complex>>(values_); };
-    Vector<Complex>& cxValues() { return std::get<std::vector<Complex>>(values_); };
+    void setValues(const Vector<double>& vec) { values_ = vec; };
+    void setCxValues(const Vector<Complex>& vec) { values_ = vec; };
     
     // Names of unknowns
     const std::vector<Id>& names() const { return names_; };
     std::vector<Id>& names() { return names_; };
+    void clearNames() { names_.clear(); };
 
     // States (DC), frequencies (HB)
     const Vector<double>& auxData() const { return auxData_; };
