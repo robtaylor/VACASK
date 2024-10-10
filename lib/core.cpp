@@ -7,6 +7,35 @@ AnalysisCore::AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& ci
     : parentResolver(parentResolver), circuit(circuit), savesCount(0) {
 }
 
+size_t AnalysisCore::stateStorageSize() const { 
+    return coreStates.size(); 
+}
+
+size_t AnalysisCore::allocateStateStorage(size_t n) { 
+    auto nOld = coreStates.size();
+    coreStates.resize(nOld+n); 
+    
+    // Initially no state is coherent nor valid
+    for(decltype(nOld) i=nOld; i<nOld+n; i++) {
+        coreStates[i].coherent = false;
+        coreStates[i].valid = false;
+    }
+    
+    return nOld;
+};
+
+void AnalysisCore::deallocateStateStorage(size_t n) { 
+    auto nOld = coreStates.size();
+    if (n==0 || n>nOld) {
+        n = nOld;
+    }
+    coreStates.resize(nOld-n);
+}
+
+void AnalysisCore::makeStateIncoherent(size_t ndx) { 
+    coreStates.at(ndx).coherent = false;
+}
+
 void AnalysisCore::clearOutputDescriptors() {
     outputDescriptors.clear();
     outputDescriptorIndices.clear();

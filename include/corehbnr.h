@@ -22,6 +22,7 @@ public:
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
         DenseMatrix<Real>& APFT, 
+        DenseMatrix<Real>& IAPFT, 
         NRSettings& settings
     ); 
 
@@ -63,6 +64,7 @@ protected:
     DenseMatrix<double>& DDT;
     DenseMatrix<double>& DDTcolMajor;
     DenseMatrix<double>& APFT;
+    DenseMatrix<double>& IAPFT;
     Vector<Complex>& solutionFD; 
     Circuit& circuit;
 

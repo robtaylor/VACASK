@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "core.h"
 #include "corehb.h"
+#include "hmtpsrc.h"
 #include "simulator.h"
 #include "common.h"
 
@@ -37,7 +38,7 @@ HBCore::HBCore(
     OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
     KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
 ) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), jacColoc(jacColoc), 
-    nrSolver(circuit, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, nrSettings), 
+    nrSolver(circuit, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, IAPFT, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true) {
 };
 
@@ -139,50 +140,15 @@ bool HBCore::deleteOutputs(Id name, Status& s) {
     return true;
 }
 
-size_t HBCore::stateStorageSize() const { 
-    return analysisStateRepository.size(); 
-}
-
-size_t HBCore::allocateStateStorage(size_t n) { 
-    auto nOld = analysisStateRepository.size();
-    analysisStateRepository.resize(nOld+n); 
-    
-    // Initially no state is coherent nor valid
-    for(decltype(nOld) i=nOld; i<nOld+n; i++) {
-        analysisStateRepository[i].coherent = false;
-        analysisStateRepository[i].valid = false;
-    }
-    
-    return nOld;
-}
-
-void HBCore::deallocateStateStorage(size_t n) {
-    auto nOld = analysisStateRepository.size();
-    if (n==0 || n>nOld) {
-        n = nOld;
-    }
-    analysisStateRepository.resize(nOld-n);
-}
-
 bool HBCore::storeState(size_t ndx, bool storeDetails) {
-    auto& repo = analysisStateRepository.at(ndx);
+    auto& repo = coreStates.at(ndx);
     // Store current solution as annotated solution
     if (storeDetails) {
         repo.solution.setNames(circuit);
     }
     
     // solutionFD is a complex spectrum, we need to convert it to an APFT spectrum
-    auto nt = timepoints.size();
-    auto& sol = repo.solution.values();
-    sol.resize(nt);
-    // DC
-    sol[0] = solutionFD[0].real();
-    // f>0
-    auto nf = solutionFD.size();
-    for(decltype(nf) i=1; i<nf; i++) {
-        sol[1+2*(i-1)] = solutionFD[i].real();
-        sol[1+2*(i-1)+1] = solutionFD[i].imag();
-    }
+    repo.solution.cxValues() = solutionFD;
     
     // Store frequencies
     repo.solution.auxData() = frequencies;
@@ -194,7 +160,7 @@ bool HBCore::storeState(size_t ndx, bool storeDetails) {
 }
 
 bool HBCore::restoreState(size_t ndx) {
-    auto& state = analysisStateRepository.at(ndx);
+    auto& state = coreStates.at(ndx);
     if (state.valid) {
         // State is valid
         continueState = &state;
@@ -203,10 +169,6 @@ bool HBCore::restoreState(size_t ndx) {
         // Nothing to restore, do not use continuation mode
         return false;
     }
-}
-
-void HBCore::makeStateIncoherent(size_t ndx) {
-    analysisStateRepository.at(ndx).coherent = false;
 }
 
 // Analysis asks cores if they request a rebuild. 
@@ -302,7 +264,11 @@ bool HBCore::rebuild(Status& s) {
 
 std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
-    bool hasInitialStates;
+    // Assume no initial state given, start with standard initial point. 
+    // Coherence information is set by an.cpp and homotopy. 
+    // They are responsible for detecting topology changes/rebuilds. 
+    // Homotopy sweeps parameters that do not cause topology changes/rebuilds. 
+    bool runInContinueMode = false;
     // Handle continuation
     if (continuePrevious) {
         // Continue mode
@@ -315,38 +281,34 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
             // State is valid, coherent, and its lengths match those of the solver vectors
             // Restore current state
             solution.vector() = continueState->solution.values();
-            hasInitialStates = true;
-            // No nodesets applied
+            runInContinueMode = true;
+            // No forces applied
             nrSolver.enableForces(0, false);
-            nrSolver.enableForces(1, false);
-            if (options.op_debug>1) {
-                Simulator::dbg() << "OP using ordinary continue mode with stored state.\n";
+            if (options.hb_debug>1) {
+                Simulator::dbg() << "HB using ordinary continue mode via initial solution.\n";
             }
             // Use forced bypass if allowed
             circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
         } else if (continueState && continueState->valid) {
             // Stored analysis state is valid, but not coherent with current circuit, 
             // its lengths may not match those of the solver vectors. 
-            // Use nodesets to continue, but set no initial states vector nor initial solution. 
-            // Ignore nodeset conflicts arising from stored solution. 
-            // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
-            // TODO: nrSolver.forces(0).set(circuit, continueState->solution, false);
+            // Use forces to continue, but set no initial states vector nor initial solution. 
+            // Ignore forces conflicts arising from stored solution. 
+            // There should be no such conflicts as we are applying forces to nodes only, not node deltas. 
+            nrSolver.setForces(0, continueState->solution, false);
             nrSolver.enableForces(0, true);
-            // Disable user-specified nodesets
-            nrSolver.enableForces(1, false);
-            if (options.op_debug>1) {
-                Simulator::dbg() << "OP using nodeset continue mode with stored state.\n";
+            if (options.hb_debug>1) {
+                Simulator::dbg() << "HB using forced continue mode.\n";
             }
             // Forced bypass is not allowed
             circuit.simulatorInternals().requestForcedBypass = false;
         } else {
             // No valid state, continue with whatever is in solution and states vector
-            hasInitialStates = true;
-            // No nodesets applied
+            runInContinueMode = true;
+            // No forces applied
             nrSolver.enableForces(0, false);
-            nrSolver.enableForces(1, false);
-            if (options.op_debug>1) {
-                Simulator::dbg() << "OP using ordinary continue mode with previous solution.\n";
+            if (options.hb_debug>1) {
+                Simulator::dbg() << "HB using ordinary continue mode with previous solution.\n";
             }
             // Forced bypass is allowed if set outside
         }
@@ -354,22 +316,20 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
         // Continue state is spent after first use
         continueState = nullptr;
     } else {
-        // No initial state given, start with standard initial point
-        hasInitialStates = false;
-        
-        // Disable continuation nodesets in slot 0
+        // Disable continuation forces in slot 0
         nrSolver.enableForces(0, false);
 
-        // Apply nodesets specified by user in slot 1
-        nrSolver.enableForces(1, true); 
-        
-        if (options.op_debug>1) {
-            Simulator::dbg() << "OP using standard initial solution and state.\n";
+        if (options.hb_debug>1) {
+            Simulator::dbg() << "HB using standard intial solution.\n";
         }
     }
 
-    auto converged = nrSolver.run(hasInitialStates);
+    auto converged = nrSolver.run(runInContinueMode);
     auto abort = nrSolver.checkFlags(HBNRSolver::Flags::Abort);
+    if (!converged_ || abort) {
+        setError(HBError::SolverError);
+    }
+
     return std::make_tuple(converged, abort);
 }
 
@@ -389,6 +349,8 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     auto& internals = circuit.simulatorInternals();
     converged_ = false;
+    bool leave = false;
+    bool tried = false;
     auto debug = options.hb_debug;
     auto n = circuit.unknownCount(); 
     auto nb = timepoints.size();
@@ -402,24 +364,85 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     }
 
     // Run solver (time domain formulation)
-    converged_ = nrSolver.run(continuePrevious);
-    if (!converged_) {
-        setError(HBError::SolverError);
+    // Initial plain HB
+    auto skipinitial = options.hb_skipinitial;
+    if (!skipinitial) {
+        tried = true;
+        std::tie(converged_, leave) = runSolver(continuePrevious);
+        if (!converged_) {
+            setError(HBError::InitialHB);
+        }
+        if (debug>0) {
+            if (converged_) {
+                Simulator::dbg() << "HB core algorithm converged in " << std::to_string(nrSolver.iterations()) << " NR iteration(s).\n";
+            } else {
+                Simulator::dbg() << "HB core algorithm failed to converge in " << std::to_string(nrSolver.iterations()) << " NR iteration(s).\n";
+            }
+        }
     }
 
-    if (converged_ && params.writeOutput) {
-        // Collect results
-        outputPhasors.upsize(1, n+1);
-        auto outvec = outputPhasors.data();
-        for(decltype(nf) k=0; k<nf; k++) {
-            outputFreq = freq[k].f;
-            for(decltype(n) i=0; i<n; i++) {
-                outvec[i+1] = solutionFD[i*nf+k];
+    // Try homotopy
+    if (!converged_ && !leave) {
+        Homotopy* homotopy;
+        for(auto it : options.hb_homotopy) {
+            if (it==Homotopy::src) {
+                if (debug>0) {
+                    Simulator::dbg() << "Trying source stepping.\n";
+                }
+                homotopy = new SourceStepping(circuit, *this);
+            } else {
+                if (debug>0) {
+                    Simulator::dbg() << "Unknown homotopy '"+std::string(it)+"'.\n";
+                }
+                homotopy = nullptr;
             }
-            
-            // Dump to output
-            outfile->addPoint();
+            if (!homotopy) {
+                continue;
+            }
+            // Run
+            std::tie(converged_, leave) = homotopy->run();
+            if (debug>0) {
+                if (converged_) {
+                    Simulator::dbg() << "Homotopy converged in " << std::to_string(homotopy->stepCount()) << " step(s).\n";
+                } else {
+                    Simulator::dbg() << "Homotopy failed to converge in " << std::to_string(homotopy->stepCount()) << " step(s).\n";
+                }
+            }
+            delete homotopy;
+            if (leave || converged_) {
+                break;
+            }
         }
+        if (!converged_) {
+            setError(HBError::Homotopy);
+        }
+    }
+
+    if (!leave) {
+        // Did not leave early
+        if (!tried) {
+            // No algorithm tried
+            setError(HBError::NoAlgorithm);
+        } else if (converged_) {
+            // Tried and converged, write results
+            if (outfile && params.writeOutput) {
+                // Collect results
+                outputPhasors.upsize(1, n+1);
+                auto outvec = outputPhasors.data();
+                for(decltype(nf) k=0; k<nf; k++) {
+                    outputFreq = freq[k].f;
+                    for(decltype(n) i=0; i<n; i++) {
+                        outvec[i+1] = solutionFD[i*nf+k];
+                    }                    
+                    // Dump to output
+                    outfile->addPoint();
+                }
+            }
+        }
+    } else {
+        // Leaving early, did not converge
+        // Add a status message one level higher
+        converged_ = false;
     }
     
     setProgress(1);
@@ -471,8 +494,17 @@ bool HBCore::formatError(Status& s) const {
         return false;
     }
     
-    // Then handle OperatingPointCore errors
+    // Then handle HBCore errors
     switch (lastHbError) {
+        case HBError::InitialHB:
+            s.extend("Initial HB analysis failed.");
+            return false;
+        case HBError::Homotopy:
+            s.set(Status::Analysis, "Homotopy failed.");
+            return false;
+        case HBError::NoAlgorithm:
+            s.set(Status::Analysis, "No HB algorithm tried."); 
+            return false;
         case HBError::MatrixError:
             bsjac.formatError(s, &nr);
             return false;

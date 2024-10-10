@@ -47,33 +47,16 @@ typedef struct HBParameters {
 } HBParameters;
 
 
-typedef struct HBState {
-    HBState() {};
-    
-    HBState           (const HBState&)  = delete;
-    HBState           (      HBState&&) = default;
-    HBState& operator=(const HBState&)  = delete;
-    HBState& operator=(      HBState&&) = default;
-
-    // Annotated solution
-    AnnotatedSolution solution;
-    // Is state coherent with current topology 
-    // Becomes coherent when it is written, 
-    // stops being coherent when makeStateIncoherent() is called.
-    bool coherent;
-    // Is state valid 
-    // Becomes valid as soon as something is written into the slot. 
-    bool valid;
-} HBState;
-
-
 class HBCore : public AnalysisCore {
 public:
     typedef HBParameters Parameters;
     enum class HBError {
         OK, 
+        NoAlgorithm, 
         MatrixError, 
-        SolverError, 
+        SolverError,
+        InitialHB, 
+        Homotopy,
     };
 
     HBCore(
@@ -107,13 +90,9 @@ public:
     bool buildColocation(Status& s=Status::ignore);
     bool buildAPFT(Status& s=Status::ignore);
 
-    virtual size_t stateStorageSize() const;
-    virtual size_t allocateStateStorage(size_t n);
-    virtual void deallocateStateStorage(size_t n=0);
     virtual bool storeState(size_t ndx, bool storeDetails=true);
     virtual bool restoreState(size_t ndx);
-    virtual void makeStateIncoherent(size_t ndx);
-
+    
     virtual std::tuple<bool, bool> runSolver(bool continuePrevious);
     virtual Int iterations() const;
     virtual Int iterationLimit(bool continuePrevious) const;
@@ -146,12 +125,10 @@ protected:
     KluBlockSparseRealMatrix& bsjac; 
     VectorRepository<Real>& solution; // Solution history
 
-    HBState* continueState;
+    CoreStateStorage* continueState;
 
-    
     OutputRawfile* outfile;
-    std::vector<HBState> analysisStateRepository;
-
+    
     bool converged_;
     
     struct SpecFreq {

@@ -100,7 +100,7 @@ SimulatorOptions::SimulatorOptions() {
     op_itl = 100;  // >0, maximal number of iterations in non-continuation mode
     op_itlcont = 50; // >0, maximal number of iterations in continuation mode
 
-    op_skipinitial = 0; // 1 = no initial op, go straight to gmin stepping
+    op_skipinitial = 0; // 1 = no initial op, go straight to homotopy
     op_homotopy = { "gdev", "gshunt", "src" };
                         // list of homotopy algorithms to apply in operating point analysis
     op_srchomotopy = { "gdev", "gshunt" };
@@ -158,9 +158,13 @@ SimulatorOptions::SimulatorOptions() {
                     // 0 = pure Euler, 0.5 = pure trapezoidal
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
+    
     hb_debug = 0; // 0 = none, 1 = solver and homotopy runs, 2 = homotopy and continuation internals
     hb_itl = 100; // >0, maximal number of iterations in non-continuation mode
     hb_itlcont = 50; // >0, maximal number of iterations in continuation mode
+    hb_skipinitial = 0; // 1 = no initial hb, go straight to homotopy
+    hb_homotopy = { "src" }; // list of homotopy algorithms to apply in hb analysis
+    
     rawfile = "binary"; // ascii or binary
     strictoutput = 2; // 0 = leave output files in place after error, 
                       // 1 = delete output files on error
@@ -289,6 +293,8 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(hb_debug);
     registerMember(hb_itl);
     registerMember(hb_itlcont);
+    registerMember(hb_skipinitial);
+    registerMember(hb_homotopy);
     
     registerMember(rawfile);
     registerMember(strictoutput);

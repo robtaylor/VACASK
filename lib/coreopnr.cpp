@@ -54,6 +54,8 @@ OpNRSolver::OpNRSolver(
     NRSettings& settings, Int forcesSize
 ) : circuit(circuit), states(states), 
     NRSolver(circuit.tables().accounting(), jac, solution, settings) {
+    // Slot 0 is for sweep continuation and homotopy (set via CoreStateStorage object)
+    // Slot 1 is 
     resizeForces(forcesSize);
 
     // For constructing the linearized system in NR loop

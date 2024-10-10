@@ -16,12 +16,14 @@ HBNRSolver::HBNRSolver(
         DenseMatrix<Real>& DDT, 
         DenseMatrix<Real>& DDTcolMajor, 
         DenseMatrix<double>& APFT, 
+        DenseMatrix<double>& IAPFT, 
         NRSettings& settings
 ) : circuit(circuit), jacColoc(jacColoc), bsjac(bsjac), solutionFD(solutionFD), 
-    frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), APFT(APFT), 
+    frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), 
+    APFT(APFT), IAPFT(IAPFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
-    // Slot 0 is for sweep continuation and homotopy
-    // Do not need slot 1 as we do not support explicit nodesets
+    // Slot 0 is for sweep continuation and homotopy (set via CoreStateStorage object)
+    // Do not need slot 1 as we do not support explicit nodesets. 
     resizeForces(1);
 
     // For constructing the linearized system in NR loop
@@ -70,10 +72,11 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     auto n = circuit.unknownCount();
 
     // Number of components per unknown
-    auto nt = timepoints.size();
+    auto nf = frequencies.size();
+    auto blockSize = 2*nf-1;
 
     // Make space for variable forces (also include bucket)
-    f.resizeUnknownForces(n*nt+1);
+    f.resizeUnknownForces(n*blockSize+1);
 
     // Number of frequencies in solution and solver
     auto nfSolution = solution.auxData().size();
@@ -117,57 +120,57 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     // Use resistive residual vector for APFT spectrum
     auto& forcesFD = resistiveResidual;
     // Set APFT spectrum to 0
-    forcesFD.resize(n*nt, 0);
-
-    // Force values at colocation points are stored in reactive residual vector
-    auto& forcesTD = reactiveResidual;
-    forcesTD.resize(n*nt);
+    forcesFD.resize(n*blockSize, 0);
 
     // Solution spectrum
-    auto& solSpec = solution.values();
+    auto& solSpec = solution.cxValues();
+    auto& solNames = solution.names();
 
-    // Copy matching frequency components
-    if (nfSolution>0) {
-        // Copy DC from APFT spectrum of stored solution
-        forcesFD[0] = solSpec[0];
-        // Copy the rest
-        for(decltype(nfSolution) i=1; i<nfSolution; i++) {
-            auto xlfi = xlat[i];
-            if (xlfi>=0) {
-                // Translation exists
-                auto ndx = (i-1)*2+1;
-                auto destNdx = (xlfi-1)*2+1;
-                forcesFD[destNdx] = solSpec[ndx];
-                forcesFD[destNdx+1] = solSpec[ndx+1];
-            }
-        }
-    }
-
-    // Perform inverse APFT
-    
-    // Go through all solution components, excluding ground
-    auto nSol = solution.values().size();
-    // Ignore components that do not have a name
-    nSol = std::min(nSol, solution.names().size());
-    for(decltype(nSol) i=1; i<nSol; i++) {
-        // Node
-        auto name = solution.names()[i];
-        auto value = solution.values()[i];
-        Node* node = circuit.findNode(name);
+    // Go through all unknowns. 
+    for(decltype(n) i=1; i<=n; i++) {
+        // Get name
+        Node* node = circuit.findNode(solNames[i]);
         if (!node) {
-            // Node not found
+            // Node not found, forces were marked as disabled by f.clear()
             continue;
         }
-
-        if (!f.setForceOnUnknown(node, value)) {
-            error = true;
-            if (abortOnError) {
-                return false;
+        // Copy spectrum
+        auto ui = node->unknownIndex();
+        auto destOrigin = (ui-1)*blockSize;
+        auto destNdx = destOrigin;
+        // Copy DC
+        forcesFD[destNdx] = solSpec[0].real();
+        destNdx++;
+        // Copy the rest
+        for(decltype(nf) k=1; k<nf; k++) {
+            auto xlf = xlat[k];
+            if (xlf>=0) {
+                // Translation exists, copy component
+                forcesFD[destNdx] = solSpec[i].real();
+                destNdx++;
+                forcesFD[destNdx] = solSpec[i].imag();
+                destNdx++;
+            } else {
+                // No translation, fill with zeros
+                forcesFD[destNdx] = 0;
+                destNdx++;
+                forcesFD[destNdx] = 0;
+                destNdx++;
             }
         }
+        // Inverse APFT, store in forces vector
+        auto fd = VectorView<double>(forcesFD.data()+destOrigin, blockSize, 1);
+        auto td = VectorView<double>(f.unknownValue().data()+1+destOrigin, blockSize, 1);
+        IAPFT.multiply(fd, td);
+        // Mark all forces for this unknown as set (IAPFT output affects all time domain components)
+        auto fflag = f.unknownForced();
+        for(decltype(nf) k=1; k<nf; k++) {
+            fflag[1+destOrigin+k] = true;
+        }
     }
-
-    return !error;
+    
+    // Ignore errors (conflicting forces are overwritten by newer value)
+    return error; 
 }
 
 bool HBNRSolver::rebuild() {

@@ -203,6 +203,7 @@ protected:
     // Used for homotopy and sweeps
     virtual size_t analysisStateStorageSize() const { return 0; };
     virtual size_t allocateAnalysisStateStorage(size_t n=0) { return 0; };
+    void deallocateAnalysisStateStorage(size_t n=0) {};
     
     // Store analysis state in internal repository 
     // Used for homotopy and sweeps

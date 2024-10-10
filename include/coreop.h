@@ -46,27 +46,6 @@ typedef struct OperatingPointParameters {
 } OperatingPointParameters;
 
 
-typedef struct OperatingPointState {
-    OperatingPointState() {};
-    
-    OperatingPointState           (const OperatingPointState&)  = delete;
-    OperatingPointState           (      OperatingPointState&&) = default;
-    OperatingPointState& operator=(const OperatingPointState&)  = delete;
-    OperatingPointState& operator=(      OperatingPointState&&) = default;
-
-    // Annotated solution
-    AnnotatedSolution solution;
-    // States vector
-    Vector<double> stateVector;
-    // Is state coherent with current topology 
-    // Becomes coherent when it is written, 
-    // stops being coherent when makeStateIncoherent() is called.
-    bool coherent;
-    // Is state valid 
-    // Becomes valid as soon as something is written into the slot. 
-    bool valid;
-} OperatingPointState;
-
 // Operating point core functionality, assumes all circuit parameters and simulator options have been set
 // This core uses no other core
 class OperatingPointCore : public AnalysisCore {
@@ -107,13 +86,9 @@ public:
     bool finalizeOutputs(Status& s=Status::ignore);
     bool deleteOutputs(Id name, Status& s=Status::ignore);
 
-    virtual size_t stateStorageSize() const;
-    virtual size_t allocateStateStorage(size_t n);
-    virtual void deallocateStateStorage(size_t n=0);
     virtual bool storeState(size_t ndx, bool storeDetails=true);
     virtual bool restoreState(size_t ndx);
-    virtual void makeStateIncoherent(size_t ndx);
-
+    
     virtual std::tuple<bool, bool> runSolver(bool continuePrevious);
     virtual Int iterations() const;
     virtual Int iterationLimit(bool continuePrevious) const;
@@ -136,7 +111,7 @@ protected:
     VectorRepository<double>& solution; // Solution history
     VectorRepository<double>& states; // Circuit states
 
-    OperatingPointState* continueState;
+    CoreStateStorage* continueState;
 
     Forces stateNodesets;
     
@@ -144,7 +119,6 @@ protected:
     bool converged_;
 
     OutputRawfile* outfile;
-    std::vector<OperatingPointState> analysisStateRepository;
     
     PreprocessedUserForces preprocessedNodeset;
 

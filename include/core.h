@@ -28,6 +28,28 @@ public:
 
 class Analysis;
 
+class CoreStateStorage {
+public:
+    CoreStateStorage() {};
+    
+    CoreStateStorage           (const CoreStateStorage&)  = delete;
+    CoreStateStorage           (      CoreStateStorage&&) = default;
+    CoreStateStorage& operator=(const CoreStateStorage&)  = delete;
+    CoreStateStorage& operator=(      CoreStateStorage&&) = default;
+
+    // Annotated solution
+    AnnotatedSolution solution;
+    
+    // Is state coherent with current topology 
+    // Becomes coherent when it is written, 
+    // stops being coherent when makeStateIncoherent() is called.
+    bool coherent;
+    // Is state valid 
+    // Becomes valid as soon as something is written into the slot. 
+    bool valid;
+};
+
+
 // Analysis core, one analysis can have multiple analysis cores (i.e. op, tran, ...)
 class AnalysisCore : public ProgressTracker {
 public: 
@@ -102,24 +124,29 @@ public:
 
     // Core state storage (used by continuation in sweeps and homotopy), do nothing by default
     // Return number of state slots
-    virtual size_t stateStorageSize() const { return 0; };
+    virtual size_t stateStorageSize() const;
     // Allocate n slots, mark them as incoherent, return the number of first allocated slot
-    virtual size_t allocateStateStorage(size_t n) { return 0; };
+    virtual size_t allocateStateStorage(size_t n);
     // Deallocate n slots. If n>slots count or n=0, deallocate all
-    virtual void deallocateStateStorage(size_t n=0) { return; };
+    virtual void deallocateStateStorage(size_t n=0);
     // Store state in slot ndx, mark as coherent
+    // Override in derived classes if needed
     virtual bool storeState(size_t ndx, bool storeDetails=true) { return true; };
     // Restore state from slot ndx
+    // Override in derived classes if needed
     virtual bool restoreState(size_t ndx) { return true; };
     // Make state in slot ndx incoherent
-    virtual void makeStateIncoherent(size_t ndx) { return; };
+    virtual void makeStateIncoherent(size_t ndx);
 
     // Homotopy interface
     // Return value: coverged, abort
+    // Override in derived classes if needed
     virtual std::tuple<bool, bool> runSolver(bool continuePrevious) { return std::make_tuple(true, false); };
     // Return the number of solver iterations in last solver run
+    // Override in derived classes if needed
     virtual Int iterations() const { return 0; };
     // Maximal number of allowed solver iterations
+    // Override in derived classes if needed
     virtual Int iterationLimit(bool continuePrevious) const { return 0; };
 
     // Dump internals
@@ -163,6 +190,8 @@ protected:
     std::unordered_map<Id,size_t> outputDescriptorIndices;
     // Number of save directives that produced at least one output descriptor
     size_t savesCount; 
+
+    std::vector<CoreStateStorage> coreStates;
 };
 
 }

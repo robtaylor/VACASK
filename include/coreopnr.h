@@ -10,7 +10,7 @@ namespace NAMESPACE {
 class OpNRSolver : public NRSolver {
 public:
     // By default OpNRSolver has 2 force slots
-    // 0 .. continuation nodesets for sweep
+    // 0 .. continuation nodesets for sweep and homotopy
     //      cannot contain branch forces
     // 1 .. forces explicitly specified via nodeset analysis parameter
     //      can contain branch forces
@@ -20,6 +20,7 @@ public:
     //      can contain branch forces
     // Slots containing branch forces affect the circuit topology. 
     // They need to be set before rebuild() is called. 
+    // By default we have 2 slots. Transient analysis requests 3 slots. 
     OpNRSolver(
         Circuit& circuit, KluRealMatrix& jac, 
         VectorRepository<double>& states, VectorRepository<double>& solution, 

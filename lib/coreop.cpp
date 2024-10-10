@@ -122,40 +122,15 @@ bool OperatingPointCore::deleteOutputs(Id name, Status &s) {
     return true;
 }
     
-size_t OperatingPointCore::stateStorageSize() const { 
-    return analysisStateRepository.size(); 
-}
-
-size_t OperatingPointCore::allocateStateStorage(size_t n) { 
-    auto nOld = analysisStateRepository.size();
-    analysisStateRepository.resize(nOld+n); 
-    
-    // Initially no state is coherent nor valid
-    for(decltype(nOld) i=nOld; i<nOld+n; i++) {
-        analysisStateRepository[i].coherent = false;
-        analysisStateRepository[i].valid = false;
-    }
-    
-    return nOld;
-}
-
-void OperatingPointCore::deallocateStateStorage(size_t n) {
-    auto nOld = analysisStateRepository.size();
-    if (n==0 || n>nOld) {
-        n = nOld;
-    }
-    analysisStateRepository.resize(nOld-n);
-}
-
 bool OperatingPointCore::storeState(size_t ndx, bool storeDetails) {
-    auto& repo = analysisStateRepository.at(ndx);
+    auto& repo = coreStates.at(ndx);
     // Store current solution as annotated solution
     if (storeDetails) {
         repo.solution.setNames(circuit);
     }
     repo.solution.values() = solution.vector();
     // Store current state
-    repo.stateVector = states.vector();
+    repo.solution.auxData() = states.vector();
     // Stored state is coherent and valid
     repo.coherent = true;
     repo.valid = true;
@@ -163,7 +138,7 @@ bool OperatingPointCore::storeState(size_t ndx, bool storeDetails) {
 }
 
 bool OperatingPointCore::restoreState(size_t ndx) {
-    auto& state = analysisStateRepository.at(ndx);
+    auto& state = coreStates.at(ndx);
     if (state.valid) {
         // State is valid
         continueState = &state;
@@ -172,10 +147,6 @@ bool OperatingPointCore::restoreState(size_t ndx) {
         // Nothing to restore, do not use continuation mode
         return false;
     }
-}
-
-void OperatingPointCore::makeStateIncoherent(size_t ndx) {
-    analysisStateRepository.at(ndx).coherent = false;
 }
 
 std::tuple<bool, bool> OperatingPointCore::preMapping(Status& s) {
@@ -307,35 +278,39 @@ bool OperatingPointCore::rebuild(Status& s) {
 std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
     auto& options = circuit.simulatorOptions().core();
     auto strictforce = options.strictforce; 
-    bool hasInitialStates;
+    // Assume no initial state given, start with standard initial point. 
+    // Coherence information is set by an.cpp and homotopy. 
+    // They are responsible for detecting topology changes/rebuilds. 
+    // Homotopy sweeps parameters that do not cause topology changes/rebuilds. 
+    bool runInContinueMode = false;
     // Handle continuation
     if (continuePrevious) {
         // Continue mode
         if (continueState &&
             continueState->valid && continueState->coherent &&
             continueState->solution.values().size()==circuit.unknownCount()+1 &&
-            continueState->stateVector.size()==circuit.statesCount() 
+            continueState->solution.auxData().size()==circuit.statesCount() 
         ) {
             // Continue a state
             // State is valid, coherent, and its lengths match those of the solver vectors
             // Restore current state
             solution.vector() = continueState->solution.values();
-            states.vector() = continueState->stateVector;
-            hasInitialStates = true;
-            // No nodesets applied
+            states.vector() = continueState->solution.auxData();
+            runInContinueMode = true;
+            // No forces applied
             nrSolver.enableForces(0, false);
             nrSolver.enableForces(1, false);
             if (options.op_debug>1) {
-                Simulator::dbg() << "OP using ordinary continue mode with stored state.\n";
+                Simulator::dbg() << "OP using ordinary continue mode via initial solution.\n";
             }
             // Use forced bypass if allowed
             circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
         } else if (continueState && continueState->valid) {
             // Stored analysis state is valid, but not coherent with current circuit, 
             // its lengths may not match those of the solver vectors. 
-            // Use nodesets to continue, but set no initial states vector nor initial solution. 
-            // Ignore nodeset conflicts arising from stored solution. Slot 0 is for sweep continuation and homotopy. 
-            // There should be no such conflicts as we are applying nodesets to nodes only, not node deltas. 
+            // Use forces to continue, but set no initial states vector nor initial solution. 
+            // Ignore forces conflicts arising from stored solution. Slot 0 is for sweep continuation and homotopy. 
+            // There should be no such conflicts as we are applying forces to nodes only, not node deltas. 
             strictforce = false;
             if (!nrSolver.setForces(0, continueState->solution, strictforce)) {
                 if (strictforce) {
@@ -346,17 +321,17 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
                 }
             }
             nrSolver.enableForces(0, true);
-            // Disable user-specified nodesets
+            // Disable user-specified forces
             nrSolver.enableForces(1, false);
             if (options.op_debug>1) {
-                Simulator::dbg() << "OP using nodeset continue mode with stored state.\n";
+                Simulator::dbg() << "OP using forced continue mode.\n";
             }
             // Forced bypass is not allowed
             circuit.simulatorInternals().requestForcedBypass = false;
         } else {
             // No valid state, continue with whatever is in solution and states vector
-            hasInitialStates = true;
-            // No nodesets applied
+            runInContinueMode = true;
+            // No forces applied
             nrSolver.enableForces(0, false);
             nrSolver.enableForces(1, false);
             if (options.op_debug>1) {
@@ -364,25 +339,22 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
             }
             // Forced bypass is allowed if set outside
         }
-
         // Continue state is spent after first use
         continueState = nullptr;
     } else {
-        // No initial state given, start with standard initial point
-        hasInitialStates = false;
-        
-        // Disable continuation nodesets in slot 0
+        // Continue mode not requested
+        // Disable continuation forces in slot 0
         nrSolver.enableForces(0, false);
 
-        // Apply nodesets specified by user in slot 1
+        // Apply forces specified by user in slot 1
         nrSolver.enableForces(1, true); 
         
         if (options.op_debug>1) {
-            Simulator::dbg() << "OP using standard initial solution and state.\n";
+            Simulator::dbg() << "OP using forced continue mode with user nodesets and standard initial solution.\n";
         }
     }
 
-    auto converged = nrSolver.run(hasInitialStates);
+    auto converged = nrSolver.run(runInContinueMode);
     auto abort = nrSolver.checkFlags(OpNRSolver::Flags::Abort);
     return std::make_tuple(converged, abort);
 }
@@ -524,7 +496,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
             setError(OperatingPointError::Homotopy);
         }
     }
-
+    
     if (!leave) {
         // Did not leave early
         if (!tried) {

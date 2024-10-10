@@ -11,11 +11,11 @@ TranNRSolver::TranNRSolver(
     NRSettings& settings, IntegratorCoeffs& integCoeffs
 ) : OpNRSolver(circuit, jac, states, solution, settings, 2), integCoeffs(&integCoeffs) {
     // TranNRSolver has 2 force slots
-    // 0 .. continuation nodesets for sweep
+    // 0 .. continuation nodesets for sweep and homotopy
     //      cannot contain branch forces
     // 1 .. forces explicitly specified via nodeset analysis parameter
     //      can contain branch forces
-    // Slots containing branch forces affect the circuti topology. 
+    // Slots containing branch forces affect the circuit topology. 
     // They need to be set before rebuild() is called. 
 
     // Set analysis type

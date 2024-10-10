@@ -22,22 +22,28 @@ public:
 
     void setNames(Circuit& circuit);
     
-    const Vector<double>& values() const { return values_; };
-    Vector<double>& values() { return values_; };
+    // Actual data
+    const Vector<double>& values() const { return std::get<std::vector<double>>(values_); };
+    Vector<double>& values() { return std::get<std::vector<double>>(values_); };
+    const Vector<Complex>& cxValues() const { return std::get<std::vector<Complex>>(values_); };
+    Vector<Complex>& cxValues() { return std::get<std::vector<Complex>>(values_); };
     
+    // Names of unknowns
     const std::vector<Id>& names() const { return names_; };
     std::vector<Id>& names() { return names_; };
 
+    // States (DC), frequencies (HB)
     const Vector<double>& auxData() const { return auxData_; };
     Vector<double>& auxData() { return auxData_; };
     
 private:
+    typedef std::variant<Vector<double>, Vector<Complex>> VectorVariant;
     // Solution vector
-    // - dc: one component per unknown, index 0 is ground (bucket)
-    // - hb: nt components per unknown (1 for DC, 2 for each frequency), 
+    // - dc: one real component per unknown, index 0 is ground (bucket)
+    // - hb: nf complex components per unknown. 
     //       no bucket - index 0 is first unknown
-    Vector<double> values_;
-
+    VectorVariant values_;
+    
     // Names of unknowns for cross matching across slightly different circuits
     std::vector<Id> names_;
 
@@ -118,7 +124,9 @@ public:
     // Get forces for unknowns
     const Vector<double>& unknownValue() const { return unknownValue_; }; 
     const Vector<bool>& unknownForced() const { return unknownForced_; }; 
-
+    Vector<double>& unknownValue() { return unknownValue_; }; 
+    Vector<bool>& unknownForced() { return unknownForced_; }; 
+    
     // Get forces for unknown differences
     const Vector<double>& deltaValue() const { return deltaValue_; }; 
     const Vector<std::tuple<UnknownIndex, UnknownIndex>>& deltaIndices() const { return deltaIndices_; }; 
