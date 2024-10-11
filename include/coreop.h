@@ -53,7 +53,6 @@ public:
     typedef OperatingPointParameters Parameters;
     enum class OperatingPointError {
         OK, 
-        Forces, 
         InitialOp, 
         Homotopy, 
         NoAlgorithm, 

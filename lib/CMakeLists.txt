@@ -119,6 +119,7 @@ add_library(simlib STATIC
     outrawfile.cpp
     densematrix.cpp
     nrsolver.cpp 
+    nrforces.cpp 
     homotopy.cpp 
     hmtpgmin.cpp
     hmtpsrc.cpp

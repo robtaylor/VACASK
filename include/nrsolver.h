@@ -44,6 +44,27 @@ namespace NAMESPACE {
 //   } while (iteration limit not reached);
 // }
 
+class Forces {
+public:
+    Forces();
+
+    Forces           (const Forces&)  = delete;
+    Forces           (      Forces&&) = default;
+    Forces& operator=(const Forces&)  = delete;
+    Forces& operator=(      Forces&&) = default;
+
+    // Clear forces
+    void clear();
+
+    void dump(Circuit& circuit, std::ostream& os) const;
+    
+    Vector<double> unknownValue_;
+    Vector<bool> unknownForced_;
+    Vector<double> deltaValue_;
+    Vector<std::tuple<UnknownIndex, UnknownIndex>> deltaIndices_;
+};
+
+
 typedef struct NRSettings {
     // Input
     int debug {0};
@@ -74,8 +95,6 @@ public:
     enum class Error {
         OK, 
         ForcesIndex, 
-        InternalForcesError, 
-        ForcesError, 
         EvalAndLoad, 
         ConvergenceCheck, 
         LinearSolver, 

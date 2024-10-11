@@ -783,6 +783,7 @@ template<typename IndexType, typename ValueType> bool KluMatrixCore<IndexType, V
                 txt += ", row "+std::to_string(errorIndex+1);
             }
             txt += ".";
+            s.set(Status::LinearSolver, txt);
             return false;
     }
     return true;

@@ -73,7 +73,7 @@ public:
         EvalAndLoad, 
         MatrixError, 
         OperatingPointError, 
-        UicForces, 
+        NRSolver, 
         TimestepTooSmall, 
         BadLteReference, 
         BreakPointPanic, 
@@ -141,7 +141,7 @@ protected:
     bool finished; 
 
     PreprocessedUserForces preprocessedIc;
-    Forces uicForces;
+    // Forces uicForces;
     
 private:
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);

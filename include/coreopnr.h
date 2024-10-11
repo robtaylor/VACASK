@@ -7,6 +7,41 @@
 
 namespace NAMESPACE {
 
+struct PreprocessedUserForces {
+    std::vector<double> nodeValues;
+    std::vector<Node*> nodes;
+    std::vector<Id> nodeIds;
+    std::vector<double> nodePairValues;
+    std::vector<std::tuple<Node*, Node*>> nodePairs;
+    std::vector<std::tuple<Id, Id>> nodeIdPairs;
+
+    PreprocessedUserForces() {};
+
+    PreprocessedUserForces           (const PreprocessedUserForces&)  = delete;
+    PreprocessedUserForces           (      PreprocessedUserForces&&) = default;
+    PreprocessedUserForces& operator=(const PreprocessedUserForces&)  = delete;
+    PreprocessedUserForces& operator=(      PreprocessedUserForces&&) = default;
+
+    // Preprocess user specified nodeset/ic parameter values, store node ptrs instead of string names. 
+    // If syntax is bad, return error. Otherwise simply store the forced value, 
+    // node and id (or node pair and ids). 
+    // If node is not found, the corresponding force is ignored. 
+    // Checks if all extradiagonal sparsity map entries are present. 
+    // This is phase 1 of user forces processing. 
+    // Return value: ok, needs to add entries to sparsity map
+    std::tuple<bool, bool> set(Circuit& circuit, ValueVector& userForces, Status& s=Status::ignore);
+
+    void clear() {
+        nodeValues.clear();
+        nodes.clear();
+        nodeIds.clear();
+        nodePairValues.clear();
+        nodePairs.clear();
+        nodeIdPairs.clear();
+    };
+};
+
+
 class OpNRSolver : public NRSolver {
 public:
     // By default OpNRSolver has 2 force slots
@@ -27,8 +62,23 @@ public:
         NRSettings& settings, Int forcesSize=2
     ); 
 
+    enum class OpNRSolverError {
+        OK, 
+        ConflictNode, 
+        ConflictDelta, 
+    };
+
+    // Clear error
+    void clearError() { NRSolver::clearError(); lastOpNRError = OpNRSolverError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
+
     // Set forces based on an annotated solution
     bool setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError);
+
+    // Set forces based on preprocessed user forces
+    bool setForces(Int ndx, const PreprocessedUserForces& preprocessed, bool uicMode, bool abortOnError);
     
     virtual bool rebuild();
     virtual bool initialize(bool continuePrevious);
@@ -69,6 +119,8 @@ public:
     ConvSetup& convSetup() { return convSetup_; };
 
 protected:
+    bool setForceOnUnknown(Forces& f, Node* node, double value);
+
     void loadShunts(double gshunt, bool loadJacobian=true);
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
     
@@ -124,6 +176,10 @@ protected:
     double maxDelta; 
     double maxNormDelta; 
     Node* maxDeltaNode;
+
+    OpNRSolverError lastOpNRError;
+    Node* errorNode1;
+    Node* errorNode2;
 };
 
 }

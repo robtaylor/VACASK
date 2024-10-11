@@ -63,7 +63,7 @@ bool NRSolver::rebuild() {
     extraDiags.resize(forcesList.size());
     auto nForces = forcesList.size();
     for(decltype(nForces) iForce=0; iForce<nForces; iForce++) {
-        auto& deltaIndices = forcesList[iForce].deltaIndices(); 
+        auto& deltaIndices = forcesList[iForce].deltaIndices_; 
         auto nDelta = deltaIndices.size();
         auto& ptrs = extraDiags[iForce];
         ptrs.clear();
@@ -98,8 +98,8 @@ bool NRSolver::loadForces(bool loadJacobian) {
         }
 
         // First, handle forced unknowns
-        auto& enabled = forcesList[iForce].unknownForced();
-        auto& force = forcesList[iForce].unknownValue();
+        auto& enabled = forcesList[iForce].unknownForced_;
+        auto& force = forcesList[iForce].unknownValue_;
         auto nForceNodes = force.size();
         // Load only if the number of forced unknowns matches 
         // the number of unknowns in the circuit including ground
@@ -127,9 +127,9 @@ bool NRSolver::loadForces(bool loadJacobian) {
 
         // Second, handle forced deltas
         auto& extraDiagPtrs = extraDiags[iForce]; 
-        auto& deltas = forcesList[iForce].deltaValue();
+        auto& deltas = forcesList[iForce].deltaValue_;
         auto nDeltas = deltas.size();
-        auto& uPairs = forcesList[iForce].deltaIndices();
+        auto& uPairs = forcesList[iForce].deltaIndices_;
         // Load only if number of extradiagonal pointer pairs matches
         // the number of forced deltas
         if (extraDiagPtrs.size()==nDeltas) {
@@ -539,12 +539,6 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
     switch (lastError) {
         case Error::ForcesIndex:
             s.set(Status::Range, "Force index out of range.");
-            return false;
-        case Error::InternalForcesError:
-            forcesList[errorForcesIndex].formatError(s);
-            return false;
-        case Error::ForcesError:
-            s.set(Status::Range, "Failed to apply forces.");
             return false;
         case Error::EvalAndLoad:
             s.set(Status::NonlinearSolver, "Evaluation/load error.");

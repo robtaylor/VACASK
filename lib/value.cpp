@@ -105,8 +105,25 @@ bool Value::convert(Type to, Value& dest, Status &s) {
             case Type::StringVec:
                 dest.sVec = new StringVector();
                 break;
+            case Type::ValueVec:
+                dest.vVec = new ValueVector();
+                break;
         }
         dest.type_ = to;
+    }
+
+    // Conversion of empty vector to any other vector is possible
+    if (isVector() && size()==0 && dest.isVector()) {
+        // Nothing to do, destination is already of correct type and length 0
+        switch (to) {
+            case Type::IntVec: 
+            case Type::RealVec: 
+            case Type::StringVec: 
+            case Type::ValueVec: 
+                return true;
+            default: 
+                return false;
+        }
     }
 
     switch (type_pair(type_, to)) {
@@ -143,6 +160,17 @@ template<typename Tfrom, typename Tto> bool convertValueInPlace(Value& v) {
 bool Value::convertInPlace(Type to, Status &s) {
     if (type_==to)
         return true;
+
+    // Conversion of empty vector to any other vector is possible
+    if (isVector() && size()==0 && (to & ValueType::VectorBit)!=0) {
+        switch (to) {
+            case Type::IntVec: *this = std::move(IntVector(0)); return true;
+            case Type::RealVec: *this = std::move(RealVector(0)); return true;
+            case Type::StringVec: *this = std::move(StringVector(0)); return true;
+            case Type::ValueVec: *this = std::move(ValueVector(0)); return true;
+            default: return false;
+        }
+    }
 
     switch (type_pair(type_, to)) {
         case type_pair(Type::Int,     Type::Real): return convertValueInPlace<Int, Real>(*this);

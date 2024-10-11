@@ -9,14 +9,17 @@ TranNRSolver::TranNRSolver(
     Circuit& circuit, KluRealMatrix& jac, 
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings, IntegratorCoeffs& integCoeffs
-) : OpNRSolver(circuit, jac, states, solution, settings, 2), integCoeffs(&integCoeffs) {
+) : OpNRSolver(circuit, jac, states, solution, settings, 3), integCoeffs(&integCoeffs) {
     // TranNRSolver has 2 force slots
     // 0 .. continuation nodesets for sweep and homotopy
     //      cannot contain branch forces
     // 1 .. forces explicitly specified via nodeset analysis parameter
     //      can contain branch forces
+    // 2 .. UIC forces, never activated, but used for setting up UIC forces
     // Slots containing branch forces affect the circuit topology. 
     // They need to be set before rebuild() is called. 
+
+    enableForces(2, false);
 
     // Set analysis type
     evalSetup_.staticAnalysis = false;

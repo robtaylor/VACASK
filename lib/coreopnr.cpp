@@ -47,6 +47,115 @@ namespace NAMESPACE {
 // Slots 0 (current) and -1 (future) are used for NR solver
 // Slots 1, 2, ... correspond to past values (at t_{k}, t_{k-1}, ...)
 // Therefore historyOffset needs to be set to 1
+
+std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector& userForces, Status& s) {
+    clear();
+
+    // 0 -> 1 -> 2
+    // 
+    // 0 = have nothing, 
+    // 1 = have node1, 
+    // 2 = have node2, 
+    // 3 = have number for single node (end)
+    // 4 = have number for node pair (end)
+    int state = 0; 
+    Node* node1;
+    Node* node2;
+    Id id1, id2;
+    double value; 
+    size_t nsNdx = 0;
+    bool haveAllEntries = true;
+    for(auto& it : userForces) {
+        switch (state) {
+            case 0:
+                node1 = node2 = nullptr;
+                if (it.type()!=Value::Type::String) {
+                    s.set(Status::BadArguments, "Expecting a string at position "+std::to_string(nsNdx)+".");
+                    return std::make_tuple(false, false);
+                }
+                id1 = it.val<String>();
+                node1 = circuit.findNode(id1);
+                // Node not found is an error
+                // if (!node1) {
+                //     s.set(Status::BadArguments, "Cannot find node '"+std::string(id1)+"' during force preprocessing.");
+                //     return std::make_tuple(false, false);
+                // }
+                state = 1;
+                break;
+            case 1:
+                switch (it.type()) {
+                    case Value::Type::Int:
+                        value = it.val<Int>();
+                        state = 3;
+                        break;
+                    case Value::Type::Real:
+                        value = it.val<Real>();
+                        state = 3;
+                        break;
+                    case Value::Type::String:
+                        id2 = it.val<String>();
+                        node2 = circuit.findNode(id2);
+                        // Node not found is an error
+                        // if (!node2) {
+                        //     s.set(Status::BadArguments, "Cannot find node '"+std::string(id2)+"' during force preprocessing.");
+                        //     return std::make_tuple(false, false);
+                        // }
+                        state = 2;
+                        break;
+                    default:
+                        s.set(Status::BadArguments, "Expecting a string, an integer, or a real at position "+std::to_string(nsNdx)+".");
+                        return std::make_tuple(false, false);
+                }
+                break;
+            case 2:
+                switch (it.type()) {
+                    case Value::Type::Int:
+                        value = it.val<Int>();
+                        state = 4;
+                        break;
+                    case Value::Type::Real:
+                        value = it.val<Real>();
+                        state = 4;
+                        break;
+                    default:
+                        s.set(Status::BadArguments, "Expecting an integer or a real at position "+std::to_string(nsNdx)+".");
+                        return std::make_tuple(false, false);
+                }
+                break;
+        }
+        if (state==3) {
+            // Have single node, ignore force if node is not found
+            if (node1) {
+                nodes.push_back(node1);
+                nodeIds.push_back(id1);
+                nodeValues.push_back(value);
+            }
+            state = 0;
+        } else if (state==4) {
+            // Have node pair, ignore force if node is not found
+            if (node1 && node2) {
+                nodePairs.push_back(std::make_tuple(node1, node2)); 
+                nodeIdPairs.push_back(std::make_tuple(id1, id2));
+                nodePairValues.push_back(value); 
+            }
+            
+            // Check existence of extradiagonal entries, but only if both nodes were found. 
+            // No need to check if haveAllEntries is already false. 
+            if (node1 && node2 && haveAllEntries) {
+                auto u1 = node1->unknownIndex();
+                auto u2 = node2->unknownIndex();
+                auto entry12 = circuit.sparsityMap().find(MatrixEntryPosition(u1, u2));
+                auto entry21 = circuit.sparsityMap().find(MatrixEntryPosition(u2, u1));
+                haveAllEntries = haveAllEntries && entry12 && entry21;
+            }
+            state = 0;
+        }
+        nsNdx++;
+    }
+    
+    return std::make_tuple(true, !haveAllEntries);
+}
+
     
 OpNRSolver::OpNRSolver(
     Circuit& circuit, KluRealMatrix& jac, 
@@ -87,11 +196,6 @@ OpNRSolver::OpNRSolver(
     };
 }
 
-// TODO: refactor Forces so that setting forces from PreprocessedUserForces will take place here
-//       also make sure all error messages are generated here
-//       remove error handling from Forces
-//       It is NRSolver's job to know how to set forces 
-//       because different solver handle forces differently. 
 bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
     // Get forces
     auto& f = forces(ndx);
@@ -103,8 +207,9 @@ bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     auto n = circuit.unknownCount();
 
     // Make space for variable forces (also include bucket)
-    f.resizeUnknownForces(n+1);
-
+    f.unknownValue_.resize(n+1);
+    f.unknownForced_.resize(n+1);
+    
     bool error = false;
 
     // Go through all solution components, excluding ground
@@ -121,18 +226,177 @@ bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
             continue;
         }
 
-        if (!f.setForceOnUnknown(node, value)) {
+        if (!setForceOnUnknown(f, node, value)) {
             error = true;
-            if (abortOnError) {
-                errorForcesIndex = ndx;
-                lastError = Error::InternalForcesError;
-                return false;
-            }
+            break;
         }
     }
 
     return !error;
 }
+
+bool OpNRSolver::setForces(Int ndx, const PreprocessedUserForces& preprocessed, bool uicMode, bool abortOnError) {
+    // Get forces
+    Forces& f = forces(ndx);
+
+    // Clear forced values
+    f.unknownValue_.clear();
+    f.unknownForced_.clear();
+    f.deltaValue_.clear();
+    f.deltaIndices_.clear();
+
+    // Number of unknowns
+    auto n = circuit.unknownCount();
+
+    // Make space for forces on unknowns, set them by default to 0
+    f.unknownValue_.resize(n+1, 0.0);
+    f.unknownForced_.resize(n+1, false);
+
+    bool error = false;
+    
+    // Set forces on unknowns
+    auto nNodeForces = preprocessed.nodes.size();
+    for(decltype(nNodeForces) i=0; i<nNodeForces; i++) {
+        // Check if node was found
+        auto node = preprocessed.nodes[i];
+        auto value = preprocessed.nodeValues[i];
+        if (!setForceOnUnknown(f, node, value)) {
+            error = true;
+            if (abortOnError) {
+                return false;
+            }
+        }
+    }
+    
+    // Set delta forces of the form v(x,0) or v(0,x), check node pairs
+    auto nDeltaForces = preprocessed.nodePairs.size();  
+    for(decltype(nNodeForces) i=0; i<nDeltaForces; i++) {
+        // Check if both nodes were found
+        auto [node1, node2] = preprocessed.nodePairs[i];
+        auto [id1, id2] = preprocessed.nodeIdPairs[i]; 
+        
+        // Get unknowns and value
+        auto u1 = node1->unknownIndex();
+        auto u2 = node2->unknownIndex();
+        auto value = preprocessed.nodePairValues[i];
+
+        // Check if both nodes are ground? 
+        if (u1==0 && u2==0) {
+            // If yes, ignore force
+            continue;
+        } else if (u1==0) {
+            // Check if first node is ground, convert it to a force on an unknown
+            // v(0,x) = value -> v(x)=-value
+            if (!setForceOnUnknown(f, node2, -value)) {
+                error = true;
+                if (abortOnError) {
+                    return false;
+                }
+            }
+        } else if (u2==0) {
+            // v(x,0) = value -> v(x)=value
+            if (!setForceOnUnknown(f, node1, value)) {
+                error = true;
+                if (abortOnError) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // Set real delta forces
+    for(decltype(nNodeForces) i=0; i<nDeltaForces; i++) {
+        // Check if both nodes were found
+        auto [node1, node2] = preprocessed.nodePairs[i];
+        auto [id1, id2] = preprocessed.nodeIdPairs[i]; 
+        
+        // Get unknowns and value
+        auto u1 = node1->unknownIndex();
+        auto u2 = node2->unknownIndex();
+        auto value = preprocessed.nodePairValues[i];
+
+        // Check if both nodes are ground
+        if (u1==0 && u2==0) {
+            // Skip this node pair
+            continue;
+        } else if (u1==0) {
+            // v(0,x) = value -> v(x)=-value, already handled
+            continue;
+        } else if (u2==0) {
+            // v(x,0) = value -> v(x)=value, already handled
+            continue;
+        } else {
+            // Actual delta force 
+            // Is force already set on both nodes
+            if (f.unknownForced_[u1] && f.unknownForced_[u2]) {
+                // Both nodes are forced
+                // Does delta force conflict with node forces
+                if (f.unknownValue_[u1]-f.unknownValue_[u2]!=value) {
+                    lastOpNRError = OpNRSolverError::ConflictDelta;
+                    errorNode1 = node1;
+                    errorNode2 = node2;
+                    error = true;
+                    if (abortOnError) {
+                        return false;
+                    }
+                } else {
+                    // Matches node forces, no need to add it, skip
+                    continue;
+                }
+            } else {
+                // At least one node is not forced yet
+                if (uicMode) {
+                    // As UIC forces, apply to nodes
+                    // One of the nodes is not forced
+                    if (f.unknownForced_[u1]) {
+                        // Force node2 to node1-value
+                        f.unknownValue_[u2] = f.unknownValue_[u1] - value;
+                        f.unknownForced_[u2] = true;
+                    } else if (f.unknownForced_[u2]) {
+                        // Force node1 to node2+value
+                        f.unknownValue_[u1] = f.unknownValue_[u2] + value;
+                        f.unknownForced_[u1] = true;
+                    } else {
+                        // Force u2 to 0 and u1 to value
+                        f.unknownValue_[u1] = value;
+                        f.unknownValue_[u2] = 0;
+                        f.unknownForced_[u1] = true;
+                        f.unknownForced_[u2] = true;
+                    }
+                } else {
+                    // As delta forces
+                    f.deltaValue_.push_back(value);
+                    f.deltaIndices_.push_back(std::make_tuple(u1, u2));
+                }        
+            }
+        }
+    }
+
+    return true;
+}
+
+bool OpNRSolver::setForceOnUnknown(Forces& f, Node* node, double value) {
+    // Unknown
+    auto u = node->unknownIndex();
+    // Is it a ground node? 
+    if (u==0) {
+        // If yes, ignore the force. 
+        return true;
+    }
+    // Is it conflicting with a previous nodeset
+    if (f.unknownForced_[u] && f.unknownValue_[u]!=value) {
+        lastOpNRError = OpNRSolverError::ConflictNode;
+        errorNode1 = node;
+        return false;
+    }
+    f.unknownValue_[u] = value;
+    f.unknownForced_[u] = true;
+
+    return true;
+}
+
+
+
 
 bool OpNRSolver::rebuild() {
     // Call parent's rebuild
@@ -166,6 +430,9 @@ bool OpNRSolver::rebuild() {
 bool OpNRSolver::initialize(bool continuePrevious) {
     // This method is called once on entering run()
     // This is the right place to set up vectors
+
+    // Clear OP NR solver error
+    clearError();
 
     // Clear flags
     clearFlags();
@@ -716,6 +983,29 @@ void OpNRSolver::updateMaxima() {
         if (c>globalMaxResidualContribution_[ndx]) {
             globalMaxResidualContribution_[ndx] = c;
         }
+    }
+}
+
+bool OpNRSolver::formatError(Status& s, NameResolver* resolver) const {
+    // Error in NRSolver
+    if (lastError!=NRSolver::Error::OK) {
+        NRSolver::formatError(s, resolver);
+        return false;
+    }
+
+    switch (lastOpNRError) {
+        case OpNRSolverError::ConflictNode:
+            s.set(Status::Force, "Conflicting forces for node '"+std::string(errorNode1->name())+"'.");
+            return false;
+        case OpNRSolverError::ConflictDelta:
+            s.set(Status::Force, "Forcing delta on node pair ('"
+                        +std::string(errorNode1->name())+"', '"
+                        +std::string(errorNode2->name())
+                        +"') conflicts previous forces."
+                    );
+            return false;
+        default:
+            return true;
     }
 }
 

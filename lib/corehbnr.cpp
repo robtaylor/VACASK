@@ -76,8 +76,9 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     auto blockSize = 2*nf-1;
 
     // Make space for variable forces (also include bucket)
-    f.resizeUnknownForces(n*blockSize+1);
-
+    f.unknownValue_.resize(n*blockSize+1);
+    f.unknownForced_.resize(n*blockSize+1);
+    
     // Number of frequencies in solution and solver
     auto nfSolution = solution.auxData().size();
     auto nfSolver = frequencies.size();
@@ -137,7 +138,7 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
         checkNames = false;
     } else {
         // Cannot apply stored solution
-        lastError = Error::ForcesError;
+        lastHBNRError = HBNRSolverError::ForcesError;
         return false;
     }
 
@@ -182,10 +183,10 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
         }
         // Inverse APFT, store in forces vector
         auto fd = VectorView<double>(forcesFD.data()+destOrigin, blockSize, 1);
-        auto td = VectorView<double>(f.unknownValue().data()+1+destOrigin, blockSize, 1);
+        auto td = VectorView<double>(f.unknownValue_.data()+1+destOrigin, blockSize, 1);
         IAPFT.multiply(fd, td);
         // Mark all forces for this unknown as set (IAPFT output affects all time domain components)
-        auto fflag = f.unknownForced();
+        auto fflag = f.unknownForced_;
         for(decltype(nf) k=1; k<nf; k++) {
             fflag[1+destOrigin+k] = true;
         }
@@ -222,6 +223,9 @@ bool HBNRSolver::rebuild() {
 }
 
 bool HBNRSolver::initialize(bool continuePrevious) {
+    // Clear HB NR solver error
+    clearError();
+
     // Number fo frequency components and timepoints
     auto nt = timepoints.size();
     
@@ -785,6 +789,22 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
     }
     
     return std::make_tuple(true, deltaOk);
+}
+
+bool HBNRSolver::formatError(Status& s, NameResolver* resolver) const {
+    // Error in NRSolver
+    if (lastError!=NRSolver::Error::OK) {
+        NRSolver::formatError(s, resolver);
+        return false;
+    }
+
+    switch (lastHBNRError) {
+        case HBNRSolverError::ForcesError:
+            s.set(Status::Range, "Failed to apply forces.");
+            return false;
+        default:
+            return true;
+    }
 }
 
 void HBNRSolver::dumpSolution(std::ostream& os, double* solution, const char* prefix) {

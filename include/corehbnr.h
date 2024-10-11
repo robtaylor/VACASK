@@ -26,6 +26,17 @@ public:
         NRSettings& settings
     ); 
 
+    enum class HBNRSolverError {
+        OK, 
+        ForcesError, 
+    };
+
+    // Clear error
+    void clearError() { NRSolver::clearError(); lastHBNRError = HBNRSolverError::OK; }; 
+
+    // Format error, return false on error - this function is not cheap (works with strings)
+    bool formatError(Status& s=Status::ignore, NameResolver* resolver=nullptr) const; 
+
     // Set forces based on an annotated solution
     bool setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError);
     
@@ -111,6 +122,8 @@ protected:
     double maxNormDelta; 
     Node* maxDeltaNode;
     size_t maxDeltaTimepointIndex;
+
+    HBNRSolverError lastHBNRError;
 };
 
 }

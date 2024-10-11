@@ -132,7 +132,7 @@ bool OperatingPointCore::storeState(size_t ndx, bool storeDetails) {
     }
     repo.solution.setValues(solution.vector());
     // Store current state
-    repo.solution.auxData() = states.vector();
+    repo.solution.setAuxData(states.vector());
     // Stored state is coherent and valid
     repo.coherent = true;
     repo.valid = true;
@@ -244,7 +244,7 @@ bool OperatingPointCore::rebuild(Status& s) {
                 if (!nrSolver.setForces(1, *solPtr, strictforce)) {
                     // Abort if strictforce is set
                     if (strictforce) {
-                        nrSolver.forces(1).formatError(s);
+                        nrSolver.formatError(s);
                         return false;
                     }
                 }
@@ -255,10 +255,10 @@ bool OperatingPointCore::rebuild(Status& s) {
         }
     } else if (params.nodeset.type()==Value::Type::ValueVec) {
         // A list with possibly delta forces
-        if (!nrSolver.forces(1).set(circuit, preprocessedNodeset, false, strictforce)) {
+        if (!nrSolver.setForces(1, preprocessedNodeset, false, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                nrSolver.forces(1).formatError(s);
+                nrSolver.formatError(s);
                 return false;
             }
         }
@@ -317,8 +317,6 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
             if (!nrSolver.setForces(0, continueState->solution, strictforce)) {
                 if (strictforce) {
                     // Failed, strictforce set
-                    errorForce = 0;
-                    setError(OperatingPointError::Forces);
                     return std::make_tuple(false, false);
                 }
             }
@@ -443,7 +441,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     }
 
     // Try homotopy
-    if (!converged_ && !leave) {
+    if (!converged_ && !leave && options.op_homotopy.size()>0) {
         Homotopy* homotopy;
         for(auto it : options.op_homotopy) {
             if (it==Homotopy::gdev) {
@@ -555,9 +553,6 @@ bool OperatingPointCore::formatError(Status& s) const {
     
     // Then handle OperatingPointCore errors
     switch (lastOpError) {
-        case OperatingPointError::Forces:
-            nrSolver.forces(errorForce).formatError(s);
-            return false;
         case OperatingPointError::InitialOp:
             s.extend("Initial OP analysis failed.");
             return false;

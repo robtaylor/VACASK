@@ -420,7 +420,8 @@ bool TranCore::rebuild(Status& s) {
                 if (!opCore_.solver().setForces(2, *solPtr, strictforce)) {
                     // Abort on error if strictforce is set
                     if (strictforce) {
-                        opCore_.solver().forces(2).formatError(s);
+                        auto nr = UnknownNameResolver(circuit);
+                        opCore_.solver().formatError(s, &nr);
                         return false;
                     }
                 }
@@ -433,10 +434,11 @@ bool TranCore::rebuild(Status& s) {
         // A list with possibly delta forces
         // Set slot 2, use op mode for setting up initial conditions
         bool uicMode = false;
-        if (!opCore_.solver().forces(2).set(circuit, preprocessedIc, uicMode, strictforce)) {
+        if (!opCore_.solver().setForces(2, preprocessedIc, uicMode, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                opCore_.solver().forces(2).formatError(s);
+                auto nr = UnknownNameResolver(circuit);
+                opCore_.solver().formatError(s, &nr);
                 return false;
             }
         }
@@ -650,15 +652,16 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         auto strictforce = circuit.simulatorOptions().core().strictforce; 
         // First, build the RHS values using force mechanism
         bool uicMode = true;
-        if (!uicForces.set(circuit, preprocessedIc, uicMode, strictforce)) {
+        // if (!uicForces.set(circuit, preprocessedIc, uicMode, strictforce)) {
+        if (!nrSolver.setForces(2, preprocessedIc, uicMode, strictforce)) {
             // Abort on error if strictforce is set
             if (strictforce) {
-                setError(TranError::UicForces);
+                setError(TranError::NRSolver);
                 co_yield CoreState::Aborted;
             }
         }
         // Copy values to RHS
-        solution.vector() = uicForces.unknownValue();
+        solution.vector() = nrSolver.forces(2).unknownValue_;
     } else {
         setError(TranError::IcMode);
         co_yield CoreState::Aborted;
@@ -1482,8 +1485,8 @@ bool TranCore::formatError(Status& s) const {
         case TranError::OperatingPointError:
             opCore_.formatError(s);
             break;
-        case TranError::UicForces:
-            uicForces.formatError(s);
+        case TranError::NRSolver:
+            nrSolver.formatError(s, &nr);
             break;
         case TranError::Tstep:
             s.set(Status::Analysis, "Transient time step must be greater than zero.");

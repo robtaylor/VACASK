@@ -153,7 +153,7 @@ bool HBCore::storeState(size_t ndx, bool storeDetails) {
     repo.solution.setCxValues(solutionFD);
     
     // Store frequencies
-    repo.solution.auxData() = frequencies;
+    repo.solution.setAuxData(frequencies);
     
     // Stored state is coherent and valid
     repo.coherent = true;
@@ -384,7 +384,7 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     }
 
     // Try homotopy
-    if (!converged_ && !leave) {
+    if (!converged_ && !leave && options.hb_homotopy.size()>0) {
         Homotopy* homotopy;
         for(auto it : options.hb_homotopy) {
             if (it==Homotopy::src) {

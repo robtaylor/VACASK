@@ -79,7 +79,6 @@ SimulatorOptions::SimulatorOptions() {
 
     homotopy_debug = 0; // >0 enables homotopy debugging
     homotopy_gminsteps = 100; // >1, <=0 disables gmin stepping
-    homotopy_srcsteps = 100; // >1, <=0 disables source stepping
     homotopy_gminfactor = 10.0; // >0, initial gmin stepping factor for dynamic gmin stepping
     homotopy_maxgminfactor = 10.0; // >=op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
     homotopy_mingminfactor = 1.00005; // 1<x<op_gminfactor, maximal gmin stepping factor for dynamic gmin stepping
@@ -87,6 +86,7 @@ SimulatorOptions::SimulatorOptions() {
     homotopy_startgmin = 1e-3; // >mingmin, value at which dynamic gmin stepping starts
     homotopy_maxgmin = 1e2;   // >mingmin, if op dynamic gmin stepping failes to solve the circuit above this value of gmin, it fails
     homotopy_mingmin = 1e-15; // >0, value where dynamic gmin stepping stops if gmin/gshunt are set to 0
+    homotopy_srcsteps = 100; // >1, <=0 disables source stepping
     homotopy_srcstep = 0.01; // >0, initial source step for dynamic source stepping
     homotopy_srcscale = 3.0;  // >1, source step scaling factor (mutliply on success, divide on failure)
     homotopy_minsrcstep = 1e-7; // 0<x<srcstep, source step at which dynamic source stepping gives up
