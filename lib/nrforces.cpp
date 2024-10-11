@@ -19,7 +19,7 @@ void Forces::dump(Circuit& circuit, std::ostream& os) const {
         if (!unknownForced_[i]) {
             continue;
         }
-        os << circuit.reprNode(i)->name() << " : " << unknownValue_[i] << "\n";
+        os << i << " : " << unknownValue_[i] << "\n";
     }
     auto nd = deltaIndices_.size();
     for(decltype(nd) i=0; i<nd; i++) {

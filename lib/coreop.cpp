@@ -303,7 +303,7 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
             nrSolver.enableForces(0, false);
             nrSolver.enableForces(1, false);
             if (options.op_debug>1) {
-                Simulator::dbg() << "OP using ordinary continue mode via initial solution.\n";
+                Simulator::dbg() << "OP using ordinary continue mode with stored analysis state.\n";
             }
             // Use forced bypass if allowed
             circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
@@ -324,7 +324,7 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
             // Disable user-specified forces
             nrSolver.enableForces(1, false);
             if (options.op_debug>1) {
-                Simulator::dbg() << "OP using forced continue mode.\n";
+                Simulator::dbg() << "OP using forced continue mode with stored analysis state.\n";
             }
             // Forced bypass is not allowed
             circuit.simulatorInternals().requestForcedBypass = false;
@@ -350,7 +350,7 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
         nrSolver.enableForces(1, true); 
         
         if (options.op_debug>1) {
-            Simulator::dbg() << "OP using forced continue mode with user nodesets and standard initial solution.\n";
+            Simulator::dbg() << "OP using standard initial solution with forced nodesets.\n";
         }
     }
 

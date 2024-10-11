@@ -193,13 +193,10 @@ public:
     // Return number of iterations spent in NR loop
     Int iterations() const { return iteration; }; 
 
-protected:
-    // Load forces
-    bool loadForces(bool loadJacobian=true); 
-
     // Dump solution
     virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="") {};
     
+protected:
     // High precision requested
     bool highPrecision;
 
@@ -209,9 +206,6 @@ protected:
     NRSettings& settings;
     Accounting& acct;
 
-    Vector<double*> diagPtrs;
-    std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
-    
     std::vector<Forces> forcesList;
     std::vector<bool> forcesEnabled;
     

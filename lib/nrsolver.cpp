@@ -49,119 +49,9 @@ bool NRSolver::rebuild() {
     // Allocate space in vectors
     // Jacobian is already built, get number of unknowns excluding ground
     auto n = jac.nRow();
-    diagPtrs.resize(n+1);
     delta.resize(n+1);
     rowNorm.resize(n+1);
     
-    // Bind diagonal matrix elements
-    // Needed for forcing unknown values and setting gshunts
-    for(decltype(n) i=0; i<n; i++) {
-        diagPtrs[i+1] = jac.elementPtr(MatrixEntryPosition(i+1, i+1), Component::Real);
-    }
-
-    // Bind extradiagonal matrix entries for forced deltas
-    extraDiags.resize(forcesList.size());
-    auto nForces = forcesList.size();
-    for(decltype(nForces) iForce=0; iForce<nForces; iForce++) {
-        auto& deltaIndices = forcesList[iForce].deltaIndices_; 
-        auto nDelta = deltaIndices.size();
-        auto& ptrs = extraDiags[iForce];
-        ptrs.clear();
-        for(decltype(nDelta) i=0; i<nDelta; i++) {
-            auto [u1, u2] = deltaIndices[i];
-            ptrs.push_back(
-                std::make_tuple(
-                    jac.elementPtr(MatrixEntryPosition(u1, u2), Component::Real),
-                    jac.elementPtr(MatrixEntryPosition(u2, u1), Component::Real)
-                )
-            );
-        }
-    }
-
-    return true;
-}
-
-bool NRSolver::loadForces(bool loadJacobian) {
-    // Are any forces enabled? 
-    auto nf = forcesList.size();
-    
-    // Get row norms
-    jac.rowMaxNorm(dataWithoutBucket(rowNorm));
-
-    // Load forces
-    auto n = jac.nRow();
-    double* xprev = solution.data();
-    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
-        // Skip disabled force lists
-        if (!forcesEnabled[iForce]) {
-            continue;
-        }
-
-        // First, handle forced unknowns
-        auto& enabled = forcesList[iForce].unknownForced_;
-        auto& force = forcesList[iForce].unknownValue_;
-        auto nForceNodes = force.size();
-        // Load only if the number of forced unknowns matches 
-        // the number of unknowns in the circuit including ground
-        if (nForceNodes==n+1) {
-            for(decltype(nForceNodes) i=1; i<=n; i++) {
-                if (enabled[i]) {
-                    double factor = rowNorm[i]*settings.forceFactor;
-                    if (factor==0.0) {
-                        factor = 1.0;
-                    }
-                    // Jacobian entry: -factor
-                    // Residual: - factor * x_i + factor * nodeset_i
-                    auto ptr = diagPtrs[i];
-                    if (ptr) {
-                        // Jacobian
-                        if (loadJacobian) {
-                            *ptr += factor;
-                        }
-                        // Residual
-                        delta[i] += factor * xprev[i] - factor * force[i];
-                    }
-                }
-            }
-        }
-
-        // Second, handle forced deltas
-        auto& extraDiagPtrs = extraDiags[iForce]; 
-        auto& deltas = forcesList[iForce].deltaValue_;
-        auto nDeltas = deltas.size();
-        auto& uPairs = forcesList[iForce].deltaIndices_;
-        // Load only if number of extradiagonal pointer pairs matches
-        // the number of forced deltas
-        if (extraDiagPtrs.size()==nDeltas) {
-            for(decltype(nDeltas) i=0; i<nDeltas; i++) {
-                auto [u1, u2] = uPairs[i];
-                auto [extraDiagPtr1, extraDiagPtr2] = extraDiagPtrs[i];
-
-                double factor1 = rowNorm[u1]*settings.forceFactor;
-                double factor2 = rowNorm[u2]*settings.forceFactor;
-
-                double contrib1 = factor1 * (xprev[u1] - xprev[u2]) - factor1 * deltas[i]; 
-                double contrib2 = factor2 * (xprev[u2] - xprev[u1]) + factor2 * deltas[i]; 
-
-                // Jacobian entry: 
-                //         u1        u2
-                //   u1    factor1  -factor1
-                //   u2   -factor2   factor2
-                // 
-                // Residual at KCL u1: factor1 * (u1-u2) - factor1 * nodeset
-                // Residual at KCL u2: factor2 * (u2-u1) + factor2 * nodeset
-                *(diagPtrs[u1]) += factor1;
-                *extraDiagPtr1 += -factor1;
-
-                *(diagPtrs[u2]) += factor2;
-                *extraDiagPtr2 += -factor2;
-                
-                delta[u1] += contrib1;
-                delta[u2] += contrib2;
-            }
-        }
-    }
-
     return true;
 }
 
@@ -253,7 +143,7 @@ bool NRSolver::run(bool continuePrevious) {
         double* xnew = solution.futureData();
         double* xdelta = delta.data();
 
-        if (settings.debug>=4) {
+        if (settings.debug>=3) {
             std::cout << "Old solution at iteration " << iteration << "\n";
             dumpSolution(std::cout, solution.data(), "  ");
             std::cout << "\n";
@@ -278,14 +168,6 @@ bool NRSolver::run(bool continuePrevious) {
             break;
         }
         xdelta[0] = 0.0; // Set RHS bucket to 0
-
-        // Add forced values to the system
-        if (haveForces() && !loadForces(true)) {
-            if (settings.debug) {
-                Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
-            }
-            break;
-        }
 
         // Check if system is finite
         if (settings.matrixCheck && !jac.isFinite(true, true)) {
@@ -334,7 +216,7 @@ bool NRSolver::run(bool continuePrevious) {
         // dumpSolution(std::cout, solution.futureArray(), "  ");
         // std::cout << "\n";
         
-        if (settings.debug>=2) {
+        if (settings.debug>=4) {
             Simulator::dbg() << "Linear system at iteration " << iteration << "\n";
             jac.dump(Simulator::dbg(), dataWithoutBucket(delta));
             Simulator::dbg() << "\n\n";
@@ -484,10 +366,10 @@ bool NRSolver::run(bool continuePrevious) {
         }
 
         // std::cout << "Old solution after update at iteration " << iteration << "\n";
-        // dumpSolution(std::cout, solution.array(), "  ");
+        // dumpSolution(std::cout, solution.data(), "  ");
         // std::cout << "\n";
 
-        if (settings.debug>=3) {
+        if (settings.debug>=2) {
             Simulator::dbg() << "New solution in iteration " << iteration << "\n";
             dumpSolution(Simulator::dbg(), solution.futureData(), "  ");
             Simulator::dbg() << "\n";

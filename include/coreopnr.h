@@ -66,6 +66,7 @@ public:
         OK, 
         ConflictNode, 
         ConflictDelta, 
+        LoadForces, 
     };
 
     // Clear error
@@ -118,16 +119,22 @@ public:
     LoadSetup& loadSetup() { return loadSetup_; };
     ConvSetup& convSetup() { return convSetup_; };
 
+    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
+
 protected:
     bool setForceOnUnknown(Forces& f, Node* node, double value);
+
+    // Load forces
+    bool loadForces(bool loadJacobian=true); 
 
     void loadShunts(double gshunt, bool loadJacobian=true);
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
     
     void setNodesetAndIcFlags(bool continuePrevious);
 
-    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
-
+    Vector<double*> diagPtrs;
+    std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
+    
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
     ConvSetup convSetup_;

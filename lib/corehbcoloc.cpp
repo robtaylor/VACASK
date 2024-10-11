@@ -15,7 +15,7 @@ namespace NAMESPACE {
 
 bool HBCore::buildColocation(Status& s) {
     auto& options = circuit.simulatorOptions().core();
-    auto hb_debug = options.hb_debug;
+    auto debug = options.hb_debug;
     
     // Includes DC
     auto n = freq.size();
@@ -38,7 +38,7 @@ bool HBCore::buildColocation(Status& s) {
     auto range = params.nper/fmin;
     timepoints.clear();
     if (params.sample==HBCore::sampleUniform) {
-        if (hb_debug>1) {
+        if (debug>2) {
             Simulator::dbg() << "Generating pool of " << nsam << " uniformly distributed points, tmax=" << range << "\n" ;
         }
         for(decltype(nsam) i=0; i<nsam; i++) {
@@ -49,7 +49,7 @@ bool HBCore::buildColocation(Status& s) {
         gen.seed(1);
         std::uniform_real_distribution dist(0.0, 1.0);
         // Select across 3 periods of fmin
-        if (hb_debug>1) {
+        if (debug>2) {
             Simulator::dbg() << "Generating pool of " << nsam << " random points, tmax=" << range << "\n" ;
         }
         for(decltype(nsam) i=0; i<nsam; i++) {
@@ -66,14 +66,14 @@ bool HBCore::buildColocation(Status& s) {
     // Number of cadidate rows
     auto ncand = IAPFT.nRows();
 
-    if (hb_debug>1) {
+    if (debug>2) {
         Simulator::dbg() << "Colocation points (" << nt << "):\n" ;
     }
 
     // Number of kept rows, first row is always kept
     decltype(ncand) nkeep = 1;
 
-    if (hb_debug>1) {
+    if (debug>2) {
         Simulator::dbg() << "  t=" << timepoints[0] << " xform norm2=" << IAPFT.row(0).norm2() << "\n" ;
     }
 
@@ -99,7 +99,7 @@ bool HBCore::buildColocation(Status& s) {
         }
 
         // Swap row ndx with row i+1
-        if (hb_debug>1) {
+        if (debug>2) {
             Simulator::dbg() << "  t=" << timepoints[ndx] << " xform norm2=" << maxNorm2 << "\n" ;
         }
         IAPFT.row(i+1).swap(IAPFT.row(ndx));

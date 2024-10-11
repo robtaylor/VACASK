@@ -59,9 +59,10 @@ SimulatorOptions::SimulatorOptions() {
     
     nr_debug = 0;  // >0  enables nonlinear solver debugging
                    // >=1 print messages
-                   // >=2 print linear system
-                   // >=3 print new solution
-                   // >=4 print old solution
+                   // >=2 print new solution
+                   // >=3 print old solution
+                   // >=4 print linear system
+                   
     nr_bypass = 0; // 1 = disable core evaluation for bypassed instances 
                    // To be bypassed an instance must converge and 
                    // the instance inputs change between iterations must be within tolerances. 
@@ -160,7 +161,10 @@ SimulatorOptions::SimulatorOptions() {
     tran_trapltefilter = 1; // enable trap ringing filter for predictor and LTE computation, 
                             // applied only when Adams-Moulton algorithm of order 2 is used 
     
-    hb_debug = 0; // 0 = none, 1 = solver and homotopy runs, 2 = homotopy and continuation internals
+    hb_debug = 0; // >0 = enables debugging
+                  // >=1 print iteration type, homotopy information, convergence report
+                  // >=2 print continuation mode information
+                  // >=3 debug spectrum construction
     hb_itl = 100; // >0, maximal number of iterations in non-continuation mode
     hb_itlcont = 50; // >0, maximal number of iterations in continuation mode
     hb_skipinitial = 1; // 1 = no initial hb, go straight to homotopy

@@ -396,8 +396,6 @@ bool OpNRSolver::setForceOnUnknown(Forces& f, Node* node, double value) {
 }
 
 
-
-
 bool OpNRSolver::rebuild() {
     // Call parent's rebuild
     if (!NRSolver::rebuild()) {
@@ -416,6 +414,36 @@ bool OpNRSolver::rebuild() {
     globalMaxResidualContribution_.resize(2); // Number of residual natures
     pointMaxResidualContribution_.resize(2);  // Number of residual natures
     resetMaxima();
+
+    // Get diagonal and extradiagonal pointers for forces
+    diagPtrs.resize(n+1);
+    
+    // Bind diagonal matrix elements
+    // Needed for forcing unknown values and setting gshunts
+    for(decltype(n) i=0; i<n; i++) {
+        // We know the matrix type so we can use the elementPtr() non-virtual function
+        diagPtrs[i+1] = jac.elementPtr(MatrixEntryPosition(i+1, i+1), Component::Real);
+    }
+
+    // Bind extradiagonal matrix entries for forced deltas
+    extraDiags.resize(forcesList.size());
+    auto nForces = forcesList.size();
+    for(decltype(nForces) iForce=0; iForce<nForces; iForce++) {
+        auto& deltaIndices = forcesList[iForce].deltaIndices_; 
+        auto nDelta = deltaIndices.size();
+        auto& ptrs = extraDiags[iForce];
+        ptrs.clear();
+        for(decltype(nDelta) i=0; i<nDelta; i++) {
+            auto [u1, u2] = deltaIndices[i];
+            // We know the matrix type so we can use the elementPtr() non-virtual function
+            ptrs.push_back(
+                std::make_tuple(
+                    jac.elementPtr(MatrixEntryPosition(u1, u2), Component::Real),
+                    jac.elementPtr(MatrixEntryPosition(u2, u1), Component::Real)
+                )
+            );
+        }
+    }
 
     // Build flow node flags
     isFlow.resize(n+1);
@@ -744,8 +772,102 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
         loadShunts(gshunt);
     }
 
+    // Add forced values to the system
+    if (haveForces() && !loadForces(true)) {
+        if (settings.debug) {
+            Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
+        }
+        lastOpNRError = OpNRSolverError::LoadForces;
+        errorIteration = iteration;
+        std::make_tuple(false, evalSetup_.limitingApplied);
+    }
+
     // Prevent convergence if limiting was applied
     return std::make_tuple(true, evalSetup_.limitingApplied); 
+}
+
+bool OpNRSolver::loadForces(bool loadJacobian) {
+    // Are any forces enabled? 
+    auto nf = forcesList.size();
+    
+    // Get row norms
+    jac.rowMaxNorm(dataWithoutBucket(rowNorm));
+
+    // Load forces
+    auto n = jac.nRow();
+    double* xprev = solution.data();
+    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
+        // Skip disabled force lists
+        if (!forcesEnabled[iForce]) {
+            continue;
+        }
+
+        // First, handle forced unknowns
+        auto& enabled = forcesList[iForce].unknownForced_;
+        auto& force = forcesList[iForce].unknownValue_;
+        auto nForceNodes = force.size();
+        // Load only if the number of forced unknowns matches 
+        // the number of unknowns in the circuit including ground
+        if (nForceNodes==n+1) {
+            for(decltype(nForceNodes) i=1; i<=n; i++) {
+                if (enabled[i]) {
+                    double factor = rowNorm[i]*settings.forceFactor;
+                    if (factor==0.0) {
+                        factor = 1.0;
+                    }
+                    // Jacobian entry: factor
+                    // Residual: factor * x_i - factor * nodeset_i
+                    auto ptr = diagPtrs[i];
+                    if (ptr) {
+                        // Jacobian
+                        if (loadJacobian) {
+                            *ptr += factor;
+                        }
+                        // Residual
+                        delta[i] += factor * xprev[i] - factor * force[i];
+                    }
+                }
+            }
+        }
+
+        // Second, handle forced deltas
+        auto& extraDiagPtrs = extraDiags[iForce]; 
+        auto& deltas = forcesList[iForce].deltaValue_;
+        auto nDeltas = deltas.size();
+        auto& uPairs = forcesList[iForce].deltaIndices_;
+        // Load only if number of extradiagonal pointer pairs matches
+        // the number of forced deltas
+        if (extraDiagPtrs.size()==nDeltas) {
+            for(decltype(nDeltas) i=0; i<nDeltas; i++) {
+                auto [u1, u2] = uPairs[i];
+                auto [extraDiagPtr1, extraDiagPtr2] = extraDiagPtrs[i];
+
+                double factor1 = rowNorm[u1]*settings.forceFactor;
+                double factor2 = rowNorm[u2]*settings.forceFactor;
+
+                double contrib1 = factor1 * (xprev[u1] - xprev[u2]) - factor1 * deltas[i]; 
+                double contrib2 = factor2 * (xprev[u2] - xprev[u1]) + factor2 * deltas[i]; 
+
+                // Jacobian entry: 
+                //         u1        u2
+                //   u1    factor1  -factor1
+                //   u2   -factor2   factor2
+                // 
+                // Residual at KCL u1: factor1 * (u1-u2) - factor1 * nodeset
+                // Residual at KCL u2: factor2 * (u2-u1) + factor2 * nodeset
+                *(diagPtrs[u1]) += factor1;
+                *extraDiagPtr1 += -factor1;
+
+                *(diagPtrs[u2]) += factor2;
+                *extraDiagPtr2 += -factor2;
+                
+                delta[u1] += contrib1;
+                delta[u2] += contrib2;
+            }
+        }
+    }
+
+    return true;
 }
 
 std::tuple<bool, bool> OpNRSolver::checkResidual() {
@@ -1003,6 +1125,9 @@ bool OpNRSolver::formatError(Status& s, NameResolver* resolver) const {
                         +std::string(errorNode2->name())
                         +"') conflicts previous forces."
                     );
+            return false;
+        case OpNRSolverError::LoadForces:
+            s.set(Status::Force, "Failed to load forces.");
             return false;
         default:
             return true;

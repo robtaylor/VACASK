@@ -16,7 +16,7 @@ bool HBCore::buildGrid(Status& s) {
     auto n = params.freq.size();
 
     auto& options = circuit.simulatorOptions().core();
-    auto hb_debug = options.hb_debug;
+    auto debug = options.hb_debug;
     auto hb_freqtol = 1e-14;
     
     if (params.freq.size()<1) {
@@ -201,7 +201,7 @@ bool HBCore::buildGrid(Status& s) {
         return false;
     }
 
-    if (hb_debug>1) {
+    if (debug>2) {
         Simulator::out() << "Raw HB frequency grid\n";
         auto nn = grid.nRows();
         for(decltype(nn) i=0; i<nn; i++) {
@@ -250,13 +250,13 @@ bool HBCore::buildGrid(Status& s) {
                 if (freq[i].order < freq[j].order) {
                     // j has higher order, keep i, mark j as removed, continue
                     removed[j] = true;
-                    if (hb_debug>1) {
+                    if (debug>2) {
                         Simulator::out() << "Removing #" << j << " (higher order)\n";
                     }
                  } else if (freq[i].order > freq[j].order) {
                     // i has higher order, keep j, mark i as removed, exit inner loop
                     removed[i] = true;
-                    if (hb_debug>1) {
+                    if (debug>2) {
                         Simulator::out() << "Removing #" << i << " (higher order)\n";
                     }
                     break;
@@ -266,20 +266,20 @@ bool HBCore::buildGrid(Status& s) {
                     if (freq[i].isHarmonic && !freq[j].isHarmonic) {
                         // i is harmonic, j is not, keep i, mark j as removed, continue
                         removed[j] = true;
-                        if (hb_debug>1) {
+                        if (debug>2) {
                             Simulator::out() << "Removing #" << j << " (not harmonic)\n";
                         }
                     } else if (!freq[i].isHarmonic && freq[j].isHarmonic) {
                         // j is harmonic, i is not, keep j, mark i as removed, exit inner loop
                         removed[i] = true;
-                        if (hb_debug>1) {
+                        if (debug>2) {
                             Simulator::out() << "Removing #" << i << " (not harmonic)\n";
                         }
                         break;
                     } else {
                         // Harmonic satus is the same, keep the one with lower index (i), mark j as removed
                         removed[j] = true;
-                        if (hb_debug>1) {
+                        if (debug>2) {
                             Simulator::out() << "Removing #" << j << " (higher index)\n";
                         }
                     }
@@ -317,7 +317,7 @@ bool HBCore::buildGrid(Status& s) {
         frequencies[i] = freq[i].f;
     }
 
-    if (hb_debug>0) {
+    if (debug>2) {
         Simulator::out() << "HB spectrum, " << freq.size() << " frequencies\n";
         auto nn = grid.nRows();
         for(auto& fd : freq) {

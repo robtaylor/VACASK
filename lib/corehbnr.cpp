@@ -23,8 +23,8 @@ HBNRSolver::HBNRSolver(
     APFT(APFT), IAPFT(IAPFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
     // Slot 0 is for sweep continuation and homotopy (set via CoreStateStorage object)
-    // Do not need slot 1 as we do not support explicit nodesets. 
-    resizeForces(1);
+    // Slot 1 is for nodesets that are read from stored results. 
+    resizeForces(2);
 
     // For constructing the linearized system in NR loop
     evalSetup_ = EvalSetup {
@@ -61,35 +61,35 @@ HBNRSolver::HBNRSolver(
     };
 }
 
-bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
+bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& storedSolution, bool abortOnError) {
     // Get forces
     auto& f = forces(ndx);
 
-    // Clear forced values
+    // Clear forced values, set number of forces to 0
     f.clear();
     
     // Number of unknowns
     auto n = circuit.unknownCount();
 
     // Number of components per unknown
-    auto nf = frequencies.size();
-    auto blockSize = 2*nf-1;
+    auto nf = frequencies.size(); // number of frequencies per unknown
+    auto blockSize = 2*nf-1; // number of timepoints per unknown
 
     // Make space for variable forces (also include bucket)
     f.unknownValue_.resize(n*blockSize+1);
-    f.unknownForced_.resize(n*blockSize+1);
+    // By default turn off all forces
+    f.unknownForced_.resize(n*blockSize+1, false);
     
     // Number of frequencies in solution and solver
-    auto nfSolution = solution.auxData().size();
+    auto nfSolution = storedSolution.auxData().size();
     auto nfSolver = frequencies.size();
 
     // Prepare frequency translator between solution and solver
     // Translator stores the solver frequency index for each solutiuon frequency index
-    std::vector<int> xlat;
-    // Assume no frequency can be trasnlated (negative index)
-    xlat.resize(nfSolution, -1);
-
-    // Translate DC (it is always present)
+    // Assume no frequency can be translated into solution frequency (negative index)
+    std::vector<int> xlat(nfSolver, -1);
+    
+    // DC can be translated as new 0 -> old 0 (it is always present)
     if (nfSolver>0 && nfSolution>0) {
         xlat[0] = 0;
     }
@@ -99,10 +99,10 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     decltype(nfSolution) ndxSolution = 1;
     for(; ndxSolver<nfSolver && ndxSolution<nfSolution;) {
         auto fSolver = frequencies[ndxSolver];
-        auto fSolution = solution.auxData()[ndxSolution];
+        auto fSolution = storedSolution.auxData()[ndxSolution];
         if (std::abs(fSolver-fSolution)<=std::max(std::abs(fSolver), std::abs(fSolution))*1e-14) {
             // Frequencies are almost the same, store translator
-            xlat[ndxSolution] = ndxSolver;
+            xlat[ndxSolver] = ndxSolution;
             // Advance both indices
             ndxSolver++;
             ndxSolution++;
@@ -117,18 +117,19 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
 
     bool error = false;
 
-    // Go hrough annotated solution. fill APFT spectrum 
+    // Go through annotated solution. fill APFT spectrum 
     // Use resistive residual vector for APFT spectrum
     auto& forcesFD = resistiveResidual;
-    // Set APFT spectrum to 0
-    forcesFD.resize(n*blockSize, 0);
+    // Resistive residual can hold n APFT spectra, we need only the first one
+    // Resize it, just in case
+    forcesFD.resize(n*blockSize);
 
     // Solution spectrum
-    auto& solSpec = solution.cxValues();
-    auto& solNames = solution.names();
+    auto& solSpec = storedSolution.cxValues();
+    auto& solNames = storedSolution.names();
 
-    // Check if there are solution name annotations available
-    // with matching length
+    // Check if we have solution name annotations
+    // with matching length. 
     bool checkNames;
     if (solNames.size()==n+1) {
         // Yes, check names
@@ -137,7 +138,7 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
         // No annotations, solutions vector has correct length
         checkNames = false;
     } else {
-        // Cannot apply stored solution
+        // Cannot apply stored solution, no names nor matching length vector
         lastHBNRError = HBNRSolverError::ForcesError;
         return false;
     }
@@ -146,56 +147,59 @@ bool HBNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abor
     for(decltype(n) i=1; i<=n; i++) {
         Node* node;
         if (checkNames) {
-            // Stored solution has name annotations
+            // Stored solution has name annotations, get node by the name from the solution
             node = circuit.findNode(solNames[i]);
         } else {
-            // Stored solution is coherent
+            // Stored solution is coherent, simply take the representative node of i-th unknown
             node = circuit.reprNode(i);
         }
         if (!node) {
-            // Node not found, forces were initially marked as disabled by f.clear()
-            // Nothig further to do. 
+            // Node not found. No forces will be applied to this unknown. 
             continue;
         }
-        // Copy spectrum
+        // Copy spectrum for one node
         auto ui = node->unknownIndex();
+        // Origin index in complex spectrum vector (no bucket)
+        auto srcOrigin = (ui-1)*nf;
+        // Origin index in destination vector of TD values (no bucket)
         auto destOrigin = (ui-1)*blockSize;
-        auto destNdx = destOrigin;
-        // Copy DC
-        forcesFD[destNdx] = solSpec[0].real();
-        destNdx++;
-        // Copy the rest
+        
+        // Copy DC (one real value)
+        forcesFD[0] = solSpec[srcOrigin].real();
+        // Scan all nonzero frequencies of solver's spectrum
         for(decltype(nf) k=1; k<nf; k++) {
+            // Translate solver frequency into solution frequency
             auto xlf = xlat[k];
+            // Index of real component (DC is stored as a single real number)
+            auto ndx = 1+2*(k-1);
             if (xlf>=0) {
-                // Translation exists, copy component
-                forcesFD[destNdx] = solSpec[i].real();
-                destNdx++;
-                forcesFD[destNdx] = solSpec[i].imag();
-                destNdx++;
+                // Translation exists, copy solution component
+                forcesFD[ndx] = solSpec[srcOrigin+k].real();
+                forcesFD[ndx+1] = solSpec[srcOrigin+k].imag();
             } else {
                 // No translation, fill with zeros
-                forcesFD[destNdx] = 0;
-                destNdx++;
-                forcesFD[destNdx] = 0;
-                destNdx++;
+                forcesFD[ndx] = 0;
+                forcesFD[ndx+1] = 0;
             }
         }
         // Inverse APFT, store in forces vector
-        auto fd = VectorView<double>(forcesFD.data()+destOrigin, blockSize, 1);
+        auto fd = VectorView<double>(forcesFD.data(), blockSize, 1);
         auto td = VectorView<double>(f.unknownValue_.data()+1+destOrigin, blockSize, 1);
         IAPFT.multiply(fd, td);
-        // Mark all forces for this unknown as set (IAPFT output affects all time domain components)
-        auto fflag = f.unknownForced_;
-        for(decltype(nf) k=1; k<nf; k++) {
-            fflag[1+destOrigin+k] = true;
+        // After IAPFT the resulting timepoints are all valid forces, even if not all spectral components were copied
+        // Mark all forces for this unknown as set. 
+        for(decltype(nf) k=0; k<blockSize; k++) {
+            f.unknownForced_[1+destOrigin+k] = true;
         }
     }
+
+    // std::cout << "Set forces:\n";
+    // f.dump(circuit, std::cout);
     
     // Ignore errors (conflicting forces are overwritten by newer value)
     // Error checking makes sense in case of manual forces (nodeset, ic). 
     // Therefore we ignore abortOnError. 
-    return error; 
+    return !error; 
 }
 
 bool HBNRSolver::rebuild() {
@@ -218,7 +222,21 @@ bool HBNRSolver::rebuild() {
     // we size them in initialize() before first iteration. 
     // Analysis asks cores if they request a rebuild. 
     // HB core replies that it does if the set of frequencies changes. 
+
+    // Get diagonal pointers for forces
+    auto n = circuit.unknownCount();
+    auto nt = timepoints.size();
+    diagPtrs.resize(n*nt+1);
     
+    // Bind diagonal matrix elements
+    // Needed for forcing unknown values
+    for(decltype(n) i=0; i<n; i++) {
+        for(decltype(nt) j=0; j<nt; j++) {
+            // We know the matrix type so we can use the elementPtr() non-virtual function
+            diagPtrs[1+i*nt+j] = bsjac.elementPtr(MatrixEntryPosition(i+1, i+1), Component::Real, MatrixEntryPosition(j, j));
+        }
+    }
+
     return true;
 }
 
@@ -374,7 +392,7 @@ bool HBNRSolver::postIteration(bool continuePrevious) {
 
 bool HBNRSolver::postRun(bool continuePrevious) {
     if (converged) {
-        // If converged, convert solution from TD to FD
+        // If converged, convert solution from TD to FD, store as complex spectrum
         auto n = circuit.unknownCount();
         auto nf = frequencies.size();
         auto nt = timepoints.size();
@@ -382,8 +400,10 @@ bool HBNRSolver::postRun(bool continuePrevious) {
 
         for(decltype(n) i=0; i<n; i++) {
             auto cxSpecPtr = solutionFD.data()+nf*i;
-            // APFT computes spectrum as complex values, with the exception of DC which is stored as real. 
+            // APFT computes spectrum as complex values, with the exception of DC which is stored as a real value. 
             // We write APFT output starting at the imaginary part of the DC complex magnitude. 
+            // This way all complex values will be in the right place, except for the DC value which 
+            // will be placed in the DC solution's imaginary part. 
             auto inPtr = solution.data()+1+i*nt;
             auto outPtr = reinterpret_cast<double*>(cxSpecPtr)+1;
             auto outVec = VectorView<Real>(outPtr, nt, 1);
@@ -467,6 +487,16 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
     auto n = bsjac.nBlockRows();
     auto nb = bsjac.nBlockElementRows();
 
+    // Remove forces originating from nodesets after nsiter iterations
+    auto nsiter = circuit.simulatorOptions().core().op_nsiter;
+    // Do this only at nsiter+1 (first iteration has index 1)
+    if (iteration==nsiter+1) {
+        // Continuation nodesets
+        enableForces(0, false);
+        // User-specified nodesets
+        enableForces(1, false);
+    }
+
     // Clear maximal residual contribution
     zero(maxResidualContribution_);
 
@@ -496,21 +526,6 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         evalSetup_.time = timepoints[k];
         loadSetup_.jacobianLoadOffset = k;
 
-        /*
-        // This is a kludge, implement real source stepping
-        decltype(settings.itlim) ramp;
-        if (continuePrevious) {
-            ramp = settings.itlimCont*0.1;
-        } else {
-            ramp = settings.itlim*0.1;
-        }
-        if (ramp<1) {
-            ramp = 1;
-        }
-        // NR starts with iteration=1
-        circuit.simulatorInternals().sourcescalefactor = (iteration-1)<ramp ? (iteration-1)*1.0/ramp : 1.0;
-        */
-    
         // For k-th timepoint (t_k) load 
         // - resistive and reactive Jacobian at t_k with offset i, 
         // - resistive residuals for all equations at t_k
@@ -600,8 +615,67 @@ std::tuple<bool, bool> HBNRSolver::buildSystem(bool continuePrevious) {
         delta[0] = 0.0;
     }
 
+    // Add forced values to the system
+    if (haveForces() && !loadForces(true)) {
+        if (settings.debug) {
+            Simulator::dbg() << "Failed to load forced values at iteration " << iteration << "\n";
+        }
+        lastHBNRError = HBNRSolverError::LoadForces;
+        errorIteration = iteration;
+        std::make_tuple(false, evalSetup_.limitingApplied);
+    }
+
+
     // OK, do not prevent convergence
     return std::make_tuple(true, false); 
+}
+
+bool HBNRSolver::loadForces(bool loadJacobian) {
+    // Are any forces enabled? 
+    auto nf = forcesList.size();
+    
+    // Get row norms
+    jac.rowMaxNorm(dataWithoutBucket(rowNorm));
+
+    // Load forces
+    auto n = jac.nRow();
+    double* xprev = solution.data();
+    for(decltype(nf) iForce=0; iForce<nf; iForce++) {
+        // Skip disabled force lists
+        if (!forcesEnabled[iForce]) {
+            continue;
+        }
+
+        // First, handle forced unknowns
+        auto& enabled = forcesList[iForce].unknownForced_;
+        auto& force = forcesList[iForce].unknownValue_;
+        auto nForceNodes = force.size();
+        // Load only if the number of forced unknowns matches 
+        // the number of unknowns in the circuit including ground
+        if (nForceNodes==n+1) {
+            for(decltype(nForceNodes) i=1; i<=n; i++) {
+                if (enabled[i]) {
+                    double factor = rowNorm[i]*settings.forceFactor;
+                    if (factor==0.0) {
+                        factor = 1.0;
+                    }
+                    // Jacobian entry: factor
+                    // Residual: factor * x_i - factor * nodeset_i
+                    auto ptr = diagPtrs[i];
+                    if (ptr) {
+                        // Jacobian
+                        if (loadJacobian) {
+                            *ptr += factor;
+                        }
+                        // Residual
+                        delta[i] += factor * xprev[i] - factor * force[i];
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 std::tuple<bool, bool> HBNRSolver::checkResidual() {
@@ -800,7 +874,10 @@ bool HBNRSolver::formatError(Status& s, NameResolver* resolver) const {
 
     switch (lastHBNRError) {
         case HBNRSolverError::ForcesError:
-            s.set(Status::Range, "Failed to apply forces.");
+            s.set(Status::Force, "Failed to apply forces.");
+            return false;            
+        case HBNRSolverError::LoadForces:
+            s.set(Status::Force, "Failed to load forces.");
             return false;
         default:
             return true;

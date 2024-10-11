@@ -29,6 +29,7 @@ public:
     enum class HBNRSolverError {
         OK, 
         ForcesError, 
+        LoadForces, 
     };
 
     // Clear error
@@ -54,11 +55,15 @@ public:
     
     EvalSetup& evalSetup() { return evalSetup_; };
     LoadSetup& loadSetup() { return loadSetup_; };
+
+    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
     
 protected:
+    bool loadForces(bool loadJacobian=true); 
+
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
-    
-    virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
+
+    Vector<double*> diagPtrs;
     
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;

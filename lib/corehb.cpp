@@ -29,6 +29,8 @@ template<> int Introspection<HBParameters>::setup() {
     registerMember(nper);
     registerMember(sample);
     registerMember(write);
+    registerMember(nodeset);
+    registerMember(store);
     
     return 0;
 }
@@ -158,7 +160,7 @@ bool HBCore::storeState(size_t ndx, bool storeDetails) {
         repo.solution.clearNames();
     }
     
-    // solutionFD is a complex spectrum, we need to convert it to an APFT spectrum
+    // Store solution in frequency domain (complex spectrum)
     repo.solution.setCxValues(solutionFD);
     
     // Store frequencies
@@ -263,6 +265,31 @@ bool HBCore::rebuild(Status& s) {
         return false;
     }
 
+    // Prepare nodesets
+    auto strictforce = circuit.simulatorOptions().core().strictforce; 
+    String& solutionName = params.nodeset;
+    if (solutionName.length()>0) {
+        // Get solution from repository
+        auto solPtr = circuit.storedSolution("hb", solutionName);
+        if (!solPtr) {
+            // No nodesets
+            nrSolver.forces(1).clear();
+            Simulator::wrn() << "Warning, solution '"+solutionName+"' not found. No user nodesets applied.\n";
+        } else {
+            // Nodesets from solution repository
+            if (!nrSolver.setForces(1, *solPtr, strictforce)) {
+                // Abort if strictforce is set
+                if (strictforce) {
+                    nrSolver.formatError(s);
+                    return false;
+                }
+            }
+        }
+    } else {
+        // No nodesets, clear slot
+        nrSolver.forces(1).clear();
+    }
+    
     // Rebuild NR solver structures
     if (!nrSolver.rebuild()) {
         s.set(Status::NonlinearSolver, "Failed to rebuild internal structures of nonlinear solver.");
@@ -295,12 +322,14 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
             runInContinueMode = true;
             // No forces applied
             nrSolver.enableForces(0, false);
+            nrSolver.enableForces(1, false);
             if (options.hb_debug>1) {
-                Simulator::dbg() << "HB using ordinary continue mode via initial solution.\n";
+                Simulator::dbg() << "HB using ordinary continue mode with stored analysis state.\n";
             }
-            // Use forced bypass if allowed
-            circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
+            // Forced bypass is not allowed
+            circuit.simulatorInternals().requestForcedBypass = false;
         } else if (continueState && continueState->valid) {
+            // Continue a state
             // Stored analysis state is valid, but not coherent with current circuit, 
             // its lengths may not match those of the solver vectors. 
             // Use forces to continue, but set no initial states vector nor initial solution. 
@@ -308,30 +337,41 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
             // There should be no such conflicts as we are applying forces to nodes only, not node deltas. 
             nrSolver.setForces(0, continueState->solution, false);
             nrSolver.enableForces(0, true);
+            // Disable user-specified forces (nodesets)
+            nrSolver.enableForces(1, false);
             if (options.hb_debug>1) {
-                Simulator::dbg() << "HB using forced continue mode.\n";
+                Simulator::dbg() << "HB using forced continue mode with stored analysis state.\n";
             }
             // Forced bypass is not allowed
             circuit.simulatorInternals().requestForcedBypass = false;
         } else {
-            // No valid state, continue with whatever is in solution and states vector
+            // Do not continue a state (either not provided or not valid)
+            // Continue with whatever is in solution and states vector
             runInContinueMode = true;
             // No forces applied
             nrSolver.enableForces(0, false);
+            nrSolver.enableForces(1, false);
             if (options.hb_debug>1) {
                 Simulator::dbg() << "HB using ordinary continue mode with previous solution.\n";
             }
-            // Forced bypass is allowed if set outside
+            // Forced bypass is not allowed
+            circuit.simulatorInternals().requestForcedBypass = false;
         }
-
         // Continue state is spent after first use
         continueState = nullptr;
     } else {
+        // Continue mode not requested
         // Disable continuation forces in slot 0
         nrSolver.enableForces(0, false);
 
+        // Apply forces specified by user in slot 1 (nodeset parameter)
+        nrSolver.enableForces(1, true); 
+
+        // Forced bypass is not allowed
+        circuit.simulatorInternals().requestForcedBypass = false;
+        
         if (options.hb_debug>1) {
-            Simulator::dbg() << "HB using standard intial solution.\n";
+            Simulator::dbg() << "HB using standard initial solution with forced nodesets.\n";
         }
     }
 
@@ -438,7 +478,7 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
         } else if (converged_) {
             // Tried and converged, write results
             if (outfile && params.write) {
-                // Collect results
+                // Collect results for one frequency
                 outputPhasors.upsize(1, n+1);
                 auto outvec = outputPhasors.data();
                 for(decltype(nf) k=0; k<nf; k++) {
@@ -446,7 +486,7 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
                     for(decltype(n) i=0; i<n; i++) {
                         outvec[i+1] = solutionFD[i*nf+k];
                     }                    
-                    // Dump to output
+                    // Dump values at current frequency to output
                     outfile->addPoint();
                 }
             }
@@ -458,6 +498,15 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     }
     
     setProgress(1);
+
+    // std::cout << "spectrum\n";
+    // int i=0;
+    // for(auto it : solutionFD) {
+    //     std::cout << "  " << i << " " << it << "\n";
+    //     i++;
+    // }
+
+    // nrSolver.dumpSolution(std::cout, solution.data(), "  ");
 
     // HB analysis can only Abort or Finish
     if (converged_) {
