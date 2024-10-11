@@ -28,6 +28,7 @@ template<> int Introspection<HBParameters>::setup() {
     registerMember(samplefac);
     registerMember(nper);
     registerMember(sample);
+    registerMember(write);
     
     return 0;
 }
@@ -49,7 +50,7 @@ HBCore::~HBCore() {
 bool HBCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -62,7 +63,7 @@ bool HBCore::addCoreOutputDescriptors() {
 
 bool HBCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -101,7 +102,7 @@ bool HBCore::resolveOutputDescriptors(bool strict, Status& s) {
 
 bool HBCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     // Create output file if not created yet
@@ -124,11 +125,19 @@ bool HBCore::finalizeOutputs(Status& s) {
         delete outfile;
         outfile = nullptr;
     }
+
+    // Write DC solution to repository if analysis is OK
+    if (converged_ && params.store.length()>0) {
+        auto sol = circuit.newStoredSolution("hb", params.store);
+        sol->setNames(circuit);
+        sol->setCxValues(solutionFD);
+        sol->setAuxData(frequencies);
+    }
     return true;
 }
 
 bool HBCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -428,7 +437,7 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
             setError(HBError::NoAlgorithm);
         } else if (converged_) {
             // Tried and converged, write results
-            if (outfile && params.writeOutput) {
+            if (outfile && params.write) {
                 // Collect results
                 outputPhasors.upsize(1, n+1);
                 auto outvec = outputPhasors.data();

@@ -35,12 +35,11 @@ namespace NAMESPACE {
 // - differential nodeset (...; "<node1>"; "<node2>"; value; ...)
 
 typedef struct OperatingPointParameters {
-    Value nodeset {Value("")}; // String to specify stored solution slot or
-                               // list to specify nodesets
+    Value nodeset {Value("")}; // String specifying stored solution slot to read or
+                               // list specifying nodesets
     String store {""};         // Name of stored solution slot to write
 
-    Int writeOutput {1}; // Do we want to write the results to a file
-                         // Not exposed as analysis parameter. 
+    Int write {1};             // Write the results to a file
 
     OperatingPointParameters(); 
 } OperatingPointParameters;

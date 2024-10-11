@@ -17,6 +17,7 @@ OperatingPointParameters::OperatingPointParameters() {
 template<> int Introspection<OperatingPointParameters>::setup() {
     registerMember(nodeset);
     registerMember(store); 
+    registerMember(write); 
     return 0;
 }
 instantiateIntrospection(OperatingPointParameters);
@@ -64,7 +65,7 @@ bool OperatingPointCore::resolveOutputDescriptors(bool strict, Status& s) {
 
 bool OperatingPointCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -74,7 +75,7 @@ bool OperatingPointCore::addDefaultOutputDescriptors() {
 }
 
 bool OperatingPointCore::initializeOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     // Create output file if not created yet
@@ -92,12 +93,11 @@ bool OperatingPointCore::initializeOutputs(Id name, Status& s) {
 }
 
 bool OperatingPointCore::finalizeOutputs(Status &s) {
-    if (!params.writeOutput) {
-        return true;
+    if (outfile) {
+        outfile->epilogue();
+        delete outfile;
+        outfile = nullptr;
     }
-    outfile->epilogue();
-    delete outfile;
-    outfile = nullptr;
 
     // Write DC solution to repository if analysis is OK
     if (converged_ && params.store.length()>0) {
@@ -110,7 +110,7 @@ bool OperatingPointCore::finalizeOutputs(Status &s) {
 }
 
 bool OperatingPointCore::deleteOutputs(Id name, Status &s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -505,7 +505,7 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
             setError(OperatingPointError::NoAlgorithm);
         } else if (converged_) {
             // Tried and converged, write results
-            if (outfile && params.writeOutput) {
+            if (outfile && params.write) {
                 outfile->addPoint();
             }
         }

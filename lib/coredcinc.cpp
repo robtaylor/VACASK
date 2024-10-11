@@ -9,11 +9,12 @@ namespace NAMESPACE {
 
 // Default parameters
 DCIncrementalParameters::DCIncrementalParameters() {
-    opParams.writeOutput = 0; 
+    opParams.write = 0; 
 }
 
 template<> int Introspection<DCIncrementalParameters>::setup() {
-    registerMember(dumpop);
+    registerMember(writeop);
+    registerMember(write);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerNamedMember(opParams.store, "store");
 
@@ -65,7 +66,7 @@ bool DCIncrementalCore::resolveOutputDescriptors(bool strict) {
 
 bool DCIncrementalCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -75,6 +76,9 @@ bool DCIncrementalCore::addDefaultOutputDescriptors() {
 }
 
 bool DCIncrementalCore::initializeOutputs(Id name, Status& s) {
+    if (!params.write) {
+        return true;
+    }
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -90,14 +94,16 @@ bool DCIncrementalCore::initializeOutputs(Id name, Status& s) {
 }
 
 bool DCIncrementalCore::finalizeOutputs(Status& s) {
-    outfile->epilogue();
-    delete outfile;
-    outfile = nullptr;
+    if (outfile) {
+        outfile->epilogue();
+        delete outfile;
+        outfile = nullptr;
+    }
     return true;
 }
 
 bool DCIncrementalCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -193,7 +199,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     }
 
     // Dump solution
-    if (params.writeOutput && outfile) {
+    if (params.write && outfile) {
         outfile->addPoint();
     }
     

@@ -57,12 +57,11 @@ typedef struct NoiseParameters {
     Id mode {Id()};   // Mode for dec/oct/lin sweep
     Int points {0};   // Number of points for dec/oct/lin sweep
     Value values {0}; // Vector of values for values sweep
-    Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
+    Int writeop {0};  // 1 = dump operating point to <analysisname>.op.raw;
     // Nodeset and store parameters of the operating point core 
     // are also exposed. 
 
-    Int writeOutput {1}; // Do we want to write the results to a file
-                         // Not exposed as analysis parameter. 
+    Int write {1};    // Write the results to a file
 
     NoiseParameters();
 } NoiseParameters;

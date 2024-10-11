@@ -12,7 +12,7 @@ namespace NAMESPACE {
 
 // Default parameters
 AcParameters::AcParameters() {
-    opParams.writeOutput = 0;
+    opParams.write = 0;
 }
 
 template<> int Introspection<AcParameters>::setup() {
@@ -22,7 +22,8 @@ template<> int Introspection<AcParameters>::setup() {
     registerMember(mode);
     registerMember(points);
     registerMember(values);
-    registerMember(dumpop);
+    registerMember(writeop);
+    registerMember(write);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerNamedMember(opParams.store, "store");
     
@@ -80,7 +81,7 @@ bool AcCore::resolveOutputDescriptors(bool strict) {
 bool AcCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -93,7 +94,7 @@ bool AcCore::addCoreOutputDescriptors() {
 
 bool AcCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -104,7 +105,7 @@ bool AcCore::addDefaultOutputDescriptors() {
 
 bool AcCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     // Create output file if not created yet
@@ -131,7 +132,7 @@ bool AcCore::finalizeOutputs(Status& s) {
 }
 
 bool AcCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -395,7 +396,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         }
         
         // Dump solution point
-        if (params.writeOutput && outfile) {
+        if (params.write && outfile) {
             outfile->addPoint();
         }
         

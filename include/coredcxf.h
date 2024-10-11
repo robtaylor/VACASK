@@ -45,12 +45,11 @@ typedef struct DCXFParameters {
     OperatingPointParameters opParams;
     
     Value out {""};   // Output node or node pair (string vector)
-    Int dumpop {0};   // 1 = dump operating point to <analysisname>.op.raw;
+    Int writeop {0};  // 1 = dump operating point to <analysisname>.op.raw;
     // Nodeset and store parameters of the operating point core 
     // are also exposed. 
 
-    Int writeOutput {1}; // Do we want to write the results to a file
-                         // Not exposed as analysis parameter. 
+    Int write {1};    // Write the results to a file
 
     DCXFParameters();
 } DCXFParameters;

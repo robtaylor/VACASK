@@ -22,7 +22,7 @@ void Tran::clearOutputDescriptors() {
     // This function is called once before analysis/sweep is started
     // and before any output descriptors are added. 
     // Disable op analysis output. 
-    params.core().opParams.writeOutput = 0;
+    params.core().opParams.write = 0;
     
     opCore.clearOutputDescriptors();
     tranCore.clearOutputDescriptors();

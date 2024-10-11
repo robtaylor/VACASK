@@ -213,7 +213,7 @@ Id TranCore::icmodeUic = Id::createStatic("uic");
 
 TranParameters::TranParameters() {
     // Turn off output for op analysis
-    opParams.writeOutput = 0; 
+    opParams.write = 0; 
     icmode = TranCore::icmodeOp;
 }
 
@@ -226,6 +226,7 @@ template<> int Introspection<TranParameters>::setup() {
     registerNamedMember(opParams.nodeset, "nodeset");
     registerMember(ic);
     registerMember(store);
+    registerMember(write);
     
     return 0;
 }
@@ -260,7 +261,7 @@ TranCore::~TranCore() {
 
 bool TranCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -302,7 +303,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
 bool TranCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     
@@ -460,6 +461,9 @@ bool TranCore::rebuild(Status& s) {
 }
 
 bool TranCore::initializeOutputs(Id name, Status& s) {
+    if (!params.write) {
+        return true;
+    }
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -475,9 +479,11 @@ bool TranCore::initializeOutputs(Id name, Status& s) {
 }
 
 bool TranCore::finalizeOutputs(Status& s) {
-    outfile->epilogue();
-    delete outfile;
-    outfile = nullptr;
+    if (outfile) {
+        outfile->epilogue();
+        delete outfile;
+        outfile = nullptr;
+    }
     
     // Write DC solution to repository if analysis is OK
     if (finished && params.store.length()>0) {
@@ -490,7 +496,7 @@ bool TranCore::finalizeOutputs(Status& s) {
 }
 
 bool TranCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 

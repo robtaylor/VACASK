@@ -12,7 +12,7 @@ namespace NAMESPACE {
 
 // Default parameters
 ACXFParameters::ACXFParameters() {
-    opParams.writeOutput = 0;
+    opParams.write = 0;
 }
 
 template<> int Introspection<ACXFParameters>::setup() {
@@ -23,7 +23,8 @@ template<> int Introspection<ACXFParameters>::setup() {
     registerMember(mode);
     registerMember(points);
     registerMember(values);
-    registerMember(dumpop);
+    registerMember(writeop);
+    registerMember(write);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerNamedMember(opParams.store, "store");
 
@@ -127,7 +128,7 @@ bool ACXFCore::resolveOutputDescriptors(bool strict) {
 bool ACXFCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -140,7 +141,7 @@ bool ACXFCore::addCoreOutputDescriptors() {
 
 bool ACXFCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -150,6 +151,9 @@ bool ACXFCore::addDefaultOutputDescriptors() {
 }
 
 bool ACXFCore::initializeOutputs(Id name, Status& s) {
+    if (!params.write) {
+        return true;
+    }
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -165,14 +169,16 @@ bool ACXFCore::initializeOutputs(Id name, Status& s) {
 }
 
 bool ACXFCore::finalizeOutputs(Status& s) {
-    outfile->epilogue();
-    delete outfile;
-    outfile = nullptr;
+    if (outfile) {
+        outfile->epilogue();
+        delete outfile;
+        outfile = nullptr;
+    }
     return true;
 }
 
 bool ACXFCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -495,7 +501,7 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
         }
 
         // Dump solution
-        if (params.writeOutput && outfile) {
+        if (params.write && outfile) {
             outfile->addPoint();
         }
 

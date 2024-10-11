@@ -38,10 +38,10 @@ typedef struct HBParameters {
     IntVector imorder {};  // When raw truncation scheme is used this flag indicates 
                            // the intermodulation product order of each frequency in the freq vector. 
                            // If not set, assumes order is -1 for all frequencies. 
+    String store {""};     // Name of stored solution slot to write
+    String nodeset {""};   // String specifying stored solution slot to read
     
- 
-    Int writeOutput {1};   // Do we want to write the results to a file
-                           // Not exposed as analysis parameter. 
+    Int write {1};         // Write the results to a file
                              
     HBParameters();
 } HBParameters;

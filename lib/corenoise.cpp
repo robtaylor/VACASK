@@ -12,7 +12,7 @@ namespace NAMESPACE {
 
 // Default parameters
 NoiseParameters::NoiseParameters() {
-    opParams.writeOutput = 0;
+    opParams.write = 0;
 }
 
 template<> int Introspection<NoiseParameters>::setup() {
@@ -24,7 +24,8 @@ template<> int Introspection<NoiseParameters>::setup() {
     registerMember(mode);
     registerMember(points);
     registerMember(values);
-    registerMember(dumpop);
+    registerMember(writeop);
+    registerMember(write);
     registerNamedMember(opParams.nodeset, "nodeset");
     registerNamedMember(opParams.store, "store");
 
@@ -152,7 +153,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
 bool NoiseCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -175,7 +176,7 @@ bool NoiseCore::addCoreOutputDescriptors() {
 
 bool NoiseCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
     if (savesCount==0) {
@@ -186,6 +187,9 @@ bool NoiseCore::addDefaultOutputDescriptors() {
 }
 
 bool NoiseCore::initializeOutputs(Id name, Status& s) {
+    if (!params.write) {
+        return true;
+    }
     // Create output file if not created yet
     if (!outfile) {
         outfile = new OutputRawfile(
@@ -201,14 +205,16 @@ bool NoiseCore::initializeOutputs(Id name, Status& s) {
 }
 
 bool NoiseCore::finalizeOutputs(Status& s) {
-    outfile->epilogue();
-    delete outfile;
-    outfile = nullptr;
+    if (outfile) {
+        outfile->epilogue();
+        delete outfile;
+        outfile = nullptr;
+    }
     return true;
 }
 
 bool NoiseCore::deleteOutputs(Id name, Status& s) {
-    if (!params.writeOutput) {
+    if (!params.write) {
         return true;
     }
 
@@ -629,7 +635,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         // std::cout << "total = " << outputNoise << "\n";
 
         // Dump solution
-        if (params.writeOutput && outfile) {
+        if (params.write && outfile) {
             outfile->addPoint();
         }
 

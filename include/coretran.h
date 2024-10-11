@@ -50,8 +50,7 @@ typedef struct TranParameters {
     String store {""};    // name of stored solution slot to write transient solution to
     // Nodeset parameter of the operating point core is also exposed. 
 
-    Int writeOutput {1}; // Do we want to write the results to a file
-                         // Not exposed as analysis parameter. 
+    Int write {1};        // Write the results to a file
     
     TranParameters();
 } TranParameters;
