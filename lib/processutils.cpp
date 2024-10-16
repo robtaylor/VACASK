@@ -10,6 +10,7 @@
 #include "processutils.h"
 #include "filesystem.h"
 #include "libplatform.h"
+#include "simulator.h"
 #include "status.h"
 
 
@@ -41,7 +42,7 @@ bool findProgram(const std::string& prog, std::string& path) {
 // TODO: replace this with something better
 std::tuple<bool, std::string, std::string> runProcess(
     const std::string& prog, const std::vector<std::string>& args, 
-    const std::string* pythonPath, bool collect, Status& s
+    const std::string* pythonPath, bool collect, bool debugFiles, Status& s
 ) {
     
     bool ok;
@@ -51,7 +52,15 @@ std::tuple<bool, std::string, std::string> runProcess(
         s.set(Status::NotFound, "Executable '"+prog+"' not found.");
         return std::make_tuple(false, "", "");
     }
-    
+
+    if (debugFiles) {
+        Simulator::dbg() << "Running: " << path;
+        for(auto& arg : args) {
+            Simulator::dbg() << " \"" << arg << "\"";
+        }
+        Simulator::dbg() << ".\n";
+    }
+
     auto procEnv = boost::this_process::environment();
     boost::process::environment customEnv = procEnv;
     if (pythonPath) {

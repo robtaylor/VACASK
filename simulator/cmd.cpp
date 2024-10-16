@@ -362,7 +362,7 @@ bool cmd_postprocess(CommandInterpreter& interpreter, PTCommand& cmd, Status& s)
         }
     }
 
-    auto [ok, out, err] = runProcess(prog, args, &(Platform::pythonPath()), false, s);
+    auto [ok, out, err] = runProcess(prog, args, &(Platform::pythonPath()), false, Simulator::fileDebug(), s);
     return ok;
 }
 

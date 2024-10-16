@@ -39,8 +39,10 @@ int main(int argc, char**argv) {
     Status status;
 
     // Setup platform
+    auto openvafCstring = std::getenv("SIM_OPENVAF"); 
+    auto openvafStr = openvafCstring ? std::string(openvafCstring) : "";
     //   openVafName, openVafArgs
-    Platform::setup("", {});
+    Platform::setup(openvafStr, {});
 
     // Get path to simulator binary
     auto simulatorBinary = executableFile();
