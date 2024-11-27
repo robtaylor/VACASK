@@ -756,6 +756,8 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
                << ((n2!=UINT32_MAX) ? nodeName(n2) : "(ground)") << "\n";
         }
     }
+    os << pfx << "  Model structure size   : " << descriptor_->model_size << " bytes\n";
+    os << pfx << "  Instance structure size: " << descriptor_->instance_size << " bytes\n";
 }
 
 }
