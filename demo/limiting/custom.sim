@@ -14,7 +14,7 @@ v1 (1 0) vsource dc=1.0
 d1 (1 0) d
 
 control
-  options op_debug=110
+  options op_debug=10 nr_debug=1
   options rawfile="binary" strictsave=1
   analysis op1 op 
 endc
@@ -58,7 +58,7 @@ module simdio(A,C);
     analog function real limspicepnj;
         input vnew, vold, vt, vcrit;
         real vnew, vold, vt, vcrit, limited, arg;
-        integer init;
+        integer init, il;
         
         begin
             limited = vnew;
@@ -69,9 +69,13 @@ module simdio(A,C);
             //   analysis("static")  ... all OP analyses, even the ones that are part of other analysis (ac, tran ...)
             //   analysis("nodeset") ... part when nodesets are applied (first op_nsiter iterations)
             //   "dc" implies "static", but opposite is not true
-            init = $simparam("iteration", 10)==1 && 
-                    (analysis("dc") || analysis("static")) && 
-                    analysis("nodeset");
+            il = $simparam("initializeLimitingx", -1);
+            init = (il>0) || (
+                il<0 &&
+                $simparam("iteration", 10)==1 && 
+                (analysis("dc") || analysis("static")) && 
+                analysis("nodeset")
+            );
             if (init) begin
                 $strobe("Limiting initialization");
                 limited = vcrit;
@@ -101,7 +105,7 @@ module simdio(A,C);
                     $discontinuity(-1);
                 end
             end 
-            $strobe("Limiting new=%e old=%e vt=%e, vcrit=%e, limited=%e", vnew, vold, vt, vcrit, limited);
+            $strobe("Limiting new=%e old=%e vt=%e, vcrit=%e, limited=%e, il=%d", vnew, vold, vt, vcrit, limited, il);
             limspicepnj = limited;
         end
     endfunction

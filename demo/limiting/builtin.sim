@@ -14,7 +14,7 @@ v1 (1 0) vsource dc=1.0
 d1 (1 0) d
 
 control
-  options op_debug=110
+  options op_debug=10 nr_debug=1
   options rawfile="binary" strictsave=1
   analysis op1 op 
 endc

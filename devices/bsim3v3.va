@@ -297,13 +297,16 @@ module bsim3(d, g, s, b);
     endfunction
 
     analog function integer initialize_limiting;
+        integer il;
         begin
             // TODO: check if first iteration is 1 or 0 (in some other simulator)
-            initialize_limiting = 
-                $simparam("initializeLimiting", 1)!=0.0 &&
+            il = $simparam("initializeLimiting", -1);
+            initialize_limiting = (il>0) || (
+                il<0 &&
                 $simparam("iteration", 10)==1 && 
                 (analysis("dc") || analysis("static")) && 
-                analysis("nodeset");
+                analysis("nodeset")
+            );
         end
     endfunction
 
