@@ -263,7 +263,7 @@ std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, D
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
     
-    OsdiDevice::populate(sp, opt, internals, dblArray, chrPtrArray);
+    OsdiDevice::populateSimParas(sp, opt, internals, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
     auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
@@ -785,6 +785,9 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         .kind = 3, 
         .name = const_cast<char*>(name().c_str())
     };
+
+    // Update simInfo
+    OsdiDevice::updateSimInfo(simInfo, evalSetup);
 
     // Set beginning of state vector chunk belonging to this instance
     simInfo.prev_state = evalSetup.oldStates + offsStates;

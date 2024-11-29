@@ -161,7 +161,6 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     internals.fromOptions(options);
     internals.analysis_name = std::string(name_);
     internals.analysis_type = std::string(ptAnalysis.typeName());
-    internals.initalizeLimiting = false;
     internals.requestForcedBypass = false;
     circuit.simulatorInternals() = internals;
     

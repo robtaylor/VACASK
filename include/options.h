@@ -136,8 +136,6 @@ typedef struct SimulatorInternals {
     String analysis_type;
     // String cwd;
 
-    bool initalizeLimiting;
-
     bool allowContinueStateBypass;
     bool requestForcedBypass; 
     

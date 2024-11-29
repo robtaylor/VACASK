@@ -724,9 +724,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
 
     // Init limits if not in continue mode and iteration is 1
     evalSetup_.initializeLimiting = !continuePrevious && (iteration==1);
-    // Write value to simulatorInternals
-    circuit.simulatorInternals().initalizeLimiting = evalSetup_.initializeLimiting; 
-
+    
     // Bypass enabled, take it into account at evaluation time
     if (circuit.simulatorOptions().core().nr_bypass) {
         // In continue mode bypass is allowed in first iteration

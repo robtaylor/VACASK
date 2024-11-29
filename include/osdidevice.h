@@ -183,7 +183,8 @@ public:
     std::tuple<bool, bool> parameterGiven(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Status& s=Status::ignore) const;
 
     static std::tuple<size_t, size_t> simParasSizes();
-    static void populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray);
+    static void populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray);
+    static void updateSimInfo(OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     
     bool processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s=Status::ignore) const;
 

@@ -204,7 +204,6 @@ SimulatorInternals::SimulatorInternals() {
     
     // Set by analysis core
     iteration = 0;
-    initalizeLimiting = false;
     requestForcedBypass = false;      // Request forced bypass in next NR iteration for all bypassable devices 
                                       // regardless of their converged state. 
 }

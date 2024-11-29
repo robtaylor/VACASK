@@ -297,7 +297,7 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Dev
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
     
-    populate(sp, opt, internals, dblArray, chrPtrArray);
+    populateSimParas(sp, opt, internals, dblArray, chrPtrArray);
     for(auto model : models()) {
         // Verilog-A $temperature is in K, convert the value given by options (in C)
         auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
@@ -362,13 +362,15 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
     auto& internals = circuit.simulatorInternals();
     OsdiSimInfo simInfo;
 
-    if (evalSetup) {
-        // Allocate tables on stack
-        auto [ndbl, nchrptr ] = simParasSizes();
-        double dblArray[ndbl];
-        char* chrPtrArray[nchrptr];
+    // Allocate tables on stack
+    // Need to do this in the top level block because otherwise 
+    // it gets freed as soon as we leave the block. 
+    auto [ndbl, nchrptr ] = simParasSizes();
+    double dblArray[ndbl];
+    char* chrPtrArray[nchrptr];
         
-        populate(simInfo.paras, opt, internals, dblArray, chrPtrArray);
+    if (evalSetup) {
+        populateSimParas(simInfo.paras, opt, internals, dblArray, chrPtrArray);
         simInfo.abstime = evalSetup->time;
         simInfo.prev_solve = evalSetup->oldSolution;
 
@@ -516,7 +518,7 @@ std::tuple<size_t, size_t> OsdiDevice::simParasSizes() {
     );
 }
 
-void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray) {
+void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray) {
     // dblArray and chrPtrArray should be allocated on stack to save time
     // simParasSizes() reports the reuired size of these two arrays
     double* simParamValues = dblArray; 
@@ -534,11 +536,11 @@ void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const S
     simParamValues[6] = Simulator::majorVersion;
     simParamValues[7] = Simulator::minorVersion;
     simParamValues[8] = internals.sourcescalefactor;
-    simParamValues[9] = internals.initalizeLimiting; 
+    simParamValues[9] = 0; 
 
     sp.names = const_cast<char**>(simParamNames); 
     sp.vals = simParamValues; 
-    
+
     char** simStrParamValues = chrPtrArray; 
     
     simStrParamValues[0] = const_cast<char*>(internals.analysis_name.c_str());
@@ -547,6 +549,10 @@ void OsdiDevice::populate(OsdiSimParas& sp, const SimulatorOptions& opt, const S
 
     sp.names_str = const_cast<char**>(simStrParamNames); 
     sp.vals_str = simStrParamValues;
+}
+
+void OsdiDevice::updateSimInfo(OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
+    simInfo.paras.vals[9] = evalSetup.initializeLimiting;
 }
 
 bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s) const {
