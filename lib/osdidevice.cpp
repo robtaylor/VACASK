@@ -563,7 +563,7 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
 }
 
 void OsdiDevice::updateSimInfo(OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
-    simInfo.paras.vals[9] = evalSetup.initializeLimiting;
+    simInfo.paras.vals[9] = evalSetup.initializeLimiting ? 1 : 0;
 }
 
 bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s) const {
