@@ -489,6 +489,11 @@ const char* OsdiDevice::simParamNames[] = {
     "simulatorSubversion", 
     "sourceScaleFactor",
     "initializeLimiting",  
+    "reltol", 
+    "vntol", 
+    "abstol", 
+    "chgtol", 
+    "fluxtol", 
     nullptr
     // TODO: According to VAMS LRM table 9-27 the following are missing
     //   imax
@@ -536,7 +541,13 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
     simParamValues[6] = Simulator::majorVersion;
     simParamValues[7] = Simulator::minorVersion;
     simParamValues[8] = internals.sourcescalefactor;
-    simParamValues[9] = 0; 
+    simParamValues[9] = 0; // initializeLimiting
+
+    simParamValues[10] = opt.reltol;
+    simParamValues[11] = opt.vntol;
+    simParamValues[12] = opt.abstol;
+    simParamValues[13] = opt.chgtol;
+    simParamValues[14] = opt.fluxtol;
 
     sp.names = const_cast<char**>(simParamNames); 
     sp.vals = simParamValues; 
