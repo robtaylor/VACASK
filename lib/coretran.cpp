@@ -677,7 +677,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
 
     // Write results at t=0, but only if tstart=0
     if (params.start<=0) {
-        outfile->addPoint();
+        if (params.write && outfile) {
+            outfile->addPoint();
+        }
     }
 
     setProgress(0, 0);
@@ -1386,7 +1388,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             
             // Write results, starting at tSolve=params.start
             if (tSolve>=params.start-timeRelativeTolerance*tk) {
-                outfile->addPoint();
+                if (params.write && outfile) {
+                    outfile->addPoint();
+                }
             }
 
             setProgress(tSolve, tSolve);

@@ -928,6 +928,13 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
         // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
         auto tol = circuit.residualTolerance(rn, tolref);
 
+        // TODO: internal nodes when NR converges have a very low residual contribution
+        //       because a single OSDI instance provides all the residual contribution to them 
+        //       and the contribution is close to 0. 
+        //       This means that restol/vnrestol absolute tolerances are used 
+        //       which in turn may be too low and prevent convergence forever. 
+        //       This is somehow remedied if relrefres is set to pointglobal or global. 
+
         // Residual component
         double rescomp = fabs(delta[i]);
     
