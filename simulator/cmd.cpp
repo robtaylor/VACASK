@@ -691,6 +691,10 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
             Simulator::out() << "\n";
 
+            Simulator::out() << "Clock resolution [ns]:             " << Accounting::resolution()*1e9 << "\n";
+
+            Simulator::out() << "\n";
+
             Simulator::out() << "Stats:\n";
             interpreter.tables().accounting().dumpTotal(2, Simulator::out());
         } else {
