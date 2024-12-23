@@ -146,6 +146,7 @@ public:
 
     // For local timing
     double tovh;
+    size_t novh;
 
 protected:
     Id name_;
@@ -209,7 +210,7 @@ public:
     bool addInstance(Instance* instance); 
 
     // Expose instances storage
-    std::vector<Instance*> instances() { return instances_; };
+    std::vector<Instance*>& instances() { return instances_; };
     
     // Number of instances
     size_t instanceCount() const { return instances_.size(); };
