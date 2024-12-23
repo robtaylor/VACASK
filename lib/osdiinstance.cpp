@@ -779,6 +779,8 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     auto model_ = model();
     auto device = model_->device();
     auto descr = device->descriptor();
+
+    Accounting::Timepoint td0;
     
     // Prepare callback handle
     OsdiCallbackHandle handle = OsdiCallbackHandle {
@@ -858,7 +860,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         clearFlags(Flags::Bypassed);
         clearFlags(Flags::Converged);
     }
-    
+
     // Evaluation, skip it if bypass is true
     if (bypass) {
         evalSetup.bypassedInstances++;
@@ -875,9 +877,17 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             }
         }
     } else {
+        if constexpr(devacct) {
+            td0 = Accounting::wclk();
+        }
+        
         // Core evaluation, need to call it always to compute bound step
         auto evalFlags = descr->eval(&handle, core(), model_->core(), &simInfo);
         
+        // if constexpr(devacct) {
+        //     device->tovh += Accounting::wclkDelta(td0);
+        // }
+
         // Handle evalFlags
         if (evalFlags & EVAL_RET_FLAG_LIM) {
             // If some variable x is linearized to xl the Jacobian is computed at xl instead of x
@@ -905,6 +915,10 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             evalSetup.requests.stop = true;
         }
     }
+
+    // if constexpr(devacct) {
+    //     td0 = Accounting::wclk();
+    // }
     
     auto nodeStateIndex = offsStates + device->internalStateCount();
     if (evalSetup.integCoeffs || evalSetup.storeReactiveState) {
@@ -969,7 +983,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             evalSetup.setBoundStep(*getDataPtr<double*>(core(), bsOffs));
         }
     }
-    
+
     return true;
 }
 
@@ -978,6 +992,11 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     auto model_ = model();
     auto device = model_->device();
     auto descr = device->descriptor();
+
+    Accounting::Timepoint td0;
+    if constexpr(devacct) {
+        td0 = Accounting::wclk();
+    }
 
     /*
     // For development
@@ -1119,7 +1138,7 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
             nodeStateIndex += 2;
         }
     }
-    
+
     return true;
 }
 

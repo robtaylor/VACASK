@@ -1255,7 +1255,6 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
     }
     
     // Enable accounting on device basis
-    constexpr bool devacct = false;
     size_t ndx = 0;
     Accounting::Timepoint td0;
     

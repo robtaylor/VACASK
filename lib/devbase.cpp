@@ -5,7 +5,7 @@
 namespace NAMESPACE {
 
 Device::Device(Id name, const Loc& location) 
-    : name_(name), loc(location), tovh(0) {
+    : name_(name), loc(location), tovh(0), novh(0) {
 }
 
 Device::~Device() {

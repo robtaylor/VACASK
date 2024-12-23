@@ -368,7 +368,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
     auto [ndbl, nchrptr ] = simParasSizes();
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
-        
+    
     if (evalSetup) {
         populateSimParas(simInfo.paras, opt, internals, dblArray, chrPtrArray);
         simInfo.abstime = evalSetup->time;
@@ -430,6 +430,10 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
         }
     }
 
+    if constexpr(devacct) {
+        novh++;
+    }
+    
     for(auto model : models()) {
         if (model->instanceCount()==0) {
             continue;
@@ -439,9 +443,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
                 return false;
             }
             if (loadSetup) {
-                // auto t0 = Accounting::wclk();
                 auto lst = static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup);
-                // circuit.tables().accounting().acctNew.tload += Accounting::wclkDelta(t0); 
                 if (!lst) {
                     return false;
                 }

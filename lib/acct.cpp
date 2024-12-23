@@ -85,7 +85,10 @@ void Accounting::dumpDevTimes(int indent, std::ostream& os, Circuit& circuit) co
             }
             os << pfx << "  " << circuit.device(i)->name() << "  t=" << devEvalLoadTimes[i] << " n=" << devEvalLoadCalls[i] 
                << " t/n=" << devEvalLoadTimes[i]/devEvalLoadCalls[i];
-            // os << " tovh=" << circuit.device(i)->tovh;
+            if (circuit.device(i)->novh>0) {
+                os << " tovh=" << circuit.device(i)->tovh << " novh=" << circuit.device(i)->novh
+                   << " tovh/novh=" << circuit.device(i)->tovh/circuit.device(i)->novh;
+            }
             os << "\n";
         }
         if (devEvalLoadCalls[nn-1]!=0) {

@@ -7,6 +7,9 @@
 
 namespace NAMESPACE {
 
+// Master device-based accounting switch
+constexpr bool devacct = false;
+    
 class Circuit;
 
 typedef struct AcctData {
@@ -64,7 +67,7 @@ typedef struct Accounting {
 
     std::vector<double> devEvalLoadTimes;
     std::vector<size_t> devEvalLoadCalls;
-    
+
     // High resolution wall clock
     typedef decltype(std::chrono::high_resolution_clock::now()) Timepoint; 
     static double resolution() { 
