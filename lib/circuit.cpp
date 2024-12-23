@@ -1254,20 +1254,54 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
         }
     }
     
+    // Enable accounting on device basis
+    constexpr bool devacct = false;
+    size_t ndx = 0;
+    Accounting::Timepoint td0;
+    
+    if constexpr(devacct) {
+        // Last entry is for overhead
+        tables_.accounting().devEvalLoadCalls.resize(devices.size()+1, 0);
+        tables_.accounting().devEvalLoadTimes.resize(devices.size()+1, 0);
+        // Measure overhead
+        td0 = Accounting::wclk();
+        tables_.accounting().devEvalLoadTimes.back() += Accounting::wclkDelta(td0);
+        tables_.accounting().devEvalLoadCalls.back()++;
+    }
+    bool retval = true;
+    bool first = true;
     for(auto& dev : devices) {
-        auto* devPtr = dev.get();
-        if (devPtr->instanceCount()==0)  {
+        // Skip first device (this is always the Hierarchical device)
+        // Will save some time
+        if (first) {
+            first = false;
+            if constexpr(devacct) {
+                ndx++;
+            }
             continue;
         }
-        if ((!deviceSelector || deviceSelector(dev.get()))) {
-            if (!devPtr->evalAndLoad(*this, evalSetup, loadSetup)) {
-                tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
-                return false;
+        auto* devPtr = dev.get();
+        if (devPtr->instanceCount()==0)  {
+            // Do nothing
+        } else if ((!deviceSelector || deviceSelector(dev.get()))) {
+            if constexpr(devacct) {
+                td0 = Accounting::wclk();
             }
+            if (!devPtr->evalAndLoad(*this, evalSetup, loadSetup)) {
+                retval = false;
+                break;
+            }
+            if constexpr(devacct) {
+                tables_.accounting().devEvalLoadTimes[ndx] += Accounting::wclkDelta(td0);
+                tables_.accounting().devEvalLoadCalls[ndx]++;
+            }
+        }
+        if constexpr(devacct) {
+            ndx++;
         }
     }
     tables_.accounting().acctNew.tevalload += Accounting::wclkDelta(t0);
-    return true;
+    return retval;
 }
 
 bool Circuit::converged(ConvSetup& convSetup) {
@@ -1278,7 +1312,14 @@ bool Circuit::converged(ConvSetup& convSetup) {
         tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
         return false;
     }
+    bool first = true;
     for(auto& dev : devices) {
+        // Skip first device (this is always the Hierarchical device)
+        // Will save some time
+        if (first) {
+            first = false;
+            continue;
+        }
         auto* devPtr = dev.get();
         if (devPtr->instanceCount()==0)  {
             continue;

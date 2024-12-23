@@ -144,6 +144,9 @@ public:
     // Dumps the device
     virtual void dump(int indent, std::ostream& os) const {};
 
+    // For local timing
+    double tovh;
+
 protected:
     Id name_;
     const Loc& loc;

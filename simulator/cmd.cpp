@@ -697,6 +697,7 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
             Simulator::out() << "Stats:\n";
             interpreter.tables().accounting().dumpTotal(2, Simulator::out());
+            interpreter.tables().accounting().dumpDevTimes(2, Simulator::out(), circuit);
         } else {
             s.set(Status::NotFound, "Unknown keyword '"+std::string(what)+"'.");
             return false;

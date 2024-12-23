@@ -1,4 +1,5 @@
 #include "acct.h"
+#include "circuit.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -70,6 +71,28 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
 
     os << pfx << "Accepted timepoints:             " << acctNew.accepted << "\n";
     os << pfx << "Rejected timepoints:             " << acctNew.rejected << "\n";
+}
+
+void Accounting::dumpDevTimes(int indent, std::ostream& os, Circuit& circuit) const {
+    std::string pfx = std::string(indent, ' ');
+    auto nn = devEvalLoadCalls.size();
+    if (nn>0) {
+        os << "\n";
+        os << pfx << "Eval and load times for devices\n";
+        for(decltype(nn) i=0; i<nn-1; i++) {
+            if (devEvalLoadCalls[i]==0) {
+                continue;
+            }
+            os << pfx << "  " << circuit.device(i)->name() << "  t=" << devEvalLoadTimes[i] << " n=" << devEvalLoadCalls[i] 
+               << " t/n=" << devEvalLoadTimes[i]/devEvalLoadCalls[i];
+            // os << " tovh=" << circuit.device(i)->tovh;
+            os << "\n";
+        }
+        if (devEvalLoadCalls[nn-1]!=0) {
+            os << "\n" << pfx << "  overhead" << "  t=" << devEvalLoadTimes[nn-1] << " n=" << devEvalLoadCalls[nn-1] 
+               << " t/n=" << devEvalLoadTimes[nn-1]/devEvalLoadCalls[nn-1];
+        }
+    }
 }
 
 }

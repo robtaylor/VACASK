@@ -3,8 +3,11 @@
 
 #include "common.h"
 #include <chrono>
+#include <vector>
 
 namespace NAMESPACE {
+
+class Circuit;
 
 typedef struct AcctData {
     size_t parse {0};
@@ -58,6 +61,9 @@ typedef struct Accounting {
     AcctData acctPrevSweepPoint;
     AcctData acctPrevPoint;
     AcctData acctNew;
+
+    std::vector<double> devEvalLoadTimes;
+    std::vector<size_t> devEvalLoadCalls;
     
     // High resolution wall clock
     typedef decltype(std::chrono::high_resolution_clock::now()) Timepoint; 
@@ -79,6 +85,8 @@ typedef struct Accounting {
 
     void dumpTotal(int indent, std::ostream& os) const;
     void dumpChange(int indent, std::ostream& os) const;
+
+    void dumpDevTimes(int indent, std::ostream& os, Circuit& circuit) const;
 } Accounting;
 
 }
