@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-330-g5a440b763
+// Version      : ngspice-42-331-g94888700f
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-03 21:30:38 UTC
+// Date         : 2025-01-07 12:19:40 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -17,11 +17,11 @@
 //   model_tc1, model_tc2, model_tce, model_w, model_l, model_bv_max, and model_r 
 //   due to name conflicts with instance parameters.
 //
-//   This model exposes opvars that can lead to creation of
-//   implicit equations by OpenVAF.
-//
 //   Simplified noise model used (ignores capacitive current).
 //   Appropriate only for small-signal noise analysis.
+//
+// SPICE variable mapping
+//   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
@@ -132,7 +132,6 @@ module sp_resistor(pos, neg);
   real RESconduct;
   real RESresist;
   real REScurrent;
-  real RESacConduct;
   real RESwidth;
   real RESlength;
   real RESbv_max;
@@ -176,6 +175,7 @@ module sp_resistor(pos, neg);
   real VACONSTcharge = 1.6021766208e-19;
   real VACONSTboltz = 1.38064852e-23;
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
+  real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
 
@@ -206,11 +206,11 @@ module sp_resistor(pos, neg);
       REStempGiven = 1;
     end
     if ($param_given(l)) begin
-      RESlength = l*scale;
+      RESlength = l*cpscale;
       RESlengthGiven = 1;
     end
     if ($param_given(w)) begin
-      RESwidth = w*scale;
+      RESwidth = w*cpscale;
       RESwidthGiven = 1;
     end
     if ($param_given(bv_max)) begin
@@ -296,7 +296,6 @@ module sp_resistor(pos, neg);
       factor = (temp_tc2*difference+temp_tc1)*difference+1.0;
     end
     RESconduct = 1.0/(RESresist*factor*scale);
-    RESacConduct = RESconduct;
 
     // Tag: load, function: RESload
     REScurrent = V(pos, neg)*RESconduct;

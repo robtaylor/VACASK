@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-330-g5a440b763
+// Version      : ngspice-42-331-g94888700f
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-03 21:30:56 UTC
+// Date         : 2025-01-07 12:20:16 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -27,9 +27,6 @@
 //   
 //   Opvar alias c was removed due to a conflict with a terminal name.
 //
-//   This model exposes opvars that can lead to creation of
-//   implicit equations by OpenVAF.
-//
 //   Simplified noise model used (ignores capacitive current).
 //   Appropriate only for small-signal noise analysis.
 //
@@ -37,11 +34,11 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
-//      CKTtemp -> (None, '$temperature')
 //    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   dio/diodefs.h
@@ -189,12 +186,9 @@ module sp_diode(a, c);
 
   // Instance opvars
   (* desc = "Diode voltage" *) real vd;
-  (* desc = "Diode current" *) real id;
   (* desc = "Diode conductance" *) real gd;
   (* desc = "Diode capacitance" *) real cd;
   (* desc = "Diode capacitor charge" *) real charge;
-  (* desc = "Diode capacitor current" *) real capcur;
-  (* desc = "Diode power" *) real p;
 
   // Model opvars
   (* desc = "Ohmic conductance" *) real cond;
@@ -411,8 +405,8 @@ module sp_diode(a, c);
   real VACONSTcharge = 1.6021766208e-19;
   real VACONSTboltz = 1.38064852e-23;
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
-  real reltol = $simparam("reltol", 1e-3);
   real epsmin = $simparam("epsmin", 1e-28);
+  real reltol = $simparam("reltol", 1e-3);
   real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
@@ -424,15 +418,16 @@ module sp_diode(a, c);
   analog function integer initialize_limiting;
     integer il;
     begin
-      il = $simparam("initializeLimiting", -1);
-      initialize_limiting = 
-        (il>0) || 
-        (
-          il<0 &&
-        $simparam("iteration", 10)==1 && 
-        (analysis("dc") || analysis("static")) && 
-          analysis("nodeset")
-        );
+      il = $simparam("iniLim", -1);
+      if (il<0) begin
+        // iniLim not available, use heuristics
+        initialize_limiting = 
+          $simparam("iteration", 10)==1 && 
+          (analysis("dc") || analysis("static")) && 
+          analysis("nodeset");
+      end else begin
+        initialize_limiting = il;
+      end
     end
   endfunction
 
@@ -1117,17 +1112,14 @@ module sp_diode(a, c);
       noise_dtemp = dtemp;
     end
     I(a_int, a) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*DIOtConductance)), "rs");
-    I(a_int, c) <+ white_noise(2*(VACONSTcharge*DIOcurrent), "id");
-    I(a_int, c) <+ flicker_noise(kf*exp(af*ln(((abs(DIOcurrent)>1E-38) ? (abs(DIOcurrent)) : (1E-38)))), 1, "flicker");
+    I(a_int, c) <+ white_noise(2*(VACONSTcharge*DIOdcCurrent), "id");
+    I(a_int, c) <+ flicker_noise(kf*exp(af*ln(((abs(DIOdcCurrent)>1E-38) ? (abs(DIOdcCurrent)) : (1E-38)))), 1, "flicker");
 
     // Instance opvar computation
     vd = DIOvoltage;
-    id = DIOcurrent;
     gd = DIOconduct;
     cd = DIOcap;
     charge = DIOcapCharge;
-    capcur = DIOcapCurrent;
-    p = DIOcurrent*DIOvoltage+DIOcurrent*DIOcurrent/DIOtConductance;
 
     // Model opvar computation
 

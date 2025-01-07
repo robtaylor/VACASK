@@ -300,7 +300,7 @@ module bsim3(d, g, s, b);
         integer il;
         begin
             // TODO: check if first iteration is 1 or 0 (in some other simulator)
-            il = $simparam("initializeLimiting", -1);
+            il = $simparam("iniLim", -1);
             initialize_limiting = (il>0) || (
                 il<0 &&
                 $simparam("iteration", 10)==1 && 

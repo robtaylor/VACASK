@@ -69,7 +69,7 @@ module simdio(A,C);
             //   analysis("static")  ... all OP analyses, even the ones that are part of other analysis (ac, tran ...)
             //   analysis("nodeset") ... part when nodesets are applied (first op_nsiter iterations)
             //   "dc" implies "static", but opposite is not true
-            il = $simparam("initializeLimitingx", -1);
+            il = $simparam("iniLim", -1);
             init = (il>0) || (
                 il<0 &&
                 $simparam("iteration", 10)==1 && 

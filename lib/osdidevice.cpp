@@ -481,6 +481,7 @@ bool OsdiDevice::converged(Circuit& circuit, ConvSetup& convSetup) {
 }
 
 const char* OsdiDevice::simParamNames[] = {
+    "iniLim",  
     "gmin", // minimum conductance to place in parallel with nonlinear branches (simulator gmin)
     "gdev", // extra conductance in parallel with nonlinear branches during homotopy
     "tnom", 
@@ -490,7 +491,6 @@ const char* OsdiDevice::simParamNames[] = {
     "simulatorVersion", 
     "simulatorSubversion", 
     "sourceScaleFactor",
-    "initializeLimiting",  
     "reltol", 
     "vntol", 
     "abstol", 
@@ -530,21 +530,21 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
     // simParasSizes() reports the reuired size of these two arrays
     double* simParamValues = dblArray; 
     
+    simParamValues[0] = 0; // iniLim
     // Because most Verilog-A devices use only gmin, we set it to internals gmin+gdev
     // Those that implement this properly will actually use 2x gdev when gdev!=0
-    simParamValues[0] = internals.gmin + internals.gdev; 
-    simParamValues[1] = internals.gdev; 
+    simParamValues[1] = internals.gmin + internals.gdev; 
+    simParamValues[2] = internals.gdev; 
     // $simparam(tnom) should return the tnom value given by options (in C)
     // No conversion needed. 
-    simParamValues[2] = opt.tnom;
-    simParamValues[3] = opt.minr;
-    simParamValues[4] = opt.scale;
-    simParamValues[5] = internals.iteration;
-    simParamValues[6] = Simulator::majorVersion;
-    simParamValues[7] = Simulator::minorVersion;
-    simParamValues[8] = internals.sourcescalefactor;
-    simParamValues[9] = 0; // initializeLimiting
-
+    simParamValues[3] = opt.tnom;
+    simParamValues[4] = opt.minr;
+    simParamValues[5] = opt.scale;
+    simParamValues[6] = internals.iteration;
+    simParamValues[7] = Simulator::majorVersion;
+    simParamValues[8] = Simulator::minorVersion;
+    simParamValues[9] = internals.sourcescalefactor;
+    
     simParamValues[10] = opt.reltol;
     simParamValues[11] = opt.vntol;
     simParamValues[12] = opt.abstol;
@@ -565,7 +565,7 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
 }
 
 void OsdiDevice::updateSimInfo(OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
-    simInfo.paras.vals[9] = evalSetup.initializeLimiting ? 1 : 0;
+    simInfo.paras.vals[0] = evalSetup.initializeLimiting ? 1 : 0;
 }
 
 bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s) const {

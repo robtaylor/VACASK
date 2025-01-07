@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-330-g5a440b763
+// Version      : ngspice-42-331-g94888700f
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-03 21:30:43 UTC
+// Date         : 2025-01-07 12:19:50 UTC
 // Module name  : sp_capacitor
 // 
 // Notes:
@@ -24,11 +24,11 @@
 //   need them comment out the appropriate section of config and rebuild 
 //   the model.
 //
-//   This model exposes opvars that can lead to creation of
-//   implicit equations by OpenVAF.
-//
 //   Simplified noise model used (ignores capacitive current).
 //   Appropriate only for small-signal noise analysis.
+//
+// SPICE variable mapping
+//   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
@@ -163,6 +163,7 @@ module sp_capacitor(pos, neg);
   real VACONSTcharge = 1.6021766208e-19;
   real VACONSTboltz = 1.38064852e-23;
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
+  real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
 
@@ -181,7 +182,7 @@ module sp_capacitor(pos, neg);
       CAPtempGiven = 1;
     end
     if ($param_given(w)) begin
-      CAPwidth = w*scale;
+      CAPwidth = w*cpscale;
       CAPwidthGiven = 1;
     end
     if ($param_given(bv_max)) begin

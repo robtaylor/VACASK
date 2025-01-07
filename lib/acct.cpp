@@ -94,6 +94,7 @@ void Accounting::dumpDevTimes(int indent, std::ostream& os, Circuit& circuit) co
         if (devEvalLoadCalls[nn-1]!=0) {
             os << "\n" << pfx << "  overhead" << "  t=" << devEvalLoadTimes[nn-1] << " n=" << devEvalLoadCalls[nn-1] 
                << " t/n=" << devEvalLoadTimes[nn-1]/devEvalLoadCalls[nn-1];
+            os << "\n";
         }
     }
 }
