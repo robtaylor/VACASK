@@ -708,6 +708,10 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
     for(decltype(n) i=0; i<n; i++) {
         // Get representative node (1-based index) and nature index
         auto rn = circuit.reprNode(i+1);
+        // Skip internal device nodes
+        if (rn->checkFlags(Node::Flags::InternalDeviceNode)) {
+            continue;
+        }
         bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
         size_t ndx = isPotential ? 1 : 0;
         // Loop through all timepoints
