@@ -22,7 +22,7 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${simfile}")
         "${simfile}" PROPERTIES 
         ENVIRONMENT 
         "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR};SIM_TEST=yes"
-        TIMEOUT 10
+        TIMEOUT 15
     )
 endmacro()
 

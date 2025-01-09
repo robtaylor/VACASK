@@ -892,10 +892,6 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
     for(decltype(n) i=1; i<=n; i++) {
         double c = std::fabs(maxResidualContribution_[i]);
         auto rn = circuit.reprNode(i);
-        // Skip internal device nodes
-        if (rn->checkFlags(Node::Flags::InternalDeviceNode)) {
-            continue;
-        }
         bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
         size_t ndx = isPotential ? 1 : 0;
         if (c>pointMaxResidualContribution_[ndx]) {
@@ -907,6 +903,10 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
     for(decltype(n) i=1; i<=n; i++) {
         // Representative node, associated flow nature index
         auto rn = circuit.reprNode(i);
+        // Skip internal device nodes
+        if (rn->checkFlags(Node::Flags::InternalDeviceNode)) {
+            continue;
+        }
         bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
         size_t ndx = isPotential ? 1 : 0;
 

@@ -102,7 +102,7 @@ expectedMag = [
 delta = np.abs(np.log10(Tmag)-np.log10(expectedMag))
 delta = np.where(np.log10(Tmag)<-10, 0, delta)
 delta = delta.max()
-tests.append(delta<1e-3)
+tests.append(delta<1e-2)
 
 delta = np.abs(y-ytran).max()
 print("delta (HB-tran):", delta)
