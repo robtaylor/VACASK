@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-331-g94888700f
+// Version      : ngspice-42-331-g4f402feb1
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-07 12:20:16 UTC
+// Date         : 2025-01-09 10:48:05 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -36,9 +36,9 @@
 // CKTcircuit member mapping
 //    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//      CKTtemp -> (None, '$temperature')
 //    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   dio/diodefs.h
@@ -208,17 +208,12 @@ module sp_diode(a, c);
   real DIOtTransitTime;
   real DIOtGradingCoeff;
   real DIOtConductance;
-  real DIOtConductance_dT;
   real DIOtDepCap;
   real DIOtDepSWCap;
   real DIOtSatCur;
-  real DIOtSatCur_dT;
   real DIOtSatSWCur;
-  real DIOtSatSWCur_dT;
   real DIOtTunSatCur;
-  real DIOtTunSatCur_dT;
   real DIOtTunSatSWCur;
-  real DIOtTunSatSWCur_dT;
   real DIOtVcrit;
   real DIOtF1;
   real DIOtBrkdwnV;
@@ -231,13 +226,7 @@ module sp_diode(a, c);
   real DIOjunctionCap;
   real DIOjunctionSWCap;
   real DIOtRecSatCur;
-  real DIOtRecSatCur_dT;
-  real DIOdIth_dVrs;
-  real DIOdIth_dVdio;
-  real DIOdIth_dT;
   real DIOgcTt;
-  real DIOdIrs_dT;
-  real i_DIOdIdio_dT;
   real DIOcmetal;
   real DIOcpoly;
   real DIOdcCurrent;
@@ -263,9 +252,6 @@ module sp_diode(a, c);
   real DIOconduct;
   real DIOcapCharge;
   real DIOcapCurrent;
-  real DIOdeltemp;
-  real DIOdIdio_dT;
-  real DIOsensxp;
 
   // Device setup locals
   real scale;
@@ -305,16 +291,9 @@ module sp_diode(a, c);
   real egfet;
   real gmanew;
   real gmaSWnew;
-  real arg1_dT;
   real arg2;
-  real arg2_dT;
   real lnTRatio;
-  real egfet_dT;
   real arg0;
-  real vte_dT;
-  real vts_dT;
-  real vtt_dT;
-  real vtr_dT;
 
   // Device load locals
   integer limited;
@@ -324,10 +303,7 @@ module sp_diode(a, c);
   real load_cd;
   real cdb;
   real cdsw;
-  real cdb_dT;
-  real cdsw_dT;
   real cdeq;
-  real cdhat;
   real ceq;
   real csat;
   real csatsw;
@@ -353,7 +329,6 @@ module sp_diode(a, c);
   real evd_rec;
   real cdb_rec;
   real gdb_rec;
-  real cdb_rec_dT;
   real geq;
   real gspr;
   real sarg;
@@ -364,37 +339,23 @@ module sp_diode(a, c);
   real vtesw;
   real vtetun;
   real vtebrk;
-  integer Check_th;
   real diffcharge;
   real deplcharge;
   real deplchargeSW;
   real diffcap;
   real deplcap;
   real deplcapSW;
-  real deldelTemp;
   real delTemp;
   real Temp;
   real ceqqth;
   real Ith;
   real gcTt;
   real vrs;
-  real dIdio_dT;
   real dIth_dVdio;
-  real dIrs_dT;
   real dIth_dVrs;
-  real dIth_dT;
-  real argsw_dT;
-  real csat_dT;
-  real csatsw_dT;
-  real evrev_dT;
   real vterec;
-  real darg_dT;
-  real load1_evrev_dT;
 
   // Device noise locals
-  real tempOnoise;
-  real tempInoise;
-  integer i;
   real noise_dtemp;
 
   // Global constants
@@ -405,8 +366,8 @@ module sp_diode(a, c);
   real VACONSTcharge = 1.6021766208e-19;
   real VACONSTboltz = 1.38064852e-23;
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
-  real epsmin = $simparam("epsmin", 1e-28);
   real reltol = $simparam("reltol", 1e-3);
+  real epsmin = $simparam("epsmin", 1e-28);
   real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
@@ -635,16 +596,11 @@ module sp_diode(a, c);
     if (!DIOtempGiven) begin
       DIOtemp = $temperature+dtemp;
     end
-    egfet_dT = 0.0;
     vt = CONSTKoverQ*DIOtemp;
     vte = n*vt;
-    vte_dT = CONSTKoverQ*n;
     vts = ns*vt;
-    vts_dT = CONSTKoverQ*ns;
     vtt = ntun*vt;
-    vtt_dT = CONSTKoverQ*ntun;
     vtr = nr*vt;
-    vtr_dT = CONSTKoverQ*nr;
     vtnom = CONSTKoverQ*DIOnomTemp;
     dt = DIOtemp-DIOnomTemp;
     lnTRatio = ln(DIOtemp/DIOnomTemp);
@@ -655,7 +611,6 @@ module sp_diode(a, c);
       egfet1 = 1.16-7.02e-4*DIOnomTemp*DIOnomTemp/(DIOnomTemp+1108);
     end else begin
       egfet = DIOactivationEnergy-gap1*DIOtemp*DIOtemp/(DIOtemp+gap2);
-      egfet_dT = gap1*DIOtemp*DIOtemp/((DIOtemp+gap2)*(DIOtemp+gap2))-2*gap1*DIOtemp/(DIOtemp+gap2);
       egfet1 = DIOactivationEnergy-gap1*DIOnomTemp*DIOnomTemp/(DIOnomTemp+gap2);
     end
     fact2 = DIOtemp/(27.0+273.15);
@@ -692,62 +647,36 @@ module sp_diode(a, c);
     end
     if (tlev==0||tlev==1) begin
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vte;
-      arg1_dT = DIOactivationEnergy/(vte*DIOnomTemp)-DIOactivationEnergy*(DIOtemp/DIOnomTemp-1)/(vte*DIOtemp);
       arg2 = xti/n*lnTRatio;
-      arg2_dT = xti/n/DIOtemp;
       DIOtSatCur = DIOsatCur*DIOarea*exp(arg1+arg2);
-      DIOtSatCur_dT = DIOtSatCur*(arg1_dT+arg2_dT);
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vts;
-      arg1_dT = DIOactivationEnergy/(vts*DIOnomTemp)-DIOactivationEnergy*(DIOtemp/DIOnomTemp-1)/(vts*DIOtemp);
       arg2 = xti/ns*lnTRatio;
-      arg2_dT = xti/ns/DIOtemp;
       DIOtSatSWCur = jsw*DIOpj*exp(arg1+arg2);
-      DIOtSatSWCur_dT = DIOtSatSWCur*(arg1_dT+arg2_dT);
       arg1 = (DIOtemp/DIOnomTemp-1)*keg*DIOactivationEnergy/vtt;
-      arg1_dT = keg*DIOactivationEnergy/(vtt*DIOnomTemp)-DIOactivationEnergy*(DIOtemp/DIOnomTemp-1)/(vtt*DIOtemp);
       arg2 = xtitun/ntun*lnTRatio;
-      arg2_dT = xtitun/ntun/DIOtemp;
       DIOtTunSatCur = jtun*DIOarea*exp(arg1+arg2);
-      DIOtTunSatCur_dT = DIOtTunSatCur*(arg1_dT+arg2_dT);
       DIOtTunSatSWCur = jtunsw*DIOpj*exp(arg1+arg2);
-      DIOtTunSatSWCur_dT = DIOtTunSatSWCur*(arg1_dT+arg2_dT);
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vtr;
-      arg1_dT = DIOactivationEnergy/(vtr*DIOnomTemp)-DIOactivationEnergy*(DIOtemp/DIOnomTemp-1)/(vtr*DIOtemp);
       arg2 = xti/nr*lnTRatio;
-      arg2_dT = xti/nr/DIOtemp;
       DIOtRecSatCur = isr*DIOarea*exp(arg1+arg2);
-      DIOtRecSatCur_dT = DIOtRecSatCur*(arg1_dT+arg2_dT);
     end else begin
       arg0 = egfet1/(n*vtnom);
       arg1 = egfet/vte;
-      arg1_dT = (egfet_dT*vte-egfet*vte_dT)/(egfet*egfet);
       arg2 = xti/n*lnTRatio;
-      arg2_dT = xti/n/DIOtemp;
       DIOtSatCur = DIOsatCur*DIOarea*exp(arg0-arg1+arg2);
-      DIOtSatCur_dT = DIOtSatCur*(-arg1_dT+arg2_dT);
       arg0 = egfet1/(ns*vtnom);
       arg1 = egfet/vts;
-      arg1_dT = (egfet_dT*vts-egfet*vts_dT)/(egfet*egfet);
       arg2 = xti/ns*lnTRatio;
-      arg2_dT = xti/ns/DIOtemp;
       DIOtSatSWCur = jsw*DIOpj*exp(arg0-arg1+arg2);
-      DIOtSatSWCur_dT = DIOtSatSWCur*(-arg1_dT+arg2_dT);
       arg0 = keg*egfet1/(ntun*vtnom);
       arg1 = keg*egfet/vtt;
-      arg1_dT = keg*(egfet_dT*vtt-egfet*vtt_dT)/(egfet*egfet);
       arg2 = xtitun/ntun*lnTRatio;
-      arg2_dT = xtitun/ntun/DIOtemp;
       DIOtTunSatCur = jtun*DIOarea*exp(arg0-arg1+arg2);
-      DIOtTunSatCur_dT = DIOtTunSatCur*(-arg1_dT+arg2_dT);
       DIOtTunSatSWCur = jtunsw*DIOpj*exp(arg0-arg1+arg2);
-      DIOtTunSatSWCur_dT = DIOtTunSatSWCur*(-arg1_dT+arg2_dT);
       arg0 = egfet1/(nr*vtnom);
       arg1 = egfet/vtr;
-      arg1_dT = (egfet_dT*vtr-egfet*vtr_dT)/(egfet*egfet);
       arg2 = xti/nr*lnTRatio;
-      arg2_dT = xti/nr/DIOtemp;
       DIOtRecSatCur = isr*DIOarea*exp(arg0-arg1+arg2);
-      DIOtRecSatCur_dT = DIOtRecSatCur*(-arg1_dT+arg2_dT);
     end
     xfc = ln(1-fc);
     xfcs = ln(1-fcs);
@@ -904,7 +833,6 @@ module sp_diode(a, c);
     if ($param_given(rs)&&rs!=0.0) begin
       factor = 1.0+trs*dt+trs2*dt*dt;
       DIOtConductance = DIOconductance*DIOarea/factor;
-      DIOtConductance_dT = -DIOconductance*DIOarea*(trs+trs2*dt)/(factor*factor);
     end
     DIOtF2 = exp((1+DIOtGradingCoeff)*xfc);
     DIOtF3 = 1-fc*(1+DIOtGradingCoeff);
@@ -917,12 +845,8 @@ module sp_diode(a, c);
     gcTt = 0.0;
     vrs = 0.0;
     dIth_dVdio = 0.0;
-    dIrs_dT = 0.0;
     dIth_dVrs = 0.0;
-    dIth_dT = 0.0;
-    Check_th = 0;
     cdsw = 0.0;
-    cdsw_dT = 0.0;
     gdsw = 0.0;
     delTemp = 0.0;
     load_vt = CONSTKoverQ*DIOtemp;
@@ -934,8 +858,6 @@ module sp_diode(a, c);
     load_vd = V(a_int, c);
     delTemp = 0.0;
     delvd = load_vd-DIOvoltage;
-    deldelTemp = delTemp-DIOdeltemp;
-    cdhat = DIOcurrent+DIOconduct*delvd+DIOdIdio_dT*deldelTemp;
     if ($param_given(bv)&&load_vd<((0<-DIOtBrkdwnV+10*vtebrk) ? (0) : (-DIOtBrkdwnV+10*vtebrk))) begin
       vdtemp = -(load_vd+DIOtBrkdwnV);
       vdtemp = DEVpnjlim(vdtemp, -(DIOvoltage+DIOtBrkdwnV), vtebrk, DIOtVcrit, limited);
@@ -950,9 +872,7 @@ module sp_diode(a, c);
     load_vd = $limit(V(a_int,c), DEVlimitNewSet, load_vd, limited);
     Temp = DIOtemp;
     csat = DIOtSatCur;
-    csat_dT = DIOtSatCur_dT;
     csatsw = DIOtSatSWCur;
-    csatsw_dT = DIOtSatSWCur_dT;
     gspr = DIOtConductance;
     if ($param_given(jsw)) begin
       if ($param_given(ns)) begin
@@ -961,40 +881,31 @@ module sp_diode(a, c);
           evd = exp(load_vd/vtesw);
           cdsw = csatsw*(evd-1);
           gdsw = csatsw*evd/vtesw;
-          cdsw_dT = csatsw_dT*(evd-1)-csatsw*load_vd*evd/(vtesw*Temp);
         end else begin
           if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
             argsw = 3*vtesw/(load_vd*CONSTe);
             argsw = argsw*argsw*argsw;
-            argsw_dT = 3*argsw/Temp;
             cdsw = -csatsw*(1+argsw);
             gdsw = csatsw*3*argsw/load_vd;
-            cdsw_dT = -csatsw_dT-(csatsw_dT*argsw+csatsw*argsw_dT);
           end else begin
             evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
-            evrev_dT = (DIOtBrkdwnV+load_vd)*evrev/(vtebrk*Temp);
             cdsw = -csatsw*evrev;
             gdsw = csatsw*evrev/vtebrk;
-            cdsw_dT = -(csatsw_dT*evrev+csatsw*evrev_dT);
           end
         end
       end else begin
         csat = csat+csatsw;
-        csat_dT = csat_dT+csatsw_dT;
-        cdsw_dT = 0.0;
       end
     end
     if (load_vd>=-3*load_vte) begin
       evd = exp(load_vd/load_vte);
       cdb = csat*(evd-1);
       gdb = csat*evd/load_vte;
-      cdb_dT = csat_dT*(evd-1)-csat*load_vd*evd/(load_vte*Temp);
       if ($param_given(isr)) begin
         vterec = nr*load_vt;
         evd_rec = exp(load_vd/vterec);
         cdb_rec = DIOtRecSatCur*(evd_rec-1);
         gdb_rec = DIOtRecSatCur*evd_rec/vterec;
-        cdb_rec_dT = DIOtRecSatCur_dT*(evd_rec-1)-DIOtRecSatCur*load_vd*evd_rec/(vterec*Temp);
         t1 = pow(1-load_vd/DIOtJctPot, 2)+0.005;
         gen_fac = pow(t1, DIOtGradingCoeff/2);
         gen_fac_vd = -DIOtGradingCoeff*(1-load_vd/DIOtJctPot)*pow(t1, DIOtGradingCoeff/2-1);
@@ -1002,22 +913,17 @@ module sp_diode(a, c);
         gdb_rec = gdb_rec*gen_fac+cdb_rec*gen_fac_vd;
         cdb = cdb+cdb_rec;
         gdb = gdb+gdb_rec;
-        cdb_dT = cdb_dT+cdb_rec_dT*gen_fac;
       end
     end else begin
       if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
         load_arg = 3*load_vte/(load_vd*CONSTe);
         load_arg = load_arg*load_arg*load_arg;
-        darg_dT = 3*load_arg/Temp;
         cdb = -csat*(1+load_arg);
         gdb = csat*3*load_arg/load_vd;
-        cdb_dT = -csat_dT-(csat_dT*load_arg+csat*darg_dT);
       end else begin
         evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
-        load1_evrev_dT = (DIOtBrkdwnV+load_vd)*evrev/(vtebrk*Temp);
         cdb = -csat*evrev;
         gdb = csat*evrev/vtebrk;
-        cdb_dT = -(csat_dT*evrev+csat*load1_evrev_dT);
       end
     end
     if ($param_given(jtunsw)) begin
@@ -1025,18 +931,15 @@ module sp_diode(a, c);
       evd = exp(-load_vd/vtetun);
       cdsw = cdsw-DIOtTunSatSWCur*(evd-1);
       gdsw = gdsw+DIOtTunSatSWCur*evd/vtetun;
-      cdsw_dT = cdsw_dT-DIOtTunSatSWCur_dT*(evd-1)-DIOtTunSatSWCur*load_vd*evd/(vtetun*Temp);
     end
     if ($param_given(jtun)) begin
       vtetun = ntun*load_vt;
       evd = exp(-load_vd/vtetun);
       cdb = cdb-DIOtTunSatCur*(evd-1);
       gdb = gdb+DIOtTunSatCur*evd/vtetun;
-      cdb_dT = cdb_dT-DIOtTunSatCur_dT*(evd-1)-DIOtTunSatCur*load_vd*evd/(vtetun*Temp);
     end
     load_cd = cdb+cdsw;
     load_gd = gdb+gdsw;
-    dIdio_dT = cdb_dT+cdsw_dT;
     if (load_vd>=-3*load_vte) begin
       if (DIOforwardKneeCurrentGiven&&load_cd>1.0e-18) begin
         ikf_area_m = DIOforwardKneeCurrent;
@@ -1096,8 +999,6 @@ module sp_diode(a, c);
     DIOvoltage = load_vd;
     DIOcurrent = load_cd;
     DIOconduct = load_gd;
-    DIOdeltemp = delTemp;
-    DIOdIdio_dT = dIdio_dT;
     cdeq = load_cd;
     
     // Residuals
