@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-331-g4f402feb1
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-09 10:47:25 UTC
+// Version      : ngspice-44-11-g9693e304e
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
+// Date         : 2025-01-14 10:14:24 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -24,8 +24,8 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //      CKTtemp -> (None, '$temperature')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   res/resdefs.h

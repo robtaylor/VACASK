@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-42-331-g4f402feb1
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vad-simparam/tree/
-// Date         : 2025-01-09 10:48:05 UTC
+// Version      : ngspice-44-11-g9693e304e
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
+// Date         : 2025-01-14 10:14:38 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -34,9 +34,9 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
+//      CKTtemp -> (None, '$temperature')
 //    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
-//      CKTtemp -> (None, '$temperature')
 //    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
@@ -196,8 +196,6 @@ module sp_diode(a, c);
   // Instance fields
   integer DIOtempNode;
   real DIOcap;
-  real DIOareaParam;
-  real DIOpjParam;
   real DIOarea;
   real DIOpj;
   real DIOtemp;
@@ -460,10 +458,10 @@ module sp_diode(a, c);
       DIOtempGiven = 1;
     end
     if ($param_given(area)) begin
-      DIOareaParam = area;
+      DIOarea = area;
     end
     if ($param_given(pj)) begin
-      DIOpjParam = pj;
+      DIOpj = pj;
     end
 
     // Model field assignments
@@ -538,29 +536,25 @@ module sp_diode(a, c);
     end
     if (!$param_given(area)) begin
       if (!$param_given(w)&&!$param_given(l)) begin
-        DIOareaParam = model_area;
+        DIOarea = model_area;
       end else begin
-        DIOareaParam = 1;
+        DIOarea = 1;
       end
     end
     if (!$param_given(pj)) begin
       if (!$param_given(w)&&!$param_given(l)) begin
-        DIOpjParam = model_pj;
+        DIOpj = model_pj;
       end else begin
-        DIOpjParam = 0;
+        DIOpj = 0;
       end
     end
-    DIOarea = DIOareaParam;
-    DIOpj = DIOpjParam;
     DIOcmetal = 0.0;
     DIOcpoly = 0.0;
     if (level==3) begin
       if ($param_given(w)&&$param_given(l)) begin
-        DIOarea = (w+xw)*(l+xw);
-        DIOpj = 2*(w+xw)+2*(l+xw);
+        DIOarea = (w+xw)*(l+xw)*scale*scale;
+        DIOpj = (2*(w+xw)+2*(l+xw))*scale;
       end
-      DIOarea = DIOarea*scale*scale;
-      DIOpj = DIOpj*scale;
       if ($param_given(wm)) begin
         setup_wm = wm;
       end else begin
@@ -691,134 +685,134 @@ module sp_diode(a, c);
         tBreakdownVoltage = bv*(1-tcv*dt);
       end
       if (level==1) begin
-        cbv = $mfactor*ibv;
+        cbv = ibv;
       end else begin
         cbv = ibv*DIOarea;
       end
       if (cbv<DIOtSatCur*tBreakdownVoltage/vt) begin
         xbv = tBreakdownVoltage;
       end else begin
-        tol = reltol*cbv*$mfactor;
-        xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(1+cbv/(DIOtSatCur*$mfactor));
+        tol = reltol*cbv;
+        xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(1+cbv/DIOtSatCur);
         iter = 0;
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/(DIOtSatCur*$mfactor)+1-xbv/vt);
-          xcbv = DIOtSatCur*$mfactor*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
+          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           iter = iter+1;
         end
         if (!(abs(xcbv-cbv)<tol)) begin
@@ -994,8 +988,8 @@ module sp_diode(a, c);
     load_gd = load_gd+geq;
     DIOdcCurrent = load_cd;
     load_cd = load_cd+DIOcapCurrent;
-    load_gd = load_gd + gmin * (1.0/$mfactor - 1);
-    load_cd = load_cd + gmin * (1.0/$mfactor - 1) * load_vd;
+    load_gd = load_gd - gmin + gmin / $mfactor;
+    load_cd = load_cd - gmin * load_vd + gmin / $mfactor * load_vd;
     DIOvoltage = load_vd;
     DIOcurrent = load_cd;
     DIOconduct = load_gd;

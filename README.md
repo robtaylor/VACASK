@@ -57,17 +57,29 @@ The following device models are supplied with VACASK.
 |Current-controlled current source|cccs   |
 |Inductive coupling               |mutual |
 
-|Verilog-A device                 |Name     |
-|---------------------------------|---------|
-|Linear resistor                  |resistor |
-|Linear capacitor                 |capacitor|
-|Linear inductor                  |inductor |
-|SPICE diode                      |diode    |
-|BSIM3v3 MOSFET                   |bsim3    |
-|BSIM4v8 MOSFET                   |bsim4    |
-|BSIMBUKLK MOSFET 106.2.0         |bsimbulk |
+|Verilog-A device                 |Name/module |
+|---------------------------------|------------|
+|Linear resistor                  |resistor    |
+|Linear capacitor                 |capacitor   |
+|Linear inductor                  |inductor    |
+|SPICE diode                      |diode       |
+|BSIM3v3 MOSFET                   |bsim3       |
+|BSIM4v8 MOSFET                   |bsim4       |
+|BSIMBUKLK MOSFET 106.2.0         |bsimbulk    |
 
-Up to now VACASK development was not focused on assembling a library of device models. You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
+All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
+
+Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) whose aim is to create a converter from SPICE3 C model format to Verilog-A took off. At this point the following converted models are available in VACASK. 
+
+|Verilog-A device (SPICE)  |Name     |Module       |
+|--------------------------|---------|-------------|
+|Linear resistor           |resistor |sp_resistor  |
+|Linear capacitor          |capacitor|sp_capacitor |
+|Linear inductor           |inductor |sp_inductor  |
+|Diode (levels 1 and 3)    |diode    |sp_diode     |
+
+The converted SPICE models can be found in [devices/spice](devices/spice). 
+
 
 # Installation from pre-built packages
 [Pre-built packages](https://codeberg.org/arpadbuermen/VACASK/releases) for Linux (based on the stable version of Debian) and Windows are available. The OpenVAF-reloaded compiler is included in all binary packages. Linux users can choose between a .tgz archive and a .deb package. The Windows package is a .zip file that you can unpack wherever you want. It is recommended to add the `bin` directory to the system path. 
