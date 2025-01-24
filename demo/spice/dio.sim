@@ -1,0 +1,66 @@
+SPICE diode test
+
+load "spice/diode.osdi"
+load "resistor.osdi"
+
+model v vsource
+model d sp_diode rs=1.0 is=1e-9 tt=1e-6 cjo=50n bv=5 ibv=1e-6
+
+v1 (1 0) v dc=-6 type="dc" val0=1 val1=-1 delay=0.2u rise=1n
+d1 (1 0) d
+
+control
+  print devices
+  print device("sp_diode")
+  print instance("d1")
+
+  save p(d1,cd) p(d1,charge) default
+  sweep v1 instance="v1" parameter="dc" from=-5.5 to=0.8 step=0.01
+    analysis op1 op
+ 
+  alter instance("v1") type="pulse"
+  analysis tran1 tran step=0.1u stop=1u
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get()
+
+raw = rawread('tran1.raw')
+tran = raw.get()
+
+fig1, ax1 = plt.subplots(2, 2, figsize=(8,8), dpi=100)
+fig1.suptitle('Diode test')
+
+fig1.axes[0].set_title('Diode DC response')
+fig1.axes[0].plot(plot['1'], -plot['v1:flow(br)'])
+fig1.axes[0].set_ylabel('Id [A]')
+fig1.axes[0].set_xlabel('Vd [V]')
+
+fig1.axes[1].set_title('Diode capacitance')
+fig1.axes[1].semilogy(plot['1'], plot['d1.cd']*1e6)
+fig1.axes[1].set_ylabel('Cd [uF]')
+fig1.axes[1].set_xlabel('Vd [V]')
+
+fig1.axes[2].set_title('Diode reverse recovery')
+fig1.axes[2].plot(tran['time']*1e6, -tran['v1:flow(br)'], marker=".")
+fig1.axes[2].set_ylabel('Id [A]')
+fig1.axes[2].set_xlabel('time [us]')
+
+fig1.axes[3].set_title('Diode charge')
+fig1.axes[3].plot(plot['1'], plot['d1.charge']*1e6)
+fig1.axes[3].set_ylabel('Qd [uAs]')
+fig1.axes[3].set_xlabel('Vd [V]')
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+

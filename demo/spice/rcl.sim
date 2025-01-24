@@ -1,0 +1,43 @@
+RCL circuit with SPICE devices
+
+load "spice/resistor.osdi"
+load "spice/capacitor.osdi"
+load "spice/inductor.osdi"
+
+model res sp_resistor
+model cap sp_capacitor
+model ind sp_inductor
+model isrc isource
+
+l1 (1 0) ind l=1u 
+c1 (1 0) cap c=10p 
+r1 (1 0) res r=2k 
+
+i1 (0 1) isrc dc=0 type="pulse" val0=0 val1=10u delay=10n rise=0.1n fall=0.1n width=1n
+
+control
+  save default p('i1', i)
+  analysis tran1 tran step=0.1n stop=250n maxstep=0.1n
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt 
+
+plot = rawread('tran1.raw').get()
+
+fig1, ax1 = plt.subplots(2, 1)
+fig1.axes[0].set_title('Pulse and response')
+fig1.axes[0].set_ylabel('I [A]')
+fig1.axes[0].plot(plot['time']*1e6, plot['i1.i'])
+
+fig1.axes[1].set_ylabel('V [V]')
+fig1.axes[1].plot(plot['time']*1e6, plot['1'])
+fig1.axes[1].set_xlabel('time [us]')
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
