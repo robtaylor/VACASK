@@ -10,7 +10,7 @@ set(device_sources
     "spice/capacitor.va"
     "spice/inductor.va"
     "spice/diode.va"
-    #"spice/jfet.va"
+    "spice/jfet.va"
     #"spice/bjt.va"
 )
 
