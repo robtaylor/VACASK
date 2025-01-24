@@ -1,0 +1,75 @@
+SPICE JFET test
+
+load "spice/jfet.osdi"
+load "resistor.osdi"
+
+model v vsource
+model nf sp_jfet type=1 vt0=-4 beta=1m lambda=0.05 cgs=10p cgd=20p
+
+vgs (g 0) v dc=0
+vds (d 0) v dc=0
+j1 (d g 0) nf
+
+control
+  print devices
+  print device("sp_jfet")
+  print instance("j1")
+
+  save p(j1,gm) p(j1,cqgs) p(j1,cqgd) default
+  sweep vgs instance="vgs" parameter="dc" from=-4 to=0 step=1
+  sweep vds instance="vds" parameter="dc" from=0 to=5 step=0.1
+    analysis op1 op
+ 
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get()
+
+raw = rawread('op1.raw')
+plot = raw.get(sweeps=1)
+
+fig1, ax1 = plt.subplots(2, 2, figsize=(8,8), dpi=100)
+fig1.suptitle('N-JFET test')
+
+fig1.axes[0].set_title('DC response')
+fig1.axes[0].set_ylabel('Id [mA]')
+fig1.axes[0].set_xlabel('Vds [V]')
+
+fig1.axes[2].set_title('gm')
+fig1.axes[2].set_ylabel('gm [mS]')
+fig1.axes[2].set_xlabel('Vds [V]')
+
+fig1.axes[1].set_title('cgs')
+fig1.axes[1].set_ylabel('cgs [pF]')
+fig1.axes[1].set_xlabel('Vds [V]')
+
+fig1.axes[3].set_title('cgd')
+fig1.axes[3].set_ylabel('cgd [pF]')
+fig1.axes[3].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    fig1.axes[0].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    fig1.axes[2].plot(plot[ii, 'd'], plot[ii, 'j1.gm']*1e3, label=traceName)
+    fig1.axes[1].plot(plot[ii, 'd'], plot[ii, 'j1.cqgs']*1e12, label=traceName)
+    fig1.axes[3].plot(plot[ii, 'd'], plot[ii, 'j1.cqgd']*1e12, label=traceName)
+    
+fig1.axes[0].legend(loc='upper left')
+fig1.axes[2].legend(loc='upper left')
+fig1.axes[1].legend(loc='upper right')
+fig1.axes[3].legend(loc='upper right')
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+
