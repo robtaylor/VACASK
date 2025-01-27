@@ -151,6 +151,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     nonzeroReactiveResNdx.resize(descriptorCount);
     osdiIdPrimaryParamName.resize(descriptorCount);
     noiseSourceNames.resize(descriptorCount);
+    uniqueNoiseSourceIndices.resize(descriptorCount);
     noiseSourceNameTranslators.resize(descriptorCount);
     nodeNameLists.resize(descriptorCount);
     nodeMaps.resize(descriptorCount);
@@ -221,8 +222,19 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
             std::string tmp = desc->noise_sources[j].name;
             // Add lowercase noise source name to the list of noise source names and the translator
             toLowercase(tmp);
-            noiseSourceNames[i].push_back(tmp);
-            noiseSourceNameTranslators[i][Id(tmp)];
+            Id id = tmp;
+            noiseSourceNames[i].push_back(id);
+            size_t uniqueNdx;
+            if (noiseSourceNameTranslators[i].contains(id)) {
+                // Already there
+                uniqueNdx = noiseSourceNameTranslators[i][id];
+            } else {
+                // Not there yet
+                uniqueNdx = noiseSourceNameTranslators[i].size();
+                noiseSourceNameTranslators[i].insert({id, uniqueNdx});
+            }
+            // Store unique index
+            uniqueNoiseSourceIndices[i].push_back(uniqueNdx);
         }
         auto& nnList = nodeNameLists[i];
         auto& nodeMap = nodeMaps[i];

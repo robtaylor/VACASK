@@ -109,7 +109,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
                 }
                 // Find contrib
                 if (inst) {
-                    std::tie(contribIndex, found) = inst->noiseSourceIndex(contrib);
+                    std::tie(contribIndex, found) = inst->uniqueNoiseSourceIndex(contrib);
                     if (strict && !found) {
                         setError(NoiseError::ContribNotFound);
                         errorInstance = name;
@@ -504,6 +504,9 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         // Set total output noise to 0
         outputNoise = 0.0;
 
+        // Zero results vector
+        zero(results);
+
         // Go through all instances
         auto ndev = circuit.deviceCount();
         for(decltype(ndev) idev=0; idev<ndev; idev++) {
@@ -544,9 +547,15 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
                     double totalInstanceContribution = 0.0;
                     for(decltype(nSources) ndx=0; ndx<nSources; ndx++) {
                         auto contrib = inst->noiseSourceName(ndx);
-
+                        
+                        auto it = contributionOffset.find({name, contrib});
                         if (debug>1) {
-                            Simulator::dbg() << "    contribution '" << std::string(contrib) << "'\n";
+                            Simulator::dbg() << "    contribution '" << std::string(contrib) 
+                                             << "' psd=" << noiseDensity[ndx];
+                            if (it!=contributionOffset.end()) {
+                                Simulator::dbg() << " ndx=" << it->second;
+                            }
+                            Simulator::dbg() << "\n";
                         }
 
                         // Compute gain from noise source to output
@@ -590,11 +599,13 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
                         // std::cout << "src  = " << noiseDensity[ndx] << "\n";
                         // std::cout << "out  = " << instanceContribution << "\n";
 
-                        // Store instance contribution
-                        auto it = contributionOffset.find({name, contrib});
+                        // Add to source contribution
                         if (it!=contributionOffset.end()) {
                             // std::cout << "store: " << it->second << "\n";
-                            results[it->second] = sourceContribution;
+                            results[it->second] += sourceContribution;
+                            if (debug>1) {
+                                Simulator::dbg() << "      gain=" << gain << " total=" << results[it->second] << "\n";
+                            }
                         }
                     }
                     // End of noise sources loop
@@ -604,6 +615,9 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
                     if (it!=contributionOffset.end()) {
                         // std::cout << "store: " << it->second << "\n";
                         results[it->second] = totalInstanceContribution;
+                        if (debug>1) {
+                            Simulator::dbg() << "    instance total=" << results[it->second] << "\n";
+                        }
                     }
 
                     // Add to output noise

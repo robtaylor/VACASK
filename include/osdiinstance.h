@@ -67,8 +67,9 @@ public:
 
     // Noise API
     virtual ParameterIndex noiseSourceCount() const { return model()->device()->noiseSourceCount(); };
+    virtual ParameterIndex uniqueNoiseSourceCount() const { return model()->device()->uniqueNoiseSourceCount(); };
     virtual Id noiseSourceName(ParameterIndex ndx) const { return model()->device()->noiseSourceName(ndx); };
-    virtual std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return model()->device()->noiseSourceIndex(name); }
+    virtual std::tuple<ParameterIndex, bool> uniqueNoiseSourceIndex(Id name) const { return model()->device()->uniqueNoiseSourceIndex(name); }
     virtual std::tuple<EquationIndex, EquationIndex> noiseExcitation(Circuit& cir, ParameterIndex ndx) const;
     virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity);
 

@@ -210,11 +210,17 @@ public:
     // Number of noise sources
     inline ParameterIndex noiseSourceCount(OsdiDeviceIndex deviceIndex) const { return descriptors[deviceIndex]->num_noise_src; };
 
+    // Number of unique noise sources
+    inline ParameterIndex uniqueNoiseSourceCount(OsdiDeviceIndex deviceIndex) const { return noiseSourceNameTranslators[deviceIndex].size(); };
+
     // Noise source name
     inline Id noiseSourceName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const { return noiseSourceNames[deviceIndex][ndx]; }; 
 
-    // Noise source index
-    inline std::tuple<ParameterIndex, bool> noiseSourceIndex(OsdiDeviceIndex deviceIndex, Id name) const {
+    // Unique noise source index from noise source index
+    inline size_t uniqueNoiseSourceIndex(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const { return uniqueNoiseSourceIndices[deviceIndex][ndx]; }; 
+
+    // Uniquie noise source index from noise source name
+    inline std::tuple<ParameterIndex, bool> uniqueNoiseSourceIndex(OsdiDeviceIndex deviceIndex, Id name) const {
         auto it = noiseSourceNameTranslators[deviceIndex].find(name);
         if (it==noiseSourceNameTranslators[deviceIndex].end()) {
             return std::make_tuple(0, false);
@@ -276,9 +282,13 @@ private:
     std::vector<std::vector<ParameterIndex>> osdiIdSimModIdLists;
 
     // Vector of vectors of noise source names
+    // Same name can appear multiple times in a single device
     std::vector<std::vector<Id>> noiseSourceNames;
+    
+    // Vector of vectors of unique noise source indices, one for each noise source
+    std::vector<std::vector<size_t>> uniqueNoiseSourceIndices;
 
-    // Vector of maps from noise source name to noise source index
+    // Vector of maps from noise source name to unique noise source index
     std::vector<std::unordered_map<Id, ParameterIndex>> noiseSourceNameTranslators;
 
     // Vector of vectors of node identifiers

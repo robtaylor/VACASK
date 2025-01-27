@@ -155,11 +155,17 @@ public:
     // Number of noise sources
     inline ParameterIndex noiseSourceCount() const { return osdiFile->noiseSourceCount(index_); };
 
+    // Number of unique noise sources
+    inline ParameterIndex uniqueNoiseSourceCount() const { return osdiFile->uniqueNoiseSourceCount(index_); };
+
     // Noise source name
     inline Id noiseSourceName(ParameterIndex ndx) const { return osdiFile->noiseSourceName(index_, ndx); }; 
 
+    // Unique noise source index from noise source index
+    inline size_t uniqueNoiseSourceIndex(ParameterIndex ndx) const { return osdiFile->uniqueNoiseSourceIndex(index_, ndx); }; 
+
     // Noise source index
-    inline std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return osdiFile->noiseSourceIndex(index_, name); };
+    inline std::tuple<ParameterIndex, bool> uniqueNoiseSourceIndex(Id name) const { return osdiFile->uniqueNoiseSourceIndex(index_, name); };
 
     // Access to nonzero entry indices
     auto& nonzeroResistiveResiduals() { return osdiFile->nonzeroResistiveResiduals(index_); };

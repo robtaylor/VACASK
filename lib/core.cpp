@@ -284,6 +284,7 @@ bool AnalysisCore::addAllNoiseContribInst(const PTSave& save, bool details) {
                 auto name = std::string("n(")+std::string(objName)+")";
                 addOutputDescriptor(OutputDescriptor(OutdNoiseContribInst, name, objName, Id()));
                 // Go through all entries
+                // If two entries have the same name, create only one output descriptor
                 if (details) {
                     for(ParameterIndex i=0; i<inst->noiseSourceCount(); i++) {
                         auto contrib = inst->noiseSourceName(i);

@@ -521,8 +521,11 @@ public:
     
     // Noise API
     virtual ParameterIndex noiseSourceCount() const { return 0; };
+    virtual ParameterIndex uniqueNoiseSourceCount() const { return 0; };
     virtual Id noiseSourceName(ParameterIndex ndx) const { return Id(); };
-    virtual std::tuple<ParameterIndex, bool> noiseSourceIndex(Id name) const { return std::make_tuple(0, false); }
+    virtual std::tuple<ParameterIndex, bool> uniqueNoiseSourceIndex(ParameterIndex ndx) const { return std::make_tuple(0, false); };
+    virtual std::tuple<ParameterIndex, bool> uniqueNoiseSourceIndex(Id name) const { return std::make_tuple(0, false); };
+
     virtual std::tuple<EquationIndex, EquationIndex> noiseExcitation(Circuit& cir, ParameterIndex ndx) const { return std::make_tuple(0, 0); };
     virtual bool loadNoise(Circuit& circuit, double freq, double* noiseDensity) { return true; };
 
