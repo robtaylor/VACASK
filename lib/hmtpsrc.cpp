@@ -176,7 +176,7 @@ std::tuple<bool, bool> SourceStepping::run() {
     circuit.simulatorInternals().sourcescalefactor = 1.0;
 
     // Deallocate state storage
-    core.deallocateStateStorage(stateNdx);
+    core.deallocateStateStorage(1);
 
     return std::make_tuple(converged, leave);
 }

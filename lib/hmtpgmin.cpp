@@ -177,7 +177,7 @@ std::tuple<bool, bool> GminStepping::run() {
     }
 
     // Deallocate state storage
-    core.deallocateStateStorage(stateNdx);
+    core.deallocateStateStorage(1);
 
     return std::make_tuple(converged, leave);
 }
