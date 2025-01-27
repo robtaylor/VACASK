@@ -1,0 +1,55 @@
+SPICE JFET amplifier
+
+load "spice/jfet.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+model r resistor
+model c capacitor
+
+vdd (1 0) v dc=10
+rd (1 d) r r=2k
+j1 (d g 0) nf
+vin (in 0) v type="pulse" val0=-5 val1=0 delay=1n rise=0.1n fall=0.1n width=100n period=200n
+rin (in g) r r=100
+
+control
+  analysis tran1 tran step=0.01n stop=1000n
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('N-JFET inverter')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['d'])
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+

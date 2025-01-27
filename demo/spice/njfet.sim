@@ -34,24 +34,28 @@ plot = raw.get()
 raw = rawread('op1.raw')
 plot = raw.get(sweeps=1)
 
-fig1, ax1 = plt.subplots(2, 2, figsize=(8,8), dpi=100)
+fig1 = plt.figure(figsize=(8,8), dpi=100)
 fig1.suptitle('N-JFET test')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+""")
 
-fig1.axes[0].set_title('DC response')
-fig1.axes[0].set_ylabel('Id [mA]')
-fig1.axes[0].set_xlabel('Vds [V]')
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
 
-fig1.axes[2].set_title('gm')
-fig1.axes[2].set_ylabel('gm [mS]')
-fig1.axes[2].set_xlabel('Vds [V]')
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
 
-fig1.axes[1].set_title('cgs')
-fig1.axes[1].set_ylabel('cgs [pF]')
-fig1.axes[1].set_xlabel('Vds [V]')
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
 
-fig1.axes[3].set_title('cgd')
-fig1.axes[3].set_ylabel('cgd [pF]')
-fig1.axes[3].set_xlabel('Vds [V]')
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
 
 for ii in range(plot.sweepGroups):
     sdata = plot.sweepData(ii)
