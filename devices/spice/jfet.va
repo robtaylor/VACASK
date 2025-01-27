@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-11-g9693e304e
+// Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-01-23 12:11:28 UTC
+// Date         : 2025-01-27 14:40:29 UTC
 // Module name  : sp_jfet
 // 
 // Notes:
@@ -97,7 +97,7 @@ module sp_jfet(d, g, s);
   (* desc = "Instance temperature difference", type = "instance" *) parameter real dtemp = 0.0;
 
   // Model parameters
-  (* desc = "N-type (1) or P-type (-1)" *) parameter integer type = 0;
+  (* desc = "N-type (1) or P-type (-1)" *) parameter integer type = 1;
   (* desc = "Threshold voltage" *) parameter real vt0 = 0;
   aliasparam vto = vt0;
   (* desc = "Transconductance parameter" *) parameter real beta = 0.0001;
@@ -212,7 +212,6 @@ module sp_jfet(d, g, s);
   real capgd;
   real capgs;
   real cd;
-  real cdhat;
   real cdrain;
   real cdreq;
   real ceq;
@@ -220,15 +219,11 @@ module sp_jfet(d, g, s);
   real ceqgs;
   real cg;
   real load_cgd;
-  real cghat;
   real csat;
   real czgd;
   real czgdf2;
   real czgs;
   real czgsf2;
-  real delvds;
-  real delvgd;
-  real delvgs;
   real evgd;
   real evgs;
   real fcpb2;
@@ -255,9 +250,6 @@ module sp_jfet(d, g, s);
   real vt_temp;
 
   // Device noise locals
-  real tempOnoise;
-  real tempInoise;
-  integer i;
   real noise_vgs;
   real noise_vds;
   real noise_vgst;
@@ -430,6 +422,7 @@ module sp_jfet(d, g, s);
     end
 
     // Model field assignments
+    JFETtype = type;
     if ($param_given(vt0)) begin
       JFETthreshold = vt0;
     end
@@ -540,8 +533,6 @@ module sp_jfet(d, g, s);
     end
 
     // Tag: load, function: JFETload
-    cdhat = 0.0;
-    cghat = 0.0;
     load_beta = JFETtBeta*area;
     gdpr = JFETdrainConduct*area;
     gspr = JFETsourceConduct*area;
@@ -551,11 +542,6 @@ module sp_jfet(d, g, s);
     JFETvgd = JFETtype * $limit(V(g, d_int), DEVlimitOldGet);
     load_vgs = JFETtype*V(g, s_int);
     load_vgd = JFETtype*V(g, d_int);
-    delvgs = load_vgs-JFETvgs;
-    delvgd = load_vgd-JFETvgd;
-    delvds = delvgs-delvgd;
-    cghat = JFETcg+JFETggd*delvgd+JFETggs*delvgs;
-    cdhat = JFETcd+JFETgm*delvgs+JFETgds*delvds-JFETggd*delvgd;
     load_vgs = DEVpnjlim(load_vgs, JFETvgs, JFETtemp*CONSTKoverQ, JFETvcrit, limited);
     load_vgd = DEVpnjlim(load_vgd, JFETvgd, JFETtemp*CONSTKoverQ, JFETvcrit, limited);
     load_vgs = DEVfetlim(load_vgs, JFETvgs, JFETtThreshold, limited);
@@ -700,9 +686,9 @@ module sp_jfet(d, g, s);
       noise_dtemp = dtemp;
     end
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*(JFETdrainConduct*area))), "rd");
-    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+dtemp)*(JFETsourceConduct*area))), "rs");
+    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*(JFETsourceConduct*area))), "rs");
     if (nlev<3) begin
-      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+dtemp)*(2.0/3.0*abs(JFETgm)))), "id");
+      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*(2.0/3.0*abs(JFETgm)))), "id");
     end else begin
       noise_vgs = JFETvgs;
       noise_vds = noise_vgs-JFETvgd;
@@ -713,7 +699,7 @@ module sp_jfet(d, g, s);
         alpha = 0;
       end
       noise_beta = JFETtBeta*area;
-      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+dtemp)*(2.0/3.0*noise_beta*noise_vgst*(1+alpha+alpha*alpha)/(1+alpha)*gdsnoi))), "id");
+      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*(2.0/3.0*noise_beta*noise_vgst*(1+alpha+alpha*alpha)/(1+alpha)*gdsnoi))), "id");
     end
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(JFETdcCurrent)>1E-38) ? (abs(JFETdcCurrent)) : (1E-38)))), 1, "flicker");
 

@@ -2,9 +2,9 @@
 // (c)2024 Arpad Buermen. All rights reserved.
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-11-g9693e304e
+// Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-01-14 10:14:32 UTC
+// Date         : 2025-01-27 13:18:14 UTC
 // Module name  : sp_inductor
 // 
 // Notes:
@@ -29,8 +29,8 @@
 //   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
-//      CKTtemp -> (None, '$temperature')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   ind/inddefs.h
@@ -186,6 +186,9 @@ module sp_inductor(pos, neg);
     if ($param_given(temp)) begin
       INDtemp = temp+273.15;
       INDtempGiven = 1;
+    end
+    if ($param_given(dtemp)) begin
+      INDdtemp = dtemp;
     end
 
     // Model field assignments

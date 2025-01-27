@@ -1,21 +1,21 @@
-SPICE N-JFET amplifier
+SPICE P-JFET amplifier
 
 load "spice/jfet.osdi"
 load "resistor.osdi"
 load "capacitor.osdi"
 
 model v vsource
-model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+model pf sp_jfet type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
 model r resistor
 model c capacitor
 
 vdd (1 0) v dc=10
-rd (1 d) r r=1.4k
-j1 (d g s) nf $mfactor=2 area=3
-rs (s 0) r r=1k
-rg (g 0) r r=1M
+rd (0 d) r r=1.4k
+j1 (d g s) pf $mfactor=2 area=3
+rs (s 1) r r=1k
+rg (g 1) r r=1M
 c1 (in g) c c=1u
-cblk (s 0) c c=100u
+cblk (s 1) c c=100u
 vin (in 0) v dc=0 mag=1 type="sine" ampl=10m freq=1k 
 
 control
@@ -30,7 +30,7 @@ control
   analysis ac1 ac from=0.1 to=1G mode="dec" points=50
   
   save full
-  options smsig_debug=10 // rawfile="ascii"
+  // options smsig_debug=10 // rawfile="ascii"
   analysis noise1 noise out=["d"] in="vin" from=1 to=1G mode="dec" points=50
  
   postprocess(PYTHON, "runme.py")
@@ -51,7 +51,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('N-JFET amplifier')
+fig1.suptitle('P-JFET amplifier')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD

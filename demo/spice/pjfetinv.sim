@@ -1,18 +1,18 @@
-SPICE N-JFET inverter
+SPICE P-JFET inverter
 
 load "spice/jfet.osdi"
 load "resistor.osdi"
 load "capacitor.osdi"
 
 model v vsource
-model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+model pf sp_jfet type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
 model r resistor
 model c capacitor
 
 vdd (1 0) v dc=10
-rd (1 d) r r=2k
-j1 (d g 0) nf $mfactor=2 area=3
-vin (in 0) v type="pulse" val0=-5 val1=0 delay=1n rise=0.1n fall=0.1n width=0.5u period=1u
+rd (0 d) r r=2k
+j1 (d g 1) pf $mfactor=2 area=3
+vin (in 0) v type="pulse" val0=10 val1=15 delay=1n rise=0.1n fall=0.1n width=0.5u period=1u
 rin (in g) r r=100
 
 control
@@ -31,7 +31,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(6,8), dpi=100)
-fig1.suptitle('N-JFET inverter')
+fig1.suptitle('P-JFET inverter')
 ax_dict = fig1.subplot_mosaic("""
 A
 B
