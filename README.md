@@ -77,8 +77,9 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 |Linear capacitor          |capacitor|sp_capacitor |
 |Linear inductor           |inductor |sp_inductor  |
 |Diode (levels 1 and 3)    |diode    |sp_diode     |
+|JFET level 1              |jfet     |sp_jfet      |
 
-The converted SPICE models can be found in [devices/spice](devices/spice). 
+The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage can be found in [demo/spice](demo/spice). 
 
 
 # Installation from pre-built packages
