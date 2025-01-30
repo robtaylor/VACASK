@@ -1,0 +1,46 @@
+Demonstration of SPICE inductors with builtin mutual inductance model
+
+load "resistor.osdi"
+load "spice/inductor.osdi"
+
+model resistor resistor
+model inductor sp_inductor
+model mutual mutual
+model vsource vsource
+model isource isource
+
+i1 (0 1) isource mag=1 type="sine" sinedc=0.0 ampl=0.5 freq=50.0
+l1 (1 0) inductor l=1m
+l2 (2 0) inductor l=4m 
+// Coupling is based on the inductor's flow node named 'flow(br)'. 
+// If it has a different name, use the ctlnode1 and ctlnode2 
+// parameters of mutual inductance. Their default value is 'flow(br)'. 
+m12 () mutual k=0.99 ind1="l1" ind2="l2"
+
+control
+  abort always
+
+  analysis tran1 tran step=0.02m stop=60m maxstep=0.1m
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt 
+
+tran1 = rawread('tran1.raw').get()
+
+t = tran1["time"]
+
+fig1, ax1 = plt.subplots(1, 1)
+fig1.axes[0].set_title('Mutual inductance (windings ratio 1:2)')
+fig1.axes[0].set_ylabel('V [V]')
+fig1.axes[0].set_xlabel('time [ms]')
+fig1.axes[0].plot(t*1000, tran1["1"], color="red", label="primary")
+fig1.axes[0].plot(t*1000, tran1["2"], color="blue", label="secondary")
+fig1.axes[0].legend(loc='upper right')
+plt.show()
+
+>>>FILE
