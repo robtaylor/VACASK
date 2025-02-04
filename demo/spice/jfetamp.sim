@@ -1,0 +1,190 @@
+SPICE JFET amplifier
+
+load "spice/jfet.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+
+subckt namp()
+  model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  vdd (1 0) v dc=10
+  rd (1 d) r r=1.4k
+  j1 (d g s) nf $mfactor=2 area=3
+  rs (s 0) r r=1k
+  rg (g 0) r r=1M
+  c1 (in g) c c=1u
+  cblk (s 0) c c=100u
+  vin (in 0) v dc=0 mag=1 type="sine" ampl=10m freq=1k 
+ends
+
+subckt pamp()
+  model pf sp_jfet type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  vdd (1 0) v dc=10
+  rd (0 d) r r=1.4k
+  j1 (d g s) pf $mfactor=2 area=3
+  rs (s 1) r r=1k
+  rg (g 1) r r=1M
+  c1 (in g) c c=1u
+  cblk (s 1) c c=100u
+  vin (in 0) v dc=0 mag=1 type="sine" ampl=10m freq=1k 
+ends
+
+control
+  elaborate circuit("namp")
+  clear saves
+  save default p(j1,gm)
+  analysis op1 op
+
+  clear saves
+  analysis tran1 tran step=0.01m stop=8m
+
+  analysis ac1 ac from=0.1 to=1G mode="dec" points=50
+  
+  save full
+  options smsig_debug=0
+  analysis noise1 noise out=["d"] in="vin" from=1 to=1G mode="dec" points=50
+
+  
+  elaborate circuit("pamp")
+  clear saves
+  save default p(j1,gm)
+  analysis op2 op
+
+  clear saves
+  analysis tran2 tran step=0.01m stop=8m
+
+  analysis ac2 ac from=0.1 to=1G mode="dec" points=50
+  
+  save full
+  analysis noise2 noise out=["d"] in="vin" from=1 to=1G mode="dec" points=50
+  
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('op1.raw')
+plot = raw.get()
+for name in plot.names:
+    print(name, plot[name])
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('N-JFET amplifier')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+EE
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ms]')
+ax_dict["A"].plot(plot['time']*1e3, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ms]')
+ax_dict["B"].plot(plot['time']*1e3, plot['d'])
+
+raw = rawread('ac1.raw')
+plot = raw.get()
+h = plot['d']
+
+ax_dict["C"].set_title('Gain')
+ax_dict["C"].set_ylabel('gain [dB]')
+ax_dict["C"].set_xlabel('f [kHz]')
+ax_dict["C"].semilogx(np.real(plot['frequency'])/1e3, 20*np.log10(np.abs(h)))
+
+ax_dict["D"].set_title('Phase')
+ax_dict["D"].set_ylabel('phase [deg]')
+ax_dict["D"].set_xlabel('f [kHz]')
+ax_dict["D"].semilogx(np.real(plot['frequency'])/1e3, 180/np.pi*np.unwrap(np.angle(h)))
+
+raw = rawread('noise1.raw')
+plot = raw.get()
+print(plot.names)
+
+ax_dict["E"].set_title('Output noise')
+ax_dict["E"].set_ylabel('PSD [V^2/Hz]')
+ax_dict["E"].set_xlabel('f [kHz]')
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,flicker)'], label="J1,flicker")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,id)'], label="J1,Id")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,rs)'], label="J1,Rs")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,rd)'], label="J1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1)'], label="J1")
+ax_dict["E"].legend(loc='upper right')
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get()
+for name in plot.names:
+    print(name, plot[name])
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+fig2 = plt.figure(figsize=(8,8), dpi=100)
+fig2.suptitle('P-JFET amplifier')
+ax_dict = fig2.subplot_mosaic("""
+AC
+BD
+EE
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ms]')
+ax_dict["A"].plot(plot['time']*1e3, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ms]')
+ax_dict["B"].plot(plot['time']*1e3, plot['d'])
+
+raw = rawread('ac2.raw')
+plot = raw.get()
+h = plot['d']
+
+ax_dict["C"].set_title('Gain')
+ax_dict["C"].set_ylabel('gain [dB]')
+ax_dict["C"].set_xlabel('f [kHz]')
+ax_dict["C"].semilogx(np.real(plot['frequency'])/1e3, 20*np.log10(np.abs(h)))
+
+ax_dict["D"].set_title('Phase')
+ax_dict["D"].set_ylabel('phase [deg]')
+ax_dict["D"].set_xlabel('f [kHz]')
+ax_dict["D"].semilogx(np.real(plot['frequency'])/1e3, 180/np.pi*np.unwrap(np.angle(h)))
+
+raw = rawread('noise2.raw')
+plot = raw.get()
+print(plot.names)
+
+ax_dict["E"].set_title('Output noise')
+ax_dict["E"].set_ylabel('PSD [V^2/Hz]')
+ax_dict["E"].set_xlabel('f [kHz]')
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,flicker)'], label="J1,flicker")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,id)'], label="J1,Id")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,rs)'], label="J1,Rs")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1,rd)'], label="J1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(j1)'], label="J1")
+ax_dict["E"].legend(loc='upper right')
+
+fig2.tight_layout()
+
+plt.show()
+>>>FILE
+
+
