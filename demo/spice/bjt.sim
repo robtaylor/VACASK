@@ -1,0 +1,187 @@
+SPICE JFET test
+
+load "spice/bjt.osdi"
+load "resistor.osdi"
+
+model v vsource
+vbe (b 0) v dc=0
+vce (c 0) v dc=0
+  
+subckt ntest()
+  model t2n2222 sp_bjt (
+      type=1 subs=1 // npn, vertical
+      is=19f bf=150 vaf=100 ikf=0.18 ise=50p 
+      ne=2.5 br=7.5 var=6.4 ikr=12m isc=8.7p
+      nc=1.2 rb=50 re=0.4 rc=0.3 cje=26p tf=0.5n 
+      cjc=11p tr=7n xtb=1.5 kf=0.032f af=1
+  )
+  q1 (c b 0) t2n2222 $mfactor=2 area=3
+ends
+
+subckt ptest()
+  model t2n2907a sp_bjt (
+    type=-1 subs=1 // pnp, vertical
+    is=60.7f nf=1.00 bf=312 vaf=139 
+    ikf=0.219 ise=26.0p ne=2.00 br=4.00 nr=1.00 
+    var=20.0 ikr=0.540 re=85.8m rb=0.343 rc=34.3m 
+    xtb=1.5 cje=50.4p vje=1.10 mje=0.500 cjc=23.1p vjc=0.300 
+    mjc=0.300 tf=758p tr=123n eg=1.12 kf=0.032f af=1
+  )
+  q1 (c b 0) t2n2907a $mfactor=2 area=3
+ends
+
+control
+  print devices
+  print device("sp_bjt")
+  
+  save p(q1,gm) p(q1,gpi) p(q1,gmu) p(q1,go) p(q1,cpi) p(q1,cmu) default
+  
+  elaborate circuit("ntest")
+  print instance("q1")
+  sweep vbe instance="vbe" parameter="dc" from=0.6 to=0.8 step=0.05
+  sweep vce instance="vce" parameter="dc" from=0 to=2 step=0.01
+    analysis op1 op
+  
+  elaborate circuit("ptest")
+  print instance("q1")
+  sweep vbe instance="vbe" parameter="dc" from=-0.6 to=-0.8 step=-0.05
+  sweep vce instance="vce" parameter="dc" from=0 to=-2 step=-0.01
+    analysis op2 op
+ 
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get(sweeps=1)
+
+fig1 = plt.figure(figsize=(8,10), dpi=100)
+fig1.suptitle('NPN test')
+ax_dict = fig1.subplot_mosaic("""
+AB
+CD
+EF
+GH
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Ic [mA]')
+ax_dict["A"].set_xlabel('Vce [V]')
+
+ax_dict["B"].set_title('DC response')
+ax_dict["B"].set_ylabel('Ib [uA]')
+ax_dict["B"].set_xlabel('Vbe [V]')
+
+ax_dict["C"].set_title('gm')
+ax_dict["C"].set_ylabel('gm [mS]')
+ax_dict["C"].set_xlabel('Vce [V]')
+
+ax_dict["D"].set_title('gpi')
+ax_dict["D"].set_ylabel('gpi [mS]')
+ax_dict["D"].set_xlabel('Vce [V]')
+
+ax_dict["E"].set_title('gmu')
+ax_dict["E"].set_ylabel('gmu [mS]')
+ax_dict["E"].set_xlabel('Vce [V]')
+
+ax_dict["F"].set_title('go')
+ax_dict["F"].set_ylabel('go [mS]')
+ax_dict["F"].set_xlabel('Vce [V]')
+
+ax_dict["G"].set_title('cpi')
+ax_dict["G"].set_ylabel('cpi [pF]')
+ax_dict["G"].set_xlabel('Vce [V]')
+
+ax_dict["H"].set_title('cmu')
+ax_dict["H"].set_ylabel('cmu [pF]')
+ax_dict["H"].set_xlabel('Vce [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vbe=%.2e' % sdata['vbe']
+    ax_dict["A"].plot(plot[ii, 'c'], -plot[ii, 'vce:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'c'], -plot[ii, 'vbe:flow(br)']*1e6, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'c'], plot[ii, 'q1.gm']*1e3, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'c'], plot[ii, 'q1.gpi']*1e3, label=traceName)
+    ax_dict["E"].plot(plot[ii, 'c'], plot[ii, 'q1.gmu']*1e3, label=traceName)
+    ax_dict["F"].plot(plot[ii, 'c'], plot[ii, 'q1.go']*1e3, label=traceName)
+    ax_dict["G"].plot(plot[ii, 'c'], plot[ii, 'q1.cpi']*1e12, label=traceName)
+    ax_dict["H"].plot(plot[ii, 'c'], plot[ii, 'q1.cmu']*1e12, label=traceName)
+
+for k, v in ax_dict.items():
+    v.legend(loc='upper right')
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get(sweeps=1)
+
+fig2 = plt.figure(figsize=(8,10), dpi=100)
+fig2.suptitle('PNP test')
+ax_dict = fig2.subplot_mosaic("""
+AB
+CD
+EF
+GH
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Ic [mA]')
+ax_dict["A"].set_xlabel('Vce [V]')
+
+ax_dict["B"].set_title('DC response')
+ax_dict["B"].set_ylabel('Ib [uA]')
+ax_dict["B"].set_xlabel('Vbe [V]')
+
+ax_dict["C"].set_title('gm')
+ax_dict["C"].set_ylabel('gm [mS]')
+ax_dict["C"].set_xlabel('Vce [V]')
+
+ax_dict["D"].set_title('gpi')
+ax_dict["D"].set_ylabel('gpi [mS]')
+ax_dict["D"].set_xlabel('Vce [V]')
+
+ax_dict["E"].set_title('gmu')
+ax_dict["E"].set_ylabel('gmu [mS]')
+ax_dict["E"].set_xlabel('Vce [V]')
+
+ax_dict["F"].set_title('go')
+ax_dict["F"].set_ylabel('go [mS]')
+ax_dict["F"].set_xlabel('Vce [V]')
+
+ax_dict["G"].set_title('cpi')
+ax_dict["G"].set_ylabel('cpi [pF]')
+ax_dict["G"].set_xlabel('Vce [V]')
+
+ax_dict["H"].set_title('cmu')
+ax_dict["H"].set_ylabel('cmu [pF]')
+ax_dict["H"].set_xlabel('Vce [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vbe=%.2e' % sdata['vbe']
+    ax_dict["A"].plot(plot[ii, 'c'], -plot[ii, 'vce:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'c'], -plot[ii, 'vbe:flow(br)']*1e6, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'c'], plot[ii, 'q1.gm']*1e3, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'c'], plot[ii, 'q1.gpi']*1e3, label=traceName)
+    ax_dict["E"].plot(plot[ii, 'c'], plot[ii, 'q1.gmu']*1e3, label=traceName)
+    ax_dict["F"].plot(plot[ii, 'c'], plot[ii, 'q1.go']*1e3, label=traceName)
+    ax_dict["G"].plot(plot[ii, 'c'], plot[ii, 'q1.cpi']*1e12, label=traceName)
+    ax_dict["H"].plot(plot[ii, 'c'], plot[ii, 'q1.cmu']*1e12, label=traceName)
+
+for k, v in ax_dict.items():
+    v.legend(loc='upper left')
+
+fig2.tight_layout()
+
+plt.show()
+>>>FILE
+
+

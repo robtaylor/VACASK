@@ -70,8 +70,8 @@
             // "args": [ "-df", "${workspaceFolder}/demo/spice/dio.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/jfet.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/jfetamp.sim" ], 
-            "args": [ "-df", "${workspaceFolder}/demo/spice/jfetinv.sim" ], 
-            // "args": [ "-df", "${workspaceFolder}/../xlat/test-spice-bjt.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/spice/jfetinv.sim" ], 
+            "args": [ "-df", "${workspaceFolder}/demo/spice/bjt.sim" ], 
             // "args": [ "-dp" ], 
             // "args": [ "-df", "${workspaceFolder}/../benchmark/c6288/vc.cir" ], 
             
