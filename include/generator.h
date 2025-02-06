@@ -124,7 +124,7 @@ struct Generator {
     
     // Generator call, proceed with coroutine if no value available, return yielded value
     T resume() {
-        // Fill promise with value, if one is not already there
+        // Make sure promise holds a value
         fill();
         // Remove the value and return it
         full_ = false;
@@ -143,7 +143,7 @@ private:
     // Do we have a value in the promise? 
     bool full_ = false;
 
-    // Fill promise with value
+    // Fill promise with value, do nothing if a value is already there
     void fill() {
         // Value already there? 
         if (!full_) {

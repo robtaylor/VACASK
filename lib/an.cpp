@@ -201,7 +201,6 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             s.extend("Failed to set up sweep for analysis '"+std::string(name_)+"'.");
             co_yield AnalysisState::Aborted;
         }
-        preSweepValuesStored = true;
         
         // Bind sweeper to actual parameters and options
         if (!sweeper.bind(circuit, simOptions, s)) {
@@ -214,7 +213,10 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             s.extend("Failed to store initial circuit state.");
             co_yield AnalysisState::Aborted;
         }
-
+        
+        // Now we can be sure that the pre-sweep parameter values are stored
+        preSweepValuesStored = true;
+        
         // Reset sweeper
         sweeper.reset();
 
