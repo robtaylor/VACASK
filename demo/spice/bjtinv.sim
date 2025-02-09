@@ -1,0 +1,107 @@
+SPICE BJT inverter
+
+load "spice/bjt.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+
+subckt ninv()
+  model t2n2222 sp_bjt (
+      type=1 subs=1 // npn, vertical
+      is=19f bf=150 vaf=100 ikf=0.18 ise=50p 
+      ne=2.5 br=7.5 var=6.4 ikr=12m isc=8.7p
+      nc=1.2 rb=50 re=0.4 rc=0.3 cje=26p tf=0.5n 
+      cjc=11p tr=7n xtb=1.5 kf=0.032f af=1
+  )
+  vcc (1 0) v dc=5
+  rc (1 c) r r=1k
+  q1 (c b 0) t2n2222 $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=0 val1=5 delay=1n rise=0.1n fall=0.1n width=2u period=4u
+  rin (in b) r r=1k
+ends
+
+subckt pinv()
+  model t2n2907a sp_bjt (
+    type=-1 subs=1 // pnp, vertical
+    is=60.7f nf=1.00 bf=312 vaf=139 
+    ikf=0.219 ise=26.0p ne=2.00 br=4.00 nr=1.00 
+    var=20.0 ikr=0.540 re=85.8m rb=0.343 rc=34.3m 
+    xtb=1.5 cje=50.4p vje=1.10 mje=0.500 cjc=23.1p vjc=0.300 
+    mjc=0.300 tf=758p tr=7n eg=1.12 kf=0.032f af=1
+  )
+  vcc (1 0) v dc=5
+  rc (0 c) r r=1k
+  q1 (c b 1) t2n2907a $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=0 val1=5 delay=1n rise=0.1n fall=0.1n width=2u period=4u
+  rin (in b) r r=1k
+ends
+
+control
+  elaborate circuit("ninv")
+  analysis tran1 tran step=0.1n stop=10u
+
+  elaborate circuit("pinv")
+  analysis tran2 tran step=0.1n stop=10u
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('NPN inverter')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [us]')
+ax_dict["A"].plot(plot['time']*1e6, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [us]')
+ax_dict["B"].plot(plot['time']*1e6, plot['c'])
+
+fig1.tight_layout()
+
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+fig2 = plt.figure(figsize=(6,8), dpi=100)
+fig2.suptitle('PNP inverter')
+ax_dict = fig2.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [us]')
+ax_dict["A"].plot(plot['time']*1e6, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [us]')
+ax_dict["B"].plot(plot['time']*1e6, plot['c'])
+
+fig2.tight_layout()
+
+
+plt.show()
+>>>FILE
+
+

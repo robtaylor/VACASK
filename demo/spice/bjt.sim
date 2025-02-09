@@ -1,4 +1,4 @@
-SPICE JFET test
+SPICE BJT test
 
 load "spice/bjt.osdi"
 load "resistor.osdi"
@@ -25,7 +25,7 @@ subckt ptest()
     ikf=0.219 ise=26.0p ne=2.00 br=4.00 nr=1.00 
     var=20.0 ikr=0.540 re=85.8m rb=0.343 rc=34.3m 
     xtb=1.5 cje=50.4p vje=1.10 mje=0.500 cjc=23.1p vjc=0.300 
-    mjc=0.300 tf=758p tr=123n eg=1.12 kf=0.032f af=1
+    mjc=0.300 tf=758p tr=7n eg=1.12 kf=0.032f af=1
   )
   q1 (c b 0) t2n2907a $mfactor=2 area=3
 ends
