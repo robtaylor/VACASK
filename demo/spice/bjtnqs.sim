@@ -1,0 +1,96 @@
+BJT NQS model demo
+
+load "spice/bjt.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model i isource
+model r resistor
+model c capacitor
+
+/*
+BJTexcessPhaseFactor in Verilog-A model
+    = ptf/(180.0/pi)*tf 
+    = ptf*pi/180*tf 
+    = TD0 in McAndrew, Huszka and Coram
+    = excess group delay
+
+ptf = TD0/tf*180/pi
+*/
+model t2n2222 sp_bjt (
+    type=1 subs=1 // npn, vertical
+    is=19f bf=150 vaf=100 ikf=0.18 ise=50p 
+    ne=2.5 br=7.5 var=6.4 ikr=12m isc=8.7p
+    nc=1.2 rb=50 re=0.4 rc=0.3 cje=26p tf=0.5n 
+    cjc=11p tr=7n xtb=1.5 kf=0.032f af=1 ptf=0
+)
+
+vcc (c 0) v dc=5
+ib (0 b) i dc=10u mag=1
+q1 (c b 0) t2n2222
+
+control
+  // sweep ib instance="ib" parameter="dc" from=0u to=100u step=1u
+  //   analysis op1 op
+  
+  sweep ptf model="t2n2222" parameter="ptf" values=[0, 5n, 10n, 15n, 20n, 25n]/0.5n*180/M_PI
+    analysis ac1 ac from=10k to=10G mode="dec" points=50
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('ac1.raw')
+plot = raw.get(sweeps=1)
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('NQS test')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+h0=-plot[0, "vcc:flow(br)"]
+mag0=np.abs(h0)
+ph0=np.unwrap(np.angle(h0))
+    
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    tf = 0.5e-9
+    td = np.real(sdata["ptf"])*np.pi/180*tf
+
+    h=-plot[ii, "vcc:flow(br)"]
+    mag=np.abs(h)
+    ph=np.unwrap(np.angle(h))
+    
+    f=np.abs(plot[ii, "frequency"])
+    dphdomega = np.diff(ph-ph0)/np.diff(f)/2/np.pi
+    fd = (f[1:]+f[:-1])/2
+
+    label="td0={:.0f}ns".format(td*1e9)
+    ax_dict["A"].semilogx(f/1e6, ph, label=label)
+    ax_dict["B"].semilogx(fd/1e6, dphdomega*1e9, label=label)
+
+ax_dict["A"].set_title("Phase of short-circuit current gain")
+ax_dict["A"].set_xlabel("Frequency [MHz]")
+ax_dict["A"].set_ylabel("Phase [rad]")
+
+ax_dict["B"].set_title("Excess group delay")
+ax_dict["B"].set_xlabel("Frequency [MHz]")
+ax_dict["B"].set_ylabel("Group delay [ns]")
+
+ax_dict["A"].legend(loc='lower left')
+ax_dict["B"].legend(loc='lower right')
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+

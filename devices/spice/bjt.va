@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-05 13:31:01 UTC
+// Date         : 2025-02-10 13:08:48 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -45,10 +45,10 @@
 //
 // CKTcircuit member mapping
 //    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
-//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//      CKTtemp -> (None, '$temperature')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
+//      CKTtemp -> (None, '$temperature')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   bjt/bjtdefs.h
@@ -1250,7 +1250,8 @@ module sp_bjt(c, b, e, sub);
     end
     //
     // Weil-McNamee model of excess phase
-    // Impelemnted as suggested by McAndrew, Huszka, and Coram
+    // Impelemnted as suggested by McAndrew, Huszka, and Coramž
+    // Excess group delay [s]: BJTexcessPhaseFactor = TD0 = ptf*pi/180*tf
     //
     xfinput = cbe/qb;
     tdscale = voltol/curtol;
@@ -1440,7 +1441,7 @@ module sp_bjt(c, b, e, sub);
     I(b) <+ load_gx*V(b, b_int)+ceqbx;
     I(e) <+ BJTtemitterConduct*V(e, e_int);
     I(sub) <+ ceqsub;
-    I(cx_int) <+ gbcx*V(cx_int, b_int)+BJTtcollectorConduct*V(cx_int, c)+(rhs_current+-cbcx);
+    I(cx_int) <+ BJTtcollectorConduct*V(cx_int, c)+gbcx*V(cx_int, b_int)+(rhs_current+-cbcx);
     I(c_int) <+ -(ceqbx+ceqbc)+-rhs_current;
     I(b_int) <+ load_gx*V(b_int, b)+gbcx*V(b_int, cx_int)+(-(-ceqbe-ceqbc)+cbcx);
     I(e_int) <+ BJTtemitterConduct*V(e_int, e)+-ceqbe;
