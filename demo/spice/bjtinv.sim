@@ -41,10 +41,10 @@ ends
 
 control
   elaborate circuit("ninv")
-  analysis tran1 tran step=0.1n stop=10u
+  analysis tran1 tran step=0.1n stop=10u icmode="uic"
 
   elaborate circuit("pinv")
-  analysis tran2 tran step=0.1n stop=10u
+  analysis tran2 tran step=0.1n stop=10u icmode="uic"
 
   postprocess(PYTHON, "runme.py")
 endc

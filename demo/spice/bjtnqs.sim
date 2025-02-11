@@ -13,7 +13,7 @@ model c capacitor
 BJTexcessPhaseFactor in Verilog-A model
     = ptf/(180.0/pi)*tf 
     = ptf*pi/180*tf 
-    = TD0 in McAndrew, Huszka and Coram
+    = TD0 in McAndrew, Huszka, and Coram
     = excess group delay
 
 ptf = TD0/tf*180/pi
@@ -52,6 +52,7 @@ plot = raw.get(sweeps=1)
 fig1 = plt.figure(figsize=(6,8), dpi=100)
 fig1.suptitle('NQS test')
 ax_dict = fig1.subplot_mosaic("""
+C
 A
 B
 """)
@@ -59,7 +60,7 @@ B
 h0=-plot[0, "vcc:flow(br)"]
 mag0=np.abs(h0)
 ph0=np.unwrap(np.angle(h0))
-    
+
 for ii in range(plot.sweepGroups):
     sdata = plot.sweepData(ii)
     tf = 0.5e-9
@@ -74,8 +75,13 @@ for ii in range(plot.sweepGroups):
     fd = (f[1:]+f[:-1])/2
 
     label="td0={:.0f}ns".format(td*1e9)
+    ax_dict["C"].semilogx(f/1e6, 20*np.log10(mag), label=label)
     ax_dict["A"].semilogx(f/1e6, ph, label=label)
     ax_dict["B"].semilogx(fd/1e6, dphdomega*1e9, label=label)
+
+ax_dict["C"].set_title("Short-circuit current gain")
+ax_dict["C"].set_xlabel("Frequency [MHz]")
+ax_dict["C"].set_ylabel("Gain [dB]")
 
 ax_dict["A"].set_title("Phase of short-circuit current gain")
 ax_dict["A"].set_xlabel("Frequency [MHz]")
@@ -85,6 +91,7 @@ ax_dict["B"].set_title("Excess group delay")
 ax_dict["B"].set_xlabel("Frequency [MHz]")
 ax_dict["B"].set_ylabel("Group delay [ns]")
 
+ax_dict["C"].legend(loc='lower left')
 ax_dict["A"].legend(loc='lower left')
 ax_dict["B"].legend(loc='lower right')
 

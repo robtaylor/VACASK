@@ -52,7 +52,7 @@ control
   analysis op1 op
 
   clear saves
-  analysis tran1 tran step=0.01m stop=8m
+  analysis tran1 tran step=1u start=400m stop=420m maxstep=10u icmode="uic"
 
   analysis ac1 ac from=0.1 to=1G mode="dec" points=50
   
@@ -67,7 +67,7 @@ control
   analysis op2 op
 
   clear saves
-  analysis tran2 tran step=0.01m stop=8m
+  analysis tran2 tran step=1u start=400m stop=420m maxstep=10u icmode="uic"
 
   analysis ac2 ac from=0.1 to=1G mode="dec" points=50
   
