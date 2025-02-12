@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-01-30 14:07:15 UTC
+// Date         : 2025-02-12 08:13:40 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -135,9 +135,9 @@ module sp_resistor(pos, neg);
   real REScurrent;
   real RESwidth;
   real RESlength;
-  real RESbv_max;
+  real i_RESbv_max;
   real RESeffNoiseArea;
-  integer RESresGiven = 0;
+  integer i_RESresGiven = 0;
   integer REStempGiven = 0;
   integer RESlengthGiven = 0;
   integer RESwidthGiven = 0;
@@ -146,7 +146,7 @@ module sp_resistor(pos, neg);
   real REStnom;
   real RESres;
   integer REStnomGiven = 0;
-  integer m_RESresGiven = 0;
+  integer RESresGiven = 0;
 
   // States
 
@@ -197,7 +197,7 @@ module sp_resistor(pos, neg);
           RESresist = -1e-12;
         end
       end
-      RESresGiven = 1;
+      i_RESresGiven = 1;
     end
     if ($param_given(temp)) begin
       REStemp = temp+273.15;
@@ -218,7 +218,7 @@ module sp_resistor(pos, neg);
       RESwidthGiven = 1;
     end
     if ($param_given(bv_max)) begin
-      RESbv_max = bv_max;
+      i_RESbv_max = bv_max;
     end
 
     // Model field assignments
@@ -229,7 +229,7 @@ module sp_resistor(pos, neg);
     if ($param_given(model_r)) begin
       if (model_r>0) begin
         RESres = model_r;
-        m_RESresGiven = 1;
+        RESresGiven = 1;
       end
     end
 
@@ -246,7 +246,7 @@ module sp_resistor(pos, neg);
       RESlength = model_l;
     end
     if (!$param_given(bv_max)) begin
-      RESbv_max = model_bv_max;
+      i_RESbv_max = model_bv_max;
     end
     if (RESwidthGiven||RESlengthGiven) begin
       RESeffNoiseArea = pow(RESlength-2*short, lf)*pow(RESwidth-2*narrow, wf);
@@ -266,11 +266,11 @@ module sp_resistor(pos, neg);
         $warning("Instance temperature specified, dtemp ignored");
       end
     end
-    if (!RESresGiven) begin
+    if (!i_RESresGiven) begin
       if (RESlength*RESwidth*rsh>0.0) begin
         RESresist = (RESlength-2*short)/(RESwidth-2*narrow)*rsh;
       end else begin
-        if (m_RESresGiven) begin
+        if (RESresGiven) begin
           RESresist = RESres;
         end else begin
           $warning("resistance too low or not given, set to 1 mOhm");

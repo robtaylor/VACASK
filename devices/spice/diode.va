@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-01-30 14:07:50 UTC
+// Date         : 2025-02-12 08:14:17 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -37,8 +37,8 @@
 // CKTcircuit member mapping
 //    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
 //      CKTtemp -> (None, '$temperature')
-//    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //
 // Source files and copyright information:
@@ -197,8 +197,8 @@ module sp_diode(a, c);
   // Instance fields
   integer DIOtempNode;
   real DIOcap;
-  real DIOarea;
-  real DIOpj;
+  real i_DIOarea;
+  real i_DIOpj;
   real DIOtemp;
   real DIOtJctPot;
   real DIOtJctCap;
@@ -220,10 +220,10 @@ module sp_diode(a, c);
   real DIOtF3;
   real DIOtF2SW;
   real DIOtF3SW;
-  real DIOforwardKneeCurrent;
-  real DIOreverseKneeCurrent;
-  real DIOjunctionCap;
-  real DIOjunctionSWCap;
+  real i_DIOforwardKneeCurrent;
+  real i_DIOreverseKneeCurrent;
+  real i_DIOjunctionCap;
+  real i_DIOjunctionSWCap;
   real DIOtRecSatCur;
   real DIOgcTt;
   real DIOcmetal;
@@ -365,8 +365,8 @@ module sp_diode(a, c);
   real VACONSTcharge = 1.6021766208e-19;
   real VACONSTboltz = 1.38064852e-23;
   real epsmin = $simparam("epsmin", 1e-28);
-  real reltol = $simparam("reltol", 1e-3);
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
+  real reltol = $simparam("reltol", 1e-3);
   real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
@@ -459,10 +459,10 @@ module sp_diode(a, c);
       DIOtempGiven = 1;
     end
     if ($param_given(area)) begin
-      DIOarea = area;
+      i_DIOarea = area;
     end
     if ($param_given(pj)) begin
-      DIOpj = pj;
+      i_DIOpj = pj;
     end
 
     // Model field assignments
@@ -537,24 +537,24 @@ module sp_diode(a, c);
     end
     if (!$param_given(area)) begin
       if (!$param_given(w)&&!$param_given(l)) begin
-        DIOarea = model_area;
+        i_DIOarea = model_area;
       end else begin
-        DIOarea = 1;
+        i_DIOarea = 1;
       end
     end
     if (!$param_given(pj)) begin
       if (!$param_given(w)&&!$param_given(l)) begin
-        DIOpj = model_pj;
+        i_DIOpj = model_pj;
       end else begin
-        DIOpj = 0;
+        i_DIOpj = 0;
       end
     end
     DIOcmetal = 0.0;
     DIOcpoly = 0.0;
     if (level==3) begin
       if ($param_given(w)&&$param_given(l)) begin
-        DIOarea = (w+xw)*(l+xw)*scale*scale;
-        DIOpj = (2*(w+xw)+2*(l+xw))*scale;
+        i_DIOarea = (w+xw)*(l+xw)*scale*scale;
+        i_DIOpj = (2*(w+xw)+2*(l+xw))*scale;
       end
       if ($param_given(wm)) begin
         setup_wm = wm;
@@ -579,10 +579,10 @@ module sp_diode(a, c);
       DIOcmetal = 3.9*(1.0/(4.0*3.1415926535897932384626433832795*1E-7*299792458*299792458))/DIOmetalOxideThick*(setup_wm*scale+xm)*(setup_lm*scale+xm);
       DIOcpoly = 3.9*(1.0/(4.0*3.1415926535897932384626433832795*1E-7*299792458*299792458))/DIOpolyOxideThick*(setup_wp*scale+xp)*(setup_lp*scale+xp);
     end
-    DIOforwardKneeCurrent = ikf*DIOarea;
-    DIOreverseKneeCurrent = ikr*DIOarea;
-    DIOjunctionCap = cjo*DIOarea;
-    DIOjunctionSWCap = cjp*DIOpj;
+    i_DIOforwardKneeCurrent = ikf*i_DIOarea;
+    i_DIOreverseKneeCurrent = ikr*i_DIOarea;
+    i_DIOjunctionCap = cjo*i_DIOarea;
+    i_DIOjunctionSWCap = cjp*i_DIOpj;
     if (rs==0) begin
       V(a_int, a) <+ 0;
     end
@@ -617,61 +617,61 @@ module sp_diode(a, c);
     if (tlevc==0) begin
       pbo = (vj-pbfact1)/fact1;
       gmaold = (vj-pbo)/pbo;
-      DIOtJctCap = DIOjunctionCap/(1+DIOtGradingCoeff*(400e-6*(DIOnomTemp-(27.0+273.15))-gmaold));
+      DIOtJctCap = i_DIOjunctionCap/(1+DIOtGradingCoeff*(400e-6*(DIOnomTemp-(27.0+273.15))-gmaold));
       DIOtJctPot = pbfact+fact2*pbo;
       gmanew = (DIOtJctPot-pbo)/pbo;
       DIOtJctCap = DIOtJctCap * (1+DIOtGradingCoeff*(400e-6*(DIOtemp-(27.0+273.15))-gmanew));
     end else begin
       if (tlevc==1) begin
         DIOtJctPot = vj-tpb*(DIOtemp-(27.0+273.15));
-        DIOtJctCap = DIOjunctionCap*(1+cta*(DIOtemp-(27.0+273.15)));
+        DIOtJctCap = i_DIOjunctionCap*(1+cta*(DIOtemp-(27.0+273.15)));
       end
     end
     if (tlevc==0) begin
       pboSW = (php-pbfact1)/fact1;
       gmaSWold = (php-pboSW)/pboSW;
-      DIOtJctSWCap = DIOjunctionSWCap/(1+mjsw*(400e-6*(DIOnomTemp-(27.0+273.15))-gmaSWold));
+      DIOtJctSWCap = i_DIOjunctionSWCap/(1+mjsw*(400e-6*(DIOnomTemp-(27.0+273.15))-gmaSWold));
       DIOtJctSWPot = pbfact+fact2*pboSW;
       gmaSWnew = (DIOtJctSWPot-pboSW)/pboSW;
       DIOtJctSWCap = DIOtJctSWCap * (1+mjsw*(400e-6*(DIOtemp-(27.0+273.15))-gmaSWnew));
     end else begin
       if (tlevc==1) begin
         DIOtJctSWPot = php-tphp*(DIOtemp-(27.0+273.15));
-        DIOtJctSWCap = DIOjunctionSWCap*(1+ctp*(DIOtemp-(27.0+273.15)));
+        DIOtJctSWCap = i_DIOjunctionSWCap*(1+ctp*(DIOtemp-(27.0+273.15)));
       end
     end
     if (tlev==0||tlev==1) begin
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vte;
       arg2 = xti/n*lnTRatio;
-      DIOtSatCur = DIOsatCur*DIOarea*exp(arg1+arg2);
+      DIOtSatCur = DIOsatCur*i_DIOarea*exp(arg1+arg2);
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vts;
       arg2 = xti/ns*lnTRatio;
-      DIOtSatSWCur = jsw*DIOpj*exp(arg1+arg2);
+      DIOtSatSWCur = jsw*i_DIOpj*exp(arg1+arg2);
       arg1 = (DIOtemp/DIOnomTemp-1)*keg*DIOactivationEnergy/vtt;
       arg2 = xtitun/ntun*lnTRatio;
-      DIOtTunSatCur = jtun*DIOarea*exp(arg1+arg2);
-      DIOtTunSatSWCur = jtunsw*DIOpj*exp(arg1+arg2);
+      DIOtTunSatCur = jtun*i_DIOarea*exp(arg1+arg2);
+      DIOtTunSatSWCur = jtunsw*i_DIOpj*exp(arg1+arg2);
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vtr;
       arg2 = xti/nr*lnTRatio;
-      DIOtRecSatCur = isr*DIOarea*exp(arg1+arg2);
+      DIOtRecSatCur = isr*i_DIOarea*exp(arg1+arg2);
     end else begin
       arg0 = egfet1/(n*vtnom);
       arg1 = egfet/vte;
       arg2 = xti/n*lnTRatio;
-      DIOtSatCur = DIOsatCur*DIOarea*exp(arg0-arg1+arg2);
+      DIOtSatCur = DIOsatCur*i_DIOarea*exp(arg0-arg1+arg2);
       arg0 = egfet1/(ns*vtnom);
       arg1 = egfet/vts;
       arg2 = xti/ns*lnTRatio;
-      DIOtSatSWCur = jsw*DIOpj*exp(arg0-arg1+arg2);
+      DIOtSatSWCur = jsw*i_DIOpj*exp(arg0-arg1+arg2);
       arg0 = keg*egfet1/(ntun*vtnom);
       arg1 = keg*egfet/vtt;
       arg2 = xtitun/ntun*lnTRatio;
-      DIOtTunSatCur = jtun*DIOarea*exp(arg0-arg1+arg2);
-      DIOtTunSatSWCur = jtunsw*DIOpj*exp(arg0-arg1+arg2);
+      DIOtTunSatCur = jtun*i_DIOarea*exp(arg0-arg1+arg2);
+      DIOtTunSatSWCur = jtunsw*i_DIOpj*exp(arg0-arg1+arg2);
       arg0 = egfet1/(nr*vtnom);
       arg1 = egfet/vtr;
       arg2 = xti/nr*lnTRatio;
-      DIOtRecSatCur = isr*DIOarea*exp(arg0-arg1+arg2);
+      DIOtRecSatCur = isr*i_DIOarea*exp(arg0-arg1+arg2);
     end
     xfc = ln(1-fc);
     xfcs = ln(1-fcs);
@@ -688,7 +688,7 @@ module sp_diode(a, c);
       if (level==1) begin
         cbv = ibv;
       end else begin
-        cbv = ibv*DIOarea;
+        cbv = ibv*i_DIOarea;
       end
       if (cbv<DIOtSatCur*tBreakdownVoltage/vt) begin
         xbv = tBreakdownVoltage;
@@ -824,10 +824,10 @@ module sp_diode(a, c);
     end
     factor = 1.0+ttt1*dt+ttt2*dt*dt;
     DIOtTransitTime = tt*factor;
-    DIOtConductance = DIOconductance*DIOarea;
+    DIOtConductance = DIOconductance*i_DIOarea;
     if ($param_given(rs)&&rs!=0.0) begin
       factor = 1.0+trs*dt+trs2*dt*dt;
-      DIOtConductance = DIOconductance*DIOarea/factor;
+      DIOtConductance = DIOconductance*i_DIOarea/factor;
     end
     DIOtF2 = exp((1+DIOtGradingCoeff)*xfc);
     DIOtF3 = 1-fc*(1+DIOtGradingCoeff);
@@ -937,7 +937,7 @@ module sp_diode(a, c);
     load_gd = gdb+gdsw;
     if (load_vd>=-3*load_vte) begin
       if (DIOforwardKneeCurrentGiven&&load_cd>1.0e-18) begin
-        ikf_area_m = DIOforwardKneeCurrent;
+        ikf_area_m = i_DIOforwardKneeCurrent;
         sqrt_ikf = sqrt(load_cd/ikf_area_m);
         load_gd = ((1+sqrt_ikf)*load_gd-load_cd*load_gd/(2*sqrt_ikf*ikf_area_m))/(1+2*sqrt_ikf+load_cd/ikf_area_m)+gmin;
         load_cd = load_cd/(1+sqrt_ikf)+gmin*load_vd;
@@ -947,7 +947,7 @@ module sp_diode(a, c);
       end
     end else begin
       if (DIOreverseKneeCurrentGiven&&load_cd<-1.0e-18) begin
-        ikr_area_m = DIOreverseKneeCurrent;
+        ikr_area_m = i_DIOreverseKneeCurrent;
         sqrt_ikr = sqrt(load_cd/-ikr_area_m);
         load_gd = ((1+sqrt_ikr)*load_gd+load_cd*load_gd/(2*sqrt_ikr*ikr_area_m))/(1+2*sqrt_ikr-load_cd/ikr_area_m)+gmin;
         load_cd = load_cd/(1+sqrt_ikr)+gmin*load_vd;

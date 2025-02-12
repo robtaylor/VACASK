@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-10 13:08:48 UTC
+// Date         : 2025-02-12 08:14:52 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -45,10 +45,10 @@
 //
 // CKTcircuit member mapping
 //    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
-//      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
-//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
 //      CKTtemp -> (None, '$temperature')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
+//      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //
 // Source files and copyright information:
 //   bjt/bjtdefs.h
@@ -445,9 +445,7 @@ module sp_bjt(c, b, e, sub);
   real cbcn;
   real cbe;
   real cben;
-  real cbhat;
   real cc;
-  real cchat;
   real cdis;
   real ceq;
   real ceqbc;
@@ -464,9 +462,6 @@ module sp_bjt(c, b, e, sub);
   real czbx;
   real czbxf2;
   real czsub;
-  real delvbc;
-  real delvbcx;
-  real delvbe;
   real denom;
   real dqbdvc;
   real dqbdve;
@@ -527,7 +522,6 @@ module sp_bjt(c, b, e, sub);
   real load_gdsub;
   real cdsub;
   real vrci;
-  real delvrci;
   real Irci;
   real Irci_Vrci;
   real Irci_Vbci;
@@ -561,6 +555,9 @@ module sp_bjt(c, b, e, sub);
   real rhs_current;
 
   // Device noise locals
+  real tempOnoise;
+  real tempInoise;
+  integer i;
   real noise_dtemp;
 
   // Global constants
@@ -1078,14 +1075,8 @@ module sp_bjt(c, b, e, sub);
     load_vbc = BJTtype*V(b_int, c_int);
     vbcx = BJTtype*V(b_int, cx_int);
     vrci = BJTtype*V(cx_int, c_int);
-    delvbe = load_vbe-BJTvbe;
-    delvbc = load_vbc-BJTvbc;
-    delvbcx = vbcx-BJTvbcx;
-    delvrci = vrci-BJTvrci;
     vbx = BJTtype*V(b, c_int);
     vsub = ttype*V(sub, sub_con);
-    cchat = BJTcc+(BJTgm+BJTgo)*delvbe-(BJTgo+BJTgmu)*delvbc;
-    cbhat = BJTcb+BJTgpi*delvbe+BJTgmu*delvbc;
     load_vbe = DEVpnjlim(load_vbe, BJTvbe, load_vt, BJTtVcrit, limited);
     load_vbc = DEVpnjlim(load_vbc, BJTvbc, load_vt, BJTtVcrit, limited);
     if ($param_given(iss)) begin
@@ -1250,7 +1241,7 @@ module sp_bjt(c, b, e, sub);
     end
     //
     // Weil-McNamee model of excess phase
-    // Impelemnted as suggested by McAndrew, Huszka, and Coramž
+    // Implemented as suggested by McAndrew, Huszka, and Coram
     // Excess group delay [s]: BJTexcessPhaseFactor = TD0 = ptf*pi/180*tf
     //
     xfinput = cbe/qb;

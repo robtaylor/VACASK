@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-12-g4b41ed405
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-01-30 14:07:25 UTC
+// Date         : 2025-02-12 08:13:51 UTC
 // Module name  : sp_capacitor
 // 
 // Notes:
@@ -124,7 +124,7 @@ module sp_capacitor(pos, neg);
   real CAPcapacinst;
   real CAPwidth;
   real CAPlength;
-  real CAPbv_max;
+  real i_CAPbv_max;
   integer CAPtempGiven = 0;
   integer CAPwidthGiven = 0;
   integer CAPlengthGiven = 0;
@@ -194,7 +194,7 @@ module sp_capacitor(pos, neg);
       CAPlengthGiven = 1;
     end
     if ($param_given(bv_max)) begin
-      CAPbv_max = bv_max;
+      i_CAPbv_max = bv_max;
     end
 
     // Model field assignments
@@ -247,7 +247,7 @@ module sp_capacitor(pos, neg);
       CAPlength = 0;
     end
     if (!$param_given(bv_max)) begin
-      CAPbv_max = model_bv_max;
+      i_CAPbv_max = model_bv_max;
     end
 
     // Tag: temp, function: CAPtemp

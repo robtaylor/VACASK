@@ -63,23 +63,24 @@ The following device models are supplied with VACASK.
 |Linear capacitor                 |capacitor   |
 |Linear inductor                  |inductor    |
 |SPICE diode                      |diode       |
-|BSIM3v3 MOSFET                   |bsim3       |
-|BSIM4v8 MOSFET                   |bsim4       |
-|BSIMBUKLK MOSFET 106.2.0         |bsimbulk    |
+|BSIM3v3 MOSFET (Cogenda)         |bsim3       |
+|BSIM4v8 MOSFET (Cogenda)         |bsim4       |
+|BSIMBULK MOSFET 106.2.0          |bsimbulk    |
 
 All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
 
 Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) whose aim is to create a converter from SPICE3 C model format to Verilog-A took off. At this point the following converted models are available in VACASK. 
 
-|Verilog-A device (SPICE)  |Name     |Module       |
-|--------------------------|---------|-------------|
-|Linear resistor           |resistor |sp_resistor  |
-|Linear capacitor          |capacitor|sp_capacitor |
-|Linear inductor           |inductor |sp_inductor  |
-|Diode (levels 1 and 3)    |diode    |sp_diode     |
-|JFET level 1              |jfet     |sp_jfet      |
+|Verilog-A device (SPICE)  |File        |Module       |
+|--------------------------|------------|-------------|
+|Linear resistor           |resistor.va |sp_resistor  |
+|Linear capacitor          |capacitor.va|sp_capacitor |
+|Linear inductor           |inductor.va |sp_inductor  |
+|Diode (levels 1 and 3)    |diode.va    |sp_diode     |
+|JFET level 1              |jfet.va     |sp_jfet      |
+|Gummel-Poon BJT           |bjt.va      |sp_bjt       |
 
-The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage can be found in [demo/spice](demo/spice). 
+The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 
 
 # Installation from pre-built packages
