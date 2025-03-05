@@ -611,11 +611,12 @@ bool Analysis::finish(Status& s) {
     return ok;
 }
 
-bool Analysis::run(Status& s) {
+std::tuple<bool, bool> Analysis::run(Status& s) {
     if (!start(s)) {
-        return false;
+        return std::make_tuple(false, false);
     }
     bool ok = true;
+    bool can_resume = false;
     while (true) {
         if (coroutine_.done()) {
             // Coroutine reached its end
@@ -632,12 +633,17 @@ bool Analysis::run(Status& s) {
             ok = false;
             break;
         } else if (state==AnalysisState::Finished) {
-            // Finish requested
+            // Finish requested - end the analysis
             ok = finish(s);
+            break;
+        } else if (state==AnalysisState::Stopped) {
+            // Stop requested - exit run loop
+            ok = true;
+            can_resume = true;
             break;
         }
     }
-    return ok;
+    return std::make_tuple(ok, can_resume);
 }
 
 std::tuple<bool, bool> Analysis::updateParameterExpressions(Status& s) {

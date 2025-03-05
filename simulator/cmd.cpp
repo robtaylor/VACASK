@@ -158,7 +158,7 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                 an->install(&progress);
             }
             // Run analysis
-            auto ret = an->run(tmps);
+            auto [ret, can_resume] = an->run(tmps);
             // Mark end time
             progress.end();
             // Print final report
@@ -172,6 +172,9 @@ bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s)
                     // Progress reporter disabled
                     Simulator::dbg() << "  Elapsed time: "<< progress.time() << "\n";
                 }
+            }
+            if (can_resume) {
+                Simulator::dbg() << "Analysis can be resumed.\n" << std::flush;
             }
             
             // Error reporting

@@ -72,7 +72,8 @@ public:
     bool finish(Status& s=Status::ignore);
 
     // Create coroutine, run it until it returns, aborts, or finishes
-    bool run(Status& s=Status::ignore);
+    // Returns ok, can_resume
+    std::tuple<bool, bool> run(Status& s=Status::ignore);
 
     static bool registerFactory(Id name, AnalysisFactory factory);
 

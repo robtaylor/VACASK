@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-12-g4b41ed405
+// Version      : ngspice-44-57-gad6d3efa1
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-12 08:14:17 UTC
+// Date         : 2025-02-19 14:29:02 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -36,10 +36,10 @@
 //
 // CKTcircuit member mapping
 //    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
-//      CKTtemp -> (None, '$temperature')
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
+//    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //
 // Source files and copyright information:
 //   dio/diodefs.h
@@ -98,6 +98,7 @@ module sp_diode(a, c);
   (* desc = "Instance delta temperature", type = "instance" *) parameter real dtemp = 0.0;
   (* desc = "Area factor", type = "instance" *) parameter real area = 0;
   (* desc = "Perimeter factor", type = "instance" *) parameter real pj = 0;
+  aliasparam perim = pj;
   (* desc = "Diode width", type = "instance" *) parameter real w = 0;
   (* desc = "Diode length", type = "instance" *) parameter real l = 0;
   (* desc = "Length of metal capacitor (level=3)", type = "instance" *) parameter real lm = 0;
@@ -110,6 +111,7 @@ module sp_diode(a, c);
   (* desc = "Saturation current" *) parameter real is = 1e-14;
   aliasparam js = is;
   (* desc = "Sidewall Saturation current" *) parameter real jsw = 0.0;
+  aliasparam isw = jsw;
   (* desc = "Parameter measurement temperature" *) parameter real tnom = 0;
   aliasparam tref = tnom;
   (* desc = "Ohmic resistance" *) parameter real rs = 0;
@@ -133,6 +135,7 @@ module sp_diode(a, c);
   (* desc = "Sidewall junction capacitance" *) parameter real cjp = 0;
   aliasparam cjsw = cjp;
   (* desc = "Sidewall junction potential" *) parameter real php = 1;
+  aliasparam vjsw = php;
   (* desc = "Sidewall Grading coefficient" *) parameter real mjsw = 0.33;
   (* desc = "Forward Knee current" *) parameter real ikf = 0;
   aliasparam ik = ikf;
@@ -621,11 +624,9 @@ module sp_diode(a, c);
       DIOtJctPot = pbfact+fact2*pbo;
       gmanew = (DIOtJctPot-pbo)/pbo;
       DIOtJctCap = DIOtJctCap * (1+DIOtGradingCoeff*(400e-6*(DIOtemp-(27.0+273.15))-gmanew));
-    end else begin
-      if (tlevc==1) begin
-        DIOtJctPot = vj-tpb*(DIOtemp-(27.0+273.15));
-        DIOtJctCap = i_DIOjunctionCap*(1+cta*(DIOtemp-(27.0+273.15)));
-      end
+    end else if (tlevc==1) begin
+      DIOtJctPot = vj-tpb*(DIOtemp-(27.0+273.15));
+      DIOtJctCap = i_DIOjunctionCap*(1+cta*(DIOtemp-(27.0+273.15)));
     end
     if (tlevc==0) begin
       pboSW = (php-pbfact1)/fact1;
@@ -634,11 +635,9 @@ module sp_diode(a, c);
       DIOtJctSWPot = pbfact+fact2*pboSW;
       gmaSWnew = (DIOtJctSWPot-pboSW)/pboSW;
       DIOtJctSWCap = DIOtJctSWCap * (1+mjsw*(400e-6*(DIOtemp-(27.0+273.15))-gmaSWnew));
-    end else begin
-      if (tlevc==1) begin
-        DIOtJctSWPot = php-tphp*(DIOtemp-(27.0+273.15));
-        DIOtJctSWCap = i_DIOjunctionSWCap*(1+ctp*(DIOtemp-(27.0+273.15)));
-      end
+    end else if (tlevc==1) begin
+      DIOtJctSWPot = php-tphp*(DIOtemp-(27.0+273.15));
+      DIOtJctSWCap = i_DIOjunctionSWCap*(1+ctp*(DIOtemp-(27.0+273.15)));
     end
     if (tlev==0||tlev==1) begin
       arg1 = (DIOtemp/DIOnomTemp-1)*DIOactivationEnergy/vte;
@@ -876,17 +875,15 @@ module sp_diode(a, c);
           evd = exp(load_vd/vtesw);
           cdsw = csatsw*(evd-1);
           gdsw = csatsw*evd/vtesw;
+        end else if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
+          argsw = 3*vtesw/(load_vd*CONSTe);
+          argsw = argsw*argsw*argsw;
+          cdsw = -csatsw*(1+argsw);
+          gdsw = csatsw*3*argsw/load_vd;
         end else begin
-          if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
-            argsw = 3*vtesw/(load_vd*CONSTe);
-            argsw = argsw*argsw*argsw;
-            cdsw = -csatsw*(1+argsw);
-            gdsw = csatsw*3*argsw/load_vd;
-          end else begin
-            evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
-            cdsw = -csatsw*evrev;
-            gdsw = csatsw*evrev/vtebrk;
-          end
+          evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
+          cdsw = -csatsw*evrev;
+          gdsw = csatsw*evrev/vtebrk;
         end
       end else begin
         csat = csat+csatsw;
@@ -909,17 +906,15 @@ module sp_diode(a, c);
         cdb = cdb+cdb_rec;
         gdb = gdb+gdb_rec;
       end
+    end else if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
+      load_arg = 3*load_vte/(load_vd*CONSTe);
+      load_arg = load_arg*load_arg*load_arg;
+      cdb = -csat*(1+load_arg);
+      gdb = csat*3*load_arg/load_vd;
     end else begin
-      if (!$param_given(bv)||load_vd>=-DIOtBrkdwnV) begin
-        load_arg = 3*load_vte/(load_vd*CONSTe);
-        load_arg = load_arg*load_arg*load_arg;
-        cdb = -csat*(1+load_arg);
-        gdb = csat*3*load_arg/load_vd;
-      end else begin
-        evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
-        cdb = -csat*evrev;
-        gdb = csat*evrev/vtebrk;
-      end
+      evrev = exp(-(DIOtBrkdwnV+load_vd)/vtebrk);
+      cdb = -csat*evrev;
+      gdb = csat*evrev/vtebrk;
     end
     if ($param_given(jtunsw)) begin
       vtetun = ntun*load_vt;

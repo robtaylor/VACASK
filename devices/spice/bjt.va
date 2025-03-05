@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-12-g4b41ed405
+// Version      : ngspice-44-57-gad6d3efa1
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-12 08:14:52 UTC
+// Date         : 2025-02-19 14:29:37 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -44,11 +44,11 @@
 //   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
-//    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
-//      CKTtemp -> (None, '$temperature')
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
+//    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
 //
 // Source files and copyright information:
 //   bjt/bjtdefs.h
@@ -462,7 +462,6 @@ module sp_bjt(c, b, e, sub);
   real czbx;
   real czbxf2;
   real czsub;
-  real denom;
   real dqbdvc;
   real dqbdve;
   real evbc;
@@ -505,14 +504,12 @@ module sp_bjt(c, b, e, sub);
   real vbcx;
   real load_vbe;
   real vbx;
-  real vce;
   real vsub;
   real load_vt;
   real vtc;
   real vte;
   real vtn;
   real vts;
-  real xfact;
   real xjtf;
   real xmc;
   real xme;
@@ -555,9 +552,6 @@ module sp_bjt(c, b, e, sub);
   real rhs_current;
 
   // Device noise locals
-  real tempOnoise;
-  real tempInoise;
-  integer i;
   real noise_dtemp;
 
   // Global constants
@@ -901,22 +895,20 @@ module sp_bjt(c, b, e, sub);
       if ($param_given(iss)) begin
         BJTtSubSatCur = iss*factor;
       end
-    end else begin
-      if (tlev==3) begin
-        BJTtSatCur = area*pow(is, 1+tis1*dt+tis2*dt*dt);
-        if ($param_given(ibe)&&$param_given(ibc)) begin
-          BJTBEtSatCur = area*pow(ibe, 1+tis1*dt+tis2*dt*dt);
-        end else begin
-          BJTBEtSatCur = BJTtSatCur;
-        end
-        if ($param_given(ibe)&&$param_given(ibc)) begin
-          BJTBCtSatCur = pow(ibc, 1+tis1*dt+tis2*dt*dt);
-        end else begin
-          BJTBCtSatCur = BJTtSatCur;
-        end
-        if ($param_given(iss)) begin
-          BJTtSubSatCur = pow(iss, 1+tiss1*dt+tiss2*dt*dt);
-        end
+    end else if (tlev==3) begin
+      BJTtSatCur = area*pow(is, 1+tis1*dt+tis2*dt*dt);
+      if ($param_given(ibe)&&$param_given(ibc)) begin
+        BJTBEtSatCur = area*pow(ibe, 1+tis1*dt+tis2*dt*dt);
+      end else begin
+        BJTBEtSatCur = BJTtSatCur;
+      end
+      if ($param_given(ibe)&&$param_given(ibc)) begin
+        BJTBCtSatCur = pow(ibc, 1+tis1*dt+tis2*dt*dt);
+      end else begin
+        BJTBCtSatCur = BJTtSatCur;
+      end
+      if ($param_given(iss)) begin
+        BJTtSubSatCur = pow(iss, 1+tiss1*dt+tiss2*dt*dt);
       end
     end
     if (BJTsubs==1) begin
@@ -952,10 +944,8 @@ module sp_bjt(c, b, e, sub);
     end
     if (tlev==0) begin
       bfactor = exp(ratlog*xtb);
-    end else begin
-      if (tlev==1) begin
-        bfactor = 1+xtb*dt;
-      end
+    end else if (tlev==1) begin
+      bfactor = 1+xtb*dt;
     end
     if ($param_given(tbf1)||$param_given(tbf2)) begin
       BJTtBetaF = bf*(1+tbf1*dt+tbf2*dt*dt);
@@ -970,11 +960,9 @@ module sp_bjt(c, b, e, sub);
     if (tlev==0||tlev==1) begin
       BJTtBEleakCur = area*BJTleakBEcurrent*exp(factlog/ne)/bfactor;
       BJTtBCleakCur = BJTleakBCcurrent*exp(factlog/nc)/bfactor;
-    end else begin
-      if (tlev==3) begin
-        BJTtBEleakCur = area*pow(BJTleakBEcurrent, 1+tise1*dt+tise2*dt*dt);
-        BJTtBCleakCur = pow(BJTleakBCcurrent, 1+tisc1*dt+tisc2*dt*dt);
-      end
+    end else if (tlev==3) begin
+      BJTtBEleakCur = area*pow(BJTleakBEcurrent, 1+tise1*dt+tise2*dt*dt);
+      BJTtBCleakCur = pow(BJTleakBCcurrent, 1+tisc1*dt+tisc2*dt*dt);
     end
     if (BJTsubs==1) begin
       BJTtBCleakCur = BJTtBCleakCur * (BJTareab);
@@ -988,11 +976,9 @@ module sp_bjt(c, b, e, sub);
       BJTtBEpot = fact2*pbo+pbfact;
       gmanew = (BJTtBEpot-pbo)/pbo;
       BJTtBEcap = BJTtBEcap * (1+BJTtjunctionExpBE*(4e-4*(BJTtemp-(27.0+273.15))-gmanew));
-    end else begin
-      if (tlevc==1) begin
-        BJTtBEcap = cje*(1+cte*dt);
-        BJTtBEpot = vje-tvje*dt;
-      end
+    end else if (tlevc==1) begin
+      BJTtBEcap = cje*(1+cte*dt);
+      BJTtBEpot = vje-tvje*dt;
     end
     BJTtBEcap = BJTtBEcap * (area);
     if (tlevc==0) begin
@@ -1002,11 +988,9 @@ module sp_bjt(c, b, e, sub);
       BJTtBCpot = fact2*pbo+pbfact;
       gmanew = (BJTtBCpot-pbo)/pbo;
       BJTtBCcap = BJTtBCcap * (1+BJTtjunctionExpBC*(4e-4*(BJTtemp-(27.0+273.15))-gmanew));
-    end else begin
-      if (tlevc==1) begin
-        BJTtBCcap = cjc*(1+ctc*dt);
-        BJTtBCpot = vjc-tvjc*dt;
-      end
+    end else if (tlevc==1) begin
+      BJTtBCcap = cjc*(1+ctc*dt);
+      BJTtBCpot = vjc-tvjc*dt;
     end
     if (BJTsubs==1) begin
       BJTtBCcap = BJTtBCcap * (BJTareab);
@@ -1020,11 +1004,9 @@ module sp_bjt(c, b, e, sub);
       BJTtSubpot = fact2*pbo+pbfact;
       gmanew = (BJTtSubpot-pbo)/pbo;
       BJTtSubcap = BJTtSubcap * (1+BJTtjunctionExpSub*(4e-4*(BJTtemp-(27.0+273.15))-gmanew));
-    end else begin
-      if (tlevc==1) begin
-        BJTtSubcap = cjs*(1+cts*dt);
-        BJTtSubpot = vjs-tvjs*dt;
-      end
+    end else if (tlevc==1) begin
+      BJTtSubcap = cjs*(1+cts*dt);
+      BJTtSubpot = vjs-tvjs*dt;
     end
     if (BJTsubs==1) begin
       BJTtSubcap = BJTtSubcap * (BJTareac);

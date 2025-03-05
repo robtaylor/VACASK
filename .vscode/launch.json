@@ -74,7 +74,12 @@
             // "args": [ "-df", "${workspaceFolder}/demo/spice/bjt.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/bjtamp.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/bjtinv.sim" ], 
-            "args": [ "-df", "${workspaceFolder}/demo/spice/bjtnqs.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/spice/bjtnqs.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/control/initfatal.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/control/runstop.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/control/runfinish.sim" ], 
+            "args": [ "-df", "${workspaceFolder}/demo/control/runfatal.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/spice/test.sim" ], 
             // "args": [ "-dp" ], 
             // "args": [ "-df", "${workspaceFolder}/../benchmark/c6288/vc.cir" ], 
             

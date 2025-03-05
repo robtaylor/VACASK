@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-12-g4b41ed405
+// Version      : ngspice-44-57-gad6d3efa1
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-12 08:13:40 UTC
+// Date         : 2025-02-19 14:28:24 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -25,8 +25,8 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//      CKTtemp -> (None, '$temperature')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   res/resdefs.h
@@ -160,12 +160,8 @@ module sp_resistor(pos, neg);
   real temp_tce;
 
   // Device load locals
-  integer limited;
 
   // Device noise locals
-  real tempOutNoise;
-  real tempInNoise;
-  integer noise_i;
   real noise_dtemp;
 
   // Global constants
@@ -191,11 +187,9 @@ module sp_resistor(pos, neg);
       if (RESresist>=0&&RESresist<1e-12) begin
         $warning("Value is too small, set to %e", 1e-12);
         RESresist = 1e-12;
-      end else begin
-        if (RESresist<0&&RESresist>-1e-12) begin
-          $warning("Value is too small, set to %e", -1e-12);
-          RESresist = -1e-12;
-        end
+      end else if (RESresist<0&&RESresist>-1e-12) begin
+        $warning("Value is too small, set to %e", -1e-12);
+        RESresist = -1e-12;
       end
       i_RESresGiven = 1;
     end
@@ -269,13 +263,11 @@ module sp_resistor(pos, neg);
     if (!i_RESresGiven) begin
       if (RESlength*RESwidth*rsh>0.0) begin
         RESresist = (RESlength-2*short)/(RESwidth-2*narrow)*rsh;
+      end else if (RESresGiven) begin
+        RESresist = RESres;
       end else begin
-        if (RESresGiven) begin
-          RESresist = RESres;
-        end else begin
-          $warning("resistance too low or not given, set to 1 mOhm");
-          RESresist = 1e-03;
-        end
+        $warning("resistance too low or not given, set to 1 mOhm");
+        RESresist = 1e-03;
       end
     end
     difference = REStemp+RESdtemp-REStnom;

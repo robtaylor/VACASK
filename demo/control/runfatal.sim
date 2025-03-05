@@ -1,0 +1,42 @@
+Test $fatal() during analysis
+
+load "runfatal.va"
+load "capacitor.osdi"
+
+model res resistor
+model cap capacitor
+model vsrc vsource
+
+v1 (1 0) vsrc dc=0 type="pulse" val0=0 val1=1 delay=1m rise=1u
+c1 (1 0) cap c=0.1u
+r1 (1 0) res r=10k 
+
+control
+  abort always
+  options tran_debug=1
+  options strictoutput=0 // Will keep the output files when analysis is aborted
+  analysis tran1 tran step=0.1m stop=10m maxstep=0.1m
+  // tran1.raw is not finalized because analysis was aborted. 
+  // It cannot be read because the point count is missing. 
+endc
+
+embed "runfatal.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module resistor(A,B);
+	inout A, B;
+	electrical A, B;
+	
+	branch (A,B) br;
+	
+	(*desc= "Resistance", type="instance", units = "Ohm"*) parameter real r = 1 from [0:inf];
+	
+	analog begin
+        if ($abstime>=2e-3) begin
+            $fatal(0, "Aborting simulation.");
+        end
+        I(br) <+ V(br)/r;
+	end
+endmodule
+>>>FILE

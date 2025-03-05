@@ -513,16 +513,16 @@ bool TranCore::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
         // Load error
         setError(TranError::EvalAndLoad);
-        if (circuit.simulatorOptions().core().tran_debug>1) {
-            Simulator::dbg() << "  Evaluation error.\n";
+        if (circuit.simulatorOptions().core().tran_debug>0) {
+            Simulator::dbg() << "Evaluation error.\n";
         }
         return false;
     }
     
     // Handle abort right now, finish and stop are handled outside NR loop
     if (evalSetup.requests.abort) {
-        if (circuit.simulatorOptions().core().tran_debug>1) {
-            Simulator::dbg() << "  Abort requested during evaluation.\n";
+        if (circuit.simulatorOptions().core().tran_debug>0) {
+            Simulator::dbg() << "Abort requested during evaluation.\n";
         }
         return false;
     }
@@ -927,6 +927,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         if (!solutionOk) {
             // Solver failed. Did we have an Abort request? 
             if (nrSolver.checkFlags(TranNRSolver::Flags::Abort)) {
+                if (debug>0) {
+                    Simulator::dbg() << "Abort requested during evaluation.\n";
+                } 
                 co_yield CoreState::Aborted;
             }
             // No Abort, solver failed
@@ -995,19 +998,14 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
 
         // Handle Finish and Stop
         if (nrSolver.checkFlags(TranNRSolver::Flags::Finish)) {
-            if (debug>0) {
+            if (debug>1) {
                 Simulator::dbg() << "Finish requested during transient analysis.\n";
             }
-            // Mark analysis as finished
-            finished = true;
-            break;
         }
         if (nrSolver.checkFlags(TranNRSolver::Flags::Stop)) {
-            if (debug>0) {
+            if (debug>1) {
                 Simulator::dbg() << "Stop requested during transient analysis.\n";
             }
-            // Analysis is not finished
-            break;
         }
 
         // Next break point assuming tSolve will be accepted,
@@ -1412,8 +1410,15 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             // Verilog-AMS LRM states that Finish and Stop should be taken into account
             // at converged iterations (we assume that this means accepted timepoints in transient analysis). 
             if (nrSolver.evalSetup().requests.finish) {
+                if (debug) {
+                    Simulator::dbg() << "Finishing analysis on request.\n";
+                }
+                finished = true;
                 co_yield CoreState::Finished;
             } else if (nrSolver.evalSetup().requests.stop) {
+                if (debug) {
+                    Simulator::dbg() << "Stoppings analysis on request.\n";
+                }
                 co_yield CoreState::Stopped;
             }
             
@@ -1455,7 +1460,10 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     } // while
 
     if (debug) {
-        Simulator::dbg() << "Transient analysis completed.\n";
+        
+        if (tSolve>=params.stop) {
+            Simulator::dbg() << "Transient analysis finished.\n";
+        }
     }
     
     co_yield CoreState::Finished;
