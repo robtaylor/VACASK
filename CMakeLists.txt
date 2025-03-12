@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 project(sim)
 
 set(CMAKE_CXX_STANDARD 20)
+cmake_policy(SET CMP0177 NEW)
 
 enable_testing()
 
@@ -90,9 +91,11 @@ endif()
 #   message("Python found: ${Python3_INCLUDE_DIRS}")
 # endif()
 
-find_package(Boost REQUIRED COMPONENTS filesystem)
-include_directories("${Boost_INCLUDE_DIRS}")
-link_directories("${Boost_LIBRARY_DIRS}")
+# find_package(Boost REQUIRED COMPONENTS filesystem)
+set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0")
+find_package(Boost CONFIG REQUIRED)
+#include_directories("${Boost_INCLUDE_DIRS}")
+#link_directories("${Boost_LIBRARY_DIRS}")
 
 #find_package(SuiteSparse CONFIG REQUIRED)
 #include_directories("${SuiteSparse_INCLUDE_DIRS}")
