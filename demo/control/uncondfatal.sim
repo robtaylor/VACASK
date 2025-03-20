@@ -29,9 +29,7 @@ module resistor(A,B);
 	(*desc= "Resistance", type="instance", units = "Ohm"*) parameter real r = 1 from [0:inf];
 	
 	analog begin
-        if (r>=1e3) begin
-            $fatal(0, "Aborting simulation in initialization.");
-        end
+        $fatal(0, "Unconditional abort.");
         I(br) <+ V(br)/r;
 	end
 endmodule

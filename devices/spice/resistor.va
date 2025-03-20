@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-57-gad6d3efa1
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-02-19 14:28:24 UTC
+// Date         : 2025-03-12 13:23:48 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -25,8 +25,8 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //      CKTtemp -> (None, '$temperature')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   res/resdefs.h

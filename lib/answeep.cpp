@@ -79,7 +79,7 @@ bool ScalarSweep::setupSteppedSweep(Real from_, Real to_, Real step_, Status& s)
         }
     } else {
         // Error
-        s.set(Status::Range, "Bad steped sweep range. Check from, to, and step.");
+        s.set(Status::Range, "Bad stepped sweep range. Check from, to, and step.");
         return false;
     }
     sweepType = SweepType::Stepped;
