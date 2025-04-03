@@ -54,11 +54,11 @@ std::tuple<bool, std::string, std::string> runProcess(
     }
 
     if (debugFiles) {
-        Simulator::dbg() << "Running: " << path;
+        Simulator::dbg() << "Running: '" << path;
         for(auto& arg : args) {
             Simulator::dbg() << " \"" << arg << "\"";
         }
-        Simulator::dbg() << ".\n";
+        Simulator::dbg() << "'.\n";
     }
 
     auto procEnv = boost::this_process::environment();

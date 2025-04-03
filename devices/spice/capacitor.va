@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-57-gad6d3efa1
+// Version      : ngspice-44-58-g7b1ecb261
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-03-12 13:23:51 UTC
+// Date         : 2025-04-02 07:43:39 UTC
 // Module name  : sp_capacitor
 // 
 // Notes:
@@ -32,8 +32,8 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//      CKTtemp -> (None, '$temperature')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   cap/capdefs.h
