@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-58-g7b1ecb261
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-03 08:41:54 UTC
+// Date         : 2025-04-09 12:44:37 UTC
 // Module name  : sp_mos1
 // 
 // Notes:
@@ -44,14 +44,14 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)')
-//           CKTtemp -> (None, '$temperature')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
-//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
+//           CKTtemp -> (None, '$temperature')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
-//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)')
+//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
+//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
+//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -242,6 +242,8 @@ module sp_mos1(d, g, s, b);
   real MOS1cgd;
   real MOS1cgb;
   real MOS1dcCurrent;
+  real meyer_scale;
+  real meyer_unscale;
   integer MOS1lGiven = 0;
   integer MOS1wGiven = 0;
   integer MOS1drainAreaGiven = 0;
@@ -388,11 +390,11 @@ module sp_mos1(d, g, s, b);
   real defas = $simparam("defas", 0);
   real defl = $simparam("defl", 1e-4);
   real defw = $simparam("defw", 1e-4);
+  real oldlimit = $simparam("oldlimit", 0);
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
   real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
-  real lc_oldlimit = 0;
   real lc_gmin = 0;
 
   // Translated function definitions
@@ -688,7 +690,6 @@ module sp_mos1(d, g, s, b);
 
     // Evaluation constants
     lc_gmin = $simparam("gmin", 1e-12);
-    lc_oldlimit = $simparam("oldlimit", 0);
 
     // Tag: setup, function: MOS1setup
     if (!$param_given(kp)) begin
@@ -959,7 +960,7 @@ module sp_mos1(d, g, s, b);
     end else begin
       vgd = DEVfetlim(vgd, vgdo, load_von, limited);
       load_vds = load_vgs-vgd;
-      if (!lc_oldlimit) begin
+      if (!oldlimit) begin
         load_vds = -DEVlimvds(-load_vds, -MOS1vds, limited);
       end
       load_vgs = vgd+load_vds;
@@ -1044,6 +1045,13 @@ module sp_mos1(d, g, s, b);
     MOS1vdsat = MOS1type*load_vdsat;
     MOS1dcCurrent = MOS1mode*cdrain-MOS1cbd;
     MOS1cd = MOS1dcCurrent;
+    if (OxideCap==0) begin
+        meyer_scale = 0;
+        meyer_unscale = 1;
+    end else begin
+        meyer_scale = OxideCap;
+        meyer_unscale = OxideCap;
+    end
     if (MOS1Cbs!=0||MOS1Cbssw!=0) begin
       if (load_vbs<MOS1tDepCap) begin
         load1_arg = 1-load_vbs/MOS1tBulkPot;
@@ -1138,11 +1146,11 @@ module sp_mos1(d, g, s, b);
       MOS1cqgb = 0;
     end
     gcgs = 0;
-    ceqgs = capgs*ddt(load_vgs);
+    ceqgs = capgs*(ddt(meyer_scale*load_vgs)/meyer_unscale);
     gcgd = 0;
-    ceqgd = capgd*ddt(vgd);
+    ceqgd = capgd*(ddt(meyer_scale*vgd)/meyer_unscale);
     gcgb = 0;
-    ceqgb = capgb*ddt(vgb);
+    ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
     ceqbs = MOS1type*(MOS1cbs-MOS1gbs*load_vbs);
     ceqbd = MOS1type*(MOS1cbd-MOS1gbd*load_vbd);
     if (MOS1mode>=0) begin
@@ -1157,9 +1165,9 @@ module sp_mos1(d, g, s, b);
     
     // Residuals
     I(d) <+ MOS1drainConductance*V(d, d_int);
-    I(g) <+ gcgd*V(g, d_int)+gcgs*V(g, s_int)+gcgb*V(g, b)+MOS1type*(ceqgs+ceqgb+ceqgd);
+    I(g) <+ gcgd*V(g, d_int)+gcgb*V(g, b)+gcgs*V(g, s_int)+MOS1type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS1sourceConductance*V(s, s_int);
-    I(b) <+ MOS1gbs*V(b, s_int)+MOS1gbd*V(b, d_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS1type*ceqgb);
+    I(b) <+ gcgb*V(b, g)+MOS1gbs*V(b, s_int)+MOS1gbd*V(b, d_int)+(ceqbs+ceqbd-MOS1type*ceqgb);
     I(d_int) <+ gcgd*V(d_int, g)+MOS1drainConductance*V(d_int, d)+MOS1gbd*V(d_int, b)+-(ceqbd-cdreq+MOS1type*ceqgd);
     I(s_int) <+ gcgs*V(s_int, g)+MOS1gbs*V(s_int, b)+MOS1sourceConductance*V(s_int, s)+-(cdreq+ceqbs+MOS1type*ceqgs);
 
