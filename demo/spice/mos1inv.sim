@@ -8,8 +8,8 @@ model v vsource
 model r resistor
 model c capacitor
 
-model nm sp_mos1 (
-  type=1 rsh=8 tox=50e-10 ld=0.21e-6 lambda=0.05
+model nm sp_mos1 ( type=1 
+  rsh=8 tox=50e-10 ld=0.21e-6 lambda=0.05
   gamma=0.4 
   nsub=35e14 uo=700 vto=1 
   cgso=2.8e-10 cgdo=2.8e-10 cj=5.75e-5 cjsw=2.48e-10 
@@ -17,8 +17,8 @@ model nm sp_mos1 (
   mjsw=0.3 kf=0.032f af=1
 )
 
-model pm sp_mos1 (
-  type=-1 rsh=8 tox=50e-10 ld=0.21e-6 lambda=0.05
+model pm sp_mos1 ( type=-1 
+  rsh=8 tox=50e-10 ld=0.21e-6 lambda=0.05
   gamma=0.4 
   nsub=35e14 uo=700 vto=-1 
   cgso=2.8e-10 cgdo=2.8e-10 cj=5.75e-5 cjsw=2.48e-10 
