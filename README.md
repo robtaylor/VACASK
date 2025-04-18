@@ -81,6 +81,7 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 |Gummel-Poon BJT           |bjt.va      |sp_bjt       |
 |MOSFET level 1 (Schichman-Hodges) |mos1.va     |sp_mos1      |
 |MOSFET level 2 (Grove-Frohman)    |mos2.va     |sp_mos2      |
+|MOSFET level 3 (empirical)        |mos3.va     |sp_mos3      |
 
 The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 
