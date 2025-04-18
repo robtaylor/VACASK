@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-59-gbdba37ee2
+// Version      : ngspice-44-59-g3699409b7
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-17 12:30:26 UTC
+// Date         : 2025-04-18 08:21:14 UTC
 // Module name  : sp_capacitor
 // 
 // Notes:

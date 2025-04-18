@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-59-gbdba37ee2
+// Version      : ngspice-44-59-g3699409b7
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-17 12:30:44 UTC
+// Date         : 2025-04-18 08:21:32 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -44,11 +44,11 @@
 //   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
+//    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
 //      CKTtemp -> (None, '$temperature')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //   CKTvoltTol -> ('voltol', '$simparam("vntol", 1e-6)')
-//    CKTabstol -> ('curtol', '$simparam("abstol", 1e-12)')
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   bjt/bjtdefs.h

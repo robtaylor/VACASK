@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-59-gbdba37ee2
+// Version      : ngspice-44-59-g3699409b7
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-18 07:33:30 UTC
+// Date         : 2025-04-18 08:21:47 UTC
 // Module name  : sp_mos2
 // 
 // Notes:
@@ -44,14 +44,14 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
-//   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
-//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
 //    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
 //           CKTtemp -> (None, '$temperature')
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
+//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -1896,7 +1896,8 @@ module sp_mos2(d, g, s, b);
     goto_destination = -1;
     MOS2von = MOS2type*load_von;
     MOS2vdsat = MOS2type*load_vdsat;
-    MOS2cd = MOS2mode*cdrain-MOS2cbd;
+    MOS2dcCurrent = MOS2mode*cdrain-MOS2cbd;
+    MOS2cd = MOS2dcCurrent;
     if (OxideCap==0) begin
         meyer_scale = 0;
         meyer_unscale = 1;
@@ -2017,11 +2018,11 @@ module sp_mos2(d, g, s, b);
     
     // Residuals
     I(d) <+ MOS2drainConductance*V(d, d_int);
-    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS2type*(ceqgs+ceqgb+ceqgd);
+    I(g) <+ gcgb*V(g, b)+gcgs*V(g, s_int)+gcgd*V(g, d_int)+MOS2type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS2sourceConductance*V(s, s_int);
-    I(b) <+ gcgb*V(b, g)+MOS2gbd*V(b, d_int)+MOS2gbs*V(b, s_int)+(ceqbs+ceqbd-MOS2type*ceqgb);
-    I(d_int) <+ gcgd*V(d_int, g)+MOS2gbd*V(d_int, b)+MOS2drainConductance*V(d_int, d)+-(ceqbd-cdreq+MOS2type*ceqgd);
-    I(s_int) <+ MOS2sourceConductance*V(s_int, s)+MOS2gbs*V(s_int, b)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS2type*ceqgs);
+    I(b) <+ MOS2gbs*V(b, s_int)+MOS2gbd*V(b, d_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS2type*ceqgb);
+    I(d_int) <+ MOS2gbd*V(d_int, b)+MOS2drainConductance*V(d_int, d)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS2type*ceqgd);
+    I(s_int) <+ MOS2gbs*V(s_int, b)+MOS2sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS2type*ceqgs);
 
     // Tag: noise, function: MOS2noise
     if (MOS2tempGiven) begin
@@ -2052,10 +2053,10 @@ module sp_mos2(d, g, s, b);
     end
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
     if (nlev==0) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
+      flicker_psd = kf*exp(af*ln(((abs(MOS2dcCurrent)>1E-38) ? (abs(MOS2dcCurrent)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
       flicker_exp = 1;
     end else if (nlev==1) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
+      flicker_psd = kf*exp(af*ln(((abs(MOS2dcCurrent)>1E-38) ? (abs(MOS2dcCurrent)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
       flicker_exp = 1;
     end else if (nlev==2||nlev==3) begin
       flicker_psd = kf*MOS2gm*MOS2gm/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
