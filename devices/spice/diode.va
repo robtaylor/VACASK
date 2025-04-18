@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-59-g3699409b7
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-18 08:21:21 UTC
+// Date         : 2025-04-18 08:51:32 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -35,11 +35,11 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//      CKTtemp -> (None, '$temperature')
-//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //    CKTreltol -> ('reltol', '$simparam("reltol", 1e-3)')
 //    CKTepsmin -> ('epsmin', '$simparam("epsmin", 1e-28)')
+//      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//      CKTtemp -> (None, '$temperature')
+//   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   dio/diodefs.h

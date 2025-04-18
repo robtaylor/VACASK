@@ -14,6 +14,7 @@ set(device_sources
     "spice/bjt.va"
     "spice/mos1.va"
     "spice/mos2.va"
+    "spice/mos3.va"
 )
 
 # Prepare directory for staging the osdi library

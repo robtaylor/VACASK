@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-59-g3699409b7
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-18 08:22:37 UTC
+// Date         : 2025-04-18 08:51:52 UTC
 // Module name  : sp_mos1
 // 
 // Notes:
@@ -44,14 +44,14 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//           CKTtemp -> (None, '$temperature')
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
-//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)')
-//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
-//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
 //    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
+//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
+//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)')
+//   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
+//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//           CKTtemp -> (None, '$temperature')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -1167,9 +1167,9 @@ module sp_mos1(d, g, s, b);
     I(d) <+ MOS1drainConductance*V(d, d_int);
     I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS1type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS1sourceConductance*V(s, s_int);
-    I(b) <+ gcgb*V(b, g)+MOS1gbs*V(b, s_int)+MOS1gbd*V(b, d_int)+(ceqbs+ceqbd-MOS1type*ceqgb);
-    I(d_int) <+ MOS1drainConductance*V(d_int, d)+gcgd*V(d_int, g)+MOS1gbd*V(d_int, b)+-(ceqbd-cdreq+MOS1type*ceqgd);
-    I(s_int) <+ MOS1gbs*V(s_int, b)+MOS1sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS1type*ceqgs);
+    I(b) <+ MOS1gbd*V(b, d_int)+gcgb*V(b, g)+MOS1gbs*V(b, s_int)+(ceqbs+ceqbd-MOS1type*ceqgb);
+    I(d_int) <+ MOS1gbd*V(d_int, b)+gcgd*V(d_int, g)+MOS1drainConductance*V(d_int, d)+-(ceqbd-cdreq+MOS1type*ceqgd);
+    I(s_int) <+ MOS1gbs*V(s_int, b)+gcgs*V(s_int, g)+MOS1sourceConductance*V(s_int, s)+-(cdreq+ceqbs+MOS1type*ceqgs);
 
     // Tag: noise, function: MOS1noise
     if (MOS1oxideCapFactor==0.0) begin
