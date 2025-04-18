@@ -61,7 +61,7 @@ raw = rawread('op1.raw')
 plot = raw.get(sweeps=1)
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('NMOS level 1 test')
+fig1.suptitle('Level 1 NMOS test')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
@@ -104,7 +104,7 @@ raw = rawread('op2.raw')
 plot = raw.get(sweeps=1)
 
 fig2 = plt.figure(figsize=(8,8), dpi=100)
-fig2.suptitle('PMOS level 1 test')
+fig2.suptitle('Level 1 PMOS test')
 ax_dict = fig2.subplot_mosaic("""
 AC
 BD

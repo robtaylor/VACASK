@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-59-gbdba37ee2
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-17 12:31:02 UTC
+// Date         : 2025-04-18 07:33:30 UTC
 // Module name  : sp_mos2
 // 
 // Notes:
@@ -44,14 +44,14 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//           CKTtemp -> (None, '$temperature')
-//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
 //       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)')
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)')
+//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//           CKTtemp -> (None, '$temperature')
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)')
+//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -2017,11 +2017,11 @@ module sp_mos2(d, g, s, b);
     
     // Residuals
     I(d) <+ MOS2drainConductance*V(d, d_int);
-    I(g) <+ gcgs*V(g, s_int)+gcgb*V(g, b)+gcgd*V(g, d_int)+MOS2type*(ceqgs+ceqgb+ceqgd);
+    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS2type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS2sourceConductance*V(s, s_int);
-    I(b) <+ MOS2gbd*V(b, d_int)+MOS2gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS2type*ceqgb);
-    I(d_int) <+ MOS2gbd*V(d_int, b)+MOS2drainConductance*V(d_int, d)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS2type*ceqgd);
-    I(s_int) <+ MOS2gbs*V(s_int, b)+gcgs*V(s_int, g)+MOS2sourceConductance*V(s_int, s)+-(cdreq+ceqbs+MOS2type*ceqgs);
+    I(b) <+ gcgb*V(b, g)+MOS2gbd*V(b, d_int)+MOS2gbs*V(b, s_int)+(ceqbs+ceqbd-MOS2type*ceqgb);
+    I(d_int) <+ gcgd*V(d_int, g)+MOS2gbd*V(d_int, b)+MOS2drainConductance*V(d_int, d)+-(ceqbd-cdreq+MOS2type*ceqgd);
+    I(s_int) <+ MOS2sourceConductance*V(s_int, s)+MOS2gbs*V(s_int, b)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS2type*ceqgs);
 
     // Tag: noise, function: MOS2noise
     if (MOS2tempGiven) begin
