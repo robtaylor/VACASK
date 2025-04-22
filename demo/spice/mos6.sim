@@ -1,0 +1,149 @@
+SPICE MOSFET level 6 test
+
+load "spice/mos6.osdi"
+load "resistor.osdi"
+
+model v vsource
+vgs (g 0) v dc=0
+vds (d 0) v dc=0
+  
+subckt ntest()
+  model nm sp_mos6 ( type=1 
+    phi=0.600000 tox=2.1200e-08
+    tpg=1 vto=1 lambda0=0.06 lambda1=0.004
+    ld=1.6470e-07 uo=591.7 
+    rsh=8.5450e+01 gamma=0.5863 nsub=1.6160e+16
+    cgdo=4.0241e-10 cgso=4.0241e-10
+    cgbo=3.6144e-10 cj=3.8541e-04 mj=1.1854
+    cjsw=1.3940e-10 mjsw=0.125195 pb=0.800000
+  )
+  m1 (d g 0 0) nm w=10u l=1u $mfactor=2
+ends
+
+subckt ptest()
+  model pm sp_mos6 ( type=-1
+    phi=0.600000 tox=2.1200e-08
+    tpg=1 vto=-1 lambda0=0.06 lambda1=0.004
+    ld=1.6470e-07 uo=591.7 
+    rsh=8.5450e+01 gamma=0.5863 nsub=1.6160e+16
+    cgdo=4.0241e-10 cgso=4.0241e-10
+    cgbo=3.6144e-10 cj=3.8541e-04 mj=1.1854
+    cjsw=1.3940e-10 mjsw=0.125195 pb=0.800000
+  )
+  m1 (d g 0 0) pm w=10u l=1u $mfactor=2
+ends
+
+control
+  print devices
+  print device("sp_mos6")
+  
+  save p(m1,gm) p(m1,cgs) p(m1,cgd) default
+  
+  elaborate circuit("ntest")
+  print instance("m1")
+  sweep vgs instance="vgs" parameter="dc" from=0.4 to=1.6 step=0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=5 step=0.02
+    analysis op1 op
+  
+  elaborate circuit("ptest")
+  print instance("m1")
+  sweep vgs instance="vgs" parameter="dc" from=-0.4 to=-1.6 step=-0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=-5 step=-0.02
+    analysis op2 op
+ 
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get(sweeps=1)
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('NMOS level 6 test')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    traceName = 'vgs=%.2e' % (sdata['vgs'])
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'm1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.cgs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.cgd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='upper left')
+ax_dict["B"].legend(loc='upper left')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper right')
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get(sweeps=1)
+
+fig2 = plt.figure(figsize=(8,8), dpi=100)
+fig2.suptitle('PMOS level 6 test')
+ax_dict = fig2.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'm1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.cgs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.cgd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='lower right')
+ax_dict["B"].legend(loc='upper right')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper left')
+
+fig2.tight_layout()
+
+plt.show()
+>>>FILE
+
+
