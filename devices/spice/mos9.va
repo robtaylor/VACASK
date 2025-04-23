@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-60-g86467457e
+// Version      : ngspice-44-61-g8da323b50
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-23 11:50:53 UTC
+// Date         : 2025-04-24 07:24:30 UTC
 // Module name  : sp_mos9
 // 
 // Notes:
@@ -41,15 +41,15 @@
 //   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
-//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
-//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
-//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //        CKTbadMos3 -> ('badmos3', '$simparam("badmos3", 0)', 'const')
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
-//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)', 'const')
-//           CKTtemp -> (None, '$temperature')
-//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)', 'const')
+//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)', 'const')
+//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)', 'const')
+//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)', 'const')
+//       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
+//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//           CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -1344,7 +1344,8 @@ module sp_mos9(d, g, s, b);
     goto_destination = -1;
     MOS9von = MOS9type*load_von;
     MOS9vdsat = MOS9type*load_vdsat;
-    MOS9cd = MOS9mode*cdrain-MOS9cbd;
+    MOS9dcCurrent = MOS9mode*cdrain-MOS9cbd;
+    MOS9cd = MOS9dcCurrent;
     if (OxideCap==0) begin
         meyer_scale = 0;
         meyer_unscale = 1;
@@ -1465,17 +1466,17 @@ module sp_mos9(d, g, s, b);
     
     // Residuals
     I(d) <+ MOS9drainConductance*V(d, d_int);
-    I(g) <+ gcgs*V(g, s_int)+gcgd*V(g, d_int)+gcgb*V(g, b)+MOS9type*(ceqgs+ceqgb+ceqgd);
+    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS9type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS9sourceConductance*V(s, s_int);
-    I(b) <+ MOS9gbs*V(b, s_int)+gcgb*V(b, g)+MOS9gbd*V(b, d_int)+(ceqbs+ceqbd-MOS9type*ceqgb);
-    I(d_int) <+ MOS9drainConductance*V(d_int, d)+gcgd*V(d_int, g)+MOS9gbd*V(d_int, b)+-(ceqbd-cdreq+MOS9type*ceqgd);
-    I(s_int) <+ gcgs*V(s_int, g)+MOS9gbs*V(s_int, b)+MOS9sourceConductance*V(s_int, s)+-(cdreq+ceqbs+MOS9type*ceqgs);
+    I(b) <+ MOS9gbd*V(b, d_int)+MOS9gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS9type*ceqgb);
+    I(d_int) <+ MOS9drainConductance*V(d_int, d)+MOS9gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS9type*ceqgd);
+    I(s_int) <+ MOS9gbs*V(s_int, b)+MOS9sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS9type*ceqgs);
 
     // Tag: noise, function: MOS9noise
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*MOS9drainConductance)), "rd");
     I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*MOS9sourceConductance)), "rs");
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0/3.0*abs(MOS9gm)))), "id");
-    flicker_psd = kf*exp(af*ln(((abs(MOS9cd)>1E-38) ? (abs(MOS9cd)) : (1E-38))))/((MOS9w-2*wd)*(MOS9l-2*ld)*MOS9oxideCapFactor*MOS9oxideCapFactor);
+    flicker_psd = kf*exp(af*ln(((abs(MOS9dcCurrent)>1E-38) ? (abs(MOS9dcCurrent)) : (1E-38))))/((MOS9w-2*wd)*(MOS9l-2*ld)*MOS9oxideCapFactor*MOS9oxideCapFactor);
     flicker_exp = 1;
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 

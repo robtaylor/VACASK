@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-60-g86467457e
+// Version      : ngspice-44-61-g8da323b50
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-23 09:49:26 UTC
+// Date         : 2025-04-24 07:23:48 UTC
 // Module name  : sp_jfet
 // 
 // Notes:
@@ -29,9 +29,9 @@
 //   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
-//      CKTtemp -> (None, '$temperature')
 //      CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//      CKTtemp -> (None, '$temperature')
 //
 // Source files and copyright information:
 //   jfet/jfetdefs.h
