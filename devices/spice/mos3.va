@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-60-g86467457e
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-18 13:08:43 UTC
+// Date         : 2025-04-23 09:49:56 UTC
 // Module name  : sp_mos3
 // 
 // Notes:
@@ -44,15 +44,15 @@
 //   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
-//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
-//        CKTbadMos3 -> ('badmos3', '$simparam("badmos3", 0)', 'const')
-//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
+//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)', 'const')
+//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)', 'const')
 //       CKTfixLimit -> ('oldlimit', '$simparam("oldlimit", 0)', 'const')
-//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
+//        CKTbadMos3 -> ('badmos3', '$simparam("badmos3", 0)', 'const')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)', 'const')
 //           CKTtemp -> (None, '$temperature')
-//    CKTdefaultMosW -> ('defw', '$simparam("defw", 1e-4)', 'const')
-//    CKTdefaultMosL -> ('defl', '$simparam("defl", 1e-4)', 'const')
+//           CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
+//   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
+//        CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
 //
 // Source files and copyright information:
 //   devsup.c
@@ -1511,11 +1511,11 @@ module sp_mos3(d, g, s, b);
     
     // Residuals
     I(d) <+ MOS3drainConductance*V(d, d_int);
-    I(g) <+ gcgs*V(g, s_int)+gcgb*V(g, b)+gcgd*V(g, d_int)+MOS3type*(ceqgs+ceqgb+ceqgd);
+    I(g) <+ gcgd*V(g, d_int)+gcgs*V(g, s_int)+gcgb*V(g, b)+MOS3type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS3sourceConductance*V(s, s_int);
-    I(b) <+ MOS3gbs*V(b, s_int)+gcgb*V(b, g)+MOS3gbd*V(b, d_int)+(ceqbs+ceqbd-MOS3type*ceqgb);
-    I(d_int) <+ MOS3drainConductance*V(d_int, d)+MOS3gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS3type*ceqgd);
-    I(s_int) <+ gcgs*V(s_int, g)+MOS3gbs*V(s_int, b)+MOS3sourceConductance*V(s_int, s)+-(cdreq+ceqbs+MOS3type*ceqgs);
+    I(b) <+ MOS3gbs*V(b, s_int)+MOS3gbd*V(b, d_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS3type*ceqgb);
+    I(d_int) <+ gcgd*V(d_int, g)+MOS3gbd*V(d_int, b)+MOS3drainConductance*V(d_int, d)+-(ceqbd-cdreq+MOS3type*ceqgd);
+    I(s_int) <+ MOS3gbs*V(s_int, b)+MOS3sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS3type*ceqgs);
 
     // Tag: noise, function: MOS3noise
     if (MOS3tempGiven) begin
