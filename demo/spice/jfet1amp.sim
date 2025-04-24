@@ -1,6 +1,6 @@
-SPICE JFET amplifier
+SPICE JFET level 1 amplifier
 
-load "spice/jfet.osdi"
+load "spice/jfet1.osdi"
 load "resistor.osdi"
 load "capacitor.osdi"
 
@@ -9,7 +9,7 @@ model r resistor
 model c capacitor
 
 subckt namp()
-  model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  model nf sp_jfet1 type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
   vdd (1 0) v dc=10
   rd (1 d) r r=1.4k
   j1 (d g s) nf $mfactor=2 area=3
@@ -21,7 +21,7 @@ subckt namp()
 ends
 
 subckt pamp()
-  model pf sp_jfet type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  model pf sp_jfet1 type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
   vdd (1 0) v dc=10
   rd (0 d) r r=1.4k
   j1 (d g s) pf $mfactor=2 area=3
@@ -80,7 +80,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('N-JFET amplifier')
+fig1.suptitle('N-JFET level 1 amplifier')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
@@ -137,7 +137,7 @@ raw = rawread('tran2.raw')
 plot = raw.get()
 
 fig2 = plt.figure(figsize=(8,8), dpi=100)
-fig2.suptitle('P-JFET amplifier')
+fig2.suptitle('P-JFET level 1 amplifier')
 ax_dict = fig2.subplot_mosaic("""
 AC
 BD

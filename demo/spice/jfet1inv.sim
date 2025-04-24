@@ -1,6 +1,6 @@
-SPICE JFET inverter
+SPICE JFET level 1 inverter
 
-load "spice/jfet.osdi"
+load "spice/jfet1.osdi"
 load "resistor.osdi"
 load "capacitor.osdi"
 
@@ -9,7 +9,7 @@ model r resistor
 model c capacitor
 
 subckt ninv()
-  model nf sp_jfet type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  model nf sp_jfet1 type=1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
   vdd (1 0) v dc=10
   rd (1 d) r r=2k
   j1 (d g 0) nf $mfactor=2 area=3
@@ -18,7 +18,7 @@ subckt ninv()
 ends
 
 subckt pinv()
-  model pf sp_jfet type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
+  model pf sp_jfet1 type=-1 vt0=-4 beta=2m lambda=0.05 rs=0.1 rd=0.1 cgs=10p cgd=20p kf=1e-14 af=1
   vdd (1 0) v dc=10
   rd (0 d) r r=2k
   j1 (d g 1) pf $mfactor=2 area=3
@@ -46,7 +46,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(6,8), dpi=100)
-fig1.suptitle('N-JFET inverter')
+fig1.suptitle('N-JFET level 1 inverter')
 ax_dict = fig1.subplot_mosaic("""
 A
 B

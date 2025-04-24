@@ -5,8 +5,8 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-61-g8da323b50
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-24 07:23:48 UTC
-// Module name  : sp_jfet
+// Date         : 2025-04-24 10:14:08 UTC
+// Module name  : sp_jfet1
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -88,7 +88,7 @@
 `include "constants.vams"
 `include "disciplines.vams"
 
-module sp_jfet(d, g, s);
+module sp_jfet1(d, g, s);
   inout d, g, s;
   electrical d, g, s, d_int, s_int;
 

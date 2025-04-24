@@ -1,6 +1,6 @@
-SPICE JFET test
+SPICE JFET level 1 test
 
-load "spice/jfet.osdi"
+load "spice/jfet1.osdi"
 load "resistor.osdi"
 
 model v vsource
@@ -8,18 +8,18 @@ vgs (g 0) v dc=0
 vds (d 0) v dc=0
   
 subckt ntest()
-  model nf sp_jfet type=1 vt0=-4 beta=1m lambda=0.05 cgs=10p cgd=20p
+  model nf sp_jfet1 type=1 vt0=-4 beta=1m lambda=0.05 cgs=10p cgd=20p
   j1 (d g 0) nf $mfactor=2 area=3
 ends
 
 subckt ptest()
-  model pf sp_jfet type=-1 vt0=-4 beta=1m lambda=0.05 cgs=10p cgd=20p
+  model pf sp_jfet1 type=-1 vt0=-4 beta=1m lambda=0.05 cgs=10p cgd=20p
   j1 (d g 0) pf $mfactor=2 area=3
 ends
 
 control
   print devices
-  print device("sp_jfet")
+  print device("sp_jfet1")
   
   save p(j1,gm) p(j1,cqgs) p(j1,cqgd) default
   
@@ -47,7 +47,7 @@ raw = rawread('op1.raw')
 plot = raw.get(sweeps=1)
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('N-JFET test')
+fig1.suptitle('N-JFET level 1 test')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
@@ -90,7 +90,7 @@ raw = rawread('op2.raw')
 plot = raw.get(sweeps=1)
 
 fig2 = plt.figure(figsize=(8,8), dpi=100)
-fig2.suptitle('P-JFET test')
+fig2.suptitle('P-JFET level 1 test')
 ax_dict = fig2.subplot_mosaic("""
 AC
 BD
