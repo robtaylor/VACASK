@@ -4,5 +4,7 @@
 settings.json
 __pycache__
 bug
+benchmark/rundir
+
 
 

@@ -58,7 +58,7 @@ def run_openvaf(file, output, args=[]):
     if output is not None:
         cmdline += [ "-o", output ]
     cmdline += args
-    cmdline += [ "file" ]
+    cmdline += [ file ]
     retval = subprocess.run(cmdline)
     if retval.returncode != 0:
         print("Verilog-A compiler error.")
@@ -126,6 +126,7 @@ if cmd_path:
 
 # Use canonical path, assume relative to current directory
 cmd = os.path.realpath(cmd)
+subdir = os.path.realpath(subdir)
 
 # Find openvaf
 openvaf = find_openvaf()
@@ -153,8 +154,12 @@ os.chdir(workdir)
 
 # Preparations for run
 if os.path.isfile("./prepare.py"):
+    print("Preparing for run...")
     spec = importlib.util.spec_from_file_location("prepare", "./prepare.py")
     prepare = importlib.util.module_from_spec(spec)
+    sys.modules["prepare"] = prepare
+    spec.loader.exec_module(prepare)
+
     retval = prepare.run({ 
         "source_dir": subdir, 
         "run_openvaf": run_openvaf 
