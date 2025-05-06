@@ -2,6 +2,8 @@
 import sys, os, time, subprocess, shutil, importlib
 import numpy as np
 
+# Simple benchmarking framework. 
+
 # Defaults
 count = 1 
 ignored_count = 0
@@ -153,7 +155,10 @@ os.chdir(workdir)
 if os.path.isfile("./prepare.py"):
     spec = importlib.util.spec_from_file_location("prepare", "./prepare.py")
     prepare = importlib.util.module_from_spec(spec)
-    retval = prepare.run({ "run_openvaf": run_openvaf })
+    retval = prepare.run({ 
+        "source_dir": subdir, 
+        "run_openvaf": run_openvaf 
+    })
     if not retval:
         print("Preparations failed.")
         sys.exit(1)
