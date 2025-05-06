@@ -1,0 +1,203 @@
+#!/usr/bin/python3
+import sys, os, time, subprocess, shutil, importlib
+import numpy as np
+
+# Defaults
+count = 1 
+ignored_count = 0
+workdir = "rundir"
+keep = False
+print_help = False
+openvaf = None
+
+def cleanup(wd):
+    if os.path.isdir(wd):
+        shutil.rmtree(wd)
+
+def prepare(wd, subdir):
+    cleanup(wd)
+    shutil.copytree(subdir, wd)
+
+def find_openvaf():
+    openvaf = None
+    
+    # Check OPENVAF_DIR env variable
+    if openvaf is None:
+        openvaf = os.environ.get("OPENVAF_DIR") 
+    
+    # Check ../../build.VACASK/Debug/simulator
+    if openvaf is None:
+        if (
+            os.path.isdir("../../build.VACASK/Debug/simulator") and
+            os.path.isfile("../../build.VACASK/Debug/simulator/openvaf-r")
+        ):
+            openvaf = "../../build.VACASK/Debug/simulator/openvaf-r"
+
+    # Check ../../build.VACASK/Release/simulator
+    if openvaf is None:
+        if (
+            os.path.isdir("../../build.VACASK/Release/simulator") and
+            os.path.isfile("../../build.VACASK/Release/simulator/openvaf-r")
+        ):
+            openvaf = "../../build.VACASK/Release/simulator/openvaf-r"
+
+    # Check system path
+    if openvaf is None:
+        openvaf = shutil.which("openvaf-r")
+
+    # Canonical path
+    if openvaf is not None:
+        openvaf = os.path.realpath(openvaf)
+
+    return openvaf
+
+def run_openvaf(file, output, args=[]):
+    cmdline = [ openvaf ]
+    if output is not None:
+        cmdline += [ "-o", output ]
+    cmdline += args
+    cmdline += [ "file" ]
+    retval = subprocess.run(cmdline)
+    if retval.returncode != 0:
+        print("Verilog-A compiler error.")
+        return False
+    
+    return True
+
+ndx = 1
+while True:
+    if sys.argv[ndx]=="-n":
+        ndx += 1
+        count = int(sys.argv[ndx])
+    elif sys.argv[ndx]=="-nd":
+        ndx += 1
+        ignored_count = int(sys.argv[ndx])
+    elif sys.argv[ndx]=="-wd":
+        ndx += 1
+        workdir = sys.argv[ndx]
+    elif sys.argv[ndx] == "--keep" or sys.argv[ndx] == "-k":
+        keep = True
+    elif sys.argv[ndx] == "-h":
+        print_help = True
+        break
+    else:
+        break
+    ndx += 1
+    if ndx>=len(sys.argv):
+        print("Need more arguments.\n")
+        print_help = True
+        break
+
+# Get directory and command
+if ndx+2>len(sys.argv):
+    print("Need more arguments.\n")
+    print_help = True
+else:
+    subdir = sys.argv[ndx]
+    cmd = sys.argv[ndx+1]
+    args = sys.argv[ndx+2:]
+
+if print_help:
+    print("Usage: python3 benchmark.py [options] directory command [arguments]")
+    print()
+    print("       Changes to a directory and runs a command with arguments.")
+    print("       Prints timing summary.")
+    print()
+    print("Options")
+    print("  -n <num>   .. number of repetitions")
+    print("  -nd <num>  .. number of initial runs that are ignored")
+    print("                0 by default")
+    print("  -wd <name> .. directory where runs are performed")
+    print("                rundir by default")
+    print("  -k, --keep .. do not delete work directory")
+    print("  -h         .. print help")
+    sys.exit(0)
+
+# Canonical path to command and workdir
+workdir = os.path.realpath(workdir)
+
+# Find binary
+cmd_path = shutil.which(cmd)
+if cmd_path:
+    # Found in path
+    cmd = cmd_path
+
+# Use canonical path, assume relative to current directory
+cmd = os.path.realpath(cmd)
+
+# Find openvaf
+openvaf = find_openvaf()
+
+# Sanity check
+if not os.path.isfile(cmd):
+    print("Executable not found:", cmd)
+    sys.exit(1)
+if not os.path.isdir(subdir):
+    print("Problem not found:", subdir)
+    sys.exit(1)
+
+# Report
+print("Problem:         ", subdir)
+print("Work directory:  ", workdir, "(kept)" if keep else "")
+print("Command:         ", cmd)
+print("OpenVAF reloaded:", openvaf)
+
+# Prepare work directory
+prepare(workdir, subdir)
+
+# Change directory
+olddir = os.getcwd()
+os.chdir(workdir)
+
+# Preparations for run
+if os.path.isfile("./prepare.py"):
+    spec = importlib.util.spec_from_file_location("prepare", "./prepare.py")
+    prepare = importlib.util.module_from_spec(spec)
+    retval = prepare.run({ "run_openvaf": run_openvaf })
+    if not retval:
+        print("Preparations failed.")
+        sys.exit(1)
+
+# Run benchmark
+times = []
+for cnt in range(count+ignored_count):
+    print("\n\nRun", cnt+1, ("(ignored)" if cnt<ignored_count else ""))
+
+    # Mark time
+    t0 = time.perf_counter()
+
+    # Run
+    retval = subprocess.run([cmd] + args + ["runme.sim"])
+
+    # Measure time
+    t1 = time.perf_counter()
+    if cnt>=ignored_count:
+        times.append(t1-t0)
+        print("Time:", t1-t0)
+    
+    # Abort on error
+    if retval.returncode != 0:
+        print("Run failed.")
+        os.chdir(olddir)
+        if not keep:
+            cleanup(workdir)
+        sys.exit(1)
+
+print()
+print("Summary:")
+if ignored_count>0:
+    print("  Ignored runs:      ", ignored_count)
+    print()
+mean = np.mean(np.array(times))
+std = np.std(np.array(times), ddof=1)
+print("  Number of runs:    ", len(times))
+print("  Minimum runtime:   ", min(times))
+print("  Maximum runtime:   ", max(times))
+print("  Average runtime:   ", mean)
+print("  Standard deviation:", std)
+print("            relative:", std/mean)
+
+os.chdir(olddir)
+if not keep:
+    cleanup(workdir)
+
