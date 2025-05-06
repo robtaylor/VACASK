@@ -2,7 +2,47 @@
 import sys, os, time, subprocess, shutil, importlib
 import numpy as np
 
-# Simple benchmarking framework. 
+# Simple benchmarking framework
+# 
+# Command line syntax:
+# python3 benchmark.py [options] <benchmark case> <path to simulator> [<args>]
+# 
+# Benchmark case is of the form <case name>/<simulator>. 
+#
+# Creates a work directory and copies the case into it. 
+# Default name of the work directory is rundir. 
+# This can be changed with the -wd option. 
+# Before running the case the run() function from the prepare.py 
+# file is called. A dictionary with the following members is
+# passed as the only argument:
+# - source_dir .. full path to the problem directory
+# - run_openvaf .. a function that invokes OpenVAF (run_openvaf())
+#   The function has 3 arguments:
+#   - name of the .va file to compile
+#   - name of the output .osdi file
+#   - optional list of arguments
+#
+# The run function can set the pre_options and post_options 
+# members to a list of options that will be added to the <args> 
+# specified on the command line. 
+#
+# If everything is OK, run() returns True. 
+#
+# Then initial runs are performed (to fill the caches). 
+# The number of initial runs can be set with the -nd option
+# (0 by default). 
+# Initial runs are followed by timed runs. The number of timed 
+# runs can be set with the -n option. 
+#
+# When all runs are finished a summary is printed and 
+# the work directory is removed. If the -k option is 
+# specified, the work directory is kept. 
+#
+# The script searches for OpenVAF-reloaded in the following locations:
+# - directory specified by the OPENVAF_DIR environmental variable
+# - ../../build.VACASK/Debug/simulator
+# - ../../build.VACASK/Release/simulator
+# - system PATH
 
 # Defaults
 count = 1 
@@ -27,7 +67,9 @@ def find_openvaf():
     
     # Check OPENVAF_DIR env variable
     if openvaf is None:
-        openvaf = os.environ.get("OPENVAF_DIR") 
+        d = os.environ.get("OPENVAF_DIR")
+        if d is not None:
+            openvaf = os.path.join(d, "openvaf-r")
     
     # Check ../../build.VACASK/Debug/simulator
     if openvaf is None:
