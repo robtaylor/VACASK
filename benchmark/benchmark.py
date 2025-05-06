@@ -11,6 +11,8 @@ workdir = "rundir"
 keep = False
 print_help = False
 openvaf = None
+pre_options = []
+post_options = []
 
 def cleanup(wd):
     if os.path.isdir(wd):
@@ -160,24 +162,35 @@ if os.path.isfile("./prepare.py"):
     sys.modules["prepare"] = prepare
     spec.loader.exec_module(prepare)
 
-    retval = prepare.run({ 
+    settings = { 
         "source_dir": subdir, 
         "run_openvaf": run_openvaf 
-    })
+    }
+    retval = prepare.run(settings)
     if not retval:
         print("Preparations failed.")
         sys.exit(1)
 
+    # Get custom options
+    pre_options = settings.get("pre_options", [])
+    post_options = settings.get("post_options", [])
+
 # Run benchmark
 times = []
 for cnt in range(count+ignored_count):
-    print("\n\nRun", cnt+1, ("(ignored)" if cnt<ignored_count else ""))
+    if cnt<ignored_count:
+        print("\n\nStartup run", cnt+1, "(ignored)")    
+    else:
+        print("\n\nRun", cnt-ignored_count+1)
+
+    # Command line
+    cmdline = [cmd] + pre_options + args + post_options + ["runme.sim"]
 
     # Mark time
     t0 = time.perf_counter()
 
     # Run
-    retval = subprocess.run([cmd] + args + ["runme.sim"])
+    retval = subprocess.run(cmdline)
 
     # Measure time
     t1 = time.perf_counter()

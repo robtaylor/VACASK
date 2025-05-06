@@ -30,12 +30,11 @@ control
   // options relref="pointlocal"
   // options relrefsol="pointlocal" relrefres="pointlocal" relreflte="pointlocal"
   // options relrefsol="local" relrefres="local" relreflte="local"
-  analysis tran1 tran step=1u stop=1 maxstep=1u write=0
+  analysis tran1 tran step=1u stop=1 maxstep=1u 
   print stats
-  // postprocess(PYTHON, "runme.py")
+  postprocess(PYTHON, "runme.py")
 endc
 
-/*
 embed "runme.py" <<<FILE
 from rawfile import rawread
 from runtest import *
@@ -55,7 +54,7 @@ print("Points", t.size)
 import matplotlib.pyplot as plt 
 
 fig1, ax1 = plt.subplots(1, 1)
-fig1.axes[0].set_title('RC pulse train')
+fig1.axes[0].set_title('Full wave rectifier with smoothing and load')
 fig1.axes[0].set_ylabel('V [V]')
 fig1.axes[0].set_xlabel('time [ms]')
 fig1.axes[0].plot(t*1000, v1, color="blue", label="v(1)")
@@ -63,4 +62,4 @@ fig1.axes[0].plot(t*1000, v2, color="red", label="v(2)")
 plt.show()
 
 >>>FILE
-*/
+

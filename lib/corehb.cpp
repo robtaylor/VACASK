@@ -52,7 +52,7 @@ HBCore::~HBCore() {
 bool HBCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -65,7 +65,7 @@ bool HBCore::addCoreOutputDescriptors() {
 
 bool HBCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -104,7 +104,7 @@ bool HBCore::resolveOutputDescriptors(bool strict, Status& s) {
 
 bool HBCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -139,7 +139,7 @@ bool HBCore::finalizeOutputs(Status& s) {
 }
 
 bool HBCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 

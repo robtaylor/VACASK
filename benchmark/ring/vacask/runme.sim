@@ -35,7 +35,7 @@ control
   // options relrefsol="local" relrefres="local" relreflte="local"
   analysis tran1 tran step=0.05n stop=1u maxstep=0.05n
   print stats
-  // postprocess(PYTHON, "runme.py")
+  postprocess(PYTHON, "runme.py")
 endc
 
 

@@ -20,13 +20,12 @@ control
   // options nr_residualcheck=1 reltol=1e-3 vntol=1e-6 tran_lteratio=3.5 tran_itl=50
   // options relrefsol="pointlocal" relrefres="pointlocal" relreflte="pointlocal"
   // options relrefsol="local" relrefres="local" relreflte="local"
-  analysis tran1 tran step=1u stop=1 maxstep=1u write=0
+  analysis tran1 tran step=1u stop=1 maxstep=1u
   print stats
-  // postprocess(PYTHON, "runme.py")
+  postprocess(PYTHON, "runme.py")
 endc
 
 
-/*
 embed "runme.py" <<<FILE
 from rawfile import rawread
 from runtest import *
@@ -53,4 +52,4 @@ fig1.axes[0].plot(t*1000, v1, color="blue", label="v(1)")
 fig1.axes[0].plot(t*1000, v2, color="red", label="v(2)", marker=".")
 plt.show()
 >>>FILE
-*/
+

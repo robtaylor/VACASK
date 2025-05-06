@@ -153,7 +153,7 @@ bool NoiseCore::resolveOutputDescriptors(bool strict) {
 bool NoiseCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -176,7 +176,7 @@ bool NoiseCore::addCoreOutputDescriptors() {
 
 bool NoiseCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -187,7 +187,7 @@ bool NoiseCore::addDefaultOutputDescriptors() {
 }
 
 bool NoiseCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -214,7 +214,7 @@ bool NoiseCore::finalizeOutputs(Status& s) {
 }
 
 bool NoiseCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -649,7 +649,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         // std::cout << "total = " << outputNoise << "\n";
 
         // Dump solution
-        if (params.write && outfile) {
+        if (params.write && !Simulator::noOutput() && outfile) {
             outfile->addPoint();
         }
 

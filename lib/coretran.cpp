@@ -261,7 +261,7 @@ TranCore::~TranCore() {
 
 bool TranCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -303,7 +303,7 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
 bool TranCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     
@@ -461,7 +461,7 @@ bool TranCore::rebuild(Status& s) {
 }
 
 bool TranCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -496,7 +496,7 @@ bool TranCore::finalizeOutputs(Status& s) {
 }
 
 bool TranCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -677,7 +677,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
 
     // Write results at t=0, but only if tstart=0
     if (params.start<=0) {
-        if (params.write && outfile) {
+        if (params.write && !Simulator::noOutput() && outfile) {
             outfile->addPoint();
         }
     }
@@ -1386,7 +1386,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             
             // Write results, starting at tSolve=params.start
             if (tSolve>=params.start-timeRelativeTolerance*tk) {
-                if (params.write && outfile) {
+                if (params.write && !Simulator::noOutput() && outfile) {
                     outfile->addPoint();
                 }
             }

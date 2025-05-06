@@ -66,7 +66,7 @@ bool DCIncrementalCore::resolveOutputDescriptors(bool strict) {
 
 bool DCIncrementalCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -76,7 +76,7 @@ bool DCIncrementalCore::addDefaultOutputDescriptors() {
 }
 
 bool DCIncrementalCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -103,7 +103,7 @@ bool DCIncrementalCore::finalizeOutputs(Status& s) {
 }
 
 bool DCIncrementalCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -199,7 +199,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     }
 
     // Dump solution
-    if (params.write && outfile) {
+    if (params.write && !Simulator::noOutput() && outfile) {
         outfile->addPoint();
     }
     

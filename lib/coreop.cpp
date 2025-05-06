@@ -65,7 +65,7 @@ bool OperatingPointCore::resolveOutputDescriptors(bool strict, Status& s) {
 
 bool OperatingPointCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -75,7 +75,7 @@ bool OperatingPointCore::addDefaultOutputDescriptors() {
 }
 
 bool OperatingPointCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -110,7 +110,7 @@ bool OperatingPointCore::finalizeOutputs(Status &s) {
 }
 
 bool OperatingPointCore::deleteOutputs(Id name, Status &s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 

@@ -28,6 +28,7 @@ char helpText[] =
     // "                      turn off warning messages\n"
     "  -qp, --quiet-progress\n"
     "                      turn off progress messages\n"
+    "  --no-output         suppress output of result files\n"
     ; 
 
 int main(int argc, char**argv) {
@@ -84,6 +85,7 @@ int main(int argc, char**argv) {
     bool dumpEmbed = true;
     bool runPostprocess = true;
     bool progress = true;
+    bool noOutput = false;
 
     Parser parser;
 
@@ -121,6 +123,8 @@ int main(int argc, char**argv) {
                 runPostprocess = false;
             } else if (arg=="-qp" || arg=="--quiet-progress") {
                 progress = false;
+            } else if (arg=="--no-output") {
+                noOutput = true;
             } else {
                 Simulator::err() << "Unrecognized argument '"+arg+"'.\n";
                 return 1;
@@ -128,6 +132,7 @@ int main(int argc, char**argv) {
         }
         
         Simulator::setFileDebug(fileDebug); 
+        Simulator::setNoOutput(noOutput); 
 
         int fileArgIndex = i;
 

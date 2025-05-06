@@ -81,7 +81,7 @@ bool AcCore::resolveOutputDescriptors(bool strict) {
 bool AcCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -94,7 +94,7 @@ bool AcCore::addCoreOutputDescriptors() {
 
 bool AcCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -105,7 +105,7 @@ bool AcCore::addDefaultOutputDescriptors() {
 
 bool AcCore::initializeOutputs(Id name, Status& s) {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -132,7 +132,7 @@ bool AcCore::finalizeOutputs(Status& s) {
 }
 
 bool AcCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -396,7 +396,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         }
         
         // Dump solution point
-        if (params.write && outfile) {
+        if (params.write && !Simulator::noOutput() && outfile) {
             outfile->addPoint();
         }
         

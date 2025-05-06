@@ -37,6 +37,7 @@ std::vector<std::string> Simulator::modulePath_;
 std::vector<std::string> Simulator::includePath_;
 
 bool Simulator::fileDebug_ = false;
+bool Simulator::noOutput_ = false;
 
 void Simulator::setStreams(std::ostream& output, std::ostream& error, std::ostream& debug) {
     Simulator::out_ = &output;

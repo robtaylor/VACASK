@@ -115,7 +115,7 @@ bool DCXFCore::resolveOutputDescriptors(bool strict) {
 
 bool DCXFCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -125,7 +125,7 @@ bool DCXFCore::addDefaultOutputDescriptors() {
 }
 
 bool DCXFCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -152,7 +152,7 @@ bool DCXFCore::finalizeOutputs(Status& s) {
 }
 
 bool DCXFCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -290,7 +290,7 @@ CoreCoroutine DCXFCore::coroutine(bool continuePrevious) {
     }
     
     // Dump solution
-    if (params.write && outfile) {
+    if (params.write && !Simulator::noOutput() && outfile) {
         outfile->addPoint();
     }
     

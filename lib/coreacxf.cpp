@@ -128,7 +128,7 @@ bool ACXFCore::resolveOutputDescriptors(bool strict) {
 bool ACXFCore::addCoreOutputDescriptors() {
     clearError();
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (!addOutputDescriptor(OutputDescriptor(OutdFrequency, "frequency"))) {
@@ -141,7 +141,7 @@ bool ACXFCore::addCoreOutputDescriptors() {
 
 bool ACXFCore::addDefaultOutputDescriptors() {
     // If output is suppressed, skip all this work
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     if (savesCount==0) {
@@ -151,7 +151,7 @@ bool ACXFCore::addDefaultOutputDescriptors() {
 }
 
 bool ACXFCore::initializeOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
     // Create output file if not created yet
@@ -178,7 +178,7 @@ bool ACXFCore::finalizeOutputs(Status& s) {
 }
 
 bool ACXFCore::deleteOutputs(Id name, Status& s) {
-    if (!params.write) {
+    if (!params.write || Simulator::noOutput()) {
         return true;
     }
 
@@ -501,7 +501,7 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
         }
 
         // Dump solution
-        if (params.write && outfile) {
+        if (params.write && !Simulator::noOutput() && outfile) {
             outfile->addPoint();
         }
 

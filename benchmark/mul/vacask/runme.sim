@@ -27,12 +27,11 @@ control
   options nr_residualcheck=0 reltol=1e-3 vntol=1e-6 tran_lteratio=3.5 tran_itl=50
   // options relrefsol="pointlocal" relrefres="pointlocal" relreflte="pointlocal"
   // options relrefsol="local" relrefres="local" relreflte="local"
-  analysis tran1 tran step=0.01u stop=5m maxstep=0.01u write=0
+  analysis tran1 tran step=0.01u stop=5m maxstep=0.01u 
   print stats
-  // postprocess(PYTHON, "runme.py")
+  postprocess(PYTHON, "runme.py")
 endc
 
-/*
 embed "runme.py" <<<FILE
 from rawfile import rawread
 from runtest import *
@@ -51,11 +50,10 @@ print("Points", t.size)
 import matplotlib.pyplot as plt 
 
 fig1, ax1 = plt.subplots(1, 1)
-fig1.axes[0].set_title('Cascade')
+fig1.axes[0].set_title('Diode cascade voltage multiplier')
 fig1.axes[0].set_ylabel('V [V]')
 fig1.axes[0].set_xlabel('time [ms]')
 fig1.axes[0].plot(t*1000, v20, color="red", label="v(1) exact")
 plt.show()
 
 >>>FILE
-*/

@@ -38,6 +38,9 @@ public:
     static bool fileDebug() { return fileDebug_; }; 
     static void setFileDebug(bool val) { fileDebug_ = val; };
 
+    static bool noOutput() { return noOutput_; }; 
+    static void setNoOutput(bool val) { noOutput_ = val; };
+
 private:
     template<typename T> static bool registerAnalysis(Id anType, Status& s=Status::ignore);
     static std::ostream* out_;
@@ -51,6 +54,7 @@ private:
     static std::vector<std::string> includePath_;
     static std::string startupPath_;
     static bool fileDebug_;
+    static bool noOutput_;
 };
 
 }
