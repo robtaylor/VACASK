@@ -2,7 +2,7 @@
 
 .include "models.inc"
 
-.subckt inverter in out vdd vss w=1u l=0.1u pfact=2
+.subckt inverter in out vdd vss w=1u l=0.2u pfact=2
   xmp out in vdd vdd pmos w={w*pfact} l={l}
   xmn out in vss vss nmos w={w} l={l}
 .ends

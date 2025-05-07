@@ -1,10 +1,10 @@
 * PSP103 wrappers and models
 
-.subckt nmos d g s b params: w=1u l=0.1u ld=0.5u ls=0.5u
+.subckt nmos d g s b params: w=1u l=0.2u ld=0.5u ls=0.5u
 m1 d g s b psp103n w={w} l={l} ad={w*ld} as={w*ls} pd={2*(w+ld)} ps={2*(w+ls)}
 .ends
 
-.subckt pmos d g s b params: w=1u l=0.1u ld=0.5u ls=0.5u
+.subckt pmos d g s b params: w=1u l=0.2u ld=0.5u ls=0.5u
 m1 d g s b psp103p w={w} l={l} ad={w*ld} as={w*ls} pd={2*(w+ld)} ps={2*(w+ls)}
 .ends
 

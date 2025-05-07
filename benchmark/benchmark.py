@@ -236,10 +236,11 @@ for cnt in range(count+ignored_count):
 
     # Measure time
     t1 = time.perf_counter()
+    dt = t1-t0
+    print("Time:", dt)
     if cnt>=ignored_count:
-        times.append(t1-t0)
-        print("Time:", t1-t0)
-    
+        times.append(dt)
+        
     # Abort on error
     if retval.returncode != 0:
         print("Run failed.")
@@ -254,13 +255,17 @@ if ignored_count>0:
     print("  Ignored runs:      ", ignored_count)
     print()
 mean = np.mean(np.array(times))
-std = np.std(np.array(times), ddof=1)
 print("  Number of runs:    ", len(times))
-print("  Minimum runtime:   ", min(times))
-print("  Maximum runtime:   ", max(times))
-print("  Average runtime:   ", mean)
-print("  Standard deviation:", std)
-print("            relative:", std/mean)
+if len(times)>1:
+    print("  Minimum runtime:   ", min(times))
+    print("  Maximum runtime:   ", max(times))
+    print("  Average runtime:   ", mean)
+else:
+    print("  Runtime:           ", mean)
+if len(times)>1:
+    std = np.std(np.array(times), ddof=1)
+    print("  Standard deviation:", std)
+    print("            relative:", std/mean)
 
 os.chdir(olddir)
 if not keep:

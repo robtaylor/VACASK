@@ -9,7 +9,7 @@ model vsource vsource
 model isource isource
 
 subckt inverter (in out vdd vss)
-parameters w=1u l=0.1u pfact=2
+parameters w=1u l=0.2u pfact=2
   mp (out in vdd vdd) pmos w=w*pfact l=l
   mn (out in vss vss) nmos w=w l=l
 ends

@@ -31,7 +31,7 @@ namespace NAMESPACE {
 //
 //   Gl_i (x_i - x_{i+1}) = f(xl_i) - Gl_i (xl_i - x_i) 
 //                          -------   -----------------
-//                          residual  RHS linearized residual contribution (storeb by OSDI models)
+//                          residual  RHS linearized residual contribution (stored by OSDI models)
 // 
 // load_residual_resist()  ... loads residual (computed at the point of limiting)
 // load_limit_rhs_resist() ... loads negated RHS linearized residual contribution

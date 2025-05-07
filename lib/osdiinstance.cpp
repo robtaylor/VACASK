@@ -814,7 +814,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         // Device does not allow bypassing
         // This is not a bypass opportunity
     } else if (evalSetup.requestHighPrecision) {
-        // If high presision is required, bypass is out of question
+        // If high precision is required, bypass is out of question
         bypass = false;
         // If device is converged, this is a bypass opportunity that was not taken
         if (checkFlags(Flags::Converged)) {
@@ -1054,10 +1054,7 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     // The second one needs to be subtracted from the first one to get the 
     // actual residual, i.e.
     //   actual_residual_when_limiting = residual - linearized_rhs_residual
-    // Now this is stupid, but that's the way OSDI API is designed. 
-    // We load each of them separately and do the subtraction in the analysis
-    // (if limiting takes place). 
-    // To maintain cache locality load_residaul_*() and load_lim_rhs_*() must be 
+    // To maintain cache locality load_residual_*() and load_lim_rhs_*() must be 
     // called close together for the same instance. 
     
     // Load residual
