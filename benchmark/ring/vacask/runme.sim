@@ -2,7 +2,7 @@
 
 load "resistor.osdi"
 load "capacitor.osdi"
-load "psp103.osdi"
+load "psp103v4.osdi"
 
 include "models.inc"
 model vsource vsource
