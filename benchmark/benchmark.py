@@ -227,6 +227,8 @@ for cnt in range(count+ignored_count):
 
     # Command line
     cmdline = [cmd] + pre_options + args + post_options + ["runme.sim"]
+    print(" ".join(cmdline))
+    print()
 
     # Mark time
     t0 = time.perf_counter()
@@ -237,6 +239,7 @@ for cnt in range(count+ignored_count):
     # Measure time
     t1 = time.perf_counter()
     dt = t1-t0
+    print()
     print("Time:", dt)
     if cnt>=ignored_count:
         times.append(dt)
@@ -249,6 +252,7 @@ for cnt in range(count+ignored_count):
             cleanup(workdir)
         sys.exit(1)
 
+print()
 print()
 print("Summary:")
 if ignored_count>0:

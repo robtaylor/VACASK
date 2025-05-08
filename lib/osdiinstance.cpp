@@ -1139,6 +1139,9 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
     return true;
 }
 
+// This function is not small compared to OSDI eval() driver
+// For PSP model nr_bypass results in almost no speedup. 
+// For BSIMBULK it has some effect. 
 bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     // If deviceStates is nullptr, we are done
     if (!convSetup.deviceStates) {
@@ -1177,7 +1180,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
     auto convtol = options.nr_convtol;
 
     //
-    // Check if input delta 
+    // Check input delta 
     //
     
     // Nonzero Jacobian and residual indices
@@ -1232,6 +1235,8 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             // Get input delta computed in this NR iteration at node1
             dv = convSetup.inputDelta[u1];
             // Get abstol based on node1
+            // flow nodes -> current
+            // potential nodes -> voltage
             abstol = node1->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
         }
         
@@ -1247,10 +1252,12 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
                 dv -= convSetup.inputDelta[u2];
                 // Update abstol
                 // This should not happen (mixing potential and flow nodes, but anyway...)
-                auto tol2 = node2->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
-                if (tol2<abstol) {
-                    abstol = tol2;
-                }
+                // flow nodes -> current
+                // potential nodes -> voltage
+                // auto tol2 = node2->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol;
+                // if (tol2<abstol) {
+                //     abstol = tol2;
+                // }
             }
         }
 
@@ -1277,34 +1284,35 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
 
     // Allocate arrays with new values (on stack)
     // (Jacobian only because we need to read those from core instance)
-    auto nn = nodes_.size();
+    // auto nn = nodes_.size();
     
-    // Old solution
-    auto x1 = convSetup.oldSolution;
-
     // Index of entry in deviceStates subvectors
     size_t i;
 
     // Loop through resistive residuals, check convergence, write to array of previous values
-    double rres[nn];
+    // double rres[nn];
     i = 0;
     for(auto resNdx : fnz) {
         // Get node
         auto node = nodes_[resNdx];
         // Get unknown index
         auto u = node->unknownIndex();
-        
+
         // Get new residual
         // If we arrive here limiting was not applied, no need to add linearized residual
         auto resOff = descr->nodes[resNdx].resist_residual_off;
         auto res = *getDataPtr<double*>(core(), resOff);
-        rres[resNdx] = res;
-
+        // rres[resNdx] = res;
+            
         // Skip this if we already know instance is not converged
-        // Also skip if this residual contributes to ground node
-        if (converged && u!=0) {    
-            // Get tolerance
-            auto tol = circuit.residualTolerance(node, x1[u]);
+        // Skip if this residual contributes to ground node
+        if (converged && u!=0) {
+            // Get absolute tolerance (residual tolerance)
+            // flow nodes -> voltage
+            // potential nodes -> current
+            auto abstol = node->checkFlags(Node::Flags::FlowNode) ? options.vntol : options.abstol;
+            // Compute tolerance
+            auto tol = std::max(std::abs(f1[i])*options.reltol, abstol);
             // Compare
             if (std::abs(f1[i]-res) > tol*convtol) {
                 // Simulator::dbg() << name() << " : f tol violated @ " << node->name() << 
@@ -1313,12 +1321,16 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             }
         }
 
-        // Store in previous values array
+        // Store in previous values array regardless if tolernce was checked or not
         f1[i] = res;
+        
         i++; 
     }
 
     /*
+    // Old solution
+    auto x1 = convSetup.oldSolution;
+
     // Read resistive Jacobian entries
     double Jr2[Jrnz.size()];
     descr->write_jacobian_array_resist(core(), model_->core(), Jr2);
@@ -1374,7 +1386,7 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
 
     // Loop through reactive residuals, check convergence, write to array of previous values
     if (convSetup.checkReactiveConvergece) {
-        double rreac[nn];
+        // double rreac[nn];
 
         i = 0;
         for(auto resNdx : qnz) {
@@ -1387,10 +1399,10 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
             // If we arrive here limiting was not applied, no need to add linearized residual
             auto resOff = descr->nodes[resNdx].react_residual_off;
             auto res = *getDataPtr<double*>(core(), resOff);
-            rreac[resNdx] = res;
+            // rreac[resNdx] = res;
 
             // Skip this if we already know instance is not converged
-            // Also skip if this residual contributes to ground node
+            // Skip if this residual contributes to ground node
             if (converged && u!=0) {
                 // Get absolute tolerance (idt residual tolerance)
                 // potential nodes -> charge
@@ -1404,8 +1416,9 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
                 }
             }
 
-            // Store in previous values array
+            // Store in previous values array regardless if tolernce was checked or not
             q1[i] = res;
+            
             i++;
         }
         
@@ -1457,7 +1470,6 @@ bool OsdiInstance::convergedCore(Circuit& circuit, ConvSetup& convSetup) {
         }
         */
     }
-    
     
     // Count converged instances
     convSetup.instancesConvergenceChecks++;
