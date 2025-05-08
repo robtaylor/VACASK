@@ -5,7 +5,20 @@ VACASK (Verilog-A Circuit Analysis Kernel) is an analog circuit simulator. VACAS
 
 VACASK is not SPICE (although one could write a SPICE-compatible netlist parser for it with little effort). SPICE3 is more than 30 years old, written in C, and the code is hard to maintain. In some respect SPICE looks more like a proof of concept one writes before building the real thing. The way circuit equations are handled in SPICE makes it hard to extend the simulator with new algorithms. VACASK's goal is to be better than SPICE, not only in terms of what it offers, but also in terms of extensibility and ease of maintenance. 
 
-VACASK offers several features: 
+# Wait... is it any good? 
+
+The following benchmark results were obtained on the [C6288 16x16 multiplier circuit](benchmark/c6288) multiplying 0xFFFF with itself (simulated as an analog circuit). This is a medium size circuit with 10112 transistors and 25380 nodes. The transistors were modelled with the PSP103.4 model. Ngspice and Xyce tolerances were set so that the number of output timepoints is roughly equal to that of VACASK. OpenMP support was disabled to make the comparison fair. All simulators used KLU as the linear solver. Results output was disabled so that the impact of disk operations was minimized. The computer was an AMD Threadripper 7970. 
+
+|Simulator                   |Time (s) |Timepoints|Linear solves|
+|----------------------------|---------|----------|-------------|
+|Xyce 7.9                    |158.5    |1013      |2509         |
+|Ngspice pre-master 45       |77.6     |1020      |3474         |
+|VACASK                      |67.6     |1024      |3506         |
+
+If you want to find out more, there is [a page dedicated to benchmarks](benchmark).
+
+# What does VACASK offer? 
+
 - user defined global and ground nodes
 - fully parameterized hierarchical circuit description
 - RPN interpreter for parameterized expression evaluation
@@ -41,7 +54,7 @@ VACASK offers several features:
  
 Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF-reloaded or even Verilog-A. 
 
-VACASK is being developed by Árpád Bűrmen at the EDA Laboratory, University of Ljubljana, Slovenia. It is written in C++20 and is free software released under the [GNU General Public License 3.0](LICENSE). 
+VACASK is being developed by Árpád Bűrmen at the EDA Laboratory, University of Ljubljana, Slovenia. It is written in C++20 and is free software released under the [GNU Affero General Public License 3.0](LICENSE). 
 
 # What about device models? 
 
@@ -65,6 +78,7 @@ The following device models are supplied with VACASK.
 |SPICE diode                      |diode       |
 |BSIM3v3 MOSFET (Cogenda)         |bsim3       |
 |BSIM4v8 MOSFET (Cogenda)         |bsim4       |
+|PSP103.4 MOSFET                  |psp103v4    |
 |BSIMBULK MOSFET 106.2.0          |bsimbulk    |
 
 All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
