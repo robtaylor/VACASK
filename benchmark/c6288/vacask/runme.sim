@@ -91,7 +91,7 @@ subckt c6288_test()
 ends
 
 control
-  options nr_convtol=1 nr_bypasstol=1 nr_bypass=0 nr_contbypass=1 nr_residualcheck=0 
+  options nr_convtol=1 nr_bypasstol=1 nr_bypass=0 nr_contbypass=1 
   options tran_lteratio=1.5
   // options tran_debug=0
   // options tran_redofactor=2.5 tran_lteratio=3.5 tran_spicelte=1 
