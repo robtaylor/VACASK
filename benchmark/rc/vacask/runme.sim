@@ -3,11 +3,11 @@ RC circuit excited by a pulse train
 // Profile everything except evalAndLoad() and KLU
 // Demonstrates the general overhead
 
-load "resistor.osdi"
-load "capacitor.osdi"
+load "spice/resistor.osdi"
+load "spice/capacitor.osdi"
 
-model r resistor
-model c capacitor
+model r sp_resistor
+model c sp_capacitor
 model vsource vsource
 
 vs (1 0) vsource dc=0 type="pulse" val0=0 val1=1 rise=1u fall=1u width=1m period=2m
