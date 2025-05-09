@@ -7,7 +7,7 @@ VACASK is not SPICE (although one could write a SPICE-compatible netlist parser 
 
 # Wait... is it any good? 
 
-The following benchmark results were obtained on the [C6288 16x16 multiplier circuit](benchmark/c6288) multiplying 0xFFFF with itself (simulated as an analog circuit). This is a medium size circuit with 10112 transistors and 25380 nodes. The transistors were modelled with the PSP103.4 model. Ngspice and Xyce tolerances were set so that the number of output timepoints is roughly equal to that of VACASK. OpenMP support was disabled to make the comparison fair. All simulators used KLU as the linear solver. Results output was disabled so that the impact of disk operations was minimized. The computer was an AMD Threadripper 7970. 
+The following benchmark results were obtained on the [C6288 16x16 multiplier circuit](benchmark/c6288) multiplying 0xFFFF with itself (simulated as an analog circuit). This is a medium size circuit with 10112 transistors and 25380 nodes. The transistors were modelled with the PSP103.4 model. Ngspice and Xyce tolerances were set so that the number of output timepoints is roughly equal to that of VACASK. OpenMP support was disabled to make the comparison fair. All simulators used KLU as the linear solver. Results output was disabled so that the impact of disk operations was minimized. The benchmark was run on a computer with an AMD Threadripper 7970 processor. 
 
 |Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
 |-----------|----------------|-----------|---------|-----------|

@@ -22,7 +22,7 @@ Each case was run 6 times. The first run was not timed. We assumed that the cach
 
 Ngspice, Xyce and Gnucap were using builtin models of circuit elements. VACASK used Ngspice models converted into Verilog-A by [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller). The simplified noise model was used (`simplified_noise` set to `True`) and opvars that induce extra internal nodes were left out (`opvars_intnodes` set to `False`) to make models as close as possible to the ones provided by Ngspice in terms of complexity. The CMOS test problems used the PSP103.4 MOSFET model. 
 
-For each test problem the number of timepoints and the number of Newton-Raphson iterations (residual evaluations for Xyce) is listed. In some cases the number of rejected timepoints is also given. 
+For each test problem the number of timepoints and the number of Newton-Raphson (NR) iterations (residual evaluations for Xyce) is listed. In some cases the number of rejected timepoints is also given. All benchmarks were run on a computer with an AMD Threadripper 7970 processor. 
 
 # Results
 
@@ -60,7 +60,7 @@ A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its inpu
 |VACASK     | 0.96           |500056     |3        |1001217    |
 
 ## 9 stage CMOS ring oscillator (ring)
-This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V. The timestep was limited to 50ps. Xyce timeint reltol parameter was set to 5e-3 to make the number of computed timepoints roughly equal to that of VACASK. 
+This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V. The timestep was limited to 50ps. Xyce `timeint reltol` option was set to 5e-3 to make the number of computed timepoints roughly equal to that of VACASK. 
 
 |Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
 |-----------|----------------|-----------|---------|-----------|
@@ -70,7 +70,7 @@ This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V
 |VACASK     | 1.19           |26066      |0        |81875      |
 
 ## 16x16 CMOS multiplier (c6288)
-A medium size digital circuit with 10112 transistors and 25380 nodes. It computes the product of 0xFFFF with itself. The timestep was not limited. The simulation is purely analog (i.e. transistor-level). Due to its size we do not test it with Xyce-fast since the timing overheads are small compared to simulation time. VACASK tran_lteratio parameter was set to 1.5 to roughly match the number of computed timepoints to those of Ngspice. For the same reason Xyce timeint reltol parameter was set 2.5e-4. 
+A medium size digital circuit with 10112 transistors and 25380 nodes. It computes the product of 0xFFFF with itself. The timestep was not limited. The simulation is purely analog (i.e. transistor-level). Due to its size we do not test it with Xyce-fast since the timing overheads are small compared to simulation time. VACASK `tran_lteratio` option was set to 1.5 to roughly match the number of computed timepoints to those of Ngspice. For the same reason Xyce `timeint reltol` option was set 2.5e-4. 
 
 |Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
 |-----------|----------------|-----------|---------|-----------|
@@ -78,9 +78,46 @@ A medium size digital circuit with 10112 transistors and 25380 nodes. It compute
 |Ngspice    |  73.16         |1020       |1        |3474       |
 |VACASK     |  61.52         |1021       |7        |3487       |
 
+### Effect of residual tolerance checks
+Residual tolerance check (rtc) makes sure KCL equations are satisfied within a prescribed tolerance. It can induce extra NR iterations and slow down the simulation, but on the other hand makes the simulation results more accurate. By default residual tolerance check is enabled (option `nr_residualcheck` set to 1). This check is not performed in Ngspice. 
 
+|Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
+|---------------------|----------------|-----------|---------|-----------|
+|Ngspice              | 73.16          |1020       |1        |3474       |
+|VACASK, rtc (default)| 61.52          |1021       |7        |3487       |
+|VACASK, no rtc       | 53.60          |1024       |8        |3090       |
+
+When residual tolerance check is disabled VACASK is faster, but the results are less accurate. 
 
 ### Effect of continuation bypass 
+Continuation bypass (cb) is a technique where the simulator avoids the evaluation of the circuit in the first iteration of the NR algorithm if the result of the previous run is used as the starting point, e.g. in 
+* a transient analysis after an accepted timepoint, 
+* a continuation method after a converged NR run for a slightly different homotopy parameter value, and 
+* a parametric sweep after a converged NR run for a slightly different swept parameter value. 
 
-### Effect of residual tolerance checks
+Since in continuation mode NR algorithm requires only a few iterations to converge, omitting the circuit evaluation in the first iteration saves a lot of time. Continuation bypass cannot be applied for circuit elements that are not time-invariant (most device models are time invariant). It is enabled by default (option `nr_contbypass` set to 1). 
 
+The following table was obtained with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs. 
+
+|Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
+|---------------------|----------------|-----------|---------|-----------|
+|Ngspice              | 73.16          |1020       |1        |3474       |
+|VACASK, no cb        | 66.61          |1024       |8        |3090       |
+|VACASK, cb (default) | 53.60          |1024       |8        |3090       |
+
+Disabling continuation bypass slows down the simulation. 
+
+### Effect of inactive element bypass 
+Evaluation of inactive elements can be bypassed if the input quantities (in most cases voltages at the element's terminals) do not change significantly and the residuals contributed by the element have stabilized within a certain tolerance. When the input quantities change sufficiently the element is evaluated again. This technique is enabled by default in SPICE. To disable it you must configure Ngspice with the `--nobypass` option. Because it can reduce the accuracy, cause convergence problems, and sometimes even slow down the simulation (checking if the element has converged takes time) it is by default disabled in VACASK (`nr_bypass` is set to 0). 
+
+The `nr_convtol` and `nr_bypasstol` specify the convergence tolerances for the residuals and the input quantities (relative to the NR convergence tolerance). Inactive element bypass (ieb) can be enabled by setting the `nr_bypass` option to 1. When enabled it is recommended to disable residual tolerance checks by setting `nr_residualcheck` to 0 because they often cancel out the gains obtained due to inactive element bypass. 
+
+The following table was obtained with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs. `nr_convtol` and `nr_bypasstol` were both set to 1. 
+
+|Simulator                |Time (s)        |Timepoints |Rejected |Iterations |
+|-------------------------|----------------|-----------|---------|-----------|
+|Ngspice                  | 73.16          |1020       |1        |3474       |
+|VACASK, no ieb (default) | 53.60          |1024       |8        |3090       |
+|VACASK, ieb              | 50.55          |1024       |10       |3101       |
+
+Inactive element bypass is effective only for large circuits when a significant part of elements is inactive most of the time. 
