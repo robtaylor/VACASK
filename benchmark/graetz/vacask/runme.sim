@@ -3,12 +3,12 @@ Full-wave rectifier with smoothing and load
 // Profile everything except evalAndLoad() and KLU
 // Demonstrates the general overhead and the overhead of the nonlinear solver
 
-load "resistor.osdi"
-load "capacitor.osdi"
+load "spice/resistor.osdi"
+load "spice/capacitor.osdi"
 load "spice/diode.osdi"
 
-model r resistor
-model c capacitor
+model r sp_resistor
+model c sp_capacitor
 model vsource vsource
 model d1n4007 sp_diode ( is=76.9p rs=42.0m bv=1.00k ibv=5.00u cjo=26.5p  m=0.333 n=1.45 /* tt=4.32u */ )
 

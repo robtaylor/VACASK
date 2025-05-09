@@ -20,28 +20,47 @@ VACASK was compiled with default options.
 
 Each case was run 6 times. The first run was not timed. We assumed that the caches are filled after the first run so the performance variability in subsequent runs is smaller. No results were stored in files to prevent disk IO operations from affecting the results. Timing includes the whole run - loading of the input files, parsing, elaboration, and simulation. The tables list the average values across 5 runs. The standard deviation of timings was below 2% of the average. You can review the methodology by looking at [benchmark.py](benchmark.py). 
 
-Ngspice, Xyce and Gnucap were using builtin models of circuit elements. VACASK used Ngspice models converted into Verilog-A by [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller). The CMOS test problems used the PSP103.4 MOSFET model. 
+Ngspice, Xyce and Gnucap were using builtin models of circuit elements. VACASK used Ngspice models converted into Verilog-A by [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller). The simplified noise model was used (`simplified_noise` set to `True`) and opvars that induce extra internal nodes were left out (`opvars_intnodes` set to `False`) to make models as close as possible to the ones provided by Ngspice in terms of complexity. The CMOS test problems used the PSP103.4 MOSFET model. 
 
 For each test problem the number of timepoints and the number of Newton-Raphson iterations (linear solves) is listed. In some cases the number of rejected timepoints is also given. 
 
 # Results
 
 ## RC circuit excited by a pulse train (rc)
-This is a simple circuit with 3 elements (voltage source, resistor, capacitor). The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. 
+This is a simple circuit with 2 elements (resistor, capacitor) excited by a voltage pulse train. The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. This is a linear circuit with no rejected timepoints. 
 
-|Simulator  |Time (s)        |Timepoints       |Linear solves|
-|-----------|----------------|-----------------|-------------|
-|Xyce       |9.39            |1011527          |1016041
-|Xyce-fast  |4.12            |1011527          |1016041      |
-|Gnucap     |8.54            |1006982          |3025043      |
-|Ngspice    |1.31            |1006013          |2012031      |
-|VACASK     |0.95            |1005006          |2010014      |
+|Simulator  |Time (s)        |Timepoints |Iterations |
+|-----------|----------------|-----------|-----------|
+|Xyce       |9.39            |1011527    |1016041    |
+|Xyce-fast  |4.12            |1011527    |1016041    |
+|Gnucap     |8.54            |1006982    |3025043    |
+|Ngspice    |1.31            |1006013    |2012031    |
+|VACASK     |0.95            |1005006    |2010014    |
 
 ## Full wave rectifier with smoothing and load (graetz)
+A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited by a sinusoidal voltage. Two 1GOhm resistors are used for setting up a DC path to ground. The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
+
+|Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
+|-----------|----------------|-----------|---------|-----------|
+|Xyce       |10.60           |1000002    |0        |1000012    |
+|Xyce-fast  | 5.34           |1000002    |12       |1000012    |
+|Gnucap     |15.16           |1000026    |739      |4459517    |
+|Ngspice    | 2.21           |1000008    |0        |2000024    |
+|VACASK     | 1.88           |1000003    |0        |2000277    |
 
 ## Diode voltage multiplier (mul)
+A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its input excited by a sinusoidal voltage. The timestep was forced artificially to a small value so that roughly 500000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
+
+|Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
+|-----------|----------------|-----------|---------|-----------|
+|Xyce       | 5.51           |502341     |1270     |1000012    |
+|Xyce-fast  | 2.78           |502341     |1270     |1000012    |
+|Gnucap     | 9.94           |520797     |739      |2822527    |
+|Ngspice    | 1.16           |500467     |957      |1019733    |
+|VACASK     | 0.96           |500056     |3        |1001217    |
 
 ## 9 stage CMOS ring oscillator (ring)
 
 ## 16x16 CMOS multiplier (c6288)
 
+### Effect of continuation bypass and residual tolerance checks
