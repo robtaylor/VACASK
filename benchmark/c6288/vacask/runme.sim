@@ -1,13 +1,12 @@
 C6288 16x16 multiplier
 
 load "psp103v4.osdi"
-load "resistor.osdi"
-load "capacitor.osdi"
+load "spice/resistor.osdi"
 
 include "models.inc"
 include "multiplier.inc"
 model v vsource
-model r resistor
+model r sp_resistor
 
 subckt drv(out)
   parameters v0=0 v1=1

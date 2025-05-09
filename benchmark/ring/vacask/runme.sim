@@ -1,7 +1,5 @@
 9 stage ring oscillator
 
-load "resistor.osdi"
-load "capacitor.osdi"
 load "psp103v4.osdi"
 
 include "models.inc"
