@@ -1,0 +1,123 @@
+opamp test
+
+load "opamp.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+model oa opamp
+
+v1 (in 0) v dc=0 mag=1
+
+subckt oatest()
+  x1 (in 0 out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
+ends
+
+subckt invamp()
+  x1 (0 n out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
+  r1 (in n) r r=10k 
+  rf (n out) r r=20k
+ends
+
+subckt filter()
+  parameters rfb=100k f3db=1k
+  x1 (0 n out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
+  r1 (in n) r r=10k 
+  rf (n out) r r=rfb
+  cf (n out) c c=1/(2*M_PI*rfb*f3db)
+ends
+
+control
+  elaborate circuit("oatest")
+  sweep v1 instance="v1" parameter="dc" from=-0.5 to=0.5 mode="lin" points=500
+    analysis op1 op
+
+  elaborate circuit("invamp")
+  sweep v1 instance="v1" parameter="dc" from=-5 to=5 step=0.01
+    analysis op2 op
+  
+  elaborate circuit("filter")
+  analysis ac1 ac from=0.1 to=100M mode="dec" points=50
+ 
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get()
+
+fig1, ax1 = plt.subplots(2, 1, figsize=(6,6), dpi=100)
+fig1.suptitle('Opamp DC response')
+
+vin = plot['in']
+vout = plot['out']
+
+fig1.axes[0].set_title('Opamp DC response')
+fig1.axes[0].plot(vin, vout)
+fig1.axes[0].set_xlabel('Vin [V]')
+fig1.axes[0].set_ylabel('Vout [V]')
+
+fig1.axes[1].set_title('Gain')
+fig1.axes[1].plot(vout, np.gradient(vout, vin))
+fig1.axes[1].set_xlabel('Vout [V]')
+fig1.axes[1].set_ylabel('Ad')
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get()
+
+fig2, ax1 = plt.subplots(2, 1, figsize=(6,6), dpi=100)
+fig2.suptitle('Inverting amplifier DC response')
+
+vin = plot['in']
+vout = plot['out']
+
+fig2.axes[0].set_title('Inverting amplifier, A=2')
+fig2.axes[0].plot(vin, vout)
+fig2.axes[0].set_xlabel('Vin [V]')
+fig2.axes[0].set_ylabel('Vout [V]')
+
+fig2.axes[1].set_title('Gain')
+fig2.axes[1].plot(vout, np.gradient(vout, vin))
+fig2.axes[1].set_xlabel('Vout [V]')
+fig2.axes[1].set_ylabel('Ad')
+
+fig2.tight_layout()
+
+
+raw = rawread('ac1.raw')
+plot = raw.get()
+
+f = np.real(plot['frequency'])
+vout = plot['out']
+vmag = 20*np.log10(np.abs(vout))
+vph = np.unwrap(np.angle(vout))*180/np.pi
+
+fig3, ax1 = plt.subplots(2, 1, figsize=(6,6), dpi=100)
+fig3.suptitle('Filter AC response')
+
+fig3.axes[0].set_title('Magnitude')
+fig3.axes[0].semilogx(f, vmag)
+fig3.axes[0].set_xlabel('f [Hz]')
+fig3.axes[0].set_ylabel('A [dB]')
+
+fig3.axes[1].set_title('Phase')
+fig3.axes[1].semilogx(f, vph)
+fig3.axes[1].set_xlabel('f [Hz]')
+fig3.axes[1].set_ylabel('ph [deg]')
+
+fig3.tight_layout()
+
+
+plt.show()
+>>>FILE
+
+

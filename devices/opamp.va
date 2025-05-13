@@ -1,0 +1,27 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+module opamp(p, n, out);
+	inout p, n, out;
+	electrical p, n, out;
+	
+	(*desc= "Input resistance", type="instance", units = "Ohm"*) parameter real rin = 1e6 from (0:inf];
+    (*desc= "Output resistance", type="instance", units = "Ohm"*) parameter real rout = 1 from (0:inf];
+    (*desc= "Gain", type="instance", units = ""*) parameter real gain = 1e6 from (0:inf];
+    (*desc= "Common mode gain", type="instance", units = ""*) parameter real cmgain = 0 from [-inf:inf];
+    (*desc= "Positive saturation", type="instance", units = "V"*) parameter real va = 10 from (-inf:inf];
+    (*desc= "Negative saturation", type="instance", units = "V"*) parameter real vb = -10 from (-inf:inf];
+    (*desc= "Input offset", type="instance", units = "V"*) parameter real voffs = 0 from (-inf:inf];
+
+    real x, xc, y, vspan, vzero;
+
+    analog begin
+        vspan = va-vb;
+        vzero = (va+vb)/2;
+        x = V(p, n);
+        xc = (V(p)+V(n))/2 - vzero;
+        y = vb + vspan * ( 2 / `M_PI * atan( `M_PI / 2 * gain / vspan * 2 * ( x - voffs ) ) + 1) / 2 + xc*cmgain;
+        I(out) <+ (V(out)-y)/rout;
+        I(p,n) <+ V(p, n)/rin;
+	end
+endmodule

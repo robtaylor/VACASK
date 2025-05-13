@@ -1,4 +1,5 @@
 set(device_sources
+    "opamp.va"           "opamp.osdi"
     "capacitor.va"       "capacitor.osdi"
     "inductor.va"        "inductor.osdi"
     "resistor.va"        "resistor.osdi"

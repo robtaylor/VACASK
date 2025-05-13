@@ -12,11 +12,15 @@ bool RpnEvaluator::isConstant(const Rpn& expr) const {
     for(auto e=expr.cbegin(); e!=expr.cend(); ++e) {
         if (e->type()==Rpn::TIdentifier) {
             // Is it a constant, OK, otherwise not
-            return ContextStack::isConstant(e->get<Rpn::Identifier>().name);
+            if (!ContextStack::isConstant(e->get<Rpn::Identifier>().name)) {
+                return false;
+            }
         } else if (e->type()==Rpn::TFunctionCall) {
             // Is it a pure function, OK, otherwise not
             auto& fcall = e->get<Rpn::FunctionCall>();
-            return ContextStack::getBuiltin(fcall.name)->pure;
+            if (!ContextStack::getBuiltin(fcall.name)->pure) {
+                return false;
+            }
         }
     }
     return true;
