@@ -193,6 +193,11 @@ std::string Rpn::str() const {
                 sstack.push_back({std::move(txt), 1000});
                 break;
             }
+            case TMakeBoolean:
+            case TJump: 
+            case TBranch: 
+                // Do not format if hidden
+                break;
             default:
                 return "<expr UNSUPPORTED>";
         }

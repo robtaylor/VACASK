@@ -2,6 +2,7 @@
 #include <exception>
 #include "rpneval.h"
 #include "rpnbuiltin.h"
+#include "rpnfunctor.h"
 #include "common.h"
 
 
@@ -25,11 +26,23 @@ void RpnEvaluator::appendLocation(Status& s, const Loc& p) {
     s.extend(p);
 }
 
+std::tuple<bool, bool> RpnEvaluator::checkCondition() {
+    Value* cond = stack_.get(); 
+    switch (cond->type()) {
+        case Value::Type::Int: return std::make_tuple(true, makeBool(cond->val<Int>()));
+        case Value::Type::Real: return std::make_tuple(true, makeBool(cond->val<Real>()));
+        case Value::Type::String: return std::make_tuple(true, cond->val<String>().size()>0);
+        default: return std::make_tuple(false, false);
+    }
+}
+
 bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
     stack_.clear();
     Value *v1p, *v2p;
-    for(auto e=rpn.cbegin(); e!=rpn.cend(); ++e) {
+    // Increment manually at the end of the loop
+    for(auto e=rpn.cbegin(); e!=rpn.cend(); ) {
         const Loc& loc = rpn.location(*e);
+        bool isJump = false; 
         switch (e->type()) {
             case Rpn::TValue: {
                 stack_.push(e->get<Value>());
@@ -90,12 +103,13 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
                         case Rpn::OpNot:
                             coreSt = mathLogicOp1<FwNot>(stack(), 1, s); break;
                         case Rpn::OpAnd:
-                            coreSt = mathLogicOp2<FwAnd>(stack(), 2, s); break;
                         case Rpn::OpOr:
-                            coreSt = mathLogicOp2<FwOr>(stack(), 2, s); break;
+                            // Short circuit operations are never executed, 
+                            // they are there only for expession formatting.
+                            coreSt = true;
+                            break;
                         case Rpn::OpSelect:
                             coreSt = mathFuncSelector2(stack(), 2, s); break;
-                        
                         default:
                             s.set( Status::Unsupported, "Unsupported operator."); 
                     }
@@ -169,10 +183,76 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
                 }
                 break;
             }
+            case Rpn::TJump: {
+                auto& p = e->get<Rpn::Jump>();
+                // Get offset, check for infinite loop
+                if (p.offset==0) {
+                    s.set(Status::Unsupported, "Internal error: infinite loop detected.");
+                    appendLocation(s, loc);
+                    return false;
+                } 
+                // Do not check destination, jump
+                e += p.offset;
+                isJump = true;
+                break;
+            }
+            case Rpn::TBranch: {
+                auto& br = e->get<Rpn::Branch>();
+                bool negate = br.flags & Rpn::BrFalse; 
+                bool keepOnBranch = br.flags&Rpn::BrKeepOnBranch;
+                bool keepOnNoBranch = br.flags&Rpn::BrKeepOnNoBranch;
+                auto offs = br.offset;
+                // Get offset, check for infinite loop
+                if (offs==0) {
+                    s.set(Status::Unsupported, "Internal error: infinite loop detected.");
+                    appendLocation(s, loc);
+                    return false;
+                } 
+
+                // Get condition
+                auto [ok, cond] = checkCondition();
+                if (!ok) {
+                    s.set(Status::Unsupported, "Don't know how to interpret value as a boolean.");
+                    appendLocation(s, loc);
+                    return false;
+                }
+                
+                // Do not check destination, jump
+                auto branch = cond^negate;
+                if (cond^negate) {
+                    e += offs;
+                    isJump = true;
+                }
+
+                // Pop condition
+                if (!(branch && keepOnBranch || !branch && keepOnNoBranch)) {
+                    stack_.pop();
+                }
+                break;
+            }
+            case Rpn::TMakeBoolean: {
+                auto [ok, cond] = checkCondition();
+                if (!ok) {
+                    s.set(Status::Unsupported, "Don't know how to interpret value as a boolean.");
+                    appendLocation(s, loc);
+                    return false;
+                }
+                
+                // Pop value
+                stack_.pop();
+
+                // Replace with 1/0
+                stack_.push(Value(cond?1:0));
+                break;
+            }
             default:
                 s.set(Status::Unsupported, "RPN entry not supported.");
                 appendLocation(s, loc);
                 return false;
+        }
+        
+        if (!isJump) {
+            ++e;
         }
     }
     // Check stack depth

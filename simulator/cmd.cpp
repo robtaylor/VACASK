@@ -701,6 +701,11 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
             Simulator::out() << "Stats:\n";
             interpreter.tables().accounting().dumpTotal(2, Simulator::out());
             interpreter.tables().accounting().dumpDevTimes(2, Simulator::out(), circuit);
+        } else if (what=="rpn") {
+            // Print RPN of expressions (one per line) for testing purposes
+            for(auto& it : cmd.expressions()) {
+                Simulator::out() << it.str() << "\n"; 
+            } 
         } else {
             s.set(Status::NotFound, "Unknown keyword '"+std::string(what)+"'.");
             return false;

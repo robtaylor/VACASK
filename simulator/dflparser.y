@@ -374,14 +374,44 @@ expr
     $$.extend(Rpn::Op(Rpn::OpBitShiftL), @2.loc());  
   }
   | expr AND expr { 
+    // short circuit (a && b) translation to RPN
+    //         a
+    //         makeboolean
+    //         branchiffalse end
+    //         b
+    //         makeboolean
+    //         op(and) // does nothing during execution, needed by formatting
+    //   end:
+    auto tailLen = $3.size();
+    auto needsConversion = !$3.endsWithMakeBoolean();
     $$.extend(std::move($1)); 
+    $$.extend(Rpn::MakeBoolean(), @2.loc());
+    $$.extend(Rpn::Branch($3.size()+(needsConversion?1:0)+2, Rpn::BrFalse|Rpn::BrKeepOnBranch|Rpn::BrHidden), @2.loc());
     $$.extend(std::move($3)); 
+    if (needsConversion) {
+      $$.extend(Rpn::MakeBoolean(), @2.loc());
+    }
     $$.extend(Rpn::Op(Rpn::OpAnd), @2.loc());  
   }
   | expr OR expr { 
+    // short circuit (a &|| b) translation to RPN
+    //         a
+    //         makeboolean
+    //         branchiftrue end
+    //         b
+    //         makeboolean
+    //         op(or) // does nothing during execution, needed by formatting
+    //   end:
+    auto tailLen = $3.size();
+    auto needsConversion = !$3.endsWithMakeBoolean();
     $$.extend(std::move($1)); 
+    $$.extend(Rpn::MakeBoolean(), @2.loc());
+    $$.extend(Rpn::Branch($3.size()+(needsConversion?1:0)+2, Rpn::BrKeepOnBranch|Rpn::BrHidden), @2.loc());
     $$.extend(std::move($3)); 
-    $$.extend(Rpn::Op(Rpn::OpOr), @2.loc());  
+    if (needsConversion) {
+      $$.extend(Rpn::MakeBoolean(), @2.loc());
+    }
+    $$.extend(Rpn::Op(Rpn::OpOr), @2.loc());
   }
   | BITNOT expr { 
     $$.extend(std::move($2)); 

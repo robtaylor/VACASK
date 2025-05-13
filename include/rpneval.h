@@ -34,7 +34,11 @@ public:
     inline const ContextStack& contextStack() const { return contextStack_; };
 
     void appendLocation(Status& s, const Loc& id);
-    
+
+protected:
+    // OK, condition
+    std::tuple<bool, bool> checkCondition();
+
 private:
     RpnStack stack_;
     ContextStack contextStack_;

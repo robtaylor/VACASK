@@ -1,0 +1,13 @@
+Print RPN of expressions
+
+model vsrc vsource
+
+v1 (1 0) vsrc dc=0
+
+control
+  abort always
+  print rpn(a && b && c && d)
+  print (0&&0, 0&&1, 1&&0, 1&&1)
+  print rpn(a || b || c || d)
+  print (0||0, 0||1, 1||0, 1||1)
+endc

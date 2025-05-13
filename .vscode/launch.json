@@ -96,8 +96,9 @@
             // "args": [ "-df", "${workspaceFolder}/demo/control/runfinish.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/control/runfatal.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/test.sim" ], 
+            "args": [ "-df", "${workspaceFolder}/demo/rpn/parser.sim" ], 
             // "args": [ "-dp" ], 
-            "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask/runme.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask/runme.sim" ], 
             
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/test/manual_run",

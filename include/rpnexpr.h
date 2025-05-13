@@ -19,6 +19,10 @@ public:
         OpAnd, OpOr, OpNot, 
         OpSelect
     };
+    enum BrFlags : char {
+        BrKeepOnBranch=1, BrKeepOnNoBranch=2, BrFalse=4, BrHidden=8
+    };
+
     static const LocationIndex badLocationIndex = std::numeric_limits<LocationIndex>::max();
     static const LocationIndex maxLocationIndex = std::numeric_limits<LocationIndex>::max() - 1;
     typedef RpnArity Arity;
@@ -68,16 +72,22 @@ public:
         Jump(JumpOffset o) : offset(o), loc(badLocationIndex) {};
     } Jump;
     // 4+8 = 12 bytes
-    typedef struct Conditional {
-        JumpOffset offsetT;
+    typedef struct Branch {
+        JumpOffset offset;
+        BrFlags flags;
         LocationIndex loc;
-        Conditional(JumpOffset oT) : offsetT(oT), loc(badLocationIndex) {};
-    } Conditional;
+        Branch(JumpOffset o, BrFlags f) : offset(o), flags(f), loc(badLocationIndex) {};
+    } Branch;
+    // 8 = 8 bytes
+    typedef struct MakeBoolean {
+        LocationIndex loc;
+        MakeBoolean() : loc(badLocationIndex) {};
+    } MakeBoolean;
     
     enum Type : char { 
         TValue=0, TOp=1, TIdentifier=2, TFunctionCall=3, 
-        TPackVec=4, TPackList=5, TMergeList=7, 
-        TJump=8, TConditional=9 
+        TPackVec=4, TPackList=5, TMergeList=6, 
+        TJump=7, TBranch=8, TMakeBoolean=9
     };
 
     class Entry {
@@ -99,7 +109,8 @@ public:
                 case TPackList: std::get<PackList>(data).loc = li; break;
                 case TMergeList: std::get<MergeList>(data).loc = li; break;
                 case TJump: std::get<Jump>(data).loc = li; break;
-                case TConditional: std::get<Conditional>(data).loc = li; break;
+                case TBranch: std::get<Branch>(data).loc = li; break;
+                case TMakeBoolean: std::get<MakeBoolean>(data).loc = li; break;
             }
         };
         LocationIndex location() const {
@@ -111,14 +122,15 @@ public:
                 case TPackList: return std::get<PackList>(data).loc;
                 case TMergeList: return std::get<MergeList>(data).loc;
                 case TJump: return std::get<Jump>(data).loc;
-                case TConditional: return std::get<Conditional>(data).loc;
+                case TBranch: return std::get<Branch>(data).loc;
+                case TMakeBoolean: return std::get<MakeBoolean>(data).loc;
                 default: return badLocationIndex;
             }
         };
         template<typename T> T& get() { return std::get<T>(data); };
         template<typename T> const T& get() const { return std::get<T>(data); };
         
-        std::variant<Value, Op, Identifier, FunctionCall, PackVec, PackList, MergeList, Jump, Conditional> data;
+        std::variant<Value, Op, Identifier, FunctionCall, PackVec, PackList, MergeList, Jump, Branch, MakeBoolean> data;
     };
     
     typedef std::vector<Entry> Expression;
@@ -136,6 +148,9 @@ public:
     inline auto cbegin() const { return expr.cbegin(); };
     inline auto cend() const { return expr.cend(); };
 
+    inline bool endsWithMakeBoolean() {
+        return expr.size()!=0 && expr.back().type()==Rpn::TMakeBoolean;
+    };
     inline void extend(Rpn &&other) {
         auto locBase = locations.size();
         for(auto it=other.begin(); it!=other.end(); ++it) {
@@ -169,6 +184,8 @@ public:
     
     inline size_t size() const noexcept { return expr.size(); }
 
+    inline const Rpn::Entry& operator[](size_t i) const { return expr[i]; }
+
     std::string str() const;
     
     friend std::ostream& operator<<(std::ostream& os, const Rpn& expr);
@@ -182,6 +199,8 @@ private:
         return std::string("(")+s+")";
     };
 };
+
+DEFINE_FLAG_OPERATORS(Rpn::BrFlags);
 
 }
 

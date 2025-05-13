@@ -23,6 +23,12 @@ public:
         else 
             return nullptr; 
     };
+    const Value* get(size_t i=0) const { 
+        if (i<stack.size())
+            return &(stack[stack.size()-1-i]); 
+        else 
+            return nullptr; 
+    };
     inline bool pop() { 
         if (stack.size()>0) { 
             stack.pop_back(); 
