@@ -12,26 +12,27 @@ model oa opamp
 v1 (in 0) v dc=0 mag=1
 
 subckt oatest()
-  x1 (in 0 out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
+  x1 (in 0 out) oa gain=10000 rin=100k rout=0.1 va=5 vb=-5
 ends
 
 subckt invamp()
-  x1 (0 n out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
+  x1 (0 n out) oa gain=10000 rin=100k rout=0.1 va=5 vb=-5
   r1 (in n) r r=10k 
   rf (n out) r r=20k
 ends
 
 subckt filter()
-  parameters rfb=100k f3db=1k
-  x1 (0 n out) oa gain=100 rin=100k rout=0.1 va=5 vb=-5
-  r1 (in n) r r=10k 
+  parameters r1=10k gain=10 f3db=1k
+  parameters rfb=r1*gain
+  x1 (0 n out) oa gain=10000 rin=100k rout=0.1 va=5 vb=-5
+  r1 (in n) r r=r1
   rf (n out) r r=rfb
   cf (n out) c c=1/(2*M_PI*rfb*f3db)
 ends
 
 control
   elaborate circuit("oatest")
-  sweep v1 instance="v1" parameter="dc" from=-0.5 to=0.5 mode="lin" points=500
+  sweep v1 instance="v1" parameter="dc" from=-5m to=5m mode="lin" points=500
     analysis op1 op
 
   elaborate circuit("invamp")

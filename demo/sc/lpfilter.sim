@@ -1,0 +1,90 @@
+S-C filter
+
+load "psp103v4.osdi"
+load "opamp.osdi"
+load "capacitor.osdi"
+
+include "models.inc"
+
+model v vsource
+model c capacitor
+model oa opamp
+
+parameters fclk=100k 
+parameters trf=1u
+
+parameters fin=1k
+parameters inmag=0.02
+
+parameters cf=10p gain=10 f3db=1k
+
+parameters tclk=1/fclk
+parameters c2=cf*f3db*2*M_PI/fclk
+parameters c1=c2*gain
+
+v1 (in 0) v type="sine" sinedc=0 ampl=inmag freq=fin
+
+subckt switch(s1 s2 clk vdd vss)
+  parameters w=2u l=0.2u
+  m1 (s1 clk s2 vss) nmos w=w l=l
+ends
+
+x1 (0 n out) oa gain=10000 rin=100k rout=0.1 va=0.5 vb=-0.5
+
+xs11 (in in1 clk vdd vss) switch
+c1 (in1 0) c c=c1
+xs12 (in1 n clkn vdd vss) switch
+
+xs21 (n 2 clk vdd vss) switch
+c2 (2 0) c c=c2
+xs22 (2 out clkn vdd vss) switch
+
+cf (n out) c c=cf
+
+vclk (clk 0)   v type="pulse" val0=-0.6 val1= 0.6 delay=tclk rise=trf fall=trf width=tclk/2 period=tclk
+vclkn (clkn 0) v type="pulse" val0= 0.6 val1=-0.6 delay=tclk rise=trf fall=trf width=tclk/2 period=tclk
+
+vdd (vdd 0) v dc=0.6
+vss (vss 0) v dc=-0.6
+
+control
+  analysis tran1 tran step=0.1u stop=3m
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1, ax1 = plt.subplots(2, 1, figsize=(6,6), dpi=100)
+fig1.suptitle('S-C filter transient response')
+
+t = plot['time']
+vin = plot['in']
+vout = plot['out']
+
+fig1.axes[0].set_title('Input')
+fig1.axes[0].plot(t, vin)
+fig1.axes[0].set_xlabel('time [s]')
+fig1.axes[0].set_ylabel('Vin [V]')
+
+fig1.axes[1].set_title('Output')
+fig1.axes[1].plot(t, 0.2/np.sqrt(2)*np.sin(2*np.pi*1000*t-5*np.pi/4), color='red', linestyle='--', label='expected')
+fig1.axes[1].plot(t, vout, label='actual')
+fig1.axes[1].legend(loc='lower right')
+
+fig1.axes[1].set_xlabel('time [s]')
+fig1.axes[1].set_ylabel('Vout [V]')
+
+fig1.tight_layout()
+
+
+plt.show()
+>>>FILE
+
+

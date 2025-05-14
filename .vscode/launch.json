@@ -97,7 +97,8 @@
             // "args": [ "-df", "${workspaceFolder}/demo/control/runfatal.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/test.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/rpn/parser.sim" ], 
-            "args": [ "-df", "${workspaceFolder}/demo/sc/opamp.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/sc/opamp.sim" ], 
+            "args": [ "-df", "${workspaceFolder}/demo/sc/lpfilter.sim" ], 
             // "args": [ "-dp" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask/runme.sim" ], 
             

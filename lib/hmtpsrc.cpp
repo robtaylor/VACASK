@@ -63,7 +63,7 @@ std::tuple<bool, bool> SourceStepping::run() {
     // Try solving without gmin stepping at source scale factor = 0.0
     std::tie(converged, leave) = core.runSolver(continuation);
     if (debug>0) {
-        Simulator::dbg() << formatProgress() << ", initial OP " 
+        Simulator::dbg() << formatProgress() << ", initial solve " 
             << (converged ? "converged in " : "failed to converge in ")
             << core.iterations() << " solver iteration(s)" << ".\n";
     }
