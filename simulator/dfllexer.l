@@ -628,6 +628,9 @@ after INCEND we have
 <BODY>:     { 
                 return (token::COLON);
             }
+<BODY>\?    { 
+                return (token::QUESTION);
+            }
 <BODY>;     {
                 return (token::SEMICOLON);
             }

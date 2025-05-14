@@ -1,4 +1,4 @@
-Print RPN of expressions
+Print RPN of expressions, evaluate expressions
 
 model vsrc vsource
 
@@ -7,7 +7,10 @@ v1 (1 0) vsrc dc=0
 control
   abort always
   print rpn(a && b && c && d)
-  print (0&&0, 0&&1, 1&&0, 1&&1)
+  print ("short circuit and: ", 0&&0, 0&&1, 1&&0, 1&&1)
   print rpn(a || b || c || d)
-  print (0||0, 0||1, 1||0, 1||1)
+  print ("short circuit or: ", 0||0, 0||1, 1||0, 1||1)
+  print rpn(a?b:c)
+  print ("ternary, true, should be 10 : ", 1?10:20)
+  print ("ternary, false, should be 20: ", 0?10:20)
 endc

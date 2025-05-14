@@ -16,7 +16,7 @@ public:
         OpPlus, OpMinus, OpTimes, OpDivide, OpUMinus, OpPower, 
         OpEqual, OpNotEqual, OpLess, OpLessEq, OpGreater, OpGreaterEq, 
         OpBitAnd, OpBitOr, OpBitExor, OpBitNot, OpBitShiftR, OpBitShiftL, 
-        OpAnd, OpOr, OpNot, 
+        OpAnd, OpOr, OpNot, OpQuestion, 
         OpSelect
     };
     enum BrFlags : char {
@@ -68,8 +68,9 @@ public:
     // 4+8 = 12 bytes
     typedef struct Jump {
         JumpOffset offset;
+        BrFlags flags;
         LocationIndex loc;
-        Jump(JumpOffset o) : offset(o), loc(badLocationIndex) {};
+        Jump(JumpOffset o, BrFlags f) : offset(o), flags(f), loc(badLocationIndex) {};
     } Jump;
     // 4+8 = 12 bytes
     typedef struct Branch {

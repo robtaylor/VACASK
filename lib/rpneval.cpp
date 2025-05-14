@@ -108,7 +108,8 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
                             coreSt = mathLogicOp1<FwNot>(stack(), 1, s); break;
                         case Rpn::OpAnd:
                         case Rpn::OpOr:
-                            // Short circuit operations are never executed, 
+                        case Rpn::OpQuestion:
+                            // Short circuit operations and ternary operator are never executed, 
                             // they are there only for expession formatting.
                             coreSt = true;
                             break;

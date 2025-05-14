@@ -189,6 +189,7 @@ typedef struct subckt {
 
 
 // Operator associativity and precedence, lowest first
+%right QUESTION
 %left OR
 %left AND
 %left BITOR
@@ -200,7 +201,7 @@ typedef struct subckt {
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right POWER
-%precedence NEG NOT BITNOT
+%right NEG NOT BITNOT
 %left LPAREN RPAREN LBRACKET RBRACKET
 
 // exprlist e  e,e
@@ -413,6 +414,21 @@ expr
     }
     $$.extend(Rpn::Op(Rpn::OpOr), @2.loc());
   }
+  | expr QUESTION expr COLON expr %prec QUESTION {
+    // Ternary operator a?b:c, translation to RPM
+    //        a
+    //        branchiffalse false // +3
+    //        b
+    //        jump end // +2
+    // false: c
+    // end:   op(question) // does nothing during execution, needed by formatting
+    $$.extend(std::move($1)); 
+    $$.extend(Rpn::Branch(3, Rpn::BrFalse|Rpn::BrHidden), @2.loc());
+    $$.extend(std::move($3)); 
+    $$.extend(Rpn::Jump(2, Rpn::BrHidden), @2.loc());
+    $$.extend(std::move($5)); 
+    $$.extend(Rpn::Op(Rpn::OpQuestion), @2.loc());
+  }
   | BITNOT expr { 
     $$.extend(std::move($2)); 
     $$.extend(Rpn::Op(Rpn::OpBitNot), @1.loc());  
@@ -421,7 +437,7 @@ expr
     $$.extend(std::move($2)); 
     $$.extend(Rpn::Op(Rpn::OpNot), @1.loc());  
   }
-  | MINUS expr { 
+  | MINUS expr %prec NEG { 
     $$.extend(std::move($2)); 
     $$.extend(Rpn::Op(Rpn::OpUMinus), @1.loc());  
   }

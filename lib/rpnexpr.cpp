@@ -10,6 +10,7 @@ Rpn::Rpn() {
 // This replicates the operator priority from the parser
 // Higher number = higher priority
 std::unordered_map<Rpn::OpCode, std::tuple<const char*, int>> Rpn::opMap = {
+    { OpQuestion, {"?", -8} },  
     { OpOr, {"||", -7} },  
     { OpAnd, {"&&", -6} },  
     { OpBitOr, {"|", -5} },  
@@ -92,6 +93,26 @@ std::string Rpn::str() const {
                             (exprPr1<priority ? parenthesize(ex1) : ex1) +
                             opStr + 
                             (exprPr2<priority ? parenthesize(ex2) : ex2), 
+                            priority
+                        });
+                        break;
+                    }
+                    case OpQuestion: {
+                        // Ternary operator
+                        std::string ex1, ex2, ex3;
+                        int exprPr1, exprPr2, exprPr3;
+                        std::tie(ex3, exprPr3) = std::move(sstack.back());
+                        sstack.pop_back();
+                        std::tie(ex2, exprPr2) = std::move(sstack.back());
+                        sstack.pop_back();
+                        std::tie(ex1, exprPr1) = std::move(sstack.back());
+                        sstack.pop_back();
+                        sstack.push_back({
+                            (exprPr1<priority ? parenthesize(ex1) : ex1) +
+                            opStr + 
+                            (exprPr2<priority ? parenthesize(ex2) : ex2) +
+                            ":" + 
+                            (exprPr3<priority ? parenthesize(ex3) : ex3), 
                             priority
                         });
                         break;
