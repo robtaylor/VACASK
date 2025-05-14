@@ -98,7 +98,8 @@
             // "args": [ "-df", "${workspaceFolder}/demo/spice/test.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/rpn/parser.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/sc/opamp.sim" ], 
-            "args": [ "-df", "${workspaceFolder}/demo/sc/lpfilter.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/sc/lpfilter.sim" ], 
+            "args": [ "-df", "${workspaceFolder}/demo/gilbert/gilbert.sim" ], 
             // "args": [ "-dp" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask/runme.sim" ], 
             
@@ -120,7 +121,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vacask",
-            "args": [ "${workspaceFolder}/test/test_hb4.sim" ],
+            "args": [ "${workspaceFolder}/demo/gilbert/gilbert.sim" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/test/manual_run",
             "environment": [

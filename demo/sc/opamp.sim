@@ -1,4 +1,4 @@
-opamp test
+Opamp test
 
 load "opamp.osdi"
 load "resistor.osdi"
