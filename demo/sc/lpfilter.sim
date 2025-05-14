@@ -1,4 +1,4 @@
-S-C filter
+Switched capacitor low-pass filter
 
 load "psp103v4.osdi"
 load "opamp.osdi"

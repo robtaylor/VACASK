@@ -1,4 +1,4 @@
-Gilbert cell test
+Gilbert cell
 
 load "psp103v4.osdi"
 load "spice/resistor.osdi"

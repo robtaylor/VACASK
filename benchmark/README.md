@@ -66,7 +66,7 @@ This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 3.33           |27310      |0        |95462      |
 |Xyce-fast  | 3.10           |27310      |0        |95462      |
-|Ngspice    | 1.56           |20483      |890      |79407      |
+|Ngspice    | 1.60           |20682      |1192     |81225      |
 |VACASK     | 1.19           |26066      |0        |81875      |
 
 ## 16x16 CMOS multiplier (c6288)

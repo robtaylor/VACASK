@@ -1,4 +1,4 @@
-Opamp test
+Opamp, inverting amplifier
 
 load "opamp.osdi"
 load "resistor.osdi"
