@@ -805,7 +805,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
        
     // Set next timepoint
     auto tSolve = tk+hk;
-    
+
     // Set current algorithm order
     order = 1;
     
@@ -1394,7 +1394,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             setProgress(tSolve, tSolve);
 
             // Check if we are done
-            if (tSolve>=params.stop) {
+            if (std::abs(tSolve-params.stop)<timeRelativeTolerance*params.stop) {
                 // Reached stop time, mark analysis as finished
                 finished = true;
                 break;
