@@ -499,10 +499,10 @@ bool Circuit::add(Device* dev, Status& s) {
 bool Circuit::add(Model* mod, Status& s) {
     auto [it, inserted] = modelMap.insert({mod->name(), nullptr});
     if (!inserted) {
-        s.set(Status::Redefinition, "A model with name '"+std::string(mod->name())+"' already exists.");
+        s.set(Status::Redefinition, "A model/subcircuit with name '"+std::string(mod->name())+"' already exists.");
         s.extend(mod->location());
         if (it->second->location()) {
-            s.extend("The existing model was first defined here");
+            s.extend("The existing model/subcircuit was defined here");
             s.extend(it->second->location());
         }
         return false;

@@ -74,6 +74,7 @@ struct sweeps {
 
 typedef struct subckt {
     bool isToplevel {true};
+    bool hasControlBlock {false};
     PTSubcircuitDefinition def;
     PTParameters parameters;
     std::vector<PTModel> models;
@@ -81,9 +82,6 @@ typedef struct subckt {
     std::vector<PTInstance> instances;
     std::vector<PTInstance> parameterizedInstances;
     std::unordered_map<Id,Location> paramLoc;
-    std::unordered_map<Id,Location> instLoc;
-    std::unordered_map<Id,Location> modLoc;
-    std::unordered_map<Id,Location> subcktLoc;
 } subckt;
 
 }
@@ -187,6 +185,11 @@ typedef struct subckt {
 %token               INNETLIST    "input netlist"
 %token               INEXPR       "input expression"
 
+%token               IF           "if"
+%token               ELIF         "elif"
+%token               ELSE         "else"
+%token               ENDTOK       "end"
+
 
 // Operator associativity and precedence, lowest first
 %right QUESTION
@@ -219,8 +222,8 @@ typedef struct subckt {
 %type <struct paramlist>                parameter_list opt_broken_parameter_list subcktparameters 
 %type <PTInstance>                      instance
 %type <PTModel>                         model
-%type <PTSubcircuitDefinition>          finished_subckt
-%type <struct subckt>                   subckt
+%type <PTSubcircuitDefinition>          subckt
+%type <struct subckt>                   subckt_build
 %type <PTLoad>                          load
 %type <Rpn>                             expr
 %type <Id>                              savestr
@@ -228,7 +231,7 @@ typedef struct subckt {
 %type <PTSave>                          savecmd
 %type <std::vector<PTSave>>             savecmd_list saves
 %type <PTEmbed>                         embed
-%type <Int>                             control_block finished_control_block
+%type <Int>                             control_block_build control_block
 %type <PTCommand>                       command
 %type <struct sweeps>                   sweeps
 %type <PTAnalysis>                      analysis pre_analysis analysis_with_params 
@@ -238,7 +241,7 @@ typedef struct subckt {
 %%
 
 output
-  : INNETLIST subckt END {
+  : INNETLIST subckt_build END {
     for(auto it=$2.models.begin(); it!=$2.models.end(); ++it) {
         $2.def.add(std::move(*it));
     }
@@ -262,6 +265,183 @@ output
   | INEXPR expr END {
     extras.setExpr(std::move($2));
   }
+
+// Toplevel netlist and subcircuit definition
+subckt_build
+  : TITLE NEWLINE {
+    // Toplevel netlist start
+    tables.setTitle(std::move($1));
+    $$.def = std::move(PTSubcircuitDefinition(
+        @1.loc(), 
+        Id(), // By default the name (Id) of the toplevel definition is not valid (empty)
+        std::move(PTIdentifierList())
+    ));
+  }
+  | SUBCKT IDENTIFIER LPAREN RPAREN NEWLINE {
+    // Subcircuit definition start, no terminals
+    $$.def = std::move(PTSubcircuitDefinition(
+        @1.loc(), 
+        $2, 
+        PTIdentifierList()
+    ));
+    // This is not the toplevel definition
+    $$.isToplevel = false;
+  }
+  | SUBCKT IDENTIFIER LPAREN terminal_list RPAREN NEWLINE {
+    // Subcircuit definition start, with terminals
+    $$.def = std::move(PTSubcircuitDefinition(
+        @1.loc(), 
+        $2, 
+        std::move($4)
+    ));
+    // This is not the toplevel definition
+    $$.isToplevel = false;
+  }
+  | subckt_build NEWLINE {
+    // Skip NEWLINE
+    $$ = std::move($1);
+  }
+  | subckt_build subcktparameters {
+    // parameters
+    for(auto it=$2.locations.begin(); it!=$2.locations.end(); ++it) {
+        auto fdit = $1.paramLoc.find(it->first);
+        if (fdit!=$1.paramLoc.end()) {
+            status.set(Status::Redefinition, "Parameter redefinition.");
+            status.extend(it->second.loc());
+            status.extend("Parameter first defined here.");
+            status.extend(fdit->second.loc());
+            YYERROR;
+        }
+    }
+    $$ = std::move($1);
+    $$.parameters.add(std::move($2.params));
+    $$.paramLoc.merge(std::move($2.locations));
+  }
+  | subckt_build model {
+    // model
+    $$ = std::move($1);
+    if ($2.isParameterized()) {
+        $$.parameterizedModels.push_back(std::move($2));
+    } else {
+        $$.models.push_back(std::move($2));
+    }
+  }
+  | subckt_build instance {
+    $$ = std::move($1);
+    if ($2.isParameterized()) {
+        $$.parameterizedInstances.push_back(std::move($2));
+    } else {
+        $$.instances.push_back(std::move($2));
+    }
+  }
+  | subckt_build condblock {
+    // TODO: implement
+    $$ = std::move($1);
+  }
+  | subckt_build subckt {
+    // subcircuit definition, not allowed inside other subcircuit definitions
+    if (!$1.isToplevel) {
+        status.set(Status::Syntax, "Nested subcircuit definitions are not allowed.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    $$.def.add(std::move($2));
+  }
+  | subckt_build global {
+    // global nodes, not allowed in subcircuit definition
+    if (!$$.isToplevel) {
+        status.set(Status::Syntax, "Global nodes allowed only in toplevel circuit.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    for(auto it=$2.begin(); it!=$2.end(); ++it) {
+        tables.addGlobal(std::move(*it));
+    }
+  }
+  | subckt_build ground {
+    // ground nodes, not allowed in subcircuit definition
+    if (!$$.isToplevel) {
+        status.set(Status::Syntax, "Ground nodes allowed only in toplevel circuit.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    for(auto it=$2.begin(); it!=$2.end(); ++it) {
+        tables.addGround(std::move(*it));
+    }
+  }
+  | subckt_build load {
+    // load, not allowed in subcircuit definition
+    if (!$$.isToplevel) {
+        status.set(Status::Syntax, "Load allowed only in toplevel circuit.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    tables.addLoad(std::move($2));
+  }
+  | subckt_build embed {
+    // embed, not allowed in subcircuit definition
+    if (!$$.isToplevel) {
+        status.set(Status::Syntax, "Embed allowed only in toplevel circuit.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    extras.addEmbed(std::move($2));
+  }
+  | subckt_build control_block {
+    // control block, allow this for toplevel definition only
+    if (!$1.isToplevel) {
+        status.set(Status::Syntax, "Control block is not allowed inside subcircuit definition.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    // Only one control block is allowed
+    if ($1.hasControlBlock) {
+        status.set(Status::Syntax, "Only one control block is allowed.");
+        status.extend(@2.loc());
+        YYERROR;
+    }
+    $$ = std::move($1);
+    $$.hasControlBlock = true;
+  }
+  
+subckt
+  : subckt_build ENDS NEWLINE {
+    $1.def.add(std::move($1.parameters)); 
+    for(auto it=$1.models.begin(); it!=$1.models.end(); ++it) {
+        $1.def.add(std::move(*it));
+    }
+    for(auto it=$1.parameterizedModels.begin(); it!=$1.parameterizedModels.end(); ++it) {
+        $1.def.add(std::move(*it));
+    }
+    for(auto it=$1.instances.begin(); it!=$1.instances.end(); ++it) {
+        $1.def.add(std::move(*it));
+    }
+    for(auto it=$1.parameterizedInstances.begin(); it!=$1.parameterizedInstances.end(); ++it) {
+        $1.def.add(std::move(*it));
+    }
+    $$ = std::move($1.def);
+  }
+
+// TODO
+condblock_build
+  : IF expr NEWLINE
+  | condblock_build instance
+  | condblock_build model
+  | condblock_build condblock 
+  | condblock_build ELIF expr NEWLINE
+  | condblock_build ELSE NEWLINE
+  | condblock_build NEWLINE
+;
+
+// TODO
+condblock
+  : condblock_build ENDTOK NEWLINE
+;
 
 terminal
   : IDENTIFIER { 
@@ -759,165 +939,6 @@ load
   }
 
 
-subckt
-  : TITLE NEWLINE {
-    // Toplevel description
-    tables.setTitle(std::move($1));
-    $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
-        Id(), // By default the name (Id) of the toplevel definition is not valid (empty)
-        std::move(PTIdentifierList())
-    ));
-  }
-  | SUBCKT IDENTIFIER LPAREN RPAREN NEWLINE {
-    // No terminals
-    $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
-        $2, 
-        PTIdentifierList()
-    ));
-    // This is not the toplevel definition
-    $$.isToplevel = false;
-  }
-  | SUBCKT IDENTIFIER LPAREN terminal_list RPAREN NEWLINE {
-    // Terminals
-    $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
-        $2, 
-        std::move($4)
-    ));
-    // This is not the toplevel definition
-    $$.isToplevel = false;
-  }
-  | subckt NEWLINE {
-    $$ = std::move($1);
-  }
-  | subckt subcktparameters {
-    for(auto it=$2.locations.begin(); it!=$2.locations.end(); ++it) {
-        auto fdit = $1.paramLoc.find(it->first);
-        if (fdit!=$1.paramLoc.end()) {
-            status.set(Status::Redefinition, "Parameter redefinition.");
-            status.extend(it->second.loc());
-            status.extend("Parameter first defined here.");
-            status.extend(fdit->second.loc());
-            YYERROR;
-        }
-    }
-    $$ = std::move($1);
-    $$.parameters.add(std::move($2.params));
-    $$.paramLoc.merge(std::move($2.locations));
-  }
-  | subckt model {
-    auto fdit = $1.modLoc.find($2.name());
-    if (fdit!=$1.modLoc.end()) {
-        status.set(Status::Redefinition, "Model redefinition.");
-        status.extend(@2.loc());
-        status.extend("Model first defined here.");
-        status.extend(fdit->second.loc());
-        YYERROR;
-    }
-    $$ = std::move($1);
-    if ($2.isParameterized()) {
-        $$.parameterizedModels.push_back(std::move($2));
-    } else {
-        $$.models.push_back(std::move($2));
-    }
-    $$.modLoc[$2.name()] = @2;
-  }
-  | subckt instance {
-    auto fdit = $1.instLoc.find($2.name());
-    if (fdit!=$1.instLoc.end()) {
-        status.set(Status::Redefinition, "Instance redefinition.");
-        status.extend(@2.loc());
-        status.extend("Instance first defined here.");
-        status.extend(fdit->second.loc());
-        YYERROR;
-    }
-    $$ = std::move($1);
-    if ($2.isParameterized()) {
-        $$.parameterizedInstances.push_back(std::move($2));
-    } else {
-        $$.instances.push_back(std::move($2));
-    }
-    $$.instLoc[$2.name()] = @2;
-  }
-  | subckt global {
-    $$ = std::move($1);
-    for(auto it=$2.begin(); it!=$2.end(); ++it) {
-        tables.addGlobal(std::move(*it));
-    }
-  }
-  | subckt ground {
-    $$ = std::move($1);
-    for(auto it=$2.begin(); it!=$2.end(); ++it) {
-        tables.addGround(std::move(*it));
-    }
-  }
-  | subckt load {
-    $$ = std::move($1);
-    tables.addLoad(std::move($2));
-  }
-  | subckt embed {
-    $$ = std::move($1);
-    extras.addEmbed(std::move($2));
-  }
-  | subckt finished_subckt {
-    // Allow this for toplevel definition only
-    if (!$1.isToplevel) {
-        status.set(Status::Syntax, "Nested subcircuit definitions are not allowed.");
-        status.extend(@2.loc());
-        YYERROR;
-    }
-    // Check uniqueness against other subcircuit definitions
-    auto fdit = $1.subcktLoc.find($2.name());
-    if (fdit!=$1.subcktLoc.end()) {
-        status.set(Status::Redefinition, "Subcircuit redefinition.");
-        status.extend(@2.loc());
-        status.extend("Subcircuit first defined here.");
-        status.extend(fdit->second.loc());
-        YYERROR;
-    }
-    // Check uniqueness against toplevel models
-    auto fdsit = $1.modLoc.find($2.name());
-    if (fdsit!=$1.modLoc.end()) {
-        status.set(Status::Redefinition, "Subcircuit definition and a model have the same name.");
-        status.extend(@2.loc());
-        status.extend("Model was defined here.");
-        status.extend(fdsit->second.loc());
-        YYERROR;
-    }
-    $$ = std::move($1);
-    $$.def.add(std::move($2));
-    $$.subcktLoc[$2.name()] = @2;
-  }
-  | subckt finished_control_block {
-    // Allow this for toplevel definition only
-    if (!$1.isToplevel) {
-        status.set(Status::Syntax, "Control block is not allowed inside subcircuit definition.");
-        status.extend(@2.loc());
-        YYERROR;
-    }
-    $$ = std::move($1);
-  }
-  
-finished_subckt
-  : subckt ENDS NEWLINE {
-    $1.def.add(std::move($1.parameters)); 
-    for(auto it=$1.models.begin(); it!=$1.models.end(); ++it) {
-        $1.def.add(std::move(*it));
-    }
-    for(auto it=$1.parameterizedModels.begin(); it!=$1.parameterizedModels.end(); ++it) {
-        $1.def.add(std::move(*it));
-    }
-    for(auto it=$1.instances.begin(); it!=$1.instances.end(); ++it) {
-        $1.def.add(std::move(*it));
-    }
-    for(auto it=$1.parameterizedInstances.begin(); it!=$1.parameterizedInstances.end(); ++it) {
-        $1.def.add(std::move(*it));
-    }
-    $$ = std::move($1.def);
-  }
-
 sweeps
   : SWEEP IDENTIFIER opt_broken_parameter_list {
     Id id = $2;
@@ -1011,12 +1032,12 @@ command
     $$.add(std::move($6.params));
   }
 
-control_block
+control_block_build
   : CONTROL NEWLINE {
   }
-  | control_block NEWLINE {
+  | control_block_build NEWLINE {
   }
-  | control_block SAVE saves NEWLINE {
+  | control_block_build SAVE saves NEWLINE {
     // This has to be defined separately because 
     // the syntax of save command is different 
     // from the rest of commands. 
@@ -1026,16 +1047,16 @@ control_block
     cmd.add(std::move(s));
     extras.addCommand(std::move(cmd));
   }
-  | control_block analysis NEWLINE {
+  | control_block_build analysis NEWLINE {
     // Analysis also has a special syntax. 
     extras.addCommand(std::move($2));
   } 
-  | control_block command NEWLINE {
+  | control_block_build command NEWLINE {
     extras.addCommand(std::move($2));
   }
   
-finished_control_block
-  : control_block ENDC NEWLINE {
+control_block
+  : control_block_build ENDC NEWLINE {
   }
 
 %%
