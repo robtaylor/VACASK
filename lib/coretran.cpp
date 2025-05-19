@@ -1394,7 +1394,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             setProgress(tSolve, tSolve);
 
             // Check if we are done
-            if (std::abs(tSolve-params.stop)<timeRelativeTolerance*params.stop) {
+            if (tSolve-params.stop>=-timeRelativeTolerance*params.stop) {
                 // Reached stop time, mark analysis as finished
                 finished = true;
                 break;
