@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-61-g8da323b50
+// Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-04-24 10:14:01 UTC
+// Date         : 2025-05-21 09:28:07 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -1025,6 +1025,13 @@ module sp_bjt(c, b, e, sub);
     BJTtf3 = 1-BJTdepletionCapCoeff*(1+BJTtjunctionExpBE);
     BJTtf6 = exp((1+BJTtjunctionExpBC)*xfc);
     BJTtf7 = 1-BJTdepletionCapCoeff*(1+BJTtjunctionExpBC);
+    if (!$port_connected(sub)) begin
+      V(sub) <+ 0;
+    end
+    if (BJTexcessPhaseFactor==0) begin
+      V(xf1) <+ 0;
+      V(xf2) <+ 0;
+    end
 
     // Tag: load, function: BJTload
     capbx = 0;
