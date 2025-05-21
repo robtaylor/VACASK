@@ -925,24 +925,27 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
         for(auto i : device->nonzeroReactiveResiduals()) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
-            // Get residual offset and residual
-            auto resOff = descr->nodes[i].react_residual_off;
-            auto contrib = *getDataPtr<double*>(core(), resOff);
-            // Add linearized residual 
-            // (note that the negative of the linearized residual is stored)
-            if (checkFlags(Flags::LimitingApplied)) {
-                auto offsLim = descr->nodes[i].react_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    contrib -= *getDataPtr<double*>(core(), offsLim);
+            // For ground nodes, skip the rest
+            if (u!=0) {
+                // Get residual offset and residual
+                auto resOff = descr->nodes[i].react_residual_off;
+                auto contrib = *getDataPtr<double*>(core(), resOff);
+                // Add linearized residual 
+                // (note that the negative of the linearized residual is stored)
+                if (checkFlags(Flags::LimitingApplied)) {
+                    auto offsLim = descr->nodes[i].react_limit_rhs_off;
+                    if (offsLim!=UINT32_MAX) {
+                        contrib -= *getDataPtr<double*>(core(), offsLim);
+                    }
                 }
-            }
-            // Store reactive residual contribution in states vector
-            evalSetup.newStates[nodeStateIndex] = contrib;
-            // Differentiate if requested
-            if (evalSetup.integCoeffs) {
-                double flow = evalSetup.integCoeffs->differentiate(contrib, nodeStateIndex);
-                // Store in states vector
-                evalSetup.newStates[nodeStateIndex+1] = flow;
+                // Store reactive residual contribution in states vector
+                evalSetup.newStates[nodeStateIndex] = contrib;
+                // Differentiate if requested
+                if (evalSetup.integCoeffs) {
+                    double flow = evalSetup.integCoeffs->differentiate(contrib, nodeStateIndex);
+                    // Store in states vector
+                    evalSetup.newStates[nodeStateIndex+1] = flow;
+                }
             }
             // Go to next node (skip two state vector entries - charge and flow)
             nodeStateIndex += 2;
@@ -1081,21 +1084,24 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
         // for(uint32_t i=0; i<descr->num_nodes; i++) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
-            // Get residual offset and residual
-            auto offs = descr->nodes[i].resist_residual_off;
-            double contrib = *getDataPtr<double*>(core(), offs);
-            // Add linearized residual
-            // (note that the negative of the linearized residual is stored)
-            if (checkFlags(Flags::LimitingApplied)) {
-                auto offsLim = descr->nodes[i].resist_limit_rhs_off;
-                if (offsLim!=UINT32_MAX) {
-                    contrib -= *getDataPtr<double*>(core(), offsLim);
+            // For ground nodes, skip the rest
+            if (u!=0) {
+                // Get residual offset and residual
+                auto offs = descr->nodes[i].resist_residual_off;
+                double contrib = *getDataPtr<double*>(core(), offs);
+                // Add linearized residual
+                // (note that the negative of the linearized residual is stored)
+                if (checkFlags(Flags::LimitingApplied)) {
+                    auto offsLim = descr->nodes[i].resist_limit_rhs_off;
+                    if (offsLim!=UINT32_MAX) {
+                        contrib -= *getDataPtr<double*>(core(), offsLim);
+                    }
                 }
-            }
-            // Update
-            contrib = std::abs(contrib);
-            if (contrib > loadSetup.maxResistiveResidualContribution[u]) {
-                loadSetup.maxResistiveResidualContribution[u] = contrib;
+                // Update
+                contrib = std::abs(contrib);
+                if (contrib > loadSetup.maxResistiveResidualContribution[u]) {
+                    loadSetup.maxResistiveResidualContribution[u] = contrib;
+                }
             }
         }
     }
@@ -1110,25 +1116,28 @@ bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
         for(auto i : device->nonzeroReactiveResiduals()) {
             // Get unknown index
             auto u = nodes_[i]->unknownIndex();
-            // No need to compute it, retrieve it from states
-            // Also retrieve derivative wrt time
-            auto contrib = loadSetup.newStates[nodeStateIndex];
-            auto flow = loadSetup.newStates[nodeStateIndex+1];
-            // Store in rhs
-            if (loadSetup.reactiveResidualDerivative) {
-                loadSetup.reactiveResidualDerivative[u] += flow;
-            }
-            // Update max
-            if (loadSetup.maxReactiveResidualContribution) {
-                contrib = std::abs(contrib);
-                if (contrib > loadSetup.maxReactiveResidualContribution[u]) {
-                    loadSetup.maxReactiveResidualContribution[u] = contrib;
+            // For ground nodes, skip the rest
+            if (u!=0) {
+                // No need to compute it, retrieve it from states
+                // Also retrieve derivative wrt time
+                auto contrib = loadSetup.newStates[nodeStateIndex];
+                auto flow = loadSetup.newStates[nodeStateIndex+1];
+                // Store in rhs
+                if (loadSetup.reactiveResidualDerivative) {
+                    loadSetup.reactiveResidualDerivative[u] += flow;
                 }
-            }
-            if (loadSetup.maxReactiveResidualDerivativeContribution) {
-                flow = std::abs(flow);
-                if (flow > loadSetup.maxReactiveResidualDerivativeContribution[u]) {
-                    loadSetup.maxReactiveResidualDerivativeContribution[u] = flow;
+                // Update max
+                if (loadSetup.maxReactiveResidualContribution) {
+                    contrib = std::abs(contrib);
+                    if (contrib > loadSetup.maxReactiveResidualContribution[u]) {
+                        loadSetup.maxReactiveResidualContribution[u] = contrib;
+                    }
+                }
+                if (loadSetup.maxReactiveResidualDerivativeContribution) {
+                    flow = std::abs(flow);
+                    if (flow > loadSetup.maxReactiveResidualDerivativeContribution[u]) {
+                        loadSetup.maxReactiveResidualDerivativeContribution[u] = flow;
+                    }
                 }
             }
             // Go to next node
