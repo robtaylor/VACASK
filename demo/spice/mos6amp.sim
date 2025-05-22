@@ -59,6 +59,9 @@ control
  
   analysis ac1 ac from=0.1 to=10G mode="dec" points=50
   
+  save full
+  analysis noise1 noise out=["d"] in="vin" from=1 to=10G mode="dec" points=50
+  
   
   elaborate circuit("pamp")
   clear saves
@@ -69,6 +72,9 @@ control
   analysis tran2 tran step=0.001m stop=8m maxstep=0.001m
  
   analysis ac2 ac from=0.1 to=10G mode="dec" points=50
+  
+  save full
+  analysis noise2 noise out=["d"] in="vin" from=1 to=10G mode="dec" points=50
   
   
   postprocess(PYTHON, "runme.py")
@@ -93,6 +99,7 @@ fig1.suptitle('Level 6 NMOS amplifier')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
+EE
 """)
 
 ax_dict["A"].set_title('Input')
@@ -122,6 +129,16 @@ ax_dict["D"].semilogx(np.real(plot['frequency'])/1e3, 180/np.pi*np.unwrap(np.ang
 raw = rawread('noise1.raw')
 plot = raw.get()
 
+ax_dict["E"].set_title('Output noise')
+ax_dict["E"].set_ylabel('PSD [V^2/Hz]')
+ax_dict["E"].set_xlabel('f [kHz]')
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,flicker)'], label="M1,flicker")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,id)'], label="M1,Id")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,rs)'], label="M1,Rs")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,rd)'], label="M1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1)'], label="M1")
+ax_dict["E"].legend(loc='upper right')
+
 fig1.tight_layout()
 
 
@@ -138,6 +155,7 @@ fig2.suptitle('Level 6 PMOS amplifier')
 ax_dict = fig2.subplot_mosaic("""
 AC
 BD
+EE
 """)
 
 ax_dict["A"].set_title('Input')
@@ -167,6 +185,16 @@ ax_dict["D"].semilogx(np.real(plot['frequency'])/1e3, 180/np.pi*np.unwrap(np.ang
 raw = rawread('noise2.raw')
 plot = raw.get()
 print(plot.names)
+
+ax_dict["E"].set_title('Output noise')
+ax_dict["E"].set_ylabel('PSD [V^2/Hz]')
+ax_dict["E"].set_xlabel('f [kHz]')
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,flicker)'], label="M1,flicker")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,id)'], label="M1,Id")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,rs)'], label="M1,Rs")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1,rd)'], label="M1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e3, plot['n(m1)'], label="M1")
+ax_dict["E"].legend(loc='upper right')
 
 fig2.tight_layout()
 
