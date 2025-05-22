@@ -79,7 +79,7 @@ A medium size digital circuit with 10112 transistors and 25380 nodes. It compute
 |VACASK     |  61.52         |1021       |7        |3487       |
 
 ### Effect of residual tolerance checks
-Residual tolerance check (rtc) makes sure KCL equations are satisfied within a prescribed tolerance. It can induce extra NR iterations and slow down the simulation, but on the other hand makes the simulation results more accurate. By default residual tolerance check is enabled (option `nr_residualcheck` set to 1). This check is not performed in Ngspice. 
+Residual tolerance check (rtc) makes sure KCL equations are satisfied within a prescribed tolerance. It can induce extra NR iterations and slow down the simulation, but on the other hand makes the simulation results more accurate. By default residual tolerance check is enabled (option `nr_residualcheck` set to 1). This check is not performed in Ngspice. The table lists the results of the c6288 benchmark. 
 
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
@@ -97,7 +97,7 @@ Continuation bypass (cb) is a technique where the simulator avoids the evaluatio
 
 Since in continuation mode NR algorithm requires only a few iterations to converge, omitting the circuit evaluation in the first iteration saves a lot of time. Continuation bypass cannot be applied for circuit elements that are not time-invariant (most device models are time invariant). It is enabled by default (option `nr_contbypass` set to 1). 
 
-The following table was obtained with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs. 
+The following table was obtained with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs of the c6288 benchmark. 
 
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
@@ -112,7 +112,7 @@ Evaluation of inactive elements can be bypassed if the input quantities (in most
 
 The `nr_convtol` and `nr_bypasstol` specify the convergence tolerances for the residuals and the input quantities (relative to the NR convergence tolerance). Inactive element bypass (ieb) can be enabled by setting the `nr_bypass` option to 1. When enabled it is recommended to disable residual tolerance checks by setting `nr_residualcheck` to 0 because they often cancel out the gains obtained due to inactive element bypass. 
 
-The following table was obtained with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs. `nr_convtol` and `nr_bypasstol` were both set to 1. 
+The following table was obtained on the c6288 benchmark with residual tolerance check disabled (`nr_residualcheck` set to 0) in both VACASK runs. `nr_convtol` and `nr_bypasstol` were both set to 1. 
 
 |Simulator                |Time (s)        |Timepoints |Rejected |Iterations |
 |-------------------------|----------------|-----------|---------|-----------|
