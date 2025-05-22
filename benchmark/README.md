@@ -4,7 +4,7 @@ Benchmarks were performed with [Xyce 7.9](https://xyce.sandia.gov/), [Gnucap 202
 
 All the tests measure single threaded performance. Xyce, Ngspice, and VACASK all used KLU as the linear solver. Gnucap used its own solver. 
 
-Xyce was compiled without parallel computing support. Trilinos 16.0.0 was used. Since it has an obsession with taking time measurements this can result in significantly slowdowns for small circuits. To disable time measurements the file `Xyce/src/UtilityPKG/N_UTL_StatMetricTraits.C` was modified by replacing `return Xyce::cpu_time();` and `return Xyce::wall_time();` with `return 0;` (thank goes to Eric Keiter for suggesting this). This modified version is named Xyce-fast. 
+Xyce 7.9 was compiled without parallel computing support. Trilinos 16.0.0 was used. Since it has an obsession with taking time measurements this can result in significantly slowdowns for small circuits. To disable time measurements the file `Xyce/src/UtilityPKG/N_UTL_StatMetricTraits.C` was modified by replacing `return Xyce::cpu_time();` and `return Xyce::wall_time();` with `return 0;` (thank goes to Eric Keiter for suggesting this). This modified version is named Xyce-fast. 
 
 Gnucap was compiled with default options. Version 20240220 was the last stable release at the time of testing. We had convergence problems with version 20250301-dev so we stuck with the stable release. 
 
@@ -33,9 +33,9 @@ This is a simple circuit with 2 elements (resistor, capacitor) excited by a volt
 |-----------|----------------|-----------|-----------|
 |Xyce       | 9.39           |1011527    |2029571    |
 |Xyce-fast  | 4.12           |1011527    |2029571    |
-|Gnucap     | 8.54           |1006982    |3025043    |
+|Gnucap     | 8.54           |1006982    |2018061    |
 |Ngspice    | 1.31           |1006013    |2012031    |
-|VACASK     | 0.94           |1005006    |2010014    |
+|VACASK     | 0.93           |1005006    |2010014    |
 
 ## Full wave rectifier with smoothing and load (graetz)
 A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited by a sinusoidal voltage. Two 1GOhm resistors are used for setting up a DC path to ground. The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
@@ -43,10 +43,10 @@ A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited
 |Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       |10.60           |1000002    |0        |2000014    |
-|Xyce-fast  | 5.34           |1000002    |12       |2000014    |
-|Gnucap     |15.16           |1000026    |739      |4459517    |
+|Xyce-fast  | 5.34           |1000002    |0        |2000014    |
+|Gnucap     |15.16           |1000026    |12       |3459503    |
 |Ngspice    | 2.21           |1000008    |0        |2000024    |
-|VACASK     | 1.87           |1000003    |0        |2000277    |
+|VACASK     | 1.89           |1000003    |0        |2000277    |
 
 ## Diode voltage multiplier (mul)
 A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its input excited by a sinusoidal voltage. The timestep was forced artificially to a small value so that roughly 500000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
@@ -55,7 +55,7 @@ A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its inpu
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 5.51           |502341     |1270     |1041833    |
 |Xyce-fast  | 2.78           |502341     |1270     |1041833    |
-|Gnucap     | 9.94           |520797     |739      |2822527    |
+|Gnucap     | 9.94           |520797     |739      |2300992    |
 |Ngspice    | 1.16           |500467     |957      |1019733    |
 |VACASK     | 0.95           |500056     |3        |1001217    |
 
@@ -67,7 +67,7 @@ This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V
 |Xyce       | 3.33           |27310      |0        |95462      |
 |Xyce-fast  | 3.10           |27310      |0        |95462      |
 |Ngspice    | 1.60           |20556      |1037     |80018      |
-|VACASK     | 1.19           |26066      |0        |81875      |
+|VACASK     | 1.18           |26066      |0        |81875      |
 
 ## 16x16 CMOS multiplier (c6288)
 A medium size digital circuit with 10112 transistors and 25380 nodes. It computes the product of 0xFFFF with itself. The timestep was not limited. The simulation is purely analog (i.e. transistor-level). Due to its size we do not test it with Xyce-fast since the timing overheads are small compared to simulation time. VACASK `tran_lteratio` option was set to 1.5 to roughly match the number of computed timepoints to those of Ngspice. For the same reason Xyce `timeint reltol` option was set 2.5e-4. 
@@ -76,7 +76,7 @@ A medium size digital circuit with 10112 transistors and 25380 nodes. It compute
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 151.57         |1013       |37       |3559       |
 |Ngspice    |  73.16         |1020       |1        |3474       |
-|VACASK     |  61.52         |1021       |7        |3487       |
+|VACASK     |  60.38         |1021       |7        |3487       |
 
 ### Effect of residual tolerance checks
 Residual tolerance check (rtc) makes sure KCL equations are satisfied within a prescribed tolerance. It can induce extra NR iterations and slow down the simulation, but on the other hand makes the simulation results more accurate. By default residual tolerance check is enabled (option `nr_residualcheck` set to 1). This check is not performed in Ngspice. The table lists the results of the c6288 benchmark. 
@@ -84,8 +84,8 @@ Residual tolerance check (rtc) makes sure KCL equations are satisfied within a p
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
 |Ngspice              | 73.16          |1020       |1        |3474       |
-|VACASK, rtc (default)| 61.52          |1021       |7        |3487       |
-|VACASK, no rtc       | 53.60          |1024       |8        |3090       |
+|VACASK, rtc (default)| 60.38          |1021       |7        |3487       |
+|VACASK, no rtc       | 50.73          |1024       |8        |3090       |
 
 When residual tolerance check is disabled VACASK is faster, but the results are less accurate. 
 
@@ -102,8 +102,8 @@ The following table was obtained with residual tolerance check disabled (`nr_res
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
 |Ngspice              | 73.16          |1020       |1        |3474       |
-|VACASK, no cb        | 66.61          |1024       |8        |3090       |
-|VACASK, cb (default) | 53.60          |1024       |8        |3090       |
+|VACASK, no cb        | 66.09          |1024       |8        |3090       |
+|VACASK, cb (default) | 50.73          |1024       |8        |3090       |
 
 Disabling continuation bypass slows down the simulation. 
 
@@ -117,7 +117,7 @@ The following table was obtained on the c6288 benchmark with residual tolerance 
 |Simulator                |Time (s)        |Timepoints |Rejected |Iterations |
 |-------------------------|----------------|-----------|---------|-----------|
 |Ngspice                  | 73.16          |1020       |1        |3474       |
-|VACASK, no ieb (default) | 53.60          |1024       |8        |3090       |
-|VACASK, ieb              | 50.55          |1024       |10       |3101       |
+|VACASK, no ieb (default) | 50.73          |1024       |8        |3090       |
+|VACASK, ieb              | 48.80          |1024       |10       |3101       |
 
 Inactive element bypass is effective only for large circuits when a significant part of elements is inactive most of the time. 

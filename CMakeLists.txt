@@ -79,7 +79,7 @@ endif()
 if (OPENVAF_COMPILER STREQUAL "OPENVAF_COMPILER-NOTFOUND")
     message(FATAL_ERROR "  not found")
 else()
-    message(STATUS "  found ${OPENVAF_COMPILER}")    
+    message(STATUS "  found ${OPENVAF_COMPILER}") 
 endif()
 
 #find_package(SWIG 4.0 COMPONENTS python)

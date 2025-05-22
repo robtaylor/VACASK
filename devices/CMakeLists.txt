@@ -71,6 +71,7 @@ while(i LESS ${list_len})
     add_custom_command(
         OUTPUT "${built_file}"
         DEPENDS "${inputfile}"
+        DEPENDS "${OPENVAF_COMPILER}"
         MAIN_DEPENDENCY "${inputfile}"
         COMMAND "${OPENVAF_COMPILER}" "--allow" "variant_const_simparam" "-I${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}" -o "${outputfile}"
         COMMAND ${CMAKE_COMMAND} ARGS -E copy "${outputfile}" "${built_file}"
