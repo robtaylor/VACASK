@@ -35,7 +35,7 @@ This is a simple circuit with 2 elements (resistor, capacitor) excited by a volt
 |Xyce-fast  | 4.12           |1011527    |2029571    |
 |Gnucap     | 8.54           |1006982    |3025043    |
 |Ngspice    | 1.31           |1006013    |2012031    |
-|VACASK     | 0.95           |1005006    |2010014    |
+|VACASK     | 0.94           |1005006    |2010014    |
 
 ## Full wave rectifier with smoothing and load (graetz)
 A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited by a sinusoidal voltage. Two 1GOhm resistors are used for setting up a DC path to ground. The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
@@ -46,7 +46,7 @@ A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited
 |Xyce-fast  | 5.34           |1000002    |12       |2000014    |
 |Gnucap     |15.16           |1000026    |739      |4459517    |
 |Ngspice    | 2.21           |1000008    |0        |2000024    |
-|VACASK     | 1.88           |1000003    |0        |2000277    |
+|VACASK     | 1.87           |1000003    |0        |2000277    |
 
 ## Diode voltage multiplier (mul)
 A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its input excited by a sinusoidal voltage. The timestep was forced artificially to a small value so that roughly 500000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
@@ -57,7 +57,7 @@ A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its inpu
 |Xyce-fast  | 2.78           |502341     |1270     |1041833    |
 |Gnucap     | 9.94           |520797     |739      |2822527    |
 |Ngspice    | 1.16           |500467     |957      |1019733    |
-|VACASK     | 0.96           |500056     |3        |1001217    |
+|VACASK     | 0.95           |500056     |3        |1001217    |
 
 ## 9 stage CMOS ring oscillator (ring)
 This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V. The timestep was limited to 50ps. Xyce `timeint reltol` option was set to 5e-3 to make the number of computed timepoints roughly equal to that of VACASK. 
@@ -66,7 +66,7 @@ This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 3.33           |27310      |0        |95462      |
 |Xyce-fast  | 3.10           |27310      |0        |95462      |
-|Ngspice    | 1.60           |20682      |1192     |81225      |
+|Ngspice    | 1.60           |20556      |1037     |80018      |
 |VACASK     | 1.19           |26066      |0        |81875      |
 
 ## 16x16 CMOS multiplier (c6288)
