@@ -94,6 +94,7 @@ ax_dict["B"].set_ylabel('vlo [V]')
 ax_dict["C"].set_ylabel('vin [V]')
 ax_dict["D"].set_ylabel('vout [V]')
 
+ax_dict["E"].set_title('Spectrum of vout (HB)')
 ax_dict["E"].set_xlabel('f [MHz]')
 ax_dict["E"].set_ylabel('mag [V]')
 
