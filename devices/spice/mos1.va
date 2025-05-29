@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-22 08:15:40 UTC
+// Date         : 2025-05-29 10:15:03 UTC
 // Module name  : sp_mos1
 // 
 // Notes:
@@ -825,12 +825,10 @@ module sp_mos1(d, g, s, b);
     end
     if ($param_given(cbd)) begin
       czbd = MOS1tCbd;
+    end else if ($param_given(cj)) begin
+      czbd = MOS1tCj*MOS1drainArea;
     end else begin
-      if ($param_given(cj)) begin
-        czbd = MOS1tCj*MOS1drainArea;
-      end else begin
-        czbd = 0;
-      end
+      czbd = 0;
     end
     if ($param_given(cjsw)) begin
       czbdsw = MOS1tCjsw*MOS1drainPerimiter;
@@ -847,12 +845,10 @@ module sp_mos1(d, g, s, b);
     MOS1f4d = czbd*MOS1tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS1tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS1f3d/2*(MOS1tDepCap*MOS1tDepCap)-MOS1tDepCap*MOS1f2d;
     if ($param_given(cbs)) begin
       czbs = MOS1tCbs;
+    end else if ($param_given(cj)) begin
+      czbs = MOS1tCj*MOS1sourceArea;
     end else begin
-      if ($param_given(cj)) begin
-        czbs = MOS1tCj*MOS1sourceArea;
-      end else begin
-        czbs = 0;
-      end
+      czbs = 0;
     end
     if ($param_given(cjsw)) begin
       czbssw = MOS1tCjsw*MOS1sourcePerimiter;

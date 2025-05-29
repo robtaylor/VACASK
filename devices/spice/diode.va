@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-22 08:15:23 UTC
+// Date         : 2025-05-29 10:14:44 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -919,16 +919,14 @@ module sp_diode(a, c);
         load_gd = load_gd+gmin;
         load_cd = load_cd+gmin*load_vd;
       end
+    end else if (DIOreverseKneeCurrentGiven&&load_cd<-1.0e-18) begin
+      ikr_area_m = i_DIOreverseKneeCurrent;
+      sqrt_ikr = sqrt(load_cd/-ikr_area_m);
+      load_gd = ((1+sqrt_ikr)*load_gd+load_cd*load_gd/(2*sqrt_ikr*ikr_area_m))/(1+2*sqrt_ikr-load_cd/ikr_area_m)+gmin;
+      load_cd = load_cd/(1+sqrt_ikr)+gmin*load_vd;
     end else begin
-      if (DIOreverseKneeCurrentGiven&&load_cd<-1.0e-18) begin
-        ikr_area_m = i_DIOreverseKneeCurrent;
-        sqrt_ikr = sqrt(load_cd/-ikr_area_m);
-        load_gd = ((1+sqrt_ikr)*load_gd+load_cd*load_gd/(2*sqrt_ikr*ikr_area_m))/(1+2*sqrt_ikr-load_cd/ikr_area_m)+gmin;
-        load_cd = load_cd/(1+sqrt_ikr)+gmin*load_vd;
-      end else begin
-        load_gd = load_gd+gmin;
-        load_cd = load_cd+gmin*load_vd;
-      end
+      load_gd = load_gd+gmin;
+      load_cd = load_cd+gmin*load_vd;
     end
     czero = DIOtJctCap;
     if (load_vd<DIOtDepCap) begin

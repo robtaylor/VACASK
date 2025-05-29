@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-22 08:16:06 UTC
+// Date         : 2025-05-29 10:15:31 UTC
 // Module name  : sp_mos9
 // 
 // Notes:
@@ -939,12 +939,10 @@ module sp_mos9(d, g, s, b);
     end
     if ($param_given(cbd)) begin
       czbd = MOS9tCbd;
+    end else if ($param_given(cj)) begin
+      czbd = MOS9tCj*MOS9drainArea;
     end else begin
-      if ($param_given(cj)) begin
-        czbd = MOS9tCj*MOS9drainArea;
-      end else begin
-        czbd = 0;
-      end
+      czbd = 0;
     end
     if ($param_given(cjsw)) begin
       czbdsw = MOS9tCjsw*pd;
@@ -961,12 +959,10 @@ module sp_mos9(d, g, s, b);
     MOS9f4d = czbd*MOS9tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS9tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS9f3d/2*(MOS9tDepCap*MOS9tDepCap)-MOS9tDepCap*MOS9f2d;
     if ($param_given(cbs)) begin
       czbs = MOS9tCbs;
+    end else if ($param_given(cj)) begin
+      czbs = MOS9tCj*MOS9sourceArea;
     end else begin
-      if ($param_given(cj)) begin
-        czbs = MOS9tCj*MOS9sourceArea;
-      end else begin
-        czbs = 0;
-      end
+      czbs = 0;
     end
     if ($param_given(cjsw)) begin
       czbssw = MOS9tCjsw*ps;
@@ -1147,14 +1143,12 @@ module sp_mos9(d, g, s, b);
       dxndvb = dqbdvb/(phibs+phibs)-qbonco*dsqdvb/(phibs*sqphbs);
       dvodvd = dvtdvd;
       dvodvb = dvtdvb+load_vt*dxndvb;
-    end else begin
-      if (((MOS9mode==1) ? (load_vgs) : (vgd))<=load_von) begin
-        cdrain = 0.0;
-        MOS9gm = 0.0;
-        MOS9gds = 0.0;
-        MOS9gmbs = 0.0;
-        goto_destination = innerline1000;
-      end
+    end else if (((MOS9mode==1) ? (load_vgs) : (vgd))<=load_von) begin
+      cdrain = 0.0;
+      MOS9gm = 0.0;
+      MOS9gds = 0.0;
+      MOS9gmbs = 0.0;
+      goto_destination = innerline1000;
     end
     if (goto_destination<0) begin
       vgsx = ((((MOS9mode==1) ? (load_vgs) : (vgd))>load_von) ? (((MOS9mode==1) ? (load_vgs) : (vgd))) : (load_von));

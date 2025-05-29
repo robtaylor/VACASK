@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-22 08:15:33 UTC
+// Date         : 2025-05-29 10:14:50 UTC
 // Module name  : sp_bjt
 // 
 // Notes:
@@ -709,28 +709,22 @@ module sp_bjt(c, b, e, sub);
     end
     if (!$param_given(ise)) begin
       BJTleakBEcurrent = 0;
-    end else begin
-      if (BJTleakBEcurrent>1e-04) begin
-        BJTleakBEcurrent = is*BJTleakBEcurrent;
-      end
+    end else if (BJTleakBEcurrent>1e-04) begin
+      BJTleakBEcurrent = is*BJTleakBEcurrent;
     end
     if (!$param_given(isc)) begin
       BJTleakBCcurrent = 0;
-    end else begin
-      if (BJTleakBCcurrent>1e-04) begin
-        BJTleakBCcurrent = is*BJTleakBCcurrent;
-      end
+    end else if (BJTleakBCcurrent>1e-04) begin
+      BJTleakBCcurrent = is*BJTleakBCcurrent;
     end
     if (!$param_given(rco)||BJTintCollResist<0.01) begin
       BJTintCollResist = 0.01;
     end
     if (!$param_given(nkf)) begin
       BJTnkf = 0.5;
-    end else begin
-      if (BJTnkf>1.0) begin
-        $warning("NKF has been set to its maximum value: 1.0");
-        BJTnkf = 1.0;
-      end
+    end else if (BJTnkf>1.0) begin
+      $warning("NKF has been set to its maximum value: 1.0");
+      BJTnkf = 1.0;
     end
     if (!$param_given(cn)) begin
       if (BJTtype==1) begin
@@ -1099,17 +1093,15 @@ module sp_bjt(c, b, e, sub);
     if (BJTtBEleakCur==0) begin
       cben = 0;
       gben = 0;
+    end else if (load_vbe>=-3*vte) begin
+      evben = exp(load_vbe/vte);
+      cben = BJTtBEleakCur*(evben-1);
+      gben = BJTtBEleakCur*evben/vte;
     end else begin
-      if (load_vbe>=-3*vte) begin
-        evben = exp(load_vbe/vte);
-        cben = BJTtBEleakCur*(evben-1);
-        gben = BJTtBEleakCur*evben/vte;
-      end else begin
-        load_arg = 3*vte/(load_vbe*CONSTe);
-        load_arg = load_arg*load_arg*load_arg;
-        cben = -BJTtBEleakCur*(1+load_arg);
-        gben = BJTtBEleakCur*3*load_arg/load_vbe;
-      end
+      load_arg = 3*vte/(load_vbe*CONSTe);
+      load_arg = load_arg*load_arg*load_arg;
+      cben = -BJTtBEleakCur*(1+load_arg);
+      gben = BJTtBEleakCur*3*load_arg/load_vbe;
     end
     gben = gben + (lc_gmin);
     cben = cben + (lc_gmin*load_vbe);
@@ -1127,17 +1119,15 @@ module sp_bjt(c, b, e, sub);
     if (BJTtBCleakCur==0) begin
       cbcn = 0;
       gbcn = 0;
+    end else if (load_vbc>=-3*vtc) begin
+      evbcn = exp(load_vbc/vtc);
+      cbcn = BJTtBCleakCur*(evbcn-1);
+      gbcn = BJTtBCleakCur*evbcn/vtc;
     end else begin
-      if (load_vbc>=-3*vtc) begin
-        evbcn = exp(load_vbc/vtc);
-        cbcn = BJTtBCleakCur*(evbcn-1);
-        gbcn = BJTtBCleakCur*evbcn/vtc;
-      end else begin
-        load_arg = 3*vtc/(load_vbc*CONSTe);
-        load_arg = load_arg*load_arg*load_arg;
-        cbcn = -BJTtBCleakCur*(1+load_arg);
-        gbcn = BJTtBCleakCur*3*load_arg/load_vbc;
-      end
+      load_arg = 3*vtc/(load_vbc*CONSTe);
+      load_arg = load_arg*load_arg*load_arg;
+      cbcn = -BJTtBCleakCur*(1+load_arg);
+      gbcn = BJTtBCleakCur*3*load_arg/load_vbc;
     end
     gbcn = gbcn + (lc_gmin);
     cbcn = cbcn + (lc_gmin*load_vbc);
@@ -1214,10 +1204,8 @@ module sp_bjt(c, b, e, sub);
         if (load_arg!=0) begin
           sqarg = sqrt(load_arg);
         end
-      end else begin
-        if (load_arg!=0) begin
-          sqarg = pow(load_arg, BJTnkf);
-        end
+      end else if (load_arg!=0) begin
+        sqarg = pow(load_arg, BJTnkf);
       end
       qb = q1*(1+sqarg)/2;
       if (!$param_given(nkf)) begin
