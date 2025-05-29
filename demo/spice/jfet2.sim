@@ -1,0 +1,146 @@
+SPICE JFET level 2 test
+
+load "spice/jfet2.osdi"
+load "resistor.osdi"
+
+model v vsource
+vgs (g 0) v dc=0
+vds (d 0) v dc=0
+  
+subckt ntest()
+  model nf sp_jfet2 ( type=1 
+    acgam=0.11 beta=0.3 cgd=200f cgs=820f delta=0.1 fc=0.3 
+    hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
+    ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
+    n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34
+  )
+  j1 (d g 0) nf $mfactor=2 area=3
+ends
+
+subckt ptest()
+  model pf sp_jfet2 ( type=-1 
+    acgam=0.11 beta=0.3 cgd=200f cgs=820f delta=0.1 fc=0.3 
+    hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
+    ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
+    n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34
+  )
+  j1 (d g 0) pf $mfactor=2 area=3
+ends
+
+control
+  print devices
+  print device("sp_jfet2")
+  
+  save p(j1,gm) p(j1,cqgs) p(j1,cqgd) default
+  
+  elaborate circuit("ntest")
+  print instance("j1")
+  sweep vgs instance="vgs" parameter="dc" from=-1.75 to=0 step=0.25 
+  sweep vds instance="vds" parameter="dc" from=0 to=5 step=0.1
+    analysis op1 op
+  
+  elaborate circuit("ptest")
+  print instance("j1")
+  sweep vgs instance="vgs" parameter="dc" from=1.75 to=0 step=-0.25
+  sweep vds instance="vds" parameter="dc" from=0 to=-5 step=-0.1
+    analysis op2 op
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get(sweeps=1)
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('N-JFET level 2 test')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'j1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'j1.cqgs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'j1.cqgd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='upper left')
+ax_dict["B"].legend(loc='upper left')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper right')
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get(sweeps=1)
+
+fig2 = plt.figure(figsize=(8,8), dpi=100)
+fig2.suptitle('P-JFET level 2 test')
+ax_dict = fig2.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'j1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'j1.cqgs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'j1.cqgd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='lower right')
+ax_dict["B"].legend(loc='upper right')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper left')
+
+fig2.tight_layout()
+
+plt.show()
+>>>FILE
+
+
