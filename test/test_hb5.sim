@@ -26,7 +26,7 @@ control
 
   options homotopy_debug=1 hb_debug=2 nr_debug=1
   options hb_itl=100 homotopy_srcscale=2 // reltol=1e-8
-  analysis hb1 hb freq=[1.01k, 50k] truncate="box" nharm=[3, 20] 
+  analysis hb1 hb freq=[1.01k, 50k] truncate="box" nharm=[3, 12] 
   
   postprocess(PYTHON, "runme.py")
 endc
