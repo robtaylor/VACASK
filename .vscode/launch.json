@@ -128,7 +128,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/test/manual_run",
             "environment": [
-                { "name": "SIM_MODULE_PATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/devices" }, 
+                { "name": "SIM_MODULE_PATH", "value": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/devices" }, 
                 { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
                 { "name": "PYTHONPATH", "value": "${workspaceFolder}/python" }
             ],
