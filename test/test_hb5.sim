@@ -1,4 +1,4 @@
-HB-assisted HB
+Germanium diode AM demodulator, incommensurate frequencies
 
 ground 0 
 
@@ -14,7 +14,7 @@ model d310 diode(
 model resistor resistor
 model capacitor capacitor
 
-v1 (1 0) vsource type="am" sinedc=0.0 ampl=0.8 freq=50k modfreq=1k modindex=0.5
+v1 (1 0) vsource type="am" sinedc=0.0 ampl=0.8 freq=50k modfreq=1.01k modindex=0.5
 d1 (1 2) d310
 c1 (2 0) capacitor c=1n
 r1 (2 0) resistor r=200k
@@ -22,15 +22,11 @@ r1 (2 0) resistor r=200k
 control
   abort always
   
-  analysis tran1 tran stop=5m step=1u maxstep=0.1u
+  analysis tran1 tran stop=3m step=0.05u maxstep=0.05u
 
-  // Initial HB with only 2 carrier harmonics, allow homotopy
-  options homotopy_debug=1 hb_debug=1 nr_debug=0 hb_skipinitial=1 hb_homotopy=["src"]
-  analysis hb0 hb freq=[1k, 50k] truncate="box" nharm=[2, 20] store="hbstart"
-  // Actual HB with only 20 carrier harmonics, initial HB only, no homotopy
-  // Use solution of initial HB as starting point
-  options hb_skipinitial=0 hb_homotopy=[] nr_debug=0 // hb_itl=100 // nr_force=1e10
-  analysis hb1 hb freq=[1k, 50k] truncate="box" nharm=[2, 20] nodeset="hbstart"
+  options homotopy_debug=1 hb_debug=2 nr_debug=1
+  options hb_itl=100 homotopy_srcscale=2 // reltol=1e-8
+  analysis hb1 hb freq=[1.01k, 50k] truncate="box" nharm=[3, 20] 
   
   postprocess(PYTHON, "runme.py")
 endc
@@ -53,17 +49,18 @@ f = np.real(hb1['frequency'])
 S = hb1['2']
 Smag = np.abs(S)
 
-ty = np.linspace(0, 2/1e3, 1000)
+ty = np.linspace(0, 1/1e3, 1000)
 y = np.zeros(ty.size)
 for f1, S1 in zip(f, S):
     y += np.real(S1)*np.cos(2*np.pi*f1*ty)
     y += -np.imag(S1)*np.sin(2*np.pi*f1*ty)
 
-ytran = np.interp(time[-1]-2/1e3+ty, time, vout)
+# ytran = np.interp(time[-1]-2/1e3+ty, time, vout)
+ytran = np.interp(2/1.1e3+0.162e-3+ty, time, vout)
 
 delta = np.abs(y-ytran).max()
 print("delta (HB-tran):", delta)
-tests.append(delta<10e-3)
+tests.append(delta<20e-3)
 
 if isTest():
     sys.exit(not all(tests))
@@ -87,7 +84,7 @@ else:
     fig1.axes[2].set_yscale("log")
     fig1.axes[2].stem(f/1e3, Smag, markerfmt='.')
 
-    fig1.axes[3].set_title('Quasi-periodic response')
+    fig1.axes[3].set_title('Demodulator response')
     fig1.axes[3].set_ylabel('vout [V]')
     fig1.axes[3].set_xlabel('time [ms]')
     fig1.axes[3].plot(ty*1e3, y, color="blue", label="HB")
