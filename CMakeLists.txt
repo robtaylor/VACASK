@@ -7,6 +7,10 @@ if(POLICY CMP0177)
     cmake_policy(SET CMP0177 NEW)
 endif()
 
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 enable_testing()
 
 message(STATUS "CMake version ${CMAKE_VERSION}")
