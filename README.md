@@ -180,7 +180,7 @@ cd \
 mkdir build
 ```
 
-Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
+Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Use Boost version 1.84.0. Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
 ```
 cd tools\build
 bootstrap mingw
@@ -206,18 +206,18 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 ```
 If needed, replace `e:/mingw64/bin` with your path. 
 
-Now, download OpenBLAS from [https://www.openblas.net/](https://www.openblas.net/). There is a link to [GitHub where the released sources can be found](https://github.com/OpenMathLib/OpenBLAS/releases). Take the latest source (at the time of writing 0.3.26). Unpack it in `e:\build`. Enter the directory with the OpenBLAS sources and type
+Now, download OpenBLAS from [https://www.openblas.net/](https://www.openblas.net/). There is a link to [GitHub where the released sources can be found](https://github.com/OpenMathLib/OpenBLAS/releases). Take the latest source (at the time of writing 0.3.29). Unpack it in `e:\build`. Enter the directory with the OpenBLAS sources and type
 ```
 mkdir build
 cd build
 cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC_LIBS=ON -DUSE_THREADS=0 -DUSE_LOCKING=1 -DDYNAMIC_LIST="CORE2;NEHALEM;BARCELONA;SANDYBRIDGE;BULLDOZER;PILEDRIVER;STEAMROLLER;EXCAVATOR;HASWELL;ZEN;SKYLAKEX;COOPERLAKE;SAPPHIRERAPIDS" -DTARGET=NEHALEM
-cmake --build . -j 4
+cmake --build . -j 8
 cmake --install . --prefix e:/build/installation
 ```
 
-The `-j 4` option enables parallel building with 4 processors. Since OpenBLAS is big, this will save you some time. In the end OpenBLAS will be installed in `e:\build\installation`. 
+The `-j 8` option enables parallel building with 8 processors. Since OpenBLAS is big, this will save you some time. In the end OpenBLAS will be installed in `e:\build\installation`. 
 
-Finally, download [SuiteSparse](https://people.engr.tamu.edu/davis/suitesparse.html) from [GitHub](https://github.com/DrTimothyAldenDavis/SuiteSparse/releases). Get the latest release source code (at the time of writing 7.6.0). Unpack it in `e:\build`. In the sources directory type
+Finally, download [SuiteSparse](https://people.engr.tamu.edu/davis/suitesparse.html) from [GitHub](https://github.com/DrTimothyAldenDavis/SuiteSparse/releases). Get the latest release source code (at the time of writing 7.10.3). Unpack it in `e:\build`. In the sources directory type
 ```
 mkdir build
 cd build
