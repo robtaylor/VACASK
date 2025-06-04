@@ -13,7 +13,7 @@ subckt ntest()
     hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
     ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
     n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
-    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34 kf=1e-14 af=1
   )
   j1 (d g 0) nf $mfactor=2 area=3
 ends
@@ -24,7 +24,7 @@ subckt ptest()
     hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
     ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
     n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
-    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34 kf=1e-14 af=1
   )
   j1 (d g 0) pf $mfactor=2 area=3
 ends
