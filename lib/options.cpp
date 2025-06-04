@@ -49,6 +49,8 @@ SimulatorOptions::SimulatorOptions() {
     matrixcheck = 0; // check matrix for inf and nan
     rhscheck = 1; // check rhs vector for inf and nan
     solutioncheck = 1; // check solution vector for inf and nan
+    rcondcheck = 0; // if >0 checks for matrix rcond, fails if rcond is smaller that the given value 
+                    // used in small-signal analyses
     
     sweep_pointmarker=0; // 1 = yields analysis execution in stepped mode before each sweep point
                          // Should be enabled in cosimulation when the analog simulator is the slave. 
@@ -240,6 +242,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(matrixcheck);
     registerMember(rhscheck);
     registerMember(solutioncheck);
+    registerMember(rcondcheck);
     
     registerMember(sweep_pointmarker);
     registerMember(sweep_debug);

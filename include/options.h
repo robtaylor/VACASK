@@ -30,6 +30,7 @@ typedef struct SimulatorOptions  {
     Int matrixcheck;
     Int rhscheck;
     Int solutioncheck;
+    Real rcondcheck;
     Int sweep_pointmarker;
     Int sweep_debug;
     int nr_debug;

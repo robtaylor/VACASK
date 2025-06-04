@@ -399,22 +399,24 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
             }
         }
         // Check if matrix is singular
-        double rcond;
-        if (!acMatrix.rcond(rcond)) {
-            setError(ACXFError::MatrixError);
-            if (debug>0) {
-                Simulator::dbg() << "Condition number estimation failed.\n";
+        if (options.rcondcheck>0) { 
+            double rcond;
+            if (!acMatrix.rcond(rcond)) {
+                setError(ACXFError::MatrixError);
+                if (debug>0) {
+                    Simulator::dbg() << "Condition number estimation failed.\n";
+                }
+                error = true;
+                break;
             }
-            error = true;
-            break;
-        }
-        if (rcond<1e-15) {
-            setError(ACXFError::MatrixError);
-            if (debug>0) {
-                Simulator::dbg() << "Matrix is close to singular.\n";
+            if (rcond<options.rcondcheck) {
+                setError(ACXFError::MatrixError);
+                if (debug>0) {
+                    Simulator::dbg() << "Matrix is close to singular.\n";
+                }
+                error = true;
+                break;
             }
-            error = true;
-            break;
         }
 
         // Go through all sources listed in sources

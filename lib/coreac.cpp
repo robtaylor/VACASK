@@ -357,22 +357,24 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
             }
         }
         // Check if matrix is singular
-        double rcond;
-        if (!acMatrix.rcond(rcond)) {
-            setError(AcError::MatrixError);
-            if (debug>0) {
-                Simulator::dbg() << "Condition number estimation failed.\n";
+        if (options.rcondcheck>0) { 
+            double rcond;
+            if (!acMatrix.rcond(rcond)) {
+                setError(AcError::MatrixError);
+                if (debug>0) {
+                    Simulator::dbg() << "Condition number estimation failed.\n";
+                }
+                error = true;
+                break;
             }
-            error = true;
-            break;
-        }
-        if (rcond<1e-15) {
-            if (debug>0) {
-                Simulator::dbg() << "Matrix is close to singular.\n";
+            if (rcond<options.rcondcheck) {
+                if (debug>0) {
+                    Simulator::dbg() << "Matrix is close to singular.\n";
+                }
+                setError(AcError::SingularMatrix);
+                error = true;
+                break;
             }
-            setError(AcError::SingularMatrix);
-            error = true;
-            break;
         }
 
         // Solve, set bucket to 0.0
