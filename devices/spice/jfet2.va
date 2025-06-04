@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-30 06:59:43 UTC
+// Date         : 2025-06-04 14:51:52 UTC
 // Module name  : sp_jfet2
 // 
 // Notes:
@@ -362,6 +362,7 @@ module sp_jfet2(d, g, s);
   real cgdna;
   real vgsin;
   real vgdin;
+  real idrain_unscaled;
   real vcnorm;
   real psids_retval;
 
@@ -685,11 +686,13 @@ module sp_jfet2(d, g, s);
     JFET2corDepCap = JFET2fc*JFET2tGatePot;
     JFET2f1 = JFET2tGatePot*(1-exp((1-0.5)*xfc))/(1-0.5);
     JFET2vcrit = vt*ln(vt/(CONSTroot2*JFET2tSatCur));
+    // inlined: PSinstanceinit(model, here)
     woo = JFET2tGatePot-JFET2vto;
     JFET2xiwoo = xi*woo;
     JFET2za = sqrt(1+z)/2;
     JFET2alpha = JFET2xiwoo*JFET2xiwoo/(xi+1)/(xi+1)/4;
     JFET2d3 = p/q/pow(woo, p-q);
+    // end of inlined: PSinstanceinit(model, here)
 
     // Tag: load, function: JFET2load
     gdpr = JFET2drainConduct*area;
@@ -717,6 +720,7 @@ module sp_jfet2(d, g, s);
       vgsin = load_vgs;
       vgdin = load_vgd;
     end
+    // inlined: PSids(ckt, model, here, vgsin, vgdin, cg, cgd, ggs, ggd, gm, gds) -> psids_retval
     load_area = area;
     Gmin = lc_gmin;
     Vt = JFET2temp*CONSTKoverQ*n;
@@ -863,8 +867,9 @@ module sp_jfet2(d, g, s);
     load_gds = load_beta*load_lambda*idrain+load_gds*load_arg;
     idrain = idrain * (load_arg);
     load_delta = delta/load_area;
+    idrain_unscaled = idrain;
     if (taud==0) begin
-      pAverage = vdst*idrain;
+      pAverage = vdst*idrain_unscaled;
     end else begin
       pAverage = V(p_avg);
     end
@@ -874,6 +879,7 @@ module sp_jfet2(d, g, s);
     load_gm = load_gm*load_arg;
     load_gds = load_gds*load_arg-load_delta*idrain*idrain;
     psids_retval = idrain;
+    // end of inlined: PSids(ckt, model, here, vgsin, vgdin, cg, cgd, ggs, ggd, gm, gds) -> psids_retval
     cd = psids_retval;
     if (vds<0.0) begin
       cd = -cd;
@@ -890,6 +896,7 @@ module sp_jfet2(d, g, s);
         vcnorm = 1;
     end
     capds = cds*area;
+    // inlined: PScharge(ckt, model, here, vgs, vgd, capgs, capgd)
     czgs = JFET2tCGS*area;
     czgd = JFET2tCGD*area;
     load1_vto = JFET2vto;
@@ -901,13 +908,16 @@ module sp_jfet2(d, g, s);
     qgg(load_vgs, load_vgd, gac, phib, alpha, load1_vto, vmax, load_xc, czgs, czgd, cgsna, cgdna);
     capgs = cgsna;
     capgd = cgdna;
+    // end of inlined: PScharge(ckt, model, here, vgs, vgd, capgs, capgd)
     JFET2qds = capds*vds;
     geq = 0;
     ceq = capgs*(ddt(vcnorm*load_vgs)/vcnorm);
+    JFET2cqgs = ceq;
     load_ggs = load_ggs+geq;
     cg = cg+JFET2cqgs;
     geq = 0;
     ceq = capgd*(ddt(vcnorm*load_vgd)/vcnorm);
+    JFET2cqgd = ceq;
     load_ggd = load_ggd+geq;
     cg = cg+JFET2cqgd;
     JFET2dcCurrent = cd;
@@ -942,8 +952,8 @@ module sp_jfet2(d, g, s);
     // vgsin and vgdin account for vds polarity, computed before PSids() is called
     I(vgs_avg) <+ V(vgs_avg) + taug * ddt(V(vgs_avg)) - vgsin;
     I(vgd_avg) <+ V(vgd_avg) + taug * ddt(V(vgd_avg)) - vgdin;
-    // Negative vds means negative cd, so the power is always positive
-    I(p_avg) <+ V(p_avg) + taud * ddt(V(p_avg)) - cd*vds;
+    // Use idrain_unscaled (before idrain is scaled with average power)
+    I(p_avg) <+ V(p_avg) + taud * ddt(V(p_avg)) - vdst*idrain_unscaled;
     //
     // End of averaging
     //

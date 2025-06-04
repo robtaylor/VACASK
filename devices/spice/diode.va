@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-29 10:14:44 UTC
+// Date         : 2025-06-04 14:53:11 UTC
 // Module name  : sp_diode
 // 
 // Notes:
@@ -594,6 +594,7 @@ module sp_diode(a, c);
     if (!DIOtempGiven) begin
       DIOtemp = $temperature+dtemp;
     end
+    // inlined: DIOtempUpdate(model, here, here->DIOtemp, ckt)
     vt = CONSTKoverQ*DIOtemp;
     vte = n*vt;
     vts = ns*vt;
@@ -811,6 +812,7 @@ module sp_diode(a, c);
     DIOtF3 = 1-fc*(1+DIOtGradingCoeff);
     DIOtF2SW = exp((1+mjsw)*xfcs);
     DIOtF3SW = 1-fcs*(1+mjsw);
+    // end of inlined: DIOtempUpdate(model, here, here->DIOtemp, ckt)
 
     // Tag: load, function: DIOload
     ceqqth = 0.0;

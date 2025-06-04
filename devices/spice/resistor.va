@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-05-29 10:14:34 UTC
+// Date         : 2025-06-04 14:53:00 UTC
 // Module name  : sp_resistor
 // 
 // Notes:
@@ -260,6 +260,7 @@ module sp_resistor(pos, neg);
         $warning("Instance temperature specified, dtemp ignored");
       end
     end
+    // inlined: RESupdate_conduct(here, 1)
     if (!i_RESresGiven) begin
       if (RESlength*RESwidth*rsh>0.0) begin
         RESresist = (RESlength-2*short)/(RESwidth-2*narrow)*rsh;
@@ -292,6 +293,7 @@ module sp_resistor(pos, neg);
       factor = (temp_tc2*difference+temp_tc1)*difference+1.0;
     end
     RESconduct = 1.0/(RESresist*factor*scale);
+    // end of inlined: RESupdate_conduct(here, 1)
 
     // Tag: load, function: RESload
     REScurrent = V(pos, neg)*RESconduct;
