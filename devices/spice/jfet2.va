@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-05 10:36:15 UTC
+// Date         : 2025-06-06 05:43:48 UTC
 // Module name  : sp_jfet2
 // 
 // Notes:
@@ -25,12 +25,12 @@
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
 //   
-//   Averaging of vgs, vgs, and power dissipation is implemented via 
+//   Averaging of vgs, vgd, and power dissipation is implemented via 
 //   internal nodes vgs_avg, vgd_avg, and p_avg. Setting model parameter 
 //   taug to 0 collapses vgs_avg and vgd_avg to ground. Setting model 
 //   parameter taud collapses p_avg to ground. 
 //   
-//   Opvars gm and gds are computed as if the effects of average vgs, 
+//   When computing opvars gm and gds the effects of average vgs, 
 //   vgs, and power are not taken into account. 
 //   
 //   G-D and G-S charge is not computed. Opvars qgs and qgd were removed.

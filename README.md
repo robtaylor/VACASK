@@ -92,12 +92,15 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 |Linear inductor           |inductor.va |sp_inductor  |
 |Diode (levels 1 and 3)    |diode.va    |sp_diode     |
 |Gummel-Poon BJT           |bjt.va      |sp_bjt       |
-|JFET level 1 (Schichman-Hodges)   |jfet1.va    |sp_jfet1     |
-|MOSFET level 1 (Schichman-Hodges) |mos1.va     |sp_mos1      |
-|MOSFET level 2 (Grove-Frohman)    |mos2.va     |sp_mos2      |
-|MOSFET level 3 (empirical)        |mos3.va     |sp_mos3      |
-|MOSFET level 6 (Sakurai-Newton)   |mos6.va     |sp_mos6      |
-|MOSFET level 9 (modified level 3) |mos9.va     |sp_mos9      |
+|JFET level 1 (Schichman-Hodges)     |jfet1.va    |sp_jfet1     |
+|JFET level 2 (Parker-Skellern) *    |jfet2.va    |sp_jfet2     |
+|MOSFET level 1 (Schichman-Hodges) * |mos1.va     |sp_mos1      |
+|MOSFET level 2 (Grove-Frohman) *    |mos2.va     |sp_mos2      |
+|MOSFET level 3 (empirical) *        |mos3.va     |sp_mos3      |
+|MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |sp_mos6      |
+|MOSFET level 9 (modified level 3) * |mos9.va     |sp_mos9      |
+
+Devices marked with an asterisk (*) do not conserve charge because of the modeling approach chosen by their respective authors. 
 
 The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 

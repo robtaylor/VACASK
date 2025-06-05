@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-62-gee62f4feb
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-04 14:53:48 UTC
+// Date         : 2025-06-05 10:53:51 UTC
 // Module name  : sp_mos6
 // 
 // Notes:
@@ -31,7 +31,14 @@
 //   Parameters ic, icvds, icvgs, and icvbs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
 //   
-//   Noise is not modelled in this device.
+//   A noise model was grafted into this device (SPICE3 source code lacks 
+//   a noise model). Noise model level (nlev) above 2 is not supported. 
+//   
+//   The noise model excludes Meyer capacitance currents from the drain 
+//   current that is used for computing noise. This is a SPICE3 feature. 
+//   Simplified noise model also excludes the capacitive current of the 
+//   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
+//   equations do not go away even if simplified noise model is used.
 // CKTcircuit member mapping
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)', 'const')
@@ -138,6 +145,9 @@ module sp_mos6(d, g, s, b);
   (* desc = "Substrate doping" *) parameter real nsub = 0;
   (* desc = "Surface state density" *) parameter real nss = 0;
   (* desc = "Parameter measurement temperature" *) parameter real tnom = 0;
+  (* desc = "Noise model selection" *) parameter integer nlev = 2;
+  (* desc = "Flicker noise coefficient" *) parameter real kf = 0;
+  (* desc = "Flicker noise exponent" *) parameter real af = 1;
 
   // Instance opvars
   (* desc = "B-S junction capacitance" *) real ibs;
@@ -230,6 +240,17 @@ module sp_mos6(d, g, s, b);
   real MOS6cgb;
   real meyer_scale;
   real meyer_unscale;
+  real MOS6dcCurrent;
+  real noise_vgs;
+  real noise_vds;
+  real noise_vgd;
+  real noise_vgst;
+  real alpha;
+  real beta;
+  real Sid;
+  real noise_dtemp;
+  real flicker_psd;
+  real flicker_exp;
   integer MOS6tempGiven = 0;
 
   // Model fields
@@ -1025,7 +1046,8 @@ module sp_mos6(d, g, s, b);
     end
     MOS6von = MOS6type*load_von;
     MOS6vdsat = MOS6type*load_vdsat;
-    MOS6cd = MOS6mode*cdrain-MOS6cbd;
+    MOS6dcCurrent = MOS6mode*cdrain-MOS6cbd;
+    MOS6cd = MOS6dcCurrent;
     if (OxideCap==0) begin
         meyer_scale = 0;
         meyer_unscale = 1;
@@ -1155,6 +1177,31 @@ module sp_mos6(d, g, s, b);
     I(b) <+ MOS6gbd*V(b, d_int)+MOS6gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS6type*ceqgb);
     I(d_int) <+ MOS6drainConductance*V(d_int, d)+MOS6gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS6type*ceqgd);
     I(s_int) <+ MOS6gbs*V(s_int, b)+MOS6sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS6type*ceqgs);
+    // Grafted noise model
+    if (MOS6tempGiven) begin
+        noise_dtemp = MOS6temp-$temperature+(MOS6tnom-273.15);
+    end else begin
+        noise_dtemp = dtemp;
+    end
+    I(d_int, d) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS6drainConductance)), "rd");
+    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS6sourceConductance)), "rs");
+    if (nlev<3) begin
+        Sid = 2.0/3.0*abs(MOS6gm);
+    end else begin
+        $fatal(0, "nlev>2 is not supported.");
+    end
+    I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
+    if (nlev==0) begin
+        flicker_psd = kf*exp(af*ln(((abs(MOS6dcCurrent)>1E-38) ? (abs(MOS6dcCurrent)) : (1E-38))))/((MOS6l-2*ld)*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = 1;
+    end else if (nlev==1) begin
+        flicker_psd = kf*exp(af*ln(((abs(MOS6dcCurrent)>1E-38) ? (abs(MOS6dcCurrent)) : (1E-38))))/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = 1;
+    end else if (nlev==2) begin
+        flicker_psd = kf*MOS6gm*MOS6gm/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = af;
+    end
+    I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation
     ibs = MOS6cbs;
