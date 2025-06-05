@@ -1,0 +1,106 @@
+SPICE JFET level 2 inverter
+
+load "spice/jfet2.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+
+subckt ninv()
+  model nf sp_jfet2 ( type=1 
+    acgam=0.11 beta=0.3 cgd=200f cgs=820f delta=0.1 fc=0.3 
+    hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
+    ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
+    n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34 kf=1e-14 af=1
+  )
+  vdd (1 0) v dc=3
+  rd (1 d) r r=0.2k
+  j1 (d g 0) nf $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=-2 val1=0 delay=100p rise=10p fall=10p width=5n period=10n
+  rin (in g) r r=100
+ends
+
+subckt pinv()
+  model pf sp_jfet2 ( type=-1 
+    acgam=0.11 beta=0.3 cgd=200f cgs=820f delta=0.1 fc=0.3 
+    hfeta=0.1 hfe1=0.05 hfe2=0.17 hfgam=0.09 hfg1=0.06 hfg2=0.01
+    ibd=800p is=1.1p lfgam=0.03 lfg1=0.008 lfg2=0.0 mvst=0.04
+    n=1.15 p=2.4 q=2.0 rs=0.7 rd=1 taud=10u taug=1m vbd=1.2 vbi=0.8
+    vst=0.07 vto=-1.5 xc=0.2 xi=0.18 z=0.34 kf=1e-14 af=1
+  )
+  vdd (1 0) v dc=3
+  rd (0 d) r r=0.2k
+  j1 (d g 1) pf $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=5 val1=3 delay=100p rise=10p fall=10p width=5n period=10n
+  rin (in g) r r=100
+ends
+
+control
+  elaborate circuit("ninv")
+  analysis tran1 tran step=10p stop=20n
+
+  elaborate circuit("pinv")
+  analysis tran2 tran step=10p stop=20n
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('N-JFET level 2 inverter')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['d'])
+
+fig1.tight_layout()
+
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+fig2 = plt.figure(figsize=(6,8), dpi=100)
+fig2.suptitle('P-JFET level 2 inverter')
+ax_dict = fig2.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['d'])
+
+fig2.tight_layout()
+
+
+plt.show()
+>>>FILE
+
+

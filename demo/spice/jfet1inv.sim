@@ -69,7 +69,7 @@ raw = rawread('tran2.raw')
 plot = raw.get()
 
 fig2 = plt.figure(figsize=(6,8), dpi=100)
-fig2.suptitle('P-JFET inverter')
+fig2.suptitle('P-JFET level 1 inverter')
 ax_dict = fig2.subplot_mosaic("""
 A
 B
