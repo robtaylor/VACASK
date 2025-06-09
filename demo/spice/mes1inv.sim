@@ -1,0 +1,94 @@
+SPICE MESFET level 1 inverter
+
+load "spice/mes1.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+
+subckt ninv()
+  model nf sp_mes1 type=1 rd=46 rs=46 vt0=-1.5 lambda=0.03 alpha=3 beta=1.4e-3 cgs=1p cgd=2p kf=1e-14 af=1
+  vdd (1 0) v dc=5
+  rd (1 d) r r=2k
+  j1 (d g 0) nf $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=-2 val1=0 delay=1n rise=0.1n fall=0.1n width=0.5u period=1u
+  rin (in g) r r=100
+ends
+
+subckt pinv()
+  model pf sp_mes1 type=-1 rd=46 rs=46 vt0=-1.5 lambda=0.03 alpha=3 beta=1.4e-3 cgs=1p cgd=2p kf=1e-14 af=1
+  vdd (1 0) v dc=5
+  rd (0 d) r r=2k
+  j1 (d g 1) pf $mfactor=2 area=3
+  vin (in 0) v type="pulse" val0=5 val1=7 delay=1n rise=0.1n fall=0.1n width=0.5u period=1u
+  rin (in g) r r=100
+ends
+
+control
+  elaborate circuit("ninv")
+  analysis tran1 tran step=0.1n stop=5u
+
+  elaborate circuit("pinv")
+  analysis tran2 tran step=0.1n stop=5u
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('N-JFET level 1 inverter')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [us]')
+ax_dict["A"].plot(plot['time']*1e6, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [us]')
+ax_dict["B"].plot(plot['time']*1e6, plot['d'])
+
+fig1.tight_layout()
+
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+fig2 = plt.figure(figsize=(6,8), dpi=100)
+fig2.suptitle('P-JFET level 1 inverter')
+ax_dict = fig2.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [us]')
+ax_dict["A"].plot(plot['time']*1e6, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [us]')
+ax_dict["B"].plot(plot['time']*1e6, plot['d'])
+
+fig2.tight_layout()
+
+
+plt.show()
+>>>FILE
+
+
