@@ -94,6 +94,7 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 |Gummel-Poon BJT           |bjt.va      |sp_bjt       |
 |JFET level 1 (Schichman-Hodges)     |jfet1.va    |sp_jfet1     |
 |JFET level 2 (Parker-Skellern) *    |jfet2.va    |sp_jfet2     |
+|MESFET level 1 (Statz et. al.) *    |mes1.va     |sp_mes1      |
 |MOSFET level 1 (Schichman-Hodges) * |mos1.va     |sp_mos1      |
 |MOSFET level 2 (Grove-Frohman) *    |mos2.va     |sp_mos2      |
 |MOSFET level 3 (empirical) *        |mos3.va     |sp_mos3      |
