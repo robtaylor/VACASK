@@ -14,6 +14,7 @@ set(device_sources
     "spice/diode.va"     "spice/diode.osdi"
     "spice/jfet1.va"     "spice/jfet1.osdi"
     "spice/jfet2.va"     "spice/jfet2.osdi"
+    "spice/mes1.va"      "spice/mes1.osdi"
     "spice/bjt.va"       "spice/bjt.osdi"
     "spice/mos1.va"      "spice/mos1.osdi"
     "spice/mos2.va"      "spice/mos2.osdi"

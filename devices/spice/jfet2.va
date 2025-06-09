@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-62-gee62f4feb
+// Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-06 05:43:48 UTC
+// Date         : 2025-06-09 06:01:48 UTC
 // Module name  : sp_jfet2
 // 
 // Notes:
@@ -22,6 +22,9 @@
 //   due to a conflict between is and model parameter is. To keep names 
 //   consistent all current opvars were renamed. 
 //   
+//   Opvar p was renamed to pwr due to a conflict with a model parameter. 
+//   Opvars vtrap and vpave were removed. 
+//   
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
 //   
@@ -34,6 +37,9 @@
 //   vgs, and power are not taken into account. 
 //   
 //   G-D and G-S charge is not computed. Opvars qgs and qgd were removed.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 //   Simplified noise model used (ignores capacitive current).
 //   Appropriate only for small-signal noise analysis.
@@ -190,14 +196,17 @@ module sp_jfet2(d, g, s);
   // Instance opvars
   (* desc = "Voltage G-S" *) real vgs;
   (* desc = "Voltage G-D" *) real vgd;
+  (* desc = "Current at gate node" *) real i_g;
+  (* desc = "Current at drain node" *) real i_d;
+  (* desc = "Source current" *) real i_s;
+  (* desc = "Current G-D" *) real i_gd;
   (* desc = "Transconductance" *) real gm;
   (* desc = "Conductance D-S" *) real gds;
   (* desc = "Conductance G-S" *) real ggs;
   (* desc = "Conductance G-D" *) real ggd;
   (* desc = "Capacitance due to charge storage G-S junction" *) real cqgs;
   (* desc = "Capacitance due to charge storage G-D junction" *) real cqgd;
-  (* desc = "Quiescent drain feedback potential" *) real vtrap;
-  (* desc = "Quiescent power dissipation" *) real vpave;
+  (* desc = "Power dissipated by the JFET2" *) real pwr;
 
   // Model opvars
   (* desc = "Drain conductance" *) real gd;
@@ -248,9 +257,6 @@ module sp_jfet2(d, g, s);
   real JFET2cqgd;
   real JFET2qds;
   real JFET2cqds;
-  real JFET2pave;
-  real JFET2vtrap;
-  real JFET2vgstrap;
   real JFET2unknown;
 
   // Device setup locals
@@ -967,14 +973,20 @@ module sp_jfet2(d, g, s);
     // Instance opvar computation
     vgs = JFET2vgs;
     vgd = JFET2vgd;
+    i_g = JFET2cg;
+    i_d = JFET2cd;
+    i_s = -JFET2cd;
+    i_s = i_s - (JFET2cg);
+    i_gd = JFET2cgd;
     gm = JFET2gm;
     gds = JFET2gds;
     ggs = JFET2ggs;
     ggd = JFET2ggd;
     cqgs = capgs;
     cqgd = capgd;
-    vtrap = JFET2vtrap;
-    vpave = JFET2pave;
+    pwr = JFET2cd*V(d);
+    pwr = pwr + (JFET2cg*V(g));
+    pwr = pwr - ((JFET2cd+JFET2cg)*V(s));
 
     // Model opvar computation
 
