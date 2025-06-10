@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:08:03 UTC
+// Date         : 2025-06-10 11:10:10 UTC
 // Module name  : sp_mos2
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -37,6 +37,9 @@
 //   Simplified noise model also excludes the capacitive current of the 
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //   OpenVAF may create implicit equations.
@@ -199,6 +202,7 @@ module sp_mos2(d, g, s, b);
   (* desc = "Capacitance due to bulk-source charge storage" *) real cqbs;
   (* desc = "Bulk-Drain charge storage" *) real qbd;
   (* desc = "Bulk-Source charge storage" *) real qbs;
+  (* desc = "Instantaneous power " *) real p;
 
   // Model opvars
 
@@ -299,6 +303,7 @@ module sp_mos2(d, g, s, b);
   // Model parameter access locals
 
   // Instance parameter access locals
+  real instask_temp;
 
   // Device setup locals
 
@@ -475,7 +480,7 @@ module sp_mos2(d, g, s, b);
   real p2;
   real p3;
   real p4;
-  real p;
+  real load_p;
   real r3;
   real r;
   real ro;
@@ -1378,10 +1383,10 @@ module sp_mos2(d, g, s, b);
         load_s = 2.0*a*a*a/27.0-a*load_b/3.0+c;
         r3 = r*r*r;
         s2 = load_s*load_s;
-        p = s2/4.0+r3/27.0;
-        p0 = abs(p);
+        load_p = s2/4.0+r3/27.0;
+        p0 = abs(load_p);
         p2 = sqrt(p0);
-        if (p<0) begin
+        if (load_p<0) begin
           ro = sqrt(s2/4.0+p0);
           ro = ln(ro)/3.0;
           ro = exp(ro);
@@ -2115,6 +2120,13 @@ module sp_mos2(d, g, s, b);
     cqbs = MOS2cqbs;
     qbd = MOS2qbd;
     qbs = MOS2qbs;
+    p = MOS2cd*V(d);
+    p = p + ((MOS2cbd+MOS2cbs-MOS2cqgb)*V(b));
+    p = p + ((MOS2cqgb+MOS2cqgd+MOS2cqgs)*V(g));
+    instask_temp = -MOS2cd;
+    instask_temp = instask_temp - (MOS2cbd+MOS2cbs);
+    instask_temp = instask_temp - (MOS2cqgb+MOS2cqgd+MOS2cqgs);
+    p = p + (instask_temp*V(s));
 
     // Model opvar computation
 

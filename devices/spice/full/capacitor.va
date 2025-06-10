@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:21 UTC
+// Date         : 2025-06-10 11:09:27 UTC
 // Module name  : sp_capacitor
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -21,6 +21,9 @@
 //   
 //   Parameter ic was removed. Initial conditions should be set via the 
 //   simulator's initial conditions mechanism.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 // SPICE variable mapping
 //   scale -> $simparam("scale", 1)
@@ -108,6 +111,8 @@ module sp_capacitor(pos, neg);
   (* desc = "maximum voltage over capacitance" *) parameter real model_bv_max = 1e+99;
 
   // Instance opvars
+  (* desc = "Device current" *) real i;
+  (* desc = "Instantaneous device power" *) real p;
 
   // Model opvars
 
@@ -299,6 +304,8 @@ module sp_capacitor(pos, neg);
     I(neg) <+ geq*V(neg, pos)+-ceq;
 
     // Instance opvar computation
+    i = CAPccap;
+    p = CAPccap*V(pos, neg);
 
     // Model opvar computation
 

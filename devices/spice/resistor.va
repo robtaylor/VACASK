@@ -5,8 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-09 06:57:16 UTC
+// Date         : 2025-06-10 11:07:18 UTC
 // Module name  : sp_resistor
+// Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -18,8 +19,7 @@
 //   model_tc1, model_tc2, model_tce, model_w, model_l, model_bv_max, and model_r 
 //   due to name conflicts with instance parameters.
 //
-//   Simplified noise model used (ignores capacitive current).
-//   Appropriate only for small-signal noise analysis.
+//   Full noise model used (appropriate for all noise analyses).
 //
 // SPICE variable mapping
 //   scale -> $simparam("scale", 1)
@@ -149,6 +149,10 @@ module sp_resistor(pos, neg);
   integer RESresGiven = 0;
 
   // States
+
+  // Model parameter access locals
+
+  // Instance parameter access locals
 
   // Device setup locals
 

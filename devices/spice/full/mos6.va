@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:56 UTC
-// Module name  : sp_mos1
-// Model variant: default
+// Date         : 2025-06-10 11:10:23 UTC
+// Module name  : sp_mos6
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -32,17 +32,17 @@
 //   Parameters ic, icvds, icvgs, and icvbs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
 //   
-//   Noise model excludes Meyer capacitance currents from the drain 
+//   A noise model was grafted into this device (SPICE3 source code lacks 
+//   a noise model). Noise model level (nlev) above 2 is not supported. 
+//   
+//   The noise model excludes Meyer capacitance currents from the drain 
 //   current that is used for computing noise. This is a SPICE3 feature. 
 //   Simplified noise model also excludes the capacitive current of the 
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
 //
-//   Full noise model used (appropriate for all noise analyses).
-//   OpenVAF may create implicit equations.
-//
-// SPICE variable mapping
-//   scale -> $simparam("scale", 1)
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 // CKTcircuit member mapping
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
@@ -59,49 +59,41 @@
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
 //     Modified: 2000 AlansFixes
-//   mos1/mos1defs.h
+//   mos6/mos6defs.h
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
+//   mos6/mos6.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1989 Takayasu Sakurai
+//   mos6/mos6par.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1989 Takayasu Sakurai
+//   mos6/mos6mpar.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1989 Takayasu Sakurai
+//   mos6/mos6ask.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1989 Takayasu Sakurai
 //     Modified: 2000 AlansFixes
-//   mos1/mos1.c
+//   mos6/mos6mask.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1987 Thomas L. Quarles
+//     Author: 1989 Takayasu Sakurai
+//   mos6/mos6set.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1989 Takayasu Sakurai
 //     Modified: 2000 AlansFixes
-//   mos1/mos1par.c
+//   mos6/mos6temp.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos1/mos1mpar.c
+//     Author: 1989 Takayasu Sakurai
+//   mos6/mos6load.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//   mos1/mos1ask.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1987 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos1/mos1mask.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1987 Thomas L. Quarles
-//   mos1/mos1set.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos1/mos1temp.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos1/mos1load.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos1/mos1noi.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1987 Gary W. Ng
+//     Author: 1989 Takayasu Sakurai
 //     Modified: 2000 AlansFixes
 
 `include "constants.vams"
 `include "disciplines.vams"
 
-module sp_mos1(d, g, s, b);
+module sp_mos6(d, g, s, b);
   inout d, g, s, b;
   electrical d, g, s, b, d_int, s_int;
 
@@ -112,8 +104,8 @@ module sp_mos1(d, g, s, b);
   (* desc = "Source area", type = "instance" *) parameter real as = 0;
   (* desc = "Drain perimeter", type = "instance" *) parameter real pd = 0;
   (* desc = "Source perimeter", type = "instance" *) parameter real ps = 0;
-  (* desc = "Drain squares", type = "instance" *) parameter real nrd = 1;
-  (* desc = "Source squares", type = "instance" *) parameter real nrs = 1;
+  (* desc = "Drain squares", type = "instance" *) parameter real nrd = 0;
+  (* desc = "Source squares", type = "instance" *) parameter real nrs = 0;
   (* desc = "Instance temperature", type = "instance" *) parameter real temp = 0;
   (* desc = "Instance temperature difference", type = "instance" *) parameter real dtemp = 0.0;
 
@@ -121,10 +113,19 @@ module sp_mos1(d, g, s, b);
   (* desc = "NMOS (1) or PMOS (-1)" *) parameter integer type = 1;
   (* desc = "Threshold voltage" *) parameter real vto = 0;
   aliasparam vt0 = vto;
-  (* desc = "Transconductance parameter" *) parameter real kp = 2e-05;
+  (* desc = "Saturation voltage factor" *) parameter real kv = 2;
+  (* desc = "Saturation voltage coeff." *) parameter real nv = 0.5;
+  (* desc = "Saturation current factor" *) parameter real kc = 5e-05;
+  (* desc = "Saturation current coeff." *) parameter real nc = 1;
+  (* desc = "Threshold voltage coeff." *) parameter real nvth = 0.5;
+  (* desc = "Sat. current modification  par." *) parameter real ps_mod = 0;
   (* desc = "Bulk threshold parameter" *) parameter real gamma = 0;
+  (* desc = "Bulk threshold parameter 1" *) parameter real gamma1 = 0;
+  (* desc = "Static feedback effect par." *) parameter real sigma = 0;
   (* desc = "Surface potential" *) parameter real phi = 0.6;
-  (* desc = "Channel length modulation" *) parameter real lambda = 0;
+  (* desc = "Channel length modulation param." *) parameter real lambda = 0;
+  (* desc = "Channel length modulation param. 0" *) parameter real lambda0 = 0;
+  (* desc = "Channel length modulation param. 1" *) parameter real lambda1 = 0;
   (* desc = "Drain ohmic resistance" *) parameter real rd = 0;
   (* desc = "Source ohmic resistance" *) parameter real rs = 0;
   (* desc = "B-D junction capacitance" *) parameter real cbd = 0;
@@ -140,156 +141,164 @@ module sp_mos1(d, g, s, b);
   (* desc = "Side junction cap per area" *) parameter real cjsw = 0;
   (* desc = "Side grading coefficient" *) parameter real mjsw = 0.5;
   (* desc = "Bulk jct. sat. current density" *) parameter real js = 0;
-  (* desc = "Oxide thickness" *) parameter real tox = 0;
   (* desc = "Lateral diffusion" *) parameter real ld = 0;
+  (* desc = "Oxide thickness" *) parameter real tox = 0;
   (* desc = "Surface mobility" *) parameter real u0 = 600;
   aliasparam uo = u0;
   (* desc = "Forward bias jct. fit parm." *) parameter real fc = 0.5;
-  (* desc = "Substrate doping" *) parameter real nsub = 0;
   (* desc = "Gate type" *) parameter integer tpg = 1;
+  (* desc = "Substrate doping" *) parameter real nsub = 0;
   (* desc = "Surface state density" *) parameter real nss = 0;
   (* desc = "Parameter measurement temperature" *) parameter real tnom = 0;
+  (* desc = "Noise model selection" *) parameter integer nlev = 2;
   (* desc = "Flicker noise coefficient" *) parameter real kf = 0;
   (* desc = "Flicker noise exponent" *) parameter real af = 1;
-  (* desc = "Noise model selection" *) parameter integer nlev = 2;
-  (* desc = "Channel shot noise coefficient" *) parameter real gdsnoi = 1;
 
   // Instance opvars
   (* desc = "Drain current" *) real i_d;
   (* desc = "Source current" *) real i_s;
   (* desc = "Gate current " *) real i_g;
   (* desc = "Bulk current " *) real i_b;
-  (* desc = "B-D junction current" *) real ibd;
-  (* desc = "B-S junction current" *) real ibs;
+  (* desc = "B-S junction capacitance" *) real ibs;
+  (* desc = "B-D junction capacitance" *) real ibd;
   (* desc = "Gate-Source voltage" *) real vgs;
   (* desc = "Drain-Source voltage" *) real vds;
   (* desc = "Bulk-Source voltage" *) real vbs;
   (* desc = "Bulk-Drain voltage" *) real vbd;
-  (* desc = " " *) real von;
+  (* desc = "Source conductance" *) real sourceconductance;
+  (* desc = "Drain conductance" *) real drainconductance;
+  (* desc = "Turn-on voltage" *) real von;
   (* desc = "Saturation drain voltage" *) real vdsat;
   (* desc = "Critical source voltage" *) real sourcevcrit;
   (* desc = "Critical drain voltage" *) real drainvcrit;
-  (* desc = "Conductance of source" *) real sourceconductance;
-  (* desc = "Conductance of drain" *) real drainconductance;
+  (* desc = "Bulk-Source transconductance" *) real gmbs;
   (* desc = "Transconductance" *) real gm;
   (* desc = "Drain-Source conductance" *) real gds;
-  (* desc = "Bulk-Source transconductance" *) real gmb;
   (* desc = "Bulk-Drain conductance" *) real gbd;
   (* desc = "Bulk-Source conductance" *) real gbs;
-  (* desc = "Bulk-Drain capacitance" *) real c_bd;
-  (* desc = "Bulk-Source capacitance" *) real c_bs;
   (* desc = "Gate-Source capacitance" *) real cgs;
   (* desc = "Gate-Drain capacitance" *) real cgd;
   (* desc = "Gate-Bulk capacitance" *) real cgb;
+  (* desc = "Bulk-Drain capacitance" *) real c_bd;
+  (* desc = "Bulk-Source capacitance" *) real c_bs;
+  (* desc = "Zero-Bias B-D junction capacitance" *) real cbd0;
+  (* desc = " " *) real cbdsw0;
+  (* desc = "Zero-Bias B-S junction capacitance" *) real cbs0;
+  (* desc = " " *) real cbssw0;
   (* desc = "Capacitance due to gate-source charge storage" *) real cqgs;
   (* desc = "Capacitance due to gate-drain charge storage" *) real cqgd;
   (* desc = "Capacitance due to gate-bulk charge storage" *) real cqgb;
   (* desc = "Capacitance due to bulk-drain charge storage" *) real cqbd;
   (* desc = "Capacitance due to bulk-source charge storage" *) real cqbs;
-  (* desc = "Zero-Bias B-D junction capacitance" *) real cbd0;
-  (* desc = " " *) real cbdsw0;
-  (* desc = "Zero-Bias B-S junction capacitance" *) real cbs0;
-  (* desc = " " *) real cbssw0;
   (* desc = "Bulk-Drain charge storage" *) real qbd;
   (* desc = "Bulk-Source charge storage" *) real qbs;
+  (* desc = "Instaneous power" *) real p;
 
   // Model opvars
 
   // Instance fields
-  real MOS1l;
-  real MOS1w;
-  real MOS1drainArea;
-  real MOS1sourceArea;
-  real MOS1drainPerimiter;
-  real MOS1sourcePerimiter;
-  real MOS1sourceConductance;
-  real MOS1drainConductance;
-  real MOS1temp;
-  real MOS1tTransconductance;
-  real MOS1tSurfMob;
-  real MOS1tPhi;
-  real MOS1tVto;
-  real MOS1tSatCur;
-  real MOS1tSatCurDens;
-  real MOS1tCbd;
-  real MOS1tCbs;
-  real MOS1tCj;
-  real MOS1tCjsw;
-  real MOS1tBulkPot;
-  real MOS1tDepCap;
-  real MOS1tVbi;
-  real MOS1von;
-  real MOS1vdsat;
-  real MOS1sourceVcrit;
-  real MOS1drainVcrit;
-  real MOS1cd;
-  real MOS1cbs;
-  real MOS1cbd;
-  real MOS1gmbs;
-  real MOS1gm;
-  real MOS1gds;
-  real MOS1gbd;
-  real MOS1gbs;
-  real MOS1capbd;
-  real MOS1capbs;
-  real MOS1Cbd;
-  real MOS1Cbdsw;
-  real MOS1Cbs;
-  real MOS1Cbssw;
-  real MOS1f2d;
-  real MOS1f3d;
-  real MOS1f4d;
-  real MOS1f2s;
-  real MOS1f3s;
-  real MOS1f4s;
-  integer MOS1mode;
-  real MOS1cgs;
-  real MOS1cgd;
-  real MOS1cgb;
-  real MOS1dcCurrent;
+  real MOS6l;
+  real MOS6w;
+  real MOS6drainArea;
+  real MOS6sourceArea;
+  real MOS6drainSquares;
+  real MOS6sourceSquares;
+  real MOS6sourceConductance;
+  real MOS6drainConductance;
+  real MOS6temp;
+  real MOS6tKv;
+  real MOS6tKc;
+  real MOS6tSurfMob;
+  real MOS6tPhi;
+  real MOS6tVto;
+  real MOS6tSatCur;
+  real MOS6tSatCurDens;
+  real MOS6tCbd;
+  real MOS6tCbs;
+  real MOS6tCj;
+  real MOS6tCjsw;
+  real MOS6tBulkPot;
+  real MOS6tDepCap;
+  real MOS6tVbi;
+  real MOS6von;
+  real MOS6vdsat;
+  real MOS6sourceVcrit;
+  real MOS6drainVcrit;
+  real MOS6cd;
+  real MOS6cbs;
+  real MOS6cbd;
+  real MOS6gmbs;
+  real MOS6gm;
+  real MOS6gds;
+  real MOS6gbd;
+  real MOS6gbs;
+  real MOS6capbd;
+  real MOS6capbs;
+  real MOS6Cbd;
+  real MOS6Cbdsw;
+  real MOS6Cbs;
+  real MOS6Cbssw;
+  real MOS6f2d;
+  real MOS6f3d;
+  real MOS6f4d;
+  real MOS6f2s;
+  real MOS6f3s;
+  real MOS6f4s;
+  integer MOS6mode;
+  real MOS6cgs;
+  real MOS6cgd;
+  real MOS6cgb;
   real meyer_scale;
   real meyer_unscale;
-  integer MOS1lGiven = 0;
-  integer MOS1wGiven = 0;
-  integer MOS1drainAreaGiven = 0;
-  integer MOS1sourceAreaGiven = 0;
-  integer MOS1drainPerimiterGiven = 0;
-  integer MOS1sourcePerimiterGiven = 0;
-  integer MOS1tempGiven = 0;
+  real MOS6dcCurrent;
+  real noise_vgs;
+  real noise_vds;
+  real noise_vgd;
+  real noise_vgst;
+  real alpha;
+  real beta;
+  real Sid;
+  real noise_dtemp;
+  real flicker_psd;
+  real flicker_exp;
+  integer MOS6tempGiven = 0;
 
   // Model fields
-  real MOS1tnom;
-  real MOS1transconductance;
-  real MOS1oxideCapFactor;
-  real MOS1vt0;
-  real MOS1phi;
-  real MOS1gamma;
-  real MOS1substrateDoping;
-  integer MOS1type;
-  integer MOS1tnomGiven = 0;
+  real MOS6tnom;
+  real MOS6kc;
+  real MOS6oxideCapFactor;
+  real MOS6vt0;
+  real MOS6phi;
+  real MOS6gamma;
+  real MOS6gamma1;
+  real MOS6lamda0;
+  real MOS6substrateDoping;
+  integer MOS6type;
+  integer MOS6tnomGiven = 0;
 
   // States
-  real MOS1vbd;
-  real MOS1vbs;
-  real MOS1vgs;
-  real MOS1vds;
-  real MOS1capgs;
-  real MOS1qgs;
-  real MOS1cqgs;
-  real MOS1capgd;
-  real MOS1qgd;
-  real MOS1cqgd;
-  real MOS1capgb;
-  real MOS1qgb;
-  real MOS1cqgb;
-  real MOS1qbd;
-  real MOS1cqbd;
-  real MOS1qbs;
-  real MOS1cqbs;
+  real MOS6vbd;
+  real MOS6vbs;
+  real MOS6vgs;
+  real MOS6vds;
+  real MOS6capgs;
+  real MOS6qgs;
+  real MOS6cqgs;
+  real MOS6capgd;
+  real MOS6qgd;
+  real MOS6cqgd;
+  real MOS6capgb;
+  real MOS6qgb;
+  real MOS6cqgb;
+  real MOS6qbd;
+  real MOS6cqbd;
+  real MOS6qbs;
+  real MOS6cqbs;
 
   // Model parameter access locals
 
   // Instance parameter access locals
+  real instask_temp;
 
   // Device setup locals
 
@@ -327,7 +336,7 @@ module sp_mos1(d, g, s, b);
 
   // Device load locals
   integer limited;
-  real Beta;
+  real betac;
   real DrainSatCur;
   real EffectiveLength;
   real GateBulkOverlapCap;
@@ -335,6 +344,7 @@ module sp_mos1(d, g, s, b);
   real GateSourceOverlapCap;
   real OxideCap;
   real SourceSatCur;
+  real load_arg;
   real cdrain;
   real cdreq;
   real ceq;
@@ -349,6 +359,7 @@ module sp_mos1(d, g, s, b);
   real gcgd;
   real gcgs;
   real geq;
+  real load_sarg;
   real load_sargsw;
   real load_vbd;
   real load_vbs;
@@ -366,27 +377,21 @@ module sp_mos1(d, g, s, b);
   real capgs;
   real capgd;
   real capgb;
-  real load_arg;
-  real betap;
-  real load_sarg;
-  real vgst;
-  real load1_arg;
-  real load1_sarg;
-  real load2_arg;
-  real load2_sarg;
+  real m;
+  real load_arg1;
+  real sarg1;
+  real vgon;
+  real vdshere;
+  real vbsvbd;
+  real idsat;
+  real load_lambda;
+  real vonbm;
+  real vdst;
+  real vdst2;
+  real ivdst1;
+  real vdstg;
 
   // Device noise locals
-  real coxSquared;
-  real noise_vgs;
-  real noise_vds;
-  real noise_vgd;
-  real noise_vgst;
-  real alpha;
-  real beta;
-  real Sid;
-  real noise_dtemp;
-  real flicker_psd = 0;
-  real flicker_exp = 1;
 
   // Global constants
   real CONSTroot2 = sqrt(2.0);
@@ -401,7 +406,6 @@ module sp_mos1(d, g, s, b);
   real defw = $simparam("defw", 1e-4);
   real oldlimit = $simparam("oldlimit", 0);
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
-  real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
   real lc_gmin = 0;
@@ -647,409 +651,418 @@ module sp_mos1(d, g, s, b);
 
     // Instance field assignments
     if ($param_given(l)) begin
-      MOS1l = l*cpscale;
-      MOS1lGiven = 1;
+      MOS6l = l;
     end
     if ($param_given(w)) begin
-      MOS1w = w*cpscale;
-      MOS1wGiven = 1;
+      MOS6w = w;
     end
     if ($param_given(ad)) begin
-      MOS1drainArea = ad*cpscale*cpscale;
-      MOS1drainAreaGiven = 1;
+      MOS6drainArea = ad;
     end
     if ($param_given(as)) begin
-      MOS1sourceArea = as*cpscale*cpscale;
-      MOS1sourceAreaGiven = 1;
+      MOS6sourceArea = as;
     end
-    if ($param_given(pd)) begin
-      MOS1drainPerimiter = pd*cpscale;
-      MOS1drainPerimiterGiven = 1;
+    if ($param_given(nrd)) begin
+      MOS6drainSquares = nrd;
     end
-    if ($param_given(ps)) begin
-      MOS1sourcePerimiter = ps*cpscale;
-      MOS1sourcePerimiterGiven = 1;
+    if ($param_given(nrs)) begin
+      MOS6sourceSquares = nrs;
     end
     if ($param_given(temp)) begin
-      MOS1temp = temp+273.15;
-      MOS1tempGiven = 1;
+      MOS6temp = temp+273.15;
+      MOS6tempGiven = 1;
     end
 
     // Model field assignments
-    MOS1type = type;
+    MOS6type = type;
     if ($param_given(vto)) begin
-      MOS1vt0 = vto;
+      MOS6vt0 = vto;
     end
-    if ($param_given(kp)) begin
-      MOS1transconductance = kp;
+    if ($param_given(kc)) begin
+      MOS6kc = kc;
     end
     if ($param_given(gamma)) begin
-      MOS1gamma = gamma;
+      MOS6gamma = gamma;
+    end
+    if ($param_given(gamma1)) begin
+      MOS6gamma1 = gamma1;
     end
     if ($param_given(phi)) begin
-      MOS1phi = phi;
+      MOS6phi = phi;
+    end
+    if ($param_given(lambda0)) begin
+      MOS6lamda0 = lambda0;
     end
     if ($param_given(nsub)) begin
-      MOS1substrateDoping = nsub;
+      MOS6substrateDoping = nsub;
     end
     if ($param_given(tnom)) begin
-      MOS1tnom = tnom+273.15;
-      MOS1tnomGiven = 1;
+      MOS6tnom = tnom+273.15;
+      MOS6tnomGiven = 1;
     end
 
     // Evaluation constants
     lc_gmin = $simparam("gmin", 1e-12);
 
-    // Tag: setup, function: MOS1setup
-    if (!$param_given(kp)) begin
-      MOS1transconductance = 2e-5;
+    // Tag: setup, function: MOS6setup
+    if (!$param_given(kc)) begin
+      MOS6kc = 5e-5;
     end
     if (!$param_given(vto)) begin
-      MOS1vt0 = 0;
+      MOS6vt0 = 0;
     end
     if (!$param_given(phi)) begin
-      MOS1phi = 0.6;
+      MOS6phi = 0.6;
+    end
+    if (!$param_given(lambda0)) begin
+      MOS6lamda0 = 0;
+      if ($param_given(lambda)) begin
+        MOS6lamda0 = lambda;
+      end
     end
     if (!$param_given(gamma)) begin
-      MOS1gamma = 0;
+      MOS6gamma = 0;
     end
-    if (!MOS1drainPerimiterGiven) begin
-      MOS1drainPerimiter = 0;
+    if (!$param_given(gamma1)) begin
+      MOS6gamma1 = 0;
     end
-    if (!MOS1sourcePerimiterGiven) begin
-      MOS1sourcePerimiter = 0;
-    end
-    MOS1vdsat = 0;
-    MOS1von = 0;
-    if (!(rd!=0||rsh!=0&&nrd!=0)) begin
+    MOS6vdsat = 0;
+    MOS6von = 0;
+    if (!(rd!=0||rsh!=0&&MOS6drainSquares!=0)) begin
       V(d_int, d) <+ 0;
     end
-    if (!(rs!=0||rsh!=0&&nrs!=0)) begin
+    if (!(rs!=0||rsh!=0&&MOS6sourceSquares!=0)) begin
       V(s_int, s) <+ 0;
     end
 
-    // Tag: temp, function: MOS1temp
-    if (!MOS1tnomGiven) begin
-      MOS1tnom = VACONST_tnom;
+    // Tag: temp, function: MOS6temp
+    if (!MOS6tnomGiven) begin
+      MOS6tnom = VACONST_tnom;
     end
-    fact1 = MOS1tnom/(27.0+273.15);
-    vtnom = MOS1tnom*CONSTKoverQ;
-    kt1 = 1.38064852e-23*MOS1tnom;
-    egfet1 = 1.16-7.02e-4*MOS1tnom*MOS1tnom/(MOS1tnom+1108);
+    fact1 = MOS6tnom/(27.0+273.15);
+    vtnom = MOS6tnom*CONSTKoverQ;
+    kt1 = 1.38064852e-23*MOS6tnom;
+    egfet1 = 1.16-7.02e-4*MOS6tnom*MOS6tnom/(MOS6tnom+1108);
     arg1 = -egfet1/(kt1+kt1)+1.1150877/(1.38064852e-23*(27.0+273.15+(27.0+273.15)));
     pbfact1 = -2*vtnom*(1.5*ln(fact1)+1.6021766208e-19*arg1);
-    if (MOS1phi<=0.0) begin
+    if (MOS6phi<=0.0) begin
       $fatal(0, "Phi is not positive.");
     end
     if (!$param_given(tox)||tox==0) begin
-      MOS1oxideCapFactor = 0;
+      MOS6oxideCapFactor = 0;
     end else begin
-      MOS1oxideCapFactor = 3.9*8.854214871e-12/tox;
-      if (!$param_given(kp)) begin
-        MOS1transconductance = u0*MOS1oxideCapFactor*1e-4;
+      MOS6oxideCapFactor = 3.9*8.854214871e-12/tox;
+      if (!$param_given(kc)) begin
+        MOS6kc = 0.5*u0*MOS6oxideCapFactor*1e-4;
       end
       if ($param_given(nsub)) begin
-        if (MOS1substrateDoping*1e6>1.45e16) begin
+        if (MOS6substrateDoping*1e6>1.45e16) begin
           if (!$param_given(phi)) begin
-            MOS1phi = 2*vtnom*ln(MOS1substrateDoping*1e6/1.45e16);
-            MOS1phi = ((0.1>MOS1phi) ? (0.1) : (MOS1phi));
+            MOS6phi = 2*vtnom*ln(MOS6substrateDoping*1e6/1.45e16);
+            MOS6phi = ((0.1>MOS6phi) ? (0.1) : (MOS6phi));
           end
-          fermis = MOS1type*0.5*MOS1phi;
+          fermis = MOS6type*0.5*MOS6phi;
           wkfng = 3.2;
           if (tpg!=0) begin
-            fermig = MOS1type*tpg*0.5*egfet1;
+            fermig = MOS6type*tpg*0.5*egfet1;
             wkfng = 3.25+0.5*egfet1-fermig;
           end
           wkfngs = wkfng-(3.25+0.5*egfet1+fermis);
           if (!$param_given(gamma)) begin
-            MOS1gamma = sqrt(2*11.70*8.854214871e-12*1.6021766208e-19*MOS1substrateDoping*1e6)/MOS1oxideCapFactor;
+            MOS6gamma = sqrt(2*11.70*8.854214871e-12*1.6021766208e-19*MOS6substrateDoping*1e6)/MOS6oxideCapFactor;
+          end
+          if (!$param_given(gamma1)) begin
+            MOS6gamma1 = 0.0;
           end
           if (!$param_given(vto)) begin
-            vfb = wkfngs-nss*1e4*1.6021766208e-19/MOS1oxideCapFactor;
-            MOS1vt0 = vfb+MOS1type*(MOS1gamma*sqrt(MOS1phi)+MOS1phi);
+            vfb = wkfngs-nss*1e4*1.6021766208e-19/MOS6oxideCapFactor;
+            MOS6vt0 = vfb+MOS6type*(MOS6gamma*sqrt(MOS6phi)+MOS6phi);
           end
         end else begin
-          MOS1substrateDoping = 0;
+          MOS6substrateDoping = 0;
           $fatal(0, "Nsub < Ni");
         end
       end
     end
-    if (!MOS1tempGiven) begin
-      MOS1temp = $temperature+dtemp;
+    if (!MOS6tempGiven) begin
+      MOS6temp = $temperature+dtemp;
     end
-    vt = MOS1temp*CONSTKoverQ;
-    ratio = MOS1temp/MOS1tnom;
-    fact2 = MOS1temp/(27.0+273.15);
-    kt = MOS1temp*1.38064852e-23;
-    egfet = 1.16-7.02e-4*MOS1temp*MOS1temp/(MOS1temp+1108);
+    vt = MOS6temp*CONSTKoverQ;
+    ratio = MOS6temp/MOS6tnom;
+    fact2 = MOS6temp/(27.0+273.15);
+    kt = MOS6temp*1.38064852e-23;
+    egfet = 1.16-7.02e-4*MOS6temp*MOS6temp/(MOS6temp+1108);
     arg = -egfet/(kt+kt)+1.1150877/(1.38064852e-23*(27.0+273.15+(27.0+273.15)));
     pbfact = -2*vt*(1.5*ln(fact2)+1.6021766208e-19*arg);
-    if (!MOS1drainAreaGiven) begin
-      MOS1drainArea = defad;
+    if (!$param_given(ad)) begin
+      MOS6drainArea = defad;
     end
-    if (!MOS1lGiven) begin
-      MOS1l = defl;
+    if (!$param_given(l)) begin
+      MOS6l = defl;
     end
-    if (!MOS1sourceAreaGiven) begin
-      MOS1sourceArea = defas;
+    if (!$param_given(as)) begin
+      MOS6sourceArea = defas;
     end
-    if (!MOS1wGiven) begin
-      MOS1w = defw;
+    if (!$param_given(w)) begin
+      MOS6w = defw;
     end
-    if (MOS1l-2*ld<=0) begin
+    if (MOS6l-2*ld<=0) begin
       $warning("effective channel length less than zero");
     end
     ratio4 = ratio*sqrt(ratio);
-    MOS1tTransconductance = MOS1transconductance/ratio4;
-    MOS1tSurfMob = u0/ratio4;
-    phio = (MOS1phi-pbfact1)/fact1;
-    MOS1tPhi = fact2*phio+pbfact;
-    MOS1tVbi = MOS1vt0-MOS1type*(MOS1gamma*sqrt(MOS1phi))+0.5*(egfet1-egfet)+MOS1type*0.5*(MOS1tPhi-MOS1phi);
-    MOS1tVto = MOS1tVbi+MOS1type*MOS1gamma*sqrt(MOS1tPhi);
-    MOS1tSatCur = is*exp(-egfet/vt+egfet1/vtnom);
-    MOS1tSatCurDens = js*exp(-egfet/vt+egfet1/vtnom);
+    MOS6tKv = kv;
+    MOS6tKc = MOS6kc/ratio4;
+    MOS6tSurfMob = u0/ratio4;
+    phio = (MOS6phi-pbfact1)/fact1;
+    MOS6tPhi = fact2*phio+pbfact;
+    MOS6tVbi = MOS6vt0-MOS6type*(MOS6gamma*sqrt(MOS6phi))+0.5*(egfet1-egfet)+MOS6type*0.5*(MOS6tPhi-MOS6phi);
+    MOS6tVto = MOS6tVbi+MOS6type*MOS6gamma*sqrt(MOS6tPhi);
+    MOS6tSatCur = is*exp(-egfet/vt+egfet1/vtnom);
+    MOS6tSatCurDens = js*exp(-egfet/vt+egfet1/vtnom);
     pbo = (pb-pbfact1)/fact1;
     gmaold = (pb-pbo)/pbo;
-    capfact = 1/(1+mj*(4e-4*(MOS1tnom-(27.0+273.15))-gmaold));
-    MOS1tCbd = cbd*capfact;
-    MOS1tCbs = cbs*capfact;
-    MOS1tCj = cj*capfact;
-    capfact = 1/(1+mjsw*(4e-4*(MOS1tnom-(27.0+273.15))-gmaold));
-    MOS1tCjsw = cjsw*capfact;
-    MOS1tBulkPot = fact2*pbo+pbfact;
-    gmanew = (MOS1tBulkPot-pbo)/pbo;
-    capfact = 1+mj*(4e-4*(MOS1temp-(27.0+273.15))-gmanew);
-    MOS1tCbd = MOS1tCbd * (capfact);
-    MOS1tCbs = MOS1tCbs * (capfact);
-    MOS1tCj = MOS1tCj * (capfact);
-    capfact = 1+mjsw*(4e-4*(MOS1temp-(27.0+273.15))-gmanew);
-    MOS1tCjsw = MOS1tCjsw * (capfact);
-    MOS1tDepCap = fc*MOS1tBulkPot;
-    if (MOS1tSatCurDens==0||MOS1drainArea==0||MOS1sourceArea==0) begin
-      MOS1drainVcrit = vt*ln(vt/(CONSTroot2*MOS1tSatCur));
-      MOS1sourceVcrit = MOS1drainVcrit;
+    capfact = 1/(1+mj*(4e-4*(MOS6tnom-(27.0+273.15))-gmaold));
+    MOS6tCbd = cbd*capfact;
+    MOS6tCbs = cbs*capfact;
+    MOS6tCj = cj*capfact;
+    capfact = 1/(1+mjsw*(4e-4*(MOS6tnom-(27.0+273.15))-gmaold));
+    MOS6tCjsw = cjsw*capfact;
+    MOS6tBulkPot = fact2*pbo+pbfact;
+    gmanew = (MOS6tBulkPot-pbo)/pbo;
+    capfact = 1+mj*(4e-4*(MOS6temp-(27.0+273.15))-gmanew);
+    MOS6tCbd = MOS6tCbd * (capfact);
+    MOS6tCbs = MOS6tCbs * (capfact);
+    MOS6tCj = MOS6tCj * (capfact);
+    capfact = 1+mjsw*(4e-4*(MOS6temp-(27.0+273.15))-gmanew);
+    MOS6tCjsw = MOS6tCjsw * (capfact);
+    MOS6tDepCap = fc*MOS6tBulkPot;
+    if (MOS6tSatCurDens==0||MOS6drainArea==0||MOS6sourceArea==0) begin
+      MOS6drainVcrit = vt*ln(vt/(CONSTroot2*MOS6tSatCur));
+      MOS6sourceVcrit = MOS6drainVcrit;
     end else begin
-      MOS1drainVcrit = vt*ln(vt/(CONSTroot2*MOS1tSatCurDens*MOS1drainArea));
-      MOS1sourceVcrit = vt*ln(vt/(CONSTroot2*MOS1tSatCurDens*MOS1sourceArea));
+      MOS6drainVcrit = vt*ln(vt/(CONSTroot2*MOS6tSatCurDens*MOS6drainArea));
+      MOS6sourceVcrit = vt*ln(vt/(CONSTroot2*MOS6tSatCurDens*MOS6sourceArea));
     end
     if ($param_given(cbd)) begin
-      czbd = MOS1tCbd;
+      czbd = MOS6tCbd;
     end else if ($param_given(cj)) begin
-      czbd = MOS1tCj*MOS1drainArea;
+      czbd = MOS6tCj*MOS6drainArea;
     end else begin
       czbd = 0;
     end
     if ($param_given(cjsw)) begin
-      czbdsw = MOS1tCjsw*MOS1drainPerimiter;
+      czbdsw = MOS6tCjsw*pd;
     end else begin
       czbdsw = 0;
     end
     arg = 1-fc;
     sarg = exp(-mj*ln(arg));
     sargsw = exp(-mjsw*ln(arg));
-    MOS1Cbd = czbd;
-    MOS1Cbdsw = czbdsw;
-    MOS1f2d = czbd*(1-fc*(1+mj))*sarg/arg+czbdsw*(1-fc*(1+mjsw))*sargsw/arg;
-    MOS1f3d = czbd*mj*sarg/arg/MOS1tBulkPot+czbdsw*mjsw*sargsw/arg/MOS1tBulkPot;
-    MOS1f4d = czbd*MOS1tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS1tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS1f3d/2*(MOS1tDepCap*MOS1tDepCap)-MOS1tDepCap*MOS1f2d;
+    MOS6Cbd = czbd;
+    MOS6Cbdsw = czbdsw;
+    MOS6f2d = czbd*(1-fc*(1+mj))*sarg/arg+czbdsw*(1-fc*(1+mjsw))*sargsw/arg;
+    MOS6f3d = czbd*mj*sarg/arg/MOS6tBulkPot+czbdsw*mjsw*sargsw/arg/MOS6tBulkPot;
+    MOS6f4d = czbd*MOS6tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS6tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS6f3d/2*(MOS6tDepCap*MOS6tDepCap)-MOS6tDepCap*MOS6f2d;
     if ($param_given(cbs)) begin
-      czbs = MOS1tCbs;
+      czbs = MOS6tCbs;
     end else if ($param_given(cj)) begin
-      czbs = MOS1tCj*MOS1sourceArea;
+      czbs = MOS6tCj*MOS6sourceArea;
     end else begin
       czbs = 0;
     end
     if ($param_given(cjsw)) begin
-      czbssw = MOS1tCjsw*MOS1sourcePerimiter;
+      czbssw = MOS6tCjsw*ps;
     end else begin
       czbssw = 0;
     end
     arg = 1-fc;
     sarg = exp(-mj*ln(arg));
     sargsw = exp(-mjsw*ln(arg));
-    MOS1Cbs = czbs;
-    MOS1Cbssw = czbssw;
-    MOS1f2s = czbs*(1-fc*(1+mj))*sarg/arg+czbssw*(1-fc*(1+mjsw))*sargsw/arg;
-    MOS1f3s = czbs*mj*sarg/arg/MOS1tBulkPot+czbssw*mjsw*sargsw/arg/MOS1tBulkPot;
-    MOS1f4s = czbs*MOS1tBulkPot*(1-arg*sarg)/(1-mj)+czbssw*MOS1tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS1f3s/2*(MOS1tDepCap*MOS1tDepCap)-MOS1tDepCap*MOS1f2s;
+    MOS6Cbs = czbs;
+    MOS6Cbssw = czbssw;
+    MOS6f2s = czbs*(1-fc*(1+mj))*sarg/arg+czbssw*(1-fc*(1+mjsw))*sargsw/arg;
+    MOS6f3s = czbs*mj*sarg/arg/MOS6tBulkPot+czbssw*mjsw*sargsw/arg/MOS6tBulkPot;
+    MOS6f4s = czbs*MOS6tBulkPot*(1-arg*sarg)/(1-mj)+czbssw*MOS6tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS6f3s/2*(MOS6tDepCap*MOS6tDepCap)-MOS6tDepCap*MOS6f2s;
     if ($param_given(rd)) begin
       if (rd!=0) begin
-        MOS1drainConductance = 1.0/rd;
+        MOS6drainConductance = 1/rd;
       end else begin
-        MOS1drainConductance = 0;
+        MOS6drainConductance = 0;
       end
     end else if ($param_given(rsh)) begin
+      if (!$param_given(nrd)||MOS6drainSquares==0) begin
+        MOS6drainSquares = 1;
+      end
       if (rsh!=0) begin
-        MOS1drainConductance = 1.0/(rsh*nrd);
+        MOS6drainConductance = 1/(rsh*MOS6drainSquares);
       end else begin
-        MOS1drainConductance = 0;
+        MOS6drainConductance = 0;
       end
     end else begin
-      MOS1drainConductance = 0;
+      MOS6drainConductance = 0;
     end
     if ($param_given(rs)) begin
       if (rs!=0) begin
-        MOS1sourceConductance = 1.0/rs;
+        MOS6sourceConductance = 1/rs;
       end else begin
-        MOS1sourceConductance = 0;
+        MOS6sourceConductance = 0;
       end
     end else if ($param_given(rsh)) begin
-      if (rsh!=0&&nrs!=0) begin
-        MOS1sourceConductance = 1.0/(rsh*nrs);
+      if (!$param_given(nrs)||MOS6sourceSquares==0) begin
+        MOS6sourceSquares = 1;
+      end
+      if (rsh!=0) begin
+        MOS6sourceConductance = 1/(rsh*MOS6sourceSquares);
       end else begin
-        MOS1sourceConductance = 0;
+        MOS6sourceConductance = 0;
       end
     end else begin
-      MOS1sourceConductance = 0;
+      MOS6sourceConductance = 0;
     end
 
-    // Tag: load, function: MOS1load
+    // Tag: load, function: MOS6load
     xfact = 0.0;
     capgs = 0.0;
     capgd = 0.0;
     capgb = 0.0;
-    load_vt = CONSTKoverQ*MOS1temp;
-    EffectiveLength = MOS1l-2*ld;
-    if (MOS1tSatCurDens==0||MOS1drainArea==0||MOS1sourceArea==0) begin
-      DrainSatCur = MOS1tSatCur;
-      SourceSatCur = MOS1tSatCur;
+    load_vt = CONSTKoverQ*MOS6temp;
+    EffectiveLength = MOS6l-2*ld;
+    if (MOS6tSatCurDens==0||MOS6drainArea==0||MOS6sourceArea==0) begin
+      DrainSatCur = MOS6tSatCur;
+      SourceSatCur = MOS6tSatCur;
     end else begin
-      DrainSatCur = MOS1tSatCurDens*MOS1drainArea;
-      SourceSatCur = MOS1tSatCurDens*MOS1sourceArea;
+      DrainSatCur = MOS6tSatCurDens*MOS6drainArea;
+      SourceSatCur = MOS6tSatCurDens*MOS6sourceArea;
     end
-    GateSourceOverlapCap = cgso*MOS1w;
-    GateDrainOverlapCap = cgdo*MOS1w;
+    GateSourceOverlapCap = cgso*MOS6w;
+    GateDrainOverlapCap = cgdo*MOS6w;
     GateBulkOverlapCap = cgbo*EffectiveLength;
-    Beta = MOS1tTransconductance*MOS1w/EffectiveLength;
-    OxideCap = MOS1oxideCapFactor*EffectiveLength*MOS1w;
+    betac = MOS6tKc*MOS6w/EffectiveLength;
+    OxideCap = MOS6oxideCapFactor*EffectiveLength*MOS6w;
     limited = 0;
     /* Previous vgs, vds, vbs, and vbd */
-    MOS1vgs = MOS1type * $limit(V(g, s_int), DEVlimitOldGet);
-    MOS1vds = MOS1type * $limit(V(d_int, s_int), DEVlimitOldGet);
-    MOS1vbs = MOS1type * $limit(V(b, s_int), DEVlimitOldGet);
-    MOS1vbd = MOS1type * $limit(V(b, d_int), DEVlimitOldGet);
+    MOS6vgs = MOS6type * $limit(V(g, s_int), DEVlimitOldGet);
+    MOS6vds = MOS6type * $limit(V(d_int, s_int), DEVlimitOldGet);
+    MOS6vbs = MOS6type * $limit(V(b, s_int), DEVlimitOldGet);
+    MOS6vbd = MOS6type * $limit(V(b, d_int), DEVlimitOldGet);
     
-    /* Previous mode */
-    if (MOS1vds >= 0) begin
-        /* normal mode */
-        MOS1mode = 1;
-    end else begin
-        /* inverse mode */
-        MOS1mode = -1;
-    end
-    
-    /* Recompute previous von */
-    if ((MOS1mode==1?MOS1vbs:MOS1vbd) <= 0 ) begin
-        load_sarg=sqrt(MOS1tPhi-(MOS1mode==1?MOS1vbs:MOS1vbd));
-    end else begin
-        load_sarg=sqrt(MOS1tPhi);
-        load_sarg=load_sarg-(MOS1mode?MOS1vbs:MOS1vbd)/(load_sarg+load_sarg);
-        load_sarg=max(0,load_sarg);
-    end
-    MOS1von=(MOS1tVbi*MOS1type)+MOS1gamma*load_sarg;
-    load_vbs = MOS1type*V(b, s_int);
-    load_vgs = MOS1type*V(g, s_int);
-    load_vds = MOS1type*V(d_int, s_int);
+    /* Simplified von value used in limiting, does not require introduction of a hidden state */
+    load_von = MOS6type*MOS6tVbi;
+    MOS6von = MOS6type*load_von;
+    load_vbs = MOS6type*V(b, s_int);
+    load_vgs = MOS6type*V(g, s_int);
+    load_vds = MOS6type*V(d_int, s_int);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
-    vgdo = MOS1vgs-MOS1vds;
-    if (!(MOS1mode>=0)) begin
+    vgdo = MOS6vgs-MOS6vds;
+    if (!(MOS6mode>=0)) begin
 
     end
-    load_von = MOS1type*MOS1von;
-    if (MOS1vds>=0) begin
-      load_vgs = DEVfetlim(load_vgs, MOS1vgs, load_von, limited);
+    load_von = MOS6type*MOS6von;
+    if (MOS6vds>=0) begin
+      load_vgs = DEVfetlim(load_vgs, MOS6vgs, load_von, limited);
       load_vds = load_vgs-vgd;
-      load_vds = DEVlimvds(load_vds, MOS1vds, limited);
+      load_vds = DEVlimvds(load_vds, MOS6vds, limited);
       vgd = load_vgs-load_vds;
     end else begin
       vgd = DEVfetlim(vgd, vgdo, load_von, limited);
       load_vds = load_vgs-vgd;
       if (!oldlimit) begin
-        load_vds = -DEVlimvds(-load_vds, -MOS1vds, limited);
+        load_vds = -DEVlimvds(-load_vds, -MOS6vds, limited);
       end
       load_vgs = vgd+load_vds;
     end
     if (load_vds>=0) begin
-      load_vbs = DEVpnjlim(load_vbs, MOS1vbs, load_vt, MOS1sourceVcrit, limited);
+      load_vbs = DEVpnjlim(load_vbs, MOS6vbs, load_vt, MOS6sourceVcrit, limited);
       load_vbd = load_vbs-load_vds;
     end else begin
-      load_vbd = DEVpnjlim(load_vbd, MOS1vbd, load_vt, MOS1drainVcrit, limited);
+      load_vbd = DEVpnjlim(load_vbd, MOS6vbd, load_vt, MOS6drainVcrit, limited);
       load_vbs = load_vbd+load_vds;
     end
     if (initialize_limiting()) begin
         load_vbs = -1;
-        load_vgs = MOS1type * MOS1tVto;
+        load_vgs = MOS6type * MOS6tVto;
         load_vds = 0;
         load_vbd = load_vbs - load_vds;
     end
     
-    load_vgs = MOS1type * $limit(V(g, s_int), DEVlimitNewSet, MOS1type * load_vgs, limited);
-    load_vds = MOS1type * $limit(V(d_int, s_int), DEVlimitNewSet, MOS1type * load_vds, limited);
-    load_vbs = MOS1type * $limit(V(b, s_int), DEVlimitNewSet, MOS1type * load_vbs, limited);
-    load_vbd = MOS1type * $limit(V(b, d_int), DEVlimitNewSet, MOS1type * load_vbd, limited);
+    load_vgs = MOS6type * $limit(V(g, s_int), DEVlimitNewSet, MOS6type * load_vgs, limited);
+    load_vds = MOS6type * $limit(V(d_int, s_int), DEVlimitNewSet, MOS6type * load_vds, limited);
+    load_vbs = MOS6type * $limit(V(b, s_int), DEVlimitNewSet, MOS6type * load_vbs, limited);
+    load_vbd = MOS6type * $limit(V(b, d_int), DEVlimitNewSet, MOS6type * load_vbd, limited);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgb = load_vgs-load_vbs;
     if (load_vbs<=-3*load_vt) begin
-      MOS1gbs = lc_gmin/$mfactor;
-      MOS1cbs = MOS1gbs*load_vbs-SourceSatCur;
+      MOS6gbs = lc_gmin;
+      MOS6cbs = MOS6gbs*load_vbs-SourceSatCur;
     end else begin
       evbs = exp(((709.0<load_vbs/load_vt) ? (709.0) : (load_vbs/load_vt)));
-      MOS1gbs = SourceSatCur*evbs/load_vt+lc_gmin/$mfactor;
-      MOS1cbs = SourceSatCur*(evbs-1)+lc_gmin/$mfactor*load_vbs;
+      MOS6gbs = SourceSatCur*evbs/load_vt+lc_gmin;
+      MOS6cbs = SourceSatCur*(evbs-1)+lc_gmin*load_vbs;
     end
     if (load_vbd<=-3*load_vt) begin
-      MOS1gbd = lc_gmin/$mfactor;
-      MOS1cbd = MOS1gbd*load_vbd-DrainSatCur;
+      MOS6gbd = lc_gmin;
+      MOS6cbd = MOS6gbd*load_vbd-DrainSatCur;
     end else begin
       evbd = exp(((709.0<load_vbd/load_vt) ? (709.0) : (load_vbd/load_vt)));
-      MOS1gbd = DrainSatCur*evbd/load_vt+lc_gmin/$mfactor;
-      MOS1cbd = DrainSatCur*(evbd-1)+lc_gmin/$mfactor*load_vbd;
+      MOS6gbd = DrainSatCur*evbd/load_vt+lc_gmin;
+      MOS6cbd = DrainSatCur*(evbd-1)+lc_gmin*load_vbd;
     end
     if (load_vds>=0) begin
-      MOS1mode = 1;
+      MOS6mode = 1;
     end else begin
-      MOS1mode = -1;
+      MOS6mode = -1;
     end
-    if (((MOS1mode==1) ? (load_vbs) : (load_vbd))<=0) begin
-      load_sarg = sqrt(MOS1tPhi-((MOS1mode==1) ? (load_vbs) : (load_vbd)));
+    vonbm = 0.0;
+    vbsvbd = ((MOS6mode==1) ? (load_vbs) : (load_vbd));
+    if (vbsvbd<=0) begin
+      sarg1 = sqrt(MOS6tPhi-vbsvbd);
     end else begin
-      load_sarg = sqrt(MOS1tPhi);
-      load_sarg = load_sarg-((MOS1mode==1) ? (load_vbs) : (load_vbd))/(load_sarg+load_sarg);
-      load_sarg = ((0>load_sarg) ? (0) : (load_sarg));
+      sarg1 = sqrt(MOS6tPhi);
+      sarg1 = sarg1-vbsvbd/(sarg1+sarg1);
+      sarg1 = ((0>sarg1) ? (0) : (sarg1));
     end
-    load_von = MOS1tVbi*MOS1type+MOS1gamma*load_sarg;
-    vgst = ((MOS1mode==1) ? (load_vgs) : (vgd))-load_von;
-    load_vdsat = ((vgst>0) ? (vgst) : (0));
-    if (load_sarg<=0) begin
-      load_arg = 0;
-    end else begin
-      load_arg = MOS1gamma/(load_sarg+load_sarg);
-    end
-    if (vgst<=0) begin
+    vdshere = load_vds*MOS6mode;
+    load_von = MOS6tVbi*MOS6type+MOS6gamma*sarg1-MOS6gamma1*vbsvbd-sigma*vdshere;
+    vgon = ((MOS6mode==1) ? (load_vgs) : (vgd))-load_von;
+    if (vgon<=0) begin
+      load_vdsat = 0;
       cdrain = 0;
-      MOS1gm = 0;
-      MOS1gds = 0;
-      MOS1gmbs = 0;
+      MOS6gm = 0;
+      MOS6gds = 0;
+      MOS6gmbs = 0;
     end else begin
-      betap = Beta*(1+lambda*(load_vds*MOS1mode));
-      if (vgst<=load_vds*MOS1mode) begin
-        cdrain = betap*vgst*vgst*0.5;
-        MOS1gm = betap*vgst;
-        MOS1gds = lambda*Beta*vgst*vgst*0.5;
-        MOS1gmbs = MOS1gm*load_arg;
+      if (sarg1<=0) begin
+        load_arg1 = 0;
+      end else if (((MOS6mode==1) ? (load_vbs) : (load_vbd))<=0) begin
+        vonbm = MOS6gamma1+MOS6gamma/(sarg1+sarg1);
       end else begin
-        cdrain = betap*(load_vds*MOS1mode)*(vgst-0.5*(load_vds*MOS1mode));
-        MOS1gm = betap*(load_vds*MOS1mode);
-        MOS1gds = betap*(vgst-load_vds*MOS1mode)+lambda*Beta*(load_vds*MOS1mode)*(vgst-0.5*(load_vds*MOS1mode));
-        MOS1gmbs = MOS1gm*load_arg;
+        vonbm = MOS6gamma1+MOS6gamma/2/sqrt(MOS6tPhi);
+      end
+      sarg1 = ln(vgon);
+      load_vdsat = kv*exp(sarg1*nv);
+      idsat = betac*exp(sarg1*nc);
+      load_lambda = MOS6lamda0-lambda1*vbsvbd;
+      cdrain = idsat*(1+load_lambda*vdshere);
+      MOS6gm = cdrain*nc/vgon;
+      MOS6gds = MOS6gm*sigma+idsat*load_lambda;
+      MOS6gmbs = MOS6gm*vonbm-idsat*lambda1*vdshere;
+      if (load_vdsat>vdshere) begin
+        vdst = vdshere/load_vdsat;
+        vdst2 = (2-vdst)*vdst;
+        vdstg = -vdst*nv/vgon;
+        ivdst1 = cdrain*(2-vdst-vdst);
+        cdrain = cdrain*vdst2;
+        MOS6gm = MOS6gm*vdst2+ivdst1*vdstg;
+        MOS6gds = MOS6gds*vdst2+ivdst1*(1/load_vdsat+vdstg*sigma);
+        MOS6gmbs = MOS6gmbs*vdst2+ivdst1*vdstg*vonbm;
       end
     end
-    MOS1von = MOS1type*load_von;
-    MOS1vdsat = MOS1type*load_vdsat;
-    MOS1dcCurrent = MOS1mode*cdrain-MOS1cbd;
-    MOS1cd = MOS1dcCurrent;
+    MOS6von = MOS6type*load_von;
+    MOS6vdsat = MOS6type*load_vdsat;
+    MOS6dcCurrent = MOS6mode*cdrain-MOS6cbd;
+    MOS6cd = MOS6dcCurrent;
     if (OxideCap==0) begin
         meyer_scale = 0;
         meyer_unscale = 1;
@@ -1057,217 +1070,204 @@ module sp_mos1(d, g, s, b);
         meyer_scale = OxideCap;
         meyer_unscale = OxideCap;
     end
-    if (MOS1Cbs!=0||MOS1Cbssw!=0) begin
-      if (load_vbs<MOS1tDepCap) begin
-        load1_arg = 1-load_vbs/MOS1tBulkPot;
+    if (MOS6Cbs!=0||MOS6Cbssw!=0) begin
+      if (load_vbs<MOS6tDepCap) begin
+        load_arg = 1-load_vbs/MOS6tBulkPot;
         if (mj==mjsw) begin
           if (mj==0.5) begin
-            load_sargsw = 1/sqrt(load1_arg);
-            load1_sarg = load_sargsw;
+            load_sargsw = 1/sqrt(load_arg);
+            load_sarg = load_sargsw;
           end else begin
-            load_sargsw = exp(-mj*ln(load1_arg));
-            load1_sarg = load_sargsw;
+            load_sargsw = exp(-mj*ln(load_arg));
+            load_sarg = load_sargsw;
           end
         end else begin
           if (mj==0.5) begin
-            load1_sarg = 1/sqrt(load1_arg);
+            load_sarg = 1/sqrt(load_arg);
           end else begin
-            load1_sarg = exp(-mj*ln(load1_arg));
+            load_sarg = exp(-mj*ln(load_arg));
           end
           if (mjsw==0.5) begin
-            load_sargsw = 1/sqrt(load1_arg);
+            load_sargsw = 1/sqrt(load_arg);
           end else begin
-            load_sargsw = exp(-mjsw*ln(load1_arg));
+            load_sargsw = exp(-mjsw*ln(load_arg));
           end
         end
-        MOS1qbs = MOS1tBulkPot*(MOS1Cbs*(1-load1_arg*load1_sarg)/(1-mj)+MOS1Cbssw*(1-load1_arg*load_sargsw)/(1-mjsw));
-        MOS1capbs = MOS1Cbs*load1_sarg+MOS1Cbssw*load_sargsw;
+        MOS6qbs = MOS6tBulkPot*(MOS6Cbs*(1-load_arg*load_sarg)/(1-mj)+MOS6Cbssw*(1-load_arg*load_sargsw)/(1-mjsw));
+        MOS6capbs = MOS6Cbs*load_sarg+MOS6Cbssw*load_sargsw;
       end else begin
-        MOS1qbs = MOS1f4s+load_vbs*(MOS1f2s+load_vbs*(MOS1f3s/2));
-        MOS1capbs = MOS1f2s+MOS1f3s*load_vbs;
+        MOS6qbs = MOS6f4s+load_vbs*(MOS6f2s+load_vbs*(MOS6f3s/2));
+        MOS6capbs = MOS6f2s+MOS6f3s*load_vbs;
       end
     end else begin
-      MOS1qbs = 0;
-      MOS1capbs = 0;
+      MOS6qbs = 0;
+      MOS6capbs = 0;
     end
-    if (MOS1Cbd!=0||MOS1Cbdsw!=0) begin
-      if (load_vbd<MOS1tDepCap) begin
-        load2_arg = 1-load_vbd/MOS1tBulkPot;
+    if (MOS6Cbd!=0||MOS6Cbdsw!=0) begin
+      if (load_vbd<MOS6tDepCap) begin
+        load_arg = 1-load_vbd/MOS6tBulkPot;
         if (mj==0.5&&mjsw==0.5) begin
-          load_sargsw = 1/sqrt(load2_arg);
-          load2_sarg = load_sargsw;
+          load_sargsw = 1/sqrt(load_arg);
+          load_sarg = load_sargsw;
         end else begin
           if (mj==0.5) begin
-            load2_sarg = 1/sqrt(load2_arg);
+            load_sarg = 1/sqrt(load_arg);
           end else begin
-            load2_sarg = exp(-mj*ln(load2_arg));
+            load_sarg = exp(-mj*ln(load_arg));
           end
           if (mjsw==0.5) begin
-            load_sargsw = 1/sqrt(load2_arg);
+            load_sargsw = 1/sqrt(load_arg);
           end else begin
-            load_sargsw = exp(-mjsw*ln(load2_arg));
+            load_sargsw = exp(-mjsw*ln(load_arg));
           end
         end
-        MOS1qbd = MOS1tBulkPot*(MOS1Cbd*(1-load2_arg*load2_sarg)/(1-mj)+MOS1Cbdsw*(1-load2_arg*load_sargsw)/(1-mjsw));
-        MOS1capbd = MOS1Cbd*load2_sarg+MOS1Cbdsw*load_sargsw;
+        MOS6qbd = MOS6tBulkPot*(MOS6Cbd*(1-load_arg*load_sarg)/(1-mj)+MOS6Cbdsw*(1-load_arg*load_sargsw)/(1-mjsw));
+        MOS6capbd = MOS6Cbd*load_sarg+MOS6Cbdsw*load_sargsw;
       end else begin
-        MOS1qbd = MOS1f4d+load_vbd*(MOS1f2d+load_vbd*MOS1f3d/2);
-        MOS1capbd = MOS1f2d+load_vbd*MOS1f3d;
+        MOS6qbd = MOS6f4d+load_vbd*(MOS6f2d+load_vbd*MOS6f3d/2);
+        MOS6capbd = MOS6f2d+load_vbd*MOS6f3d;
       end
     end else begin
-      MOS1qbd = 0;
-      MOS1capbd = 0;
+      MOS6qbd = 0;
+      MOS6capbd = 0;
     end
     geq = 0;
-    MOS1cqbd = ddt(MOS1qbd);
-    ceq = MOS1cqbd;
-    MOS1gbd = MOS1gbd + (geq);
-    MOS1cbd = MOS1cbd + (MOS1cqbd);
-    MOS1cd = MOS1cd - (MOS1cqbd);
+    MOS6cqbd = ddt(MOS6qbd);
+    ceq = MOS6cqbd;
+    MOS6gbd = MOS6gbd + (geq);
+    MOS6cbd = MOS6cbd + (MOS6cqbd);
+    MOS6cd = MOS6cd - (MOS6cqbd);
     geq = 0;
-    MOS1cqbs = ddt(MOS1qbs);
-    ceq = MOS1cqbs;
-    MOS1gbs = MOS1gbs + (geq);
-    MOS1cbs = MOS1cbs + (MOS1cqbs);
-    MOS1vbs = load_vbs;
-    MOS1vbd = load_vbd;
-    MOS1vgs = load_vgs;
-    MOS1vds = load_vds;
-    if (MOS1mode>0) begin
-      DEVqmeyer(load_vgs, vgd, vgb, load_von, load_vdsat, MOS1capgs, MOS1capgd, MOS1capgb, MOS1tPhi, OxideCap);
+    MOS6cqbs = ddt(MOS6qbs);
+    ceq = MOS6cqbs;
+    MOS6gbs = MOS6gbs + (geq);
+    MOS6cbs = MOS6cbs + (MOS6cqbs);
+    MOS6vbs = load_vbs;
+    MOS6vbd = load_vbd;
+    MOS6vgs = load_vgs;
+    MOS6vds = load_vds;
+    if (MOS6mode>0) begin
+      DEVqmeyer(load_vgs, vgd, vgb, load_von, load_vdsat, MOS6capgs, MOS6capgd, MOS6capgb, MOS6tPhi, OxideCap);
     end else begin
-      DEVqmeyer(vgd, load_vgs, vgb, load_von, load_vdsat, MOS1capgd, MOS1capgs, MOS1capgb, MOS1tPhi, OxideCap);
+      DEVqmeyer(vgd, load_vgs, vgb, load_von, load_vdsat, MOS6capgd, MOS6capgs, MOS6capgb, MOS6tPhi, OxideCap);
     end
-    capgs = MOS1capgs+MOS1capgs+GateSourceOverlapCap;
-    capgd = MOS1capgd+MOS1capgd+GateDrainOverlapCap;
-    capgb = MOS1capgb+MOS1capgb+GateBulkOverlapCap;
+    capgs = MOS6capgs+MOS6capgs+GateSourceOverlapCap;
+    capgd = MOS6capgd+MOS6capgd+GateDrainOverlapCap;
+    capgb = MOS6capgb+MOS6capgb+GateBulkOverlapCap;
     if (capgs==0) begin
-      MOS1cqgs = 0;
+      MOS6cqgs = 0;
     end
     if (capgd==0) begin
-      MOS1cqgd = 0;
+      MOS6cqgd = 0;
     end
     if (capgb==0) begin
-      MOS1cqgb = 0;
+      MOS6cqgb = 0;
     end
     gcgs = 0;
     ceqgs = capgs*(ddt(meyer_scale*load_vgs)/meyer_unscale);
-    MOS1cqgs = ceqgs;
+    MOS6cqgs = ceqgs;
     gcgd = 0;
     ceqgd = capgd*(ddt(meyer_scale*vgd)/meyer_unscale);
-    MOS1cqgd = ceqgd;
+    MOS6cqgd = ceqgd;
     gcgb = 0;
     ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
-    MOS1cqgb = ceqgb;
-    ceqbs = MOS1type*(MOS1cbs-MOS1gbs*load_vbs);
-    ceqbd = MOS1type*(MOS1cbd-MOS1gbd*load_vbd);
-    if (MOS1mode>=0) begin
+    MOS6cqgb = ceqgb;
+    m = 1;
+    ceqbs = MOS6type*(MOS6cbs-MOS6gbs*load_vbs);
+    ceqbd = MOS6type*(MOS6cbd-MOS6gbd*load_vbd);
+    if (MOS6mode>=0) begin
       xnrm = 1;
       xrev = 0;
-      cdreq = MOS1type*cdrain;
+      cdreq = MOS6type*cdrain;
     end else begin
       xnrm = 0;
       xrev = 1;
-      cdreq = -MOS1type*cdrain;
+      cdreq = -MOS6type*cdrain;
     end
     
     // Residuals
-    I(d) <+ MOS1drainConductance*V(d, d_int);
-    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS1type*(ceqgs+ceqgb+ceqgd);
-    I(s) <+ MOS1sourceConductance*V(s, s_int);
-    I(b) <+ MOS1gbd*V(b, d_int)+MOS1gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS1type*ceqgb);
-    I(d_int) <+ MOS1drainConductance*V(d_int, d)+MOS1gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS1type*ceqgd);
-    I(s_int) <+ MOS1gbs*V(s_int, b)+MOS1sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS1type*ceqgs);
-
-    // Tag: noise, function: MOS1noise
-    if (MOS1oxideCapFactor==0.0) begin
-      coxSquared = 3.9*8.854214871e-12/1e-7;
+    I(d) <+ MOS6drainConductance*V(d, d_int);
+    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS6type*(ceqgs+ceqgb+ceqgd);
+    I(s) <+ MOS6sourceConductance*V(s, s_int);
+    I(b) <+ MOS6gbd*V(b, d_int)+MOS6gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS6type*ceqgb);
+    I(d_int) <+ MOS6drainConductance*V(d_int, d)+MOS6gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS6type*ceqgd);
+    I(s_int) <+ MOS6gbs*V(s_int, b)+MOS6sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS6type*ceqgs);
+    // Grafted noise model
+    if (MOS6tempGiven) begin
+        noise_dtemp = MOS6temp-$temperature+(MOS6tnom-273.15);
     end else begin
-      coxSquared = MOS1oxideCapFactor;
+        noise_dtemp = dtemp;
     end
-    coxSquared = coxSquared * (coxSquared);
-    if (MOS1tempGiven) begin
-      noise_dtemp = MOS1temp-$temperature+(MOS1tnom-273.15);
-    end else begin
-      noise_dtemp = dtemp;
-    end
-    I(d_int, d) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS1drainConductance)), "rd");
-    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS1sourceConductance)), "rs");
+    I(d_int, d) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS6drainConductance)), "rd");
+    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS6sourceConductance)), "rs");
     if (nlev<3) begin
-      Sid = 2.0/3.0*abs(MOS1gm);
+        Sid = 2.0/3.0*abs(MOS6gm);
     end else begin
-      noise_vds = MOS1vds;
-      noise_vgs = MOS1vgs;
-      noise_vgd = noise_vgs-noise_vds;
-      noise_vgst = ((MOS1mode==1) ? (noise_vgs) : (noise_vgd))-MOS1type*MOS1von;
-      if (noise_vgst>0) begin
-        if (noise_vgst<=noise_vds*MOS1mode) begin
-          alpha = 0.0;
-        end else begin
-          alpha = 1.0-noise_vds*MOS1mode/(MOS1type*MOS1vdsat);
-        end
-        beta = MOS1tTransconductance*MOS1w/(MOS1l-2*ld);
-        Sid = 2.0/3.0*beta*noise_vgst*(1.0+alpha+alpha*alpha)/(1.0+alpha)*gdsnoi;
-      end else begin
-        Sid = 0.0;
-      end
+        $fatal(0, "nlev>2 is not supported.");
     end
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
     if (nlev==0) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS1cd)>1E-38) ? (abs(MOS1cd)) : (1E-38))))/((MOS1l-2*ld)*(MOS1l-2*ld)*sqrt(coxSquared));
-      flicker_exp = 1;
+        flicker_psd = kf*exp(af*ln(((abs(MOS6dcCurrent)>1E-38) ? (abs(MOS6dcCurrent)) : (1E-38))))/((MOS6l-2*ld)*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = 1;
     end else if (nlev==1) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS1cd)>1E-38) ? (abs(MOS1cd)) : (1E-38))))/(MOS1w*(MOS1l-2*ld)*sqrt(coxSquared));
-      flicker_exp = 1;
-    end else if (nlev==2||nlev==3) begin
-      flicker_psd = kf*MOS1gm*MOS1gm/(MOS1w*(MOS1l-2*ld)*sqrt(coxSquared));
-      flicker_exp = af;
+        flicker_psd = kf*exp(af*ln(((abs(MOS6dcCurrent)>1E-38) ? (abs(MOS6dcCurrent)) : (1E-38))))/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = 1;
+    end else if (nlev==2) begin
+        flicker_psd = kf*MOS6gm*MOS6gm/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
+        flicker_exp = af;
     end
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation
-    i_d = MOS1cd;
-    i_s = -MOS1cd;
-    i_s = i_s - (MOS1cbd+MOS1cbs-MOS1cqgb);
-    i_s = i_s - (MOS1cqgb+MOS1cqgd+MOS1cqgs);
-    i_g = MOS1cqgb+MOS1cqgd+MOS1cqgs;
-    i_b = MOS1cbd+MOS1cbs-MOS1cqgb;
-    ibd = MOS1cbd;
-    ibs = MOS1cbs;
-    vgs = MOS1vgs;
-    vds = MOS1vds;
-    vbs = MOS1vbs;
-    vbd = MOS1vbd;
-    von = MOS1von;
-    vdsat = MOS1vdsat;
-    sourcevcrit = MOS1sourceVcrit;
-    drainvcrit = MOS1drainVcrit;
-    sourceconductance = MOS1sourceConductance;
-    drainconductance = MOS1drainConductance;
-    gm = MOS1gm;
-    gds = MOS1gds;
-    gmb = MOS1gmbs;
-    gbd = MOS1gbd;
-    gbs = MOS1gbs;
-    c_bd = MOS1capbd;
-    c_bs = MOS1capbs;
-    cgs = 2*MOS1capgs;
-    cgs = cgs + (cgso*MOS1w);
-    cgd = 2*MOS1capgd;
-    cgd = cgd + (cgdo*MOS1w);
-    cgb = 2*MOS1capgb;
-    cgb = cgb + (cgbo*(MOS1l-2*ld));
-    cqgs = MOS1cqgs;
-    cqgd = MOS1cqgd;
-    cqgb = MOS1cqgb;
-    cqbd = MOS1cqbd;
-    cqbs = MOS1cqbs;
-    cbd0 = MOS1Cbd;
-    cbdsw0 = MOS1Cbdsw;
-    cbs0 = MOS1Cbs;
-    cbssw0 = MOS1Cbssw;
-    qbd = MOS1qbd;
-    qbs = MOS1qbs;
+    i_d = MOS6cd;
+    i_s = -MOS6cd;
+    i_s = i_s - (MOS6cbd+MOS6cbs-MOS6cqgb);
+    i_s = i_s - (MOS6cqgb+MOS6cqgd+MOS6cqgs);
+    i_g = MOS6cqgb+MOS6cqgd+MOS6cqgs;
+    i_b = MOS6cbd+MOS6cbs-MOS6cqgb;
+    ibs = MOS6cbs;
+    ibd = MOS6cbd;
+    vgs = MOS6vgs;
+    vds = MOS6vds;
+    vbs = MOS6vbs;
+    vbd = MOS6vbd;
+    sourceconductance = MOS6sourceConductance;
+    drainconductance = MOS6drainConductance;
+    von = MOS6von;
+    vdsat = MOS6vdsat;
+    sourcevcrit = MOS6sourceVcrit;
+    drainvcrit = MOS6drainVcrit;
+    gmbs = MOS6gmbs;
+    gm = MOS6gm;
+    gds = MOS6gds;
+    gbd = MOS6gbd;
+    gbs = MOS6gbs;
+    cgs = 2*MOS6capgs;
+    cgs = cgs + (cgso*MOS6w);
+    cgd = 2*MOS6capgd;
+    cgd = cgd + (cgso*MOS6w);
+    cgb = 2*MOS6capgb;
+    cgb = cgb + (cgbo*(MOS6l-2*ld));
+    c_bd = MOS6capbd;
+    c_bs = MOS6capbs;
+    cbd0 = MOS6Cbd;
+    cbdsw0 = MOS6Cbdsw;
+    cbs0 = MOS6Cbs;
+    cbssw0 = MOS6Cbssw;
+    cqgs = MOS6cqgs;
+    cqgd = MOS6cqgd;
+    cqgb = MOS6cqgb;
+    cqbd = MOS6cqbd;
+    cqbs = MOS6cqbs;
+    qbd = MOS6qbd;
+    qbs = MOS6qbs;
+    p = MOS6cd*V(d);
+    p = p + ((MOS6cbd+MOS6cbs-MOS6cqgb)*V(b));
+    p = p + ((MOS6cqgb+MOS6cqgd+MOS6cqgs)*V(g));
+    instask_temp = -MOS6cd;
+    instask_temp = instask_temp - (MOS6cbd+MOS6cbs);
+    instask_temp = instask_temp - (MOS6cqgb+MOS6cqgd+MOS6cqgs);
+    p = p + (instask_temp*V(s));
 
     // Model opvar computation
 

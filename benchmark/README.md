@@ -20,7 +20,7 @@ VACASK was compiled with default options.
 
 Each case was run 6 times. The first run was not timed. We assumed that the caches are filled after the first run so the performance variability in subsequent runs is smaller. No results were stored in files to prevent disk IO operations from affecting the results. Timing includes the whole run - loading of the input files, parsing, elaboration, and simulation. The tables list the average values across 5 runs. The standard deviation of timings was below 2% of the average. You can review the methodology by looking at [benchmark.py](benchmark.py). 
 
-Ngspice, Xyce and Gnucap were using builtin models of circuit elements. VACASK used Ngspice models converted into Verilog-A by [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller). The simplified noise model was used (`simplified_noise` set to `True`) and opvars that induce extra internal nodes were left out (`opvars_intnodes` set to `False`) to make models as close as possible to the ones provided by Ngspice in terms of complexity. The CMOS test problems used the PSP103.4 MOSFET model. 
+Ngspice, Xyce and Gnucap were using builtin models of circuit elements. VACASK used Ngspice models converted into Verilog-A by [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller). The simplified noise model was used and opvars that induce extra internal nodes were left out (model variant `sn`) to make models as close as possible to the ones provided by Ngspice in terms of complexity. The CMOS test problems used the PSP103.4 MOSFET model. 
 
 For each test problem the number of timepoints and the number of Newton-Raphson (NR) iterations (residual evaluations for Xyce) is listed. In some cases the number of rejected timepoints is also given. All benchmarks were run on a computer with an AMD Threadripper 7970 processor. 
 
@@ -35,7 +35,7 @@ This is a simple circuit with 2 elements (resistor, capacitor) excited by a volt
 |Xyce-fast  | 4.12           |1011527    |2029571    |
 |Gnucap     | 8.54           |1006982    |2018061    |
 |Ngspice    | 1.31           |1006013    |2012031    |
-|VACASK     | 0.93           |1005006    |2010014    |
+|VACASK     | 0.94           |1005006    |2010014    |
 
 ## Full wave rectifier with smoothing and load (graetz)
 A full wave rectifier (4 diodes) with a capacitor and a resistor as load excited by a sinusoidal voltage. Two 1GOhm resistors are used for setting up a DC path to ground. The timestep was forced artificially to a small value so that roughly 1000000 time steps are computed. Second order Gear integration was used. The diode model has transit time (tt) set to 0 because Gnucap exhibits convergence problem when reverse recovery effects are modelled. 
@@ -57,7 +57,7 @@ A voltage multiplier (4 diodes, 4 capacitors) with a series resistor at its inpu
 |Xyce-fast  | 2.78           |502341     |1270     |1041833    |
 |Gnucap     | 9.94           |520797     |739      |2300992    |
 |Ngspice    | 1.16           |500467     |957      |1019733    |
-|VACASK     | 0.95           |500056     |3        |1001217    |
+|VACASK     | 0.97           |500056     |3        |1001233    |
 
 ## 9 stage CMOS ring oscillator (ring)
 This is a ring oscillator with 9 CMOS inverters (18 transistors) powered by 1.2V. The timestep was limited to 50ps. Xyce `timeint reltol` option was set to 5e-3 to make the number of computed timepoints roughly equal to that of VACASK. 
@@ -76,7 +76,7 @@ A medium size digital circuit with 10112 transistors and 25380 nodes. It compute
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 151.57         |1013       |37       |3559       |
 |Ngspice    |  73.16         |1020       |1        |3474       |
-|VACASK     |  60.38         |1021       |7        |3487       |
+|VACASK     |  57.98         |1021       |7        |3487       |
 
 ### Effect of residual tolerance checks
 Residual tolerance check (rtc) makes sure KCL equations are satisfied within a prescribed tolerance. It can induce extra NR iterations and slow down the simulation, but on the other hand makes the simulation results more accurate. By default residual tolerance check is enabled (option `nr_residualcheck` set to 1). This check is not performed in Ngspice. The table lists the results of the c6288 benchmark. 
@@ -84,8 +84,8 @@ Residual tolerance check (rtc) makes sure KCL equations are satisfied within a p
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
 |Ngspice              | 73.16          |1020       |1        |3474       |
-|VACASK, rtc (default)| 60.38          |1021       |7        |3487       |
-|VACASK, no rtc       | 50.73          |1024       |8        |3090       |
+|VACASK, rtc (default)| 57.98          |1021       |7        |3487       |
+|VACASK, no rtc       | 48.34          |1024       |8        |3090       |
 
 When residual tolerance check is disabled VACASK is faster, but the results are less accurate. 
 
@@ -102,8 +102,8 @@ The following table was obtained with residual tolerance check disabled (`nr_res
 |Simulator            |Time (s)        |Timepoints |Rejected |Iterations |
 |---------------------|----------------|-----------|---------|-----------|
 |Ngspice              | 73.16          |1020       |1        |3474       |
-|VACASK, no cb        | 66.09          |1024       |8        |3090       |
-|VACASK, cb (default) | 50.73          |1024       |8        |3090       |
+|VACASK, no cb        | 63.19          |1024       |8        |3090       |
+|VACASK, cb (default) | 57.98          |1024       |8        |3090       |
 
 Disabling continuation bypass slows down the simulation. 
 
@@ -117,7 +117,7 @@ The following table was obtained on the c6288 benchmark with residual tolerance 
 |Simulator                |Time (s)        |Timepoints |Rejected |Iterations |
 |-------------------------|----------------|-----------|---------|-----------|
 |Ngspice                  | 73.16          |1020       |1        |3474       |
-|VACASK, no ieb (default) | 50.73          |1024       |8        |3090       |
-|VACASK, ieb              | 48.80          |1024       |10       |3101       |
+|VACASK, no ieb (default) | 48.34          |1024       |8        |3090       |
+|VACASK, ieb              | 46.74          |1024       |10       |3101       |
 
 Inactive element bypass is effective only for large circuits when a significant part of elements is inactive most of the time. 

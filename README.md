@@ -103,7 +103,15 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 
 Devices marked with an asterisk (*) do not conserve charge because of the modeling approach chosen by their respective authors. 
 
-The converted SPICE models can be found in [devices/spice](devices/spice). Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
+The converted SPICE models can be found in the [devices/spice](devices/spice) directory.
+
+Most devices provide several model variants. The `sn` variant ([devices/spice/sn](devices/spice/sn) directory) models have a simplified noise model and do not expose opvars that would introduce extra internal nodes. These models are the fastest, but they cannot be used in advanced noise analyses (they give correct noise values in the ordinary small-signal noise analysis only). 
+
+The `full` variant  ([devices/spice/full](devices/spice/full) directory) of a model exposes all opvars and the noise model is appropriate for all types of analysis. 
+
+The `default` model variant can be found in the [devices/spice](devices/spice) directory. These models do not expose opvars that introduce extra internal nodes. The noise model, however, is appropriate for all types of noise analysis. If a particular device does not have a `sn` or a `full` variant then that variant is equal to the `default` variant. For more information consult the [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller) repository. 
+
+Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 
 
 # Installation from pre-built packages

@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:35 UTC
+// Date         : 2025-06-10 11:09:41 UTC
 // Module name  : sp_bjt
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -40,6 +40,9 @@
 //   The Weil-McNamee excess phase model has been implemented using the 
 //   McAndrew-Huszka-Coram approach. The model adds two internal nodes (xf1 and 
 //   xf2) when the excess phase parameter (ptf) is nonzero.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //   OpenVAF may create implicit equations.
@@ -245,6 +248,10 @@ module sp_bjt(c, b, e, sub);
   (* desc = "thermal resistance juntion to ambient" *) parameter real rth0 = 0;
 
   // Instance opvars
+  (* desc = "Current at collector node" *) real ic;
+  (* desc = "Current at base node" *) real ib;
+  (* desc = "Emitter current" *) real ie;
+  (* desc = "Substrate current" *) real isubs;
   (* desc = "B-E voltage" *) real vbe;
   (* desc = "B-C voltage" *) real vbc;
   (* desc = "Small signal transconductance" *) real gm;
@@ -266,6 +273,7 @@ module sp_bjt(c, b, e, sub);
   (* desc = "Charge storage B-C junction" *) real qbc;
   (* desc = "Charge storage Subs. junction" *) real qsub;
   (* desc = "Charge storage B-X junction" *) real qbx;
+  (* desc = "Power dissipation" *) real p;
 
   // Model opvars
   (* desc = "Inverse early voltage:forward" *) real invearlyvoltf;
@@ -1434,6 +1442,18 @@ module sp_bjt(c, b, e, sub);
     I(b_int, e_int) <+ flicker_noise(kf*exp(af*ln(((abs(BJTcb)>1E-38) ? (abs(BJTcb)) : (1E-38)))), 1, "flicker");
 
     // Instance opvar computation
+    ic = BJTcc * BJTtype;
+    ib = BJTcb;
+        if (BJTsubs==-1) begin // lateral
+        ib = ib - BJTcdsub - BJTcqsub;
+        end
+        ib = ib * BJTtype;
+    ie = -BJTcc -BJTcb;
+        if (BJTsubs==1) begin // vertical
+        ie = ie + BJTcdsub + BJTcqsub;
+        end
+        ie = ie * BJTtype;
+    isubs = -BJTsubs * (BJTcqsub + BJTcdsub) * BJTtype;
     vbe = BJTvbe;
     vbc = BJTvbc;
     gm = BJTgm;
@@ -1455,6 +1475,10 @@ module sp_bjt(c, b, e, sub);
     qbc = BJTqbc;
     qsub = BJTqsub;
     qbx = BJTqbx;
+    p = abs(BJTcc*V(c, e));
+    p = p + (abs(BJTcb*V(b, e)));
+    p = p + (abs(BJTcdsub*V(sub_con, sub)));
+    p = p + (BJTcqsub*abs(V(sub_con, sub)));
 
     // Model opvar computation
 

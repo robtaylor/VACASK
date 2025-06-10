@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:08:03 UTC
+// Date         : 2025-06-10 11:09:04 UTC
 // Module name  : sp_mos2
-// Model variant: default
+// Model variant: sn
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -38,8 +38,8 @@
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
 //
-//   Full noise model used (appropriate for all noise analyses).
-//   OpenVAF may create implicit equations.
+//   Simplified noise model used (ignores capacitive current).
+//   Appropriate only for small-signal noise analysis.
 //
 // SPICE variable mapping
 //   scale -> $simparam("scale", 1)
@@ -2061,10 +2061,10 @@ module sp_mos2(d, g, s, b);
     end
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
     if (nlev==0) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
+      flicker_psd = kf*exp(af*ln(((abs(MOS2dcCurrent)>1E-38) ? (abs(MOS2dcCurrent)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
       flicker_exp = 1;
     end else if (nlev==1) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
+      flicker_psd = kf*exp(af*ln(((abs(MOS2dcCurrent)>1E-38) ? (abs(MOS2dcCurrent)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
       flicker_exp = 1;
     end else if (nlev==2||nlev==3) begin
       flicker_psd = kf*MOS2gm*MOS2gm/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);

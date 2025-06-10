@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:24 UTC
+// Date         : 2025-06-10 11:09:30 UTC
 // Module name  : sp_inductor
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -22,6 +22,9 @@
 //   
 //   Parameter ic was removed. Initial conditions should be set via the 
 //   simulator's initial conditions mechanism.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 // CKTcircuit member mapping
 //   CKTnomTemp -> ('tnom', '($simparam("tnom", 27)+273.15)')
@@ -87,7 +90,9 @@ module sp_inductor(pos, neg);
 
   // Instance opvars
   (* desc = "Flux through inductor" *) real flux;
+  (* desc = "Terminal voltage of inductor" *) real v;
   (* desc = "Current through the inductor" *) real i;
+  (* desc = "instantaneous power dissipated by the inductor" *) real p;
 
   // Model opvars
 
@@ -277,7 +282,9 @@ module sp_inductor(pos, neg);
 
     // Instance opvar computation
     flux = INDflux;
+    v = INDvolt;
     i = I(br);
+    p = I(br)*INDvolt;
 
     // Model opvar computation
 

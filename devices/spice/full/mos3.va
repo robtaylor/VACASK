@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:08:11 UTC
+// Date         : 2025-06-10 11:10:17 UTC
 // Module name  : sp_mos3
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -37,6 +37,9 @@
 //   Simplified noise model also excludes the capacitive current of the 
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
+//
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //   OpenVAF may create implicit equations.
@@ -206,6 +209,7 @@ module sp_mos3(d, g, s, b);
   (* desc = "Zero-Bias B-S sidewall capacitance" *) real cbssw0;
   (* desc = "Bulk-Source charge storage" *) real qbs;
   (* desc = "Bulk-Drain charge storage" *) real qbd;
+  (* desc = "Instantaneous power" *) real p;
 
   // Model opvars
   (* desc = "Depletion layer width" *) real xd;
@@ -310,6 +314,7 @@ module sp_mos3(d, g, s, b);
   // Model parameter access locals
 
   // Instance parameter access locals
+  real instask_temp;
 
   // Device setup locals
 
@@ -1606,6 +1611,13 @@ module sp_mos3(d, g, s, b);
     cbssw0 = MOS3Cbssw;
     qbs = MOS3qbs;
     qbd = MOS3qbd;
+    p = MOS3cd*V(d);
+    p = p + ((MOS3cbd+MOS3cbs-MOS3cqgb)*V(b));
+    p = p + ((MOS3cqgb+MOS3cqgd+MOS3cqgs)*V(g));
+    instask_temp = -MOS3cd;
+    instask_temp = instask_temp - (MOS3cbd+MOS3cbs);
+    instask_temp = instask_temp - (MOS3cqgb+MOS3cqgd+MOS3cqgs);
+    p = p + (instask_temp*V(s));
 
     // Model opvar computation
 

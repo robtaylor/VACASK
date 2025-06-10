@@ -5,8 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-09 06:58:13 UTC
+// Date         : 2025-06-10 11:08:17 UTC
 // Module name  : sp_mos6
+// Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -22,8 +23,8 @@
 //   Their inverses are available as sourceconductance and drainconductance 
 //   opvars. 
 //   
-//   Opvars cbd and cbs were renamed to c_bd and c_bs due to a conflict 
-//   with model parameters. 
+//   Opvars cbd, cbs, ig, id, is, and ib were renamed to c_bd and c_bs, 
+//   i_g, i_d, i_s, i_b due to conflicts with model parameters. 
 //   
 //   Meyer charge is not computed and therefore not available. Opvars qgs, 
 //   qgd, and qgb were removed. 
@@ -39,6 +40,7 @@
 //   Simplified noise model also excludes the capacitive current of the 
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
+//
 // CKTcircuit member mapping
 //   CKTdefaultMosAD -> ('defad', '$simparam("defad", 0)', 'const')
 //   CKTdefaultMosAS -> ('defas', '$simparam("defas", 0)', 'const')
@@ -150,6 +152,10 @@ module sp_mos6(d, g, s, b);
   (* desc = "Flicker noise exponent" *) parameter real af = 1;
 
   // Instance opvars
+  (* desc = "Drain current" *) real i_d;
+  (* desc = "Source current" *) real i_s;
+  (* desc = "Gate current " *) real i_g;
+  (* desc = "Bulk current " *) real i_b;
   (* desc = "B-S junction capacitance" *) real ibs;
   (* desc = "B-D junction capacitance" *) real ibd;
   (* desc = "Gate-Source voltage" *) real vgs;
@@ -284,6 +290,10 @@ module sp_mos6(d, g, s, b);
   real MOS6cqbd;
   real MOS6qbs;
   real MOS6cqbs;
+
+  // Model parameter access locals
+
+  // Instance parameter access locals
 
   // Device setup locals
 
@@ -1204,6 +1214,12 @@ module sp_mos6(d, g, s, b);
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation
+    i_d = MOS6cd;
+    i_s = -MOS6cd;
+    i_s = i_s - (MOS6cbd+MOS6cbs-MOS6cqgb);
+    i_s = i_s - (MOS6cqgb+MOS6cqgd+MOS6cqgs);
+    i_g = MOS6cqgb+MOS6cqgd+MOS6cqgs;
+    i_b = MOS6cbd+MOS6cbs-MOS6cqgb;
     ibs = MOS6cbs;
     ibd = MOS6cbd;
     vgs = MOS6vgs;

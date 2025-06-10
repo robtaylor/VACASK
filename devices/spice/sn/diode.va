@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:29 UTC
+// Date         : 2025-06-10 11:08:30 UTC
 // Module name  : sp_diode
-// Model variant: default
+// Model variant: sn
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -33,8 +33,8 @@
 //   model. If you need them comment out the appropriate section of the 
 //   config and rebuild the model.
 //
-//   Full noise model used (appropriate for all noise analyses).
-//   OpenVAF may create implicit equations.
+//   Simplified noise model used (ignores capacitive current).
+//   Appropriate only for small-signal noise analysis.
 //
 // SPICE variable mapping
 //   scale -> $simparam("scale", 1)
@@ -991,8 +991,8 @@ module sp_diode(a, c);
       noise_dtemp = dtemp;
     end
     I(a_int, a) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*DIOtConductance)), "rs");
-    I(a_int, c) <+ white_noise(2*(VACONSTcharge*DIOcurrent), "id");
-    I(a_int, c) <+ flicker_noise(kf*exp(af*ln(((abs(DIOcurrent)>1E-38) ? (abs(DIOcurrent)) : (1E-38)))), 1, "flicker");
+    I(a_int, c) <+ white_noise(2*(VACONSTcharge*DIOdcCurrent), "id");
+    I(a_int, c) <+ flicker_noise(kf*exp(af*ln(((abs(DIOdcCurrent)>1E-38) ? (abs(DIOdcCurrent)) : (1E-38)))), 1, "flicker");
 
     // Instance opvar computation
     vd = DIOvoltage;

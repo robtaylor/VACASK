@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:08:11 UTC
-// Module name  : sp_mos3
-// Model variant: default
+// Date         : 2025-06-10 11:10:30 UTC
+// Module name  : sp_mos9
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -38,11 +38,11 @@
 //   B-D diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
 //
+//   This model exposes opvars that can lead to creation of
+//   implicit equations by OpenVAF.
+//
 //   Full noise model used (appropriate for all noise analyses).
 //   OpenVAF may create implicit equations.
-//
-// SPICE variable mapping
-//   scale -> $simparam("scale", 1)
 //
 // CKTcircuit member mapping
 //        CKTbadMos3 -> ('badmos3', '$simparam("badmos3", 0)', 'const')
@@ -60,51 +60,51 @@
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
 //     Modified: 2000 AlansFixes
-//   mos3/mos3defs.h
+//   mos9/mos9defs.h
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlanFixes
-//   mos3/mos3.c
+//     Modified: Alan Gillespie
+//   mos9/mos9.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1987 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3par.c
+//     Modified: Alan Gillespie
+//   mos9/mos9par.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3mpar.c
+//     Modified: Alan Gillespie
+//   mos9/mos9mpar.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3ask.c
+//     Modified: Alan Gillespie
+//   mos9/mos9ask.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1987 Mathew Lew and Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3mask.c
+//     Modified: Alan Gillespie
+//   mos9/mos9mask.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1987 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3set.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarlesù
-//     Modified: 2000 AlansFixes
-//   mos3/mos3temp.c
+//     Modified: Alan Gillespie
+//   mos9/mos9set.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3load.c
+//     Modified: Alan Gillespie
+//   mos9/mos9temp.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//   mos3/mos3noi.c
+//     Modified: Alan Gillespie
+//   mos9/mos9load.c
+//     Copyright 1990 Regents of the University of California.  All rights reserved.
+//     Author: 1985 Thomas L. Quarles
+//     Modified: Alan Gillespie
+//   mos9/mos9noi.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1987 Gary W. Ng
-//     Modified: 2000 AlansFixes
+//     Modified: Alan Gillespie
 
 `include "constants.vams"
 `include "disciplines.vams"
 
-module sp_mos3(d, g, s, b);
+module sp_mos9(d, g, s, b);
   inout d, g, s, b;
   electrical d, g, s, b, d_int, s_int;
 
@@ -118,7 +118,7 @@ module sp_mos3(d, g, s, b);
   (* desc = "Drain squares", type = "instance" *) parameter real nrd = 1;
   (* desc = "Source squares", type = "instance" *) parameter real nrs = 1;
   (* desc = "Instance operating temperature", type = "instance" *) parameter real temp = 0;
-  (* desc = "Instance temperature difference", type = "instance" *) parameter real dtemp = 0.0;
+  (* desc = "Instance operating temperature difference", type = "instance" *) parameter real dtemp = 0.0;
 
   // Model parameters
   (* desc = "NMOS (1) or PMOS (-1)" *) parameter integer type = 1;
@@ -165,8 +165,6 @@ module sp_mos3(d, g, s, b);
   (* desc = "Parameter measurement temperature" *) parameter real tnom = 0;
   (* desc = "Flicker noise coefficient" *) parameter real kf = 0;
   (* desc = "Flicker noise exponent" *) parameter real af = 1;
-  (* desc = "Noise model selection" *) parameter integer nlev = 2;
-  (* desc = "Channel shot noise coefficient" *) parameter real gdsnoi = 1;
 
   // Instance opvars
   (* desc = "Drain current" *) real i_d;
@@ -206,6 +204,7 @@ module sp_mos3(d, g, s, b);
   (* desc = "Zero-Bias B-S sidewall capacitance" *) real cbssw0;
   (* desc = "Bulk-Source charge storage" *) real qbs;
   (* desc = "Bulk-Drain charge storage" *) real qbd;
+  (* desc = "Instantaneous power" *) real p;
 
   // Model opvars
   (* desc = "Depletion layer width" *) real xd;
@@ -213,103 +212,96 @@ module sp_mos3(d, g, s, b);
   (* desc = "" *) real input_delta;
 
   // Instance fields
-  real MOS3l;
-  real MOS3w;
-  real MOS3drainArea;
-  real MOS3sourceArea;
-  real MOS3drainPerimiter;
-  real MOS3sourcePerimiter;
-  real MOS3sourceConductance;
-  real MOS3drainConductance;
-  real MOS3temp;
-  real MOS3tTransconductance;
-  real MOS3tSurfMob;
-  real MOS3tPhi;
-  real MOS3tVto;
-  real MOS3tSatCur;
-  real MOS3tSatCurDens;
-  real MOS3tCbd;
-  real MOS3tCbs;
-  real MOS3tCj;
-  real MOS3tCjsw;
-  real MOS3tBulkPot;
-  real MOS3tDepCap;
-  real MOS3tVbi;
-  real MOS3von;
-  real MOS3vdsat;
-  real MOS3sourceVcrit;
-  real MOS3drainVcrit;
-  real MOS3cd;
-  real MOS3cbs;
-  real MOS3cbd;
-  real MOS3gmbs;
-  real MOS3gm;
-  real MOS3gds;
-  real MOS3gbd;
-  real MOS3gbs;
-  real MOS3capbd;
-  real MOS3capbs;
-  real MOS3Cbd;
-  real MOS3Cbdsw;
-  real MOS3Cbs;
-  real MOS3Cbssw;
-  real MOS3f2d;
-  real MOS3f3d;
-  real MOS3f4d;
-  real MOS3f2s;
-  real MOS3f3s;
-  real MOS3f4s;
-  integer MOS3mode;
-  real MOS3cgs;
-  real MOS3cgd;
-  real MOS3cgb;
-  real MOS3dcCurrent;
+  real MOS9l;
+  real MOS9w;
+  real MOS9drainArea;
+  real MOS9sourceArea;
+  real MOS9sourceConductance;
+  real MOS9drainConductance;
+  real MOS9temp;
+  real MOS9tTransconductance;
+  real MOS9tSurfMob;
+  real MOS9tPhi;
+  real MOS9tVto;
+  real MOS9tSatCur;
+  real MOS9tSatCurDens;
+  real MOS9tCbd;
+  real MOS9tCbs;
+  real MOS9tCj;
+  real MOS9tCjsw;
+  real MOS9tBulkPot;
+  real MOS9tDepCap;
+  real MOS9tVbi;
+  real MOS9von;
+  real MOS9vdsat;
+  real MOS9sourceVcrit;
+  real MOS9drainVcrit;
+  real MOS9cd;
+  real MOS9cbs;
+  real MOS9cbd;
+  real MOS9gmbs;
+  real MOS9gm;
+  real MOS9gds;
+  real MOS9gbd;
+  real MOS9gbs;
+  real MOS9capbd;
+  real MOS9capbs;
+  real MOS9Cbd;
+  real MOS9Cbdsw;
+  real MOS9Cbs;
+  real MOS9Cbssw;
+  real MOS9f2d;
+  real MOS9f3d;
+  real MOS9f4d;
+  real MOS9f2s;
+  real MOS9f3s;
+  real MOS9f4s;
+  integer MOS9mode;
+  real MOS9cgs;
+  real MOS9cgd;
+  real MOS9cgb;
+  real MOS9dcCurrent;
   real meyer_scale;
   real meyer_unscale;
-  integer MOS3lGiven = 0;
-  integer MOS3wGiven = 0;
-  integer MOS3drainAreaGiven = 0;
-  integer MOS3sourceAreaGiven = 0;
-  integer MOS3drainPerimiterGiven = 0;
-  integer MOS3sourcePerimiterGiven = 0;
-  integer MOS3tempGiven = 0;
+  integer MOS9tempGiven = 0;
 
   // Model fields
-  real MOS3tnom;
-  real MOS3transconductance;
-  real MOS3oxideCapFactor;
-  real MOS3vt0;
-  real MOS3phi;
-  real MOS3gamma;
-  real MOS3substrateDoping;
-  real MOS3coeffDepLayWidth;
-  real MOS3narrowFactor;
-  real MOS3alpha;
-  integer MOS3type;
-  integer MOS3tnomGiven = 0;
+  real MOS9tnom;
+  real MOS9transconductance;
+  real MOS9oxideCapFactor;
+  real MOS9vt0;
+  real MOS9phi;
+  real MOS9gamma;
+  real MOS9substrateDoping;
+  real MOS9coeffDepLayWidth;
+  real MOS9narrowFactor;
+  real MOS9alpha;
+  integer MOS9type;
+  integer MOS9tnomGiven = 0;
 
   // States
-  real MOS3vbd;
-  real MOS3vbs;
-  real MOS3vgs;
-  real MOS3vds;
-  real MOS3capgs;
-  real MOS3qgs;
-  real MOS3cqgs;
-  real MOS3capgd;
-  real MOS3qgd;
-  real MOS3cqgd;
-  real MOS3capgb;
-  real MOS3qgb;
-  real MOS3cqgb;
-  real MOS3qbd;
-  real MOS3cqbd;
-  real MOS3qbs;
-  real MOS3cqbs;
+  real MOS9vbd;
+  real MOS9vbs;
+  real MOS9vgs;
+  real MOS9vds;
+  real MOS9capgs;
+  real MOS9qgs;
+  real MOS9cqgs;
+  real MOS9capgd;
+  real MOS9qgd;
+  real MOS9cqgd;
+  real MOS9capgb;
+  real MOS9qgb;
+  real MOS9cqgb;
+  real MOS9qbd;
+  real MOS9cqbd;
+  real MOS9qbs;
+  real MOS9cqbs;
 
   // Model parameter access locals
 
   // Instance parameter access locals
+  real instask_temp;
 
   // Device setup locals
 
@@ -492,14 +484,6 @@ module sp_mos3(d, g, s, b);
   integer goto_destination = -1;
 
   // Device noise locals
-  real noise_vgs;
-  real noise_vds;
-  real noise_vgd;
-  real vgst;
-  real noise_alpha;
-  real beta;
-  real Sid;
-  real noise_dtemp;
   real flicker_psd = 0;
   real flicker_exp = 1;
 
@@ -517,7 +501,6 @@ module sp_mos3(d, g, s, b);
   real defw = $simparam("defw", 1e-4);
   real oldlimit = $simparam("oldlimit", 0);
   real VACONST_tnom = ($simparam("tnom", 27)+273.15);
-  real cpscale = $simparam("scale", 1);
 
   // Evaluation constants
   real lc_gmin = 0;
@@ -763,84 +746,66 @@ module sp_mos3(d, g, s, b);
 
     // Instance field assignments
     if ($param_given(l)) begin
-      MOS3l = l*cpscale;
-      MOS3lGiven = 1;
+      MOS9l = l;
     end
     if ($param_given(w)) begin
-      MOS3w = w*cpscale;
-      MOS3wGiven = 1;
+      MOS9w = w;
     end
     if ($param_given(ad)) begin
-      MOS3drainArea = ad*cpscale*cpscale;
-      MOS3drainAreaGiven = 1;
+      MOS9drainArea = ad;
     end
     if ($param_given(as)) begin
-      MOS3sourceArea = as*cpscale*cpscale;
-      MOS3sourceAreaGiven = 1;
-    end
-    if ($param_given(pd)) begin
-      MOS3drainPerimiter = pd*cpscale;
-      MOS3drainPerimiterGiven = 1;
-    end
-    if ($param_given(ps)) begin
-      MOS3sourcePerimiter = ps*cpscale;
-      MOS3sourcePerimiterGiven = 1;
+      MOS9sourceArea = as;
     end
     if ($param_given(temp)) begin
-      MOS3temp = temp+273.15;
-      MOS3tempGiven = 1;
+      MOS9temp = temp+273.15;
+      MOS9tempGiven = 1;
     end
 
     // Model field assignments
-    MOS3type = type;
+    MOS9type = type;
     if ($param_given(vto)) begin
-      MOS3vt0 = vto;
+      MOS9vt0 = vto;
     end
     if ($param_given(kp)) begin
-      MOS3transconductance = kp;
+      MOS9transconductance = kp;
     end
     if ($param_given(gamma)) begin
-      MOS3gamma = gamma;
+      MOS9gamma = gamma;
     end
     if ($param_given(phi)) begin
-      MOS3phi = phi;
+      MOS9phi = phi;
     end
     if ($param_given(nsub)) begin
-      MOS3substrateDoping = nsub;
+      MOS9substrateDoping = nsub;
     end
     if ($param_given(tnom)) begin
-      MOS3tnom = tnom+273.15;
-      MOS3tnomGiven = 1;
+      MOS9tnom = tnom+273.15;
+      MOS9tnomGiven = 1;
     end
 
     // Evaluation constants
     lc_gmin = $simparam("gmin", 1e-12);
 
-    // Tag: setup, function: MOS3setup
+    // Tag: setup, function: MOS9setup
     if (!$param_given(kp)) begin
-      MOS3transconductance = 2e-5;
+      MOS9transconductance = 2e-5;
     end
     if (!$param_given(vto)) begin
-      MOS3vt0 = 0;
+      MOS9vt0 = 0;
     end
     if (!$param_given(phi)) begin
-      MOS3phi = 0.6;
+      MOS9phi = 0.6;
     end
     if (!$param_given(gamma)) begin
-      MOS3gamma = 0;
+      MOS9gamma = 0;
     end
-    if (!MOS3drainAreaGiven) begin
-      MOS3drainArea = defad;
+    if (!$param_given(ad)) begin
+      MOS9drainArea = defad;
     end
-    if (!MOS3drainPerimiterGiven) begin
-      MOS3drainPerimiter = 0;
-    end
-    if (!MOS3sourcePerimiterGiven) begin
-      MOS3sourcePerimiter = 0;
-    end
-    MOS3vdsat = 0;
-    MOS3von = 0;
-    MOS3mode = 1;
+    MOS9vdsat = 0;
+    MOS9von = 0;
+    MOS9mode = 1;
     if (!(rd!=0||rsh!=0&&nrd!=0)) begin
       V(d_int, d) <+ 0;
     end
@@ -848,283 +813,283 @@ module sp_mos3(d, g, s, b);
       V(s_int, s) <+ 0;
     end
 
-    // Tag: temp, function: MOS3temp
-    if (!MOS3tnomGiven) begin
-      MOS3tnom = VACONST_tnom;
+    // Tag: temp, function: MOS9temp
+    if (!MOS9tnomGiven) begin
+      MOS9tnom = VACONST_tnom;
     end
-    fact1 = MOS3tnom/(27.0+273.15);
-    vtnom = MOS3tnom*CONSTKoverQ;
-    kt1 = 1.38064852e-23*MOS3tnom;
-    egfet1 = 1.16-7.02e-4*MOS3tnom*MOS3tnom/(MOS3tnom+1108);
+    fact1 = MOS9tnom/(27.0+273.15);
+    vtnom = MOS9tnom*CONSTKoverQ;
+    kt1 = 1.38064852e-23*MOS9tnom;
+    egfet1 = 1.16-7.02e-4*MOS9tnom*MOS9tnom/(MOS9tnom+1108);
     arg1 = -egfet1/(kt1+kt1)+1.1150877/(1.38064852e-23*(27.0+273.15+(27.0+273.15)));
     pbfact1 = -2*vtnom*(1.5*ln(fact1)+1.6021766208e-19*arg1);
-    nifact = MOS3tnom/300*sqrt(MOS3tnom/300);
-    nifact = nifact * (exp(0.5*egfet1*(1.0/300.0-1/MOS3tnom)/CONSTKoverQ));
+    nifact = MOS9tnom/300*sqrt(MOS9tnom/300);
+    nifact = nifact * (exp(0.5*egfet1*(1.0/300.0-1/MOS9tnom)/CONSTKoverQ));
     ni_temp = 1.45e16*nifact;
-    if (MOS3phi<=0.0) begin
+    if (MOS9phi<=0.0) begin
       $fatal(0, "Phi is not positive.");
     end
-    MOS3oxideCapFactor = 3.9*8.854214871e-12/tox;
+    MOS9oxideCapFactor = 3.9*8.854214871e-12/tox;
     if (!$param_given(kp)) begin
-      MOS3transconductance = u0*MOS3oxideCapFactor*1e-4;
+      MOS9transconductance = u0*MOS9oxideCapFactor*1e-4;
     end
     if ($param_given(nsub)) begin
-      if (MOS3substrateDoping*1e6>ni_temp) begin
+      if (MOS9substrateDoping*1e6>ni_temp) begin
         if (!$param_given(phi)) begin
-          MOS3phi = 2*vtnom*ln(MOS3substrateDoping*1e6/ni_temp);
-          MOS3phi = ((0.1>MOS3phi) ? (0.1) : (MOS3phi));
+          MOS9phi = 2*vtnom*ln(MOS9substrateDoping*1e6/ni_temp);
+          MOS9phi = ((0.1>MOS9phi) ? (0.1) : (MOS9phi));
         end
-        fermis = MOS3type*0.5*MOS3phi;
+        fermis = MOS9type*0.5*MOS9phi;
         wkfng = 3.2;
         if (tpg!=0) begin
-          fermig = MOS3type*tpg*0.5*egfet1;
+          fermig = MOS9type*tpg*0.5*egfet1;
           wkfng = 3.25+0.5*egfet1-fermig;
         end
         wkfngs = wkfng-(3.25+0.5*egfet1+fermis);
         if (!$param_given(gamma)) begin
-          MOS3gamma = sqrt(2*(11.7*8.854214871e-12)*1.6021766208e-19*MOS3substrateDoping*1e6)/MOS3oxideCapFactor;
+          MOS9gamma = sqrt(2*(11.7*8.854214871e-12)*1.6021766208e-19*MOS9substrateDoping*1e6)/MOS9oxideCapFactor;
         end
         if (!$param_given(vto)) begin
-          vfb = wkfngs-nss*1e4*1.6021766208e-19/MOS3oxideCapFactor;
-          MOS3vt0 = vfb+MOS3type*(MOS3gamma*sqrt(MOS3phi)+MOS3phi);
+          vfb = wkfngs-nss*1e4*1.6021766208e-19/MOS9oxideCapFactor;
+          MOS9vt0 = vfb+MOS9type*(MOS9gamma*sqrt(MOS9phi)+MOS9phi);
         end else begin
-          vfb = MOS3vt0-MOS3type*(MOS3gamma*sqrt(MOS3phi)+MOS3phi);
+          vfb = MOS9vt0-MOS9type*(MOS9gamma*sqrt(MOS9phi)+MOS9phi);
         end
-        MOS3alpha = (11.7*8.854214871e-12+11.7*8.854214871e-12)/(1.6021766208e-19*MOS3substrateDoping*1e6);
-        MOS3coeffDepLayWidth = sqrt(MOS3alpha);
+        MOS9alpha = (11.7*8.854214871e-12+11.7*8.854214871e-12)/(1.6021766208e-19*MOS9substrateDoping*1e6);
+        MOS9coeffDepLayWidth = sqrt(MOS9alpha);
       end else begin
-        MOS3substrateDoping = 0;
+        MOS9substrateDoping = 0;
         $fatal(0, "Nsub < Ni ");
       end
     end
-    MOS3narrowFactor = delta*0.5*3.1415926535897932384626433832795*(11.7*8.854214871e-12)/MOS3oxideCapFactor;
-    if (!MOS3tempGiven) begin
-      MOS3temp = $temperature+dtemp;
+    MOS9narrowFactor = delta*0.5*3.1415926535897932384626433832795*(11.7*8.854214871e-12)/MOS9oxideCapFactor;
+    if (!MOS9tempGiven) begin
+      MOS9temp = $temperature+dtemp;
     end
-    vt = MOS3temp*CONSTKoverQ;
-    ratio = MOS3temp/MOS3tnom;
-    fact2 = MOS3temp/(27.0+273.15);
-    kt = MOS3temp*1.38064852e-23;
-    egfet = 1.16-7.02e-4*MOS3temp*MOS3temp/(MOS3temp+1108);
+    vt = MOS9temp*CONSTKoverQ;
+    ratio = MOS9temp/MOS9tnom;
+    fact2 = MOS9temp/(27.0+273.15);
+    kt = MOS9temp*1.38064852e-23;
+    egfet = 1.16-7.02e-4*MOS9temp*MOS9temp/(MOS9temp+1108);
     arg = -egfet/(kt+kt)+1.1150877/(1.38064852e-23*(27.0+273.15+(27.0+273.15)));
     pbfact = -2*vt*(1.5*ln(fact2)+1.6021766208e-19*arg);
-    if (!MOS3lGiven) begin
-      MOS3l = defl;
+    if (!$param_given(l)) begin
+      MOS9l = defl;
     end
-    if (!MOS3sourceAreaGiven) begin
-      MOS3sourceArea = defas;
+    if (!$param_given(as)) begin
+      MOS9sourceArea = defas;
     end
-    if (!MOS3wGiven) begin
-      MOS3w = defw;
+    if (!$param_given(w)) begin
+      MOS9w = defw;
     end
     if ($param_given(rd)) begin
       if (rd!=0) begin
-        MOS3drainConductance = 1.0/rd;
+        MOS9drainConductance = 1.0/rd;
       end else begin
-        MOS3drainConductance = 0;
+        MOS9drainConductance = 0;
       end
     end else if ($param_given(rsh)) begin
       if (rsh!=0&&nrd!=0) begin
-        MOS3drainConductance = 1.0/(rsh*nrd);
+        MOS9drainConductance = 1.0/(rsh*nrd);
       end else begin
-        MOS3drainConductance = 0;
+        MOS9drainConductance = 0;
       end
     end else begin
-      MOS3drainConductance = 0;
+      MOS9drainConductance = 0;
     end
     if ($param_given(rs)) begin
       if (rs!=0) begin
-        MOS3sourceConductance = 1.0/rs;
+        MOS9sourceConductance = 1.0/rs;
       end else begin
-        MOS3sourceConductance = 0;
+        MOS9sourceConductance = 0;
       end
     end else if ($param_given(rsh)) begin
       if (rsh!=0&&nrs!=0) begin
-        MOS3sourceConductance = 1.0/(rsh*nrs);
+        MOS9sourceConductance = 1.0/(rsh*nrs);
       end else begin
-        MOS3sourceConductance = 0;
+        MOS9sourceConductance = 0;
       end
     end else begin
-      MOS3sourceConductance = 0;
+      MOS9sourceConductance = 0;
     end
-    if (MOS3l-2*ld+xl<=0) begin
+    if (MOS9l-2*ld+xl<1e-6) begin
       $fatal(0, "effective channel length less than zero");
     end
-    if (MOS3w-2*wd+xw<=0) begin
+    if (MOS9w-2*wd+xw<1e-6) begin
       $fatal(0, "effective channel width less than zero");
     end
     ratio4 = ratio*sqrt(ratio);
-    MOS3tTransconductance = MOS3transconductance/ratio4;
-    MOS3tSurfMob = u0/ratio4;
-    phio = (MOS3phi-pbfact1)/fact1;
-    MOS3tPhi = fact2*phio+pbfact;
-    MOS3tVbi = delvto+MOS3vt0-MOS3type*(MOS3gamma*sqrt(MOS3phi))+0.5*(egfet1-egfet)+MOS3type*0.5*(MOS3tPhi-MOS3phi);
-    MOS3tVto = MOS3tVbi+MOS3type*MOS3gamma*sqrt(MOS3tPhi);
-    MOS3tSatCur = is*exp(-egfet/vt+egfet1/vtnom);
-    MOS3tSatCurDens = js*exp(-egfet/vt+egfet1/vtnom);
+    MOS9tTransconductance = MOS9transconductance/ratio4;
+    MOS9tSurfMob = u0/ratio4;
+    phio = (MOS9phi-pbfact1)/fact1;
+    MOS9tPhi = fact2*phio+pbfact;
+    MOS9tVbi = delvto+MOS9vt0-MOS9type*(MOS9gamma*sqrt(MOS9phi))+0.5*(egfet1-egfet)+MOS9type*0.5*(MOS9tPhi-MOS9phi);
+    MOS9tVto = MOS9tVbi+MOS9type*MOS9gamma*sqrt(MOS9tPhi);
+    MOS9tSatCur = is*exp(-egfet/vt+egfet1/vtnom);
+    MOS9tSatCurDens = js*exp(-egfet/vt+egfet1/vtnom);
     pbo = (pb-pbfact1)/fact1;
     gmaold = (pb-pbo)/pbo;
-    capfact = 1/(1+mj*(4e-4*(MOS3tnom-(27.0+273.15))-gmaold));
-    MOS3tCbd = cbd*capfact;
-    MOS3tCbs = cbs*capfact;
-    MOS3tCj = cj*capfact;
-    capfact = 1/(1+mjsw*(4e-4*(MOS3tnom-(27.0+273.15))-gmaold));
-    MOS3tCjsw = cjsw*capfact;
-    MOS3tBulkPot = fact2*pbo+pbfact;
-    gmanew = (MOS3tBulkPot-pbo)/pbo;
-    capfact = 1+mj*(4e-4*(MOS3temp-(27.0+273.15))-gmanew);
-    MOS3tCbd = MOS3tCbd * (capfact);
-    MOS3tCbs = MOS3tCbs * (capfact);
-    MOS3tCj = MOS3tCj * (capfact);
-    capfact = 1+mjsw*(4e-4*(MOS3temp-(27.0+273.15))-gmanew);
-    MOS3tCjsw = MOS3tCjsw * (capfact);
-    MOS3tDepCap = fc*MOS3tBulkPot;
-    if (js==0||MOS3drainArea==0||MOS3sourceArea==0) begin
-      MOS3drainVcrit = vt*ln(vt/(CONSTroot2*MOS3tSatCur));
-      MOS3sourceVcrit = MOS3drainVcrit;
+    capfact = 1/(1+mj*(4e-4*(MOS9tnom-(27.0+273.15))-gmaold));
+    MOS9tCbd = cbd*capfact;
+    MOS9tCbs = cbs*capfact;
+    MOS9tCj = cj*capfact;
+    capfact = 1/(1+mjsw*(4e-4*(MOS9tnom-(27.0+273.15))-gmaold));
+    MOS9tCjsw = cjsw*capfact;
+    MOS9tBulkPot = fact2*pbo+pbfact;
+    gmanew = (MOS9tBulkPot-pbo)/pbo;
+    capfact = 1+mj*(4e-4*(MOS9temp-(27.0+273.15))-gmanew);
+    MOS9tCbd = MOS9tCbd * (capfact);
+    MOS9tCbs = MOS9tCbs * (capfact);
+    MOS9tCj = MOS9tCj * (capfact);
+    capfact = 1+mjsw*(4e-4*(MOS9temp-(27.0+273.15))-gmanew);
+    MOS9tCjsw = MOS9tCjsw * (capfact);
+    MOS9tDepCap = fc*MOS9tBulkPot;
+    if (js==0||MOS9drainArea==0||MOS9sourceArea==0) begin
+      MOS9drainVcrit = vt*ln(vt/(CONSTroot2*MOS9tSatCur));
+      MOS9sourceVcrit = MOS9drainVcrit;
     end else begin
-      MOS3drainVcrit = vt*ln(vt/(CONSTroot2*MOS3tSatCurDens*MOS3drainArea));
-      MOS3sourceVcrit = vt*ln(vt/(CONSTroot2*MOS3tSatCurDens*MOS3sourceArea));
+      MOS9drainVcrit = vt*ln(vt/(CONSTroot2*MOS9tSatCurDens*MOS9drainArea));
+      MOS9sourceVcrit = vt*ln(vt/(CONSTroot2*MOS9tSatCurDens*MOS9sourceArea));
     end
     if ($param_given(cbd)) begin
-      czbd = MOS3tCbd;
+      czbd = MOS9tCbd;
     end else if ($param_given(cj)) begin
-      czbd = MOS3tCj*MOS3drainArea;
+      czbd = MOS9tCj*MOS9drainArea;
     end else begin
       czbd = 0;
     end
     if ($param_given(cjsw)) begin
-      czbdsw = MOS3tCjsw*MOS3drainPerimiter;
+      czbdsw = MOS9tCjsw*pd;
     end else begin
       czbdsw = 0;
     end
     arg = 1-fc;
     sarg = exp(-mj*ln(arg));
     sargsw = exp(-mjsw*ln(arg));
-    MOS3Cbd = czbd;
-    MOS3Cbdsw = czbdsw;
-    MOS3f2d = czbd*(1-fc*(1+mj))*sarg/arg+czbdsw*(1-fc*(1+mjsw))*sargsw/arg;
-    MOS3f3d = czbd*mj*sarg/arg/MOS3tBulkPot+czbdsw*mjsw*sargsw/arg/MOS3tBulkPot;
-    MOS3f4d = czbd*MOS3tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS3tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS3f3d/2*(MOS3tDepCap*MOS3tDepCap)-MOS3tDepCap*MOS3f2d;
+    MOS9Cbd = czbd;
+    MOS9Cbdsw = czbdsw;
+    MOS9f2d = czbd*(1-fc*(1+mj))*sarg/arg+czbdsw*(1-fc*(1+mjsw))*sargsw/arg;
+    MOS9f3d = czbd*mj*sarg/arg/MOS9tBulkPot+czbdsw*mjsw*sargsw/arg/MOS9tBulkPot;
+    MOS9f4d = czbd*MOS9tBulkPot*(1-arg*sarg)/(1-mj)+czbdsw*MOS9tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS9f3d/2*(MOS9tDepCap*MOS9tDepCap)-MOS9tDepCap*MOS9f2d;
     if ($param_given(cbs)) begin
-      czbs = MOS3tCbs;
+      czbs = MOS9tCbs;
     end else if ($param_given(cj)) begin
-      czbs = MOS3tCj*MOS3sourceArea;
+      czbs = MOS9tCj*MOS9sourceArea;
     end else begin
       czbs = 0;
     end
     if ($param_given(cjsw)) begin
-      czbssw = MOS3tCjsw*MOS3sourcePerimiter;
+      czbssw = MOS9tCjsw*ps;
     end else begin
       czbssw = 0;
     end
     arg = 1-fc;
     sarg = exp(-mj*ln(arg));
     sargsw = exp(-mjsw*ln(arg));
-    MOS3Cbs = czbs;
-    MOS3Cbssw = czbssw;
-    MOS3f2s = czbs*(1-fc*(1+mj))*sarg/arg+czbssw*(1-fc*(1+mjsw))*sargsw/arg;
-    MOS3f3s = czbs*mj*sarg/arg/MOS3tBulkPot+czbssw*mjsw*sargsw/arg/MOS3tBulkPot;
-    MOS3f4s = czbs*MOS3tBulkPot*(1-arg*sarg)/(1-mj)+czbssw*MOS3tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS3f3s/2*(MOS3tDepCap*MOS3tDepCap)-MOS3tDepCap*MOS3f2s;
+    MOS9Cbs = czbs;
+    MOS9Cbssw = czbssw;
+    MOS9f2s = czbs*(1-fc*(1+mj))*sarg/arg+czbssw*(1-fc*(1+mjsw))*sargsw/arg;
+    MOS9f3s = czbs*mj*sarg/arg/MOS9tBulkPot+czbssw*mjsw*sargsw/arg/MOS9tBulkPot;
+    MOS9f4s = czbs*MOS9tBulkPot*(1-arg*sarg)/(1-mj)+czbssw*MOS9tBulkPot*(1-arg*sargsw)/(1-mjsw)-MOS9f3s/2*(MOS9tDepCap*MOS9tDepCap)-MOS9tDepCap*MOS9f2s;
 
-    // Tag: load, function: MOS3load
+    // Tag: load, function: MOS9load
     xfact = 0.0;
     capgs = 0.0;
     capgd = 0.0;
     capgb = 0.0;
-    load_vt = CONSTKoverQ*MOS3temp;
-    EffectiveWidth = MOS3w-2*wd+xw;
-    EffectiveLength = MOS3l-2*ld+xl;
-    if (MOS3tSatCurDens==0||MOS3drainArea==0||MOS3sourceArea==0) begin
-      DrainSatCur = MOS3tSatCur;
-      SourceSatCur = MOS3tSatCur;
+    load_vt = CONSTKoverQ*MOS9temp;
+    EffectiveWidth = MOS9w-2*wd+xw;
+    EffectiveLength = MOS9l-2*ld+xl;
+    if (MOS9tSatCurDens==0||MOS9drainArea==0||MOS9sourceArea==0) begin
+      DrainSatCur = MOS9tSatCur;
+      SourceSatCur = MOS9tSatCur;
     end else begin
-      DrainSatCur = MOS3tSatCurDens*MOS3drainArea;
-      SourceSatCur = MOS3tSatCurDens*MOS3sourceArea;
+      DrainSatCur = MOS9tSatCurDens*MOS9drainArea;
+      SourceSatCur = MOS9tSatCurDens*MOS9sourceArea;
     end
     GateSourceOverlapCap = cgso*EffectiveWidth;
     GateDrainOverlapCap = cgdo*EffectiveWidth;
     GateBulkOverlapCap = cgbo*EffectiveLength;
-    Beta = MOS3tTransconductance*EffectiveWidth/EffectiveLength;
-    OxideCap = MOS3oxideCapFactor*EffectiveLength*EffectiveWidth;
+    Beta = MOS9tTransconductance*EffectiveWidth/EffectiveLength;
+    OxideCap = MOS9oxideCapFactor*EffectiveLength*EffectiveWidth;
     limited = 0;
     /* Previous vgs, vds, vbs, and vbd */
-    MOS3vgs = MOS3type * $limit(V(g, s_int), DEVlimitOldGet);
-    MOS3vds = MOS3type * $limit(V(d_int, s_int), DEVlimitOldGet);
-    MOS3vbs = MOS3type * $limit(V(b, s_int), DEVlimitOldGet);
-    MOS3vbd = MOS3type * $limit(V(b, d_int), DEVlimitOldGet);
+    MOS9vgs = MOS9type * $limit(V(g, s_int), DEVlimitOldGet);
+    MOS9vds = MOS9type * $limit(V(d_int, s_int), DEVlimitOldGet);
+    MOS9vbs = MOS9type * $limit(V(b, s_int), DEVlimitOldGet);
+    MOS9vbd = MOS9type * $limit(V(b, d_int), DEVlimitOldGet);
     
     /* Simplified von value used in limiting, does not require introduction of a hidden state */
-    load_von = MOS3type*MOS3tVbi;
-    MOS3von = MOS3type*load_von;
-    load_vbs = MOS3type*V(b, s_int);
-    load_vgs = MOS3type*V(g, s_int);
-    load_vds = MOS3type*V(d_int, s_int);
+    load_von = MOS9type*MOS9tVbi;
+    MOS9von = MOS9type*load_von;
+    load_vbs = MOS9type*V(b, s_int);
+    load_vgs = MOS9type*V(g, s_int);
+    load_vds = MOS9type*V(d_int, s_int);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
-    vgdo = MOS3vgs-MOS3vds;
-    if (!(MOS3mode>=0)) begin
+    vgdo = MOS9vgs-MOS9vds;
+    if (!(MOS9mode>=0)) begin
 
     end
-    load_von = MOS3type*MOS3von;
-    if (MOS3vds>=0) begin
-      load_vgs = DEVfetlim(load_vgs, MOS3vgs, load_von, limited);
+    load_von = MOS9type*MOS9von;
+    if (MOS9vds>=0) begin
+      load_vgs = DEVfetlim(load_vgs, MOS9vgs, load_von, limited);
       load_vds = load_vgs-vgd;
-      load_vds = DEVlimvds(load_vds, MOS3vds, limited);
+      load_vds = DEVlimvds(load_vds, MOS9vds, limited);
       vgd = load_vgs-load_vds;
     end else begin
       vgd = DEVfetlim(vgd, vgdo, load_von, limited);
       load_vds = load_vgs-vgd;
       if (!oldlimit) begin
-        load_vds = -DEVlimvds(-load_vds, -MOS3vds, limited);
+        load_vds = -DEVlimvds(-load_vds, -MOS9vds, limited);
       end
       load_vgs = vgd+load_vds;
     end
     if (load_vds>=0) begin
-      load_vbs = DEVpnjlim(load_vbs, MOS3vbs, load_vt, MOS3sourceVcrit, limited);
+      load_vbs = DEVpnjlim(load_vbs, MOS9vbs, load_vt, MOS9sourceVcrit, limited);
       load_vbd = load_vbs-load_vds;
     end else begin
-      load_vbd = DEVpnjlim(load_vbd, MOS3vbd, load_vt, MOS3drainVcrit, limited);
+      load_vbd = DEVpnjlim(load_vbd, MOS9vbd, load_vt, MOS9drainVcrit, limited);
       load_vbs = load_vbd+load_vds;
     end
     if (initialize_limiting()) begin
         load_vbs = -1;
-        load_vgs = MOS3type * MOS3tVto;
+        load_vgs = MOS9type * MOS9tVto;
         load_vds = 0;
         load_vbd = load_vbs - load_vds;
     end
     
-    load_vgs = MOS3type * $limit(V(g, s_int), DEVlimitNewSet, MOS3type * load_vgs, limited);
-    load_vds = MOS3type * $limit(V(d_int, s_int), DEVlimitNewSet, MOS3type * load_vds, limited);
-    load_vbs = MOS3type * $limit(V(b, s_int), DEVlimitNewSet, MOS3type * load_vbs, limited);
-    load_vbd = MOS3type * $limit(V(b, d_int), DEVlimitNewSet, MOS3type * load_vbd, limited);
+    load_vgs = MOS9type * $limit(V(g, s_int), DEVlimitNewSet, MOS9type * load_vgs, limited);
+    load_vds = MOS9type * $limit(V(d_int, s_int), DEVlimitNewSet, MOS9type * load_vds, limited);
+    load_vbs = MOS9type * $limit(V(b, s_int), DEVlimitNewSet, MOS9type * load_vbs, limited);
+    load_vbd = MOS9type * $limit(V(b, d_int), DEVlimitNewSet, MOS9type * load_vbd, limited);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgb = load_vgs-load_vbs;
     if (load_vbs<=-3*load_vt) begin
       load_arg = 3*load_vt/(load_vbs*CONSTe);
       load_arg = load_arg*load_arg*load_arg;
-      MOS3cbs = -SourceSatCur*(1+load_arg)+lc_gmin/$mfactor*load_vbs;
-      MOS3gbs = SourceSatCur*3*load_arg/load_vbs+lc_gmin/$mfactor;
+      MOS9cbs = -SourceSatCur*(1+load_arg)+lc_gmin/$mfactor*load_vbs;
+      MOS9gbs = SourceSatCur*3*load_arg/load_vbs+lc_gmin/$mfactor;
     end else begin
       evbs = exp(((709.0<load_vbs/load_vt) ? (709.0) : (load_vbs/load_vt)));
-      MOS3gbs = SourceSatCur*evbs/load_vt+lc_gmin/$mfactor;
-      MOS3cbs = SourceSatCur*(evbs-1)+lc_gmin/$mfactor*load_vbs;
+      MOS9gbs = SourceSatCur*evbs/load_vt+lc_gmin/$mfactor;
+      MOS9cbs = SourceSatCur*(evbs-1)+lc_gmin/$mfactor*load_vbs;
     end
     if (load_vbd<=-3*load_vt) begin
       load_arg = 3*load_vt/(load_vbd*CONSTe);
       load_arg = load_arg*load_arg*load_arg;
-      MOS3cbd = -DrainSatCur*(1+load_arg)+lc_gmin/$mfactor*load_vbd;
-      MOS3gbd = DrainSatCur*3*load_arg/load_vbd+lc_gmin/$mfactor;
+      MOS9cbd = -DrainSatCur*(1+load_arg)+lc_gmin/$mfactor*load_vbd;
+      MOS9gbd = DrainSatCur*3*load_arg/load_vbd+lc_gmin/$mfactor;
     end else begin
       evbd = exp(((709.0<load_vbd/load_vt) ? (709.0) : (load_vbd/load_vt)));
-      MOS3gbd = DrainSatCur*evbd/load_vt+lc_gmin/$mfactor;
-      MOS3cbd = DrainSatCur*(evbd-1)+lc_gmin/$mfactor*load_vbd;
+      MOS9gbd = DrainSatCur*evbd/load_vt+lc_gmin/$mfactor;
+      MOS9cbd = DrainSatCur*(evbd-1)+lc_gmin/$mfactor*load_vbd;
     end
     if (load_vds>=0) begin
-      MOS3mode = 1;
+      MOS9mode = 1;
     end else begin
-      MOS3mode = -1;
+      MOS9mode = -1;
     end
     coeff0 = 0.0631353e0;
     coeff1 = 0.8013292e0;
@@ -1141,20 +1106,20 @@ module sp_mos3(d, g, s, b);
     gds0 = 0.0;
     load_vdsat = 0.0;
     oneoverxl = 1.0/EffectiveLength;
-    load_eta = eta*8.15e-22/(MOS3oxideCapFactor*EffectiveLength*EffectiveLength*EffectiveLength);
-    if (((MOS3mode==1) ? (load_vbs) : (load_vbd))<=0.0) begin
-      phibs = MOS3tPhi-((MOS3mode==1) ? (load_vbs) : (load_vbd));
+    load_eta = eta*8.15e-22/(MOS9oxideCapFactor*EffectiveLength*EffectiveLength*EffectiveLength);
+    if (((MOS9mode==1) ? (load_vbs) : (load_vbd))<=0.0) begin
+      phibs = MOS9tPhi-((MOS9mode==1) ? (load_vbs) : (load_vbd));
       sqphbs = sqrt(phibs);
       dsqdvb = -0.5/sqphbs;
     end else begin
-      sqphis = sqrt(MOS3tPhi);
-      sqphs3 = MOS3tPhi*sqphis;
-      sqphbs = sqphis/(1.0+((MOS3mode==1) ? (load_vbs) : (load_vbd))/(MOS3tPhi+MOS3tPhi));
+      sqphis = sqrt(MOS9tPhi);
+      sqphs3 = MOS9tPhi*sqphis;
+      sqphbs = sqphis/(1.0+((MOS9mode==1) ? (load_vbs) : (load_vbd))/(MOS9tPhi+MOS9tPhi));
       phibs = sqphbs*sqphbs;
       dsqdvb = -phibs/(sqphs3+sqphs3);
     end
-    if (xj!=0.0&&MOS3coeffDepLayWidth!=0.0) begin
-      wps = MOS3coeffDepLayWidth*sqphbs;
+    if (xj!=0.0&&MOS9coeffDepLayWidth!=0.0) begin
+      wps = MOS9coeffDepLayWidth*sqphbs;
       oneoverxj = 1.0/xj;
       xjonxl = xj*oneoverxl;
       djonxj = ld*oneoverxj;
@@ -1164,7 +1129,7 @@ module sp_mos3(d, g, s, b);
       argc = wponxj/(1.0+wponxj);
       argb = sqrt(1.0-argc*argc);
       fshort = 1.0-xjonxl*(arga*argb-djonxj);
-      dwpdvb = MOS3coeffDepLayWidth*dsqdvb;
+      dwpdvb = MOS9coeffDepLayWidth*dsqdvb;
       dadvb = (coeff1+coeff2*(wponxj+wponxj))*dwpdvb*oneoverxj;
       dbdvb = -argc*argc*(1.0-argc)*dwpdvb/(argb*wps);
       dfsdvb = -xjonxl*(dadvb*argb+arga*dbdvb);
@@ -1172,14 +1137,14 @@ module sp_mos3(d, g, s, b);
       fshort = 1.0;
       dfsdvb = 0.0;
     end
-    gammas = MOS3gamma*fshort;
+    gammas = MOS9gamma*fshort;
     fbodys = 0.5*gammas/(sqphbs+sqphbs);
-    fbody = fbodys+MOS3narrowFactor/EffectiveWidth;
+    fbody = fbodys+MOS9narrowFactor/EffectiveWidth;
     onfbdy = 1.0/(1.0+fbody);
     dfbdvb = -fbodys*dsqdvb/sqphbs+fbodys*dfsdvb/fshort;
-    qbonco = gammas*sqphbs+MOS3narrowFactor*phibs/EffectiveWidth;
-    dqbdvb = gammas*dsqdvb+MOS3gamma*dfsdvb*sqphbs-MOS3narrowFactor/EffectiveWidth;
-    vbix = MOS3tVbi*MOS3type-load_eta*(MOS3mode*load_vds);
+    qbonco = gammas*sqphbs+MOS9narrowFactor*phibs/EffectiveWidth;
+    dqbdvb = gammas*dsqdvb+MOS9gamma*dfsdvb*sqphbs-MOS9narrowFactor/EffectiveWidth;
+    vbix = MOS9tVbi*MOS9type-load_eta*(MOS9mode*load_vds);
     vth = vbix+qbonco;
     dvtdvd = -load_eta;
     dvtdvb = dqbdvb;
@@ -1192,18 +1157,18 @@ module sp_mos3(d, g, s, b);
       dxndvb = dqbdvb/(phibs+phibs)-qbonco*dsqdvb/(phibs*sqphbs);
       dvodvd = dvtdvd;
       dvodvb = dvtdvb+load_vt*dxndvb;
-    end else if (((MOS3mode==1) ? (load_vgs) : (vgd))<=load_von) begin
+    end else if (((MOS9mode==1) ? (load_vgs) : (vgd))<=load_von) begin
       cdrain = 0.0;
-      MOS3gm = 0.0;
-      MOS3gds = 0.0;
-      MOS3gmbs = 0.0;
+      MOS9gm = 0.0;
+      MOS9gds = 0.0;
+      MOS9gmbs = 0.0;
       goto_destination = innerline1000;
     end
     if (goto_destination<0) begin
-      vgsx = ((((MOS3mode==1) ? (load_vgs) : (vgd))>load_von) ? (((MOS3mode==1) ? (load_vgs) : (vgd))) : (load_von));
+      vgsx = ((((MOS9mode==1) ? (load_vgs) : (vgd))>load_von) ? (((MOS9mode==1) ? (load_vgs) : (vgd))) : (load_von));
       onfg = 1.0+theta*(vgsx-vth);
       fgate = 1.0/onfg;
-      us = MOS3tSurfMob*1e-4*fgate;
+      us = MOS9tSurfMob*1e-4*fgate;
       dfgdvg = -theta*fgate*fgate;
       dfgdvd = -dfgdvg*dvtdvd;
       dfgdvb = -dfgdvg*dvtdvb;
@@ -1223,7 +1188,7 @@ module sp_mos3(d, g, s, b);
         dvsdvd = -dvsdvg*dvtdvd;
         dvsdvb = -dvsdvg*dvtdvb-arga*dvsdga*dfbdvb;
       end
-      vdsx = ((MOS3mode*load_vds<load_vdsat) ? (MOS3mode*load_vds) : (load_vdsat));
+      vdsx = ((MOS9mode*load_vds<load_vdsat) ? (MOS9mode*load_vds) : (load_vdsat));
       if (vdsx==0.0) begin
         goto_destination = line900;
       end
@@ -1231,42 +1196,42 @@ module sp_mos3(d, g, s, b);
         cdo = vgsx-vth-0.5*(1.0+fbody)*vdsx;
         dcodvb = -dvtdvb-0.5*dfbdvb*vdsx;
         cdnorm = cdo*vdsx;
-        MOS3gm = vdsx;
-        if (MOS3mode*load_vds>load_vdsat) begin
-          MOS3gds = -dvtdvd*vdsx;
+        MOS9gm = vdsx;
+        if (MOS9mode*load_vds>load_vdsat) begin
+          MOS9gds = -dvtdvd*vdsx;
         end else begin
-          MOS3gds = vgsx-vth-(1.0+fbody+dvtdvd)*vdsx;
+          MOS9gds = vgsx-vth-(1.0+fbody+dvtdvd)*vdsx;
         end
-        MOS3gmbs = dcodvb*vdsx;
+        MOS9gmbs = dcodvb*vdsx;
         cd1 = Beta*cdnorm;
         Beta = Beta*fgate;
         cdrain = Beta*cdnorm;
-        MOS3gm = Beta*MOS3gm+dfgdvg*cd1;
-        MOS3gds = Beta*MOS3gds+dfgdvd*cd1;
-        MOS3gmbs = Beta*MOS3gmbs+dfgdvb*cd1;
+        MOS9gm = Beta*MOS9gm+dfgdvg*cd1;
+        MOS9gds = Beta*MOS9gds+dfgdvd*cd1;
+        MOS9gmbs = Beta*MOS9gmbs+dfgdvb*cd1;
         if (vmax>0.0) begin
           fdrain = 1.0/(1.0+vdsx*onvdsc);
           fd2 = fdrain*fdrain;
           arga = fd2*vdsx*onvdsc*onfg;
           dfddvg = -dfgdvg*arga;
-          if (MOS3mode*load_vds>load_vdsat) begin
+          if (MOS9mode*load_vds>load_vdsat) begin
             dfddvd = -dfgdvd*arga;
           end else begin
             dfddvd = -dfgdvd*arga-fd2*onvdsc;
           end
           dfddvb = -dfgdvb*arga;
-          MOS3gm = fdrain*MOS3gm+dfddvg*cdrain;
-          MOS3gds = fdrain*MOS3gds+dfddvd*cdrain;
-          MOS3gmbs = fdrain*MOS3gmbs+dfddvb*cdrain;
+          MOS9gm = fdrain*MOS9gm+dfddvg*cdrain;
+          MOS9gds = fdrain*MOS9gds+dfddvd*cdrain;
+          MOS9gmbs = fdrain*MOS9gmbs+dfddvb*cdrain;
           cdrain = fdrain*cdrain;
           Beta = Beta*fdrain;
         end
-        if (MOS3mode*load_vds<=load_vdsat) begin
-          if (vmax>0.0||MOS3alpha==0.0||badmos3) begin
+        if (MOS9mode*load_vds<=load_vdsat) begin
+          if (vmax>0.0||MOS9alpha==0.0||badmos3) begin
             goto_destination = line700;
           end else begin
-            arga = MOS3mode*load_vds/load_vdsat;
-            delxl = sqrt(kappa*MOS3alpha*load_vdsat/8);
+            arga = MOS9mode*load_vds/load_vdsat;
+            delxl = sqrt(kappa*MOS9alpha*load_vdsat/8);
             dldvd = 4*delxl*arga*arga*arga/load_vdsat;
             arga = arga * (arga);
             arga = arga * (arga);
@@ -1282,7 +1247,7 @@ module sp_mos3(d, g, s, b);
             goto_destination = line510;
           end
           if (goto_destination<0) begin
-            if (MOS3alpha==0.0) begin
+            if (MOS9alpha==0.0) begin
               goto_destination = line700;
             end
             if (goto_destination<0) begin
@@ -1292,9 +1257,9 @@ module sp_mos3(d, g, s, b);
               gdoncd = gdsat/cdsat;
               gdonfd = gdsat/(1.0-fdrain);
               gdonfg = gdsat*onfg;
-              dgdvg = gdoncd*MOS3gm-gdonfd*dfddvg+gdonfg*dfgdvg;
-              dgdvd = gdoncd*MOS3gds-gdonfd*dfddvd+gdonfg*dfgdvd;
-              dgdvb = gdoncd*MOS3gmbs-gdonfd*dfddvb+gdonfg*dfgdvb;
+              dgdvg = gdoncd*MOS9gm-gdonfd*dfddvg+gdonfg*dfgdvg;
+              dgdvd = gdoncd*MOS9gds-gdonfd*dfddvd+gdonfg*dfgdvd;
+              dgdvb = gdoncd*MOS9gmbs-gdonfd*dfddvb+gdonfg*dfgdvb;
               if (badmos3) begin
                 emax = cdsat*oneoverxl/gdsat;
               end else begin
@@ -1302,20 +1267,15 @@ module sp_mos3(d, g, s, b);
               end
               emoncd = emax/cdsat;
               emongd = emax/gdsat;
-              demdvg = emoncd*MOS3gm-emongd*dgdvg;
-              demdvd = emoncd*MOS3gds-emongd*dgdvd;
-              demdvb = emoncd*MOS3gmbs-emongd*dgdvb;
-              arga = 0.5*emax*MOS3alpha;
-              argc = kappa*MOS3alpha;
-              argb = sqrt(arga*arga+argc*(MOS3mode*load_vds-load_vdsat));
+              demdvg = emoncd*MOS9gm-emongd*dgdvg;
+              demdvd = emoncd*MOS9gds-emongd*dgdvd;
+              demdvb = emoncd*MOS9gmbs-emongd*dgdvb;
+              arga = 0.5*emax*MOS9alpha;
+              argc = kappa*MOS9alpha;
+              argb = sqrt(arga*arga+argc*(MOS9mode*load_vds-load_vdsat));
               delxl = argb-arga;
-              if (argb!=0.0) begin
-                dldvd = argc/(argb+argb);
-                dldem = 0.5*(arga/argb-1.0)*MOS3alpha;
-              end else begin
-                dldvd = 0.0;
-                dldem = 0.0;
-              end
+              dldvd = argc/(argb+argb);
+              dldem = 0.5*(arga/argb-1.0)*MOS9alpha;
               ddldvg = dldem*demdvg;
               ddldvd = dldem*demdvd-dldvd;
               ddldvb = dldem*demdvb;
@@ -1328,11 +1288,11 @@ module sp_mos3(d, g, s, b);
     if (goto_destination<0||goto_destination==line510) begin
       goto_destination = -1;
       if (badmos3) begin
-        delxl = sqrt(kappa*(MOS3mode*load_vds-load_vdsat)*MOS3alpha);
-        dldvd = 0.5*delxl/(MOS3mode*load_vds-load_vdsat);
+        delxl = sqrt(kappa*(MOS9mode*load_vds-load_vdsat)*MOS9alpha);
+        dldvd = 0.5*delxl/(MOS9mode*load_vds-load_vdsat);
       end else begin
-        delxl = sqrt(kappa*MOS3alpha*(MOS3mode*load_vds-load_vdsat+load_vdsat/8));
-        dldvd = 0.5*delxl/(MOS3mode*load_vds-load_vdsat+load_vdsat/8);
+        delxl = sqrt(kappa*MOS9alpha*(MOS9mode*load_vds-load_vdsat+load_vdsat/8));
+        dldvd = 0.5*delxl/(MOS9mode*load_vds-load_vdsat+load_vdsat/8);
       end
       ddldvg = 0.0;
       ddldvd = -dldvd;
@@ -1353,28 +1313,28 @@ module sp_mos3(d, g, s, b);
       cd1 = cdrain;
       cdrain = cdrain*xlfact;
       diddl = cdrain/(EffectiveLength-delxl);
-      MOS3gm = MOS3gm*xlfact+diddl*ddldvg;
-      MOS3gmbs = MOS3gmbs*xlfact+diddl*ddldvb;
+      MOS9gm = MOS9gm*xlfact+diddl*ddldvg;
+      MOS9gmbs = MOS9gmbs*xlfact+diddl*ddldvb;
       gds0 = diddl*ddldvd;
-      MOS3gm = MOS3gm+gds0*dvsdvg;
-      MOS3gmbs = MOS3gmbs+gds0*dvsdvb;
-      MOS3gds = MOS3gds*xlfact+diddl*dldvd+gds0*dvsdvd;
+      MOS9gm = MOS9gm+gds0*dvsdvg;
+      MOS9gmbs = MOS9gmbs+gds0*dvsdvb;
+      MOS9gds = MOS9gds*xlfact+diddl*dldvd+gds0*dvsdvd;
     end
     if (goto_destination<0||goto_destination==line700) begin
       goto_destination = -1;
-      if (((MOS3mode==1) ? (load_vgs) : (vgd))<load_von) begin
+      if (((MOS9mode==1) ? (load_vgs) : (vgd))<load_von) begin
         onxn = 1.0/xn;
         ondvt = onxn/load_vt;
-        wfact = exp((((MOS3mode==1) ? (load_vgs) : (vgd))-load_von)*ondvt);
+        wfact = exp((((MOS9mode==1) ? (load_vgs) : (vgd))-load_von)*ondvt);
         cdrain = cdrain*wfact;
-        gms = MOS3gm*wfact;
+        gms = MOS9gm*wfact;
         gmw = cdrain*ondvt;
-        MOS3gm = gmw;
-        if (MOS3mode*load_vds>load_vdsat) begin
-          MOS3gm = MOS3gm+gds0*dvsdvg*wfact;
+        MOS9gm = gmw;
+        if (MOS9mode*load_vds>load_vdsat) begin
+          MOS9gm = MOS9gm+gds0*dvsdvg*wfact;
         end
-        MOS3gds = MOS3gds*wfact+(gms-gmw)*dvodvd;
-        MOS3gmbs = MOS3gmbs*wfact+(gms-gmw)*dvodvb-gmw*(((MOS3mode==1) ? (load_vgs) : (vgd))-load_von)*onxn*dxndvb;
+        MOS9gds = MOS9gds*wfact+(gms-gmw)*dvodvd;
+        MOS9gmbs = MOS9gmbs*wfact+(gms-gmw)*dvodvb-gmw*(((MOS9mode==1) ? (load_vgs) : (vgd))-load_von)*onxn*dxndvb;
       end
       goto_destination = innerline1000;
     end
@@ -1382,18 +1342,18 @@ module sp_mos3(d, g, s, b);
       goto_destination = -1;
       Beta = Beta*fgate;
       cdrain = 0.0;
-      MOS3gm = 0.0;
-      MOS3gds = Beta*(vgsx-vth);
-      MOS3gmbs = 0.0;
-      if (nfs!=0.0&&((MOS3mode==1) ? (load_vgs) : (vgd))<load_von) begin
-        MOS3gds = MOS3gds * (exp((((MOS3mode==1) ? (load_vgs) : (vgd))-load_von)/(load_vt*xn)));
+      MOS9gm = 0.0;
+      MOS9gds = Beta*(vgsx-vth);
+      MOS9gmbs = 0.0;
+      if (nfs!=0.0&&((MOS9mode==1) ? (load_vgs) : (vgd))<load_von) begin
+        MOS9gds = MOS9gds * (exp((((MOS9mode==1) ? (load_vgs) : (vgd))-load_von)/(load_vt*xn)));
       end
     end
     goto_destination = -1;
-    MOS3von = MOS3type*load_von;
-    MOS3vdsat = MOS3type*load_vdsat;
-    MOS3dcCurrent = MOS3mode*cdrain-MOS3cbd;
-    MOS3cd = MOS3dcCurrent;
+    MOS9von = MOS9type*load_von;
+    MOS9vdsat = MOS9type*load_vdsat;
+    MOS9dcCurrent = MOS9mode*cdrain-MOS9cbd;
+    MOS9cd = MOS9dcCurrent;
     if (OxideCap==0) begin
         meyer_scale = 0;
         meyer_unscale = 1;
@@ -1401,9 +1361,9 @@ module sp_mos3(d, g, s, b);
         meyer_scale = OxideCap;
         meyer_unscale = OxideCap;
     end
-    if (MOS3Cbs!=0||MOS3Cbssw!=0) begin
-      if (load_vbs<MOS3tDepCap) begin
-        load_arg = 1-load_vbs/MOS3tBulkPot;
+    if (MOS9Cbs!=0||MOS9Cbssw!=0) begin
+      if (load_vbs<MOS9tDepCap) begin
+        load_arg = 1-load_vbs/MOS9tBulkPot;
         if (mj==mjsw) begin
           if (mj==0.5) begin
             load_sargsw = 1/sqrt(load_arg);
@@ -1424,19 +1384,19 @@ module sp_mos3(d, g, s, b);
             load_sargsw = exp(-mjsw*ln(load_arg));
           end
         end
-        MOS3qbs = MOS3tBulkPot*(MOS3Cbs*(1-load_arg*load_sarg)/(1-mj)+MOS3Cbssw*(1-load_arg*load_sargsw)/(1-mjsw));
-        MOS3capbs = MOS3Cbs*load_sarg+MOS3Cbssw*load_sargsw;
+        MOS9qbs = MOS9tBulkPot*(MOS9Cbs*(1-load_arg*load_sarg)/(1-mj)+MOS9Cbssw*(1-load_arg*load_sargsw)/(1-mjsw));
+        MOS9capbs = MOS9Cbs*load_sarg+MOS9Cbssw*load_sargsw;
       end else begin
-        MOS3qbs = MOS3f4s+load_vbs*(MOS3f2s+load_vbs*(MOS3f3s/2));
-        MOS3capbs = MOS3f2s+MOS3f3s*load_vbs;
+        MOS9qbs = MOS9f4s+load_vbs*(MOS9f2s+load_vbs*(MOS9f3s/2));
+        MOS9capbs = MOS9f2s+MOS9f3s*load_vbs;
       end
     end else begin
-      MOS3qbs = 0;
-      MOS3capbs = 0;
+      MOS9qbs = 0;
+      MOS9capbs = 0;
     end
-    if (MOS3Cbd!=0||MOS3Cbdsw!=0) begin
-      if (load_vbd<MOS3tDepCap) begin
-        load_arg = 1-load_vbd/MOS3tBulkPot;
+    if (MOS9Cbd!=0||MOS9Cbdsw!=0) begin
+      if (load_vbd<MOS9tDepCap) begin
+        load_arg = 1-load_vbd/MOS9tBulkPot;
         if (mj==0.5&&mjsw==0.5) begin
           load_sargsw = 1/sqrt(load_arg);
           load_sarg = load_sargsw;
@@ -1452,160 +1412,135 @@ module sp_mos3(d, g, s, b);
             load_sargsw = exp(-mjsw*ln(load_arg));
           end
         end
-        MOS3qbd = MOS3tBulkPot*(MOS3Cbd*(1-load_arg*load_sarg)/(1-mj)+MOS3Cbdsw*(1-load_arg*load_sargsw)/(1-mjsw));
-        MOS3capbd = MOS3Cbd*load_sarg+MOS3Cbdsw*load_sargsw;
+        MOS9qbd = MOS9tBulkPot*(MOS9Cbd*(1-load_arg*load_sarg)/(1-mj)+MOS9Cbdsw*(1-load_arg*load_sargsw)/(1-mjsw));
+        MOS9capbd = MOS9Cbd*load_sarg+MOS9Cbdsw*load_sargsw;
       end else begin
-        MOS3qbd = MOS3f4d+load_vbd*(MOS3f2d+load_vbd*MOS3f3d/2);
-        MOS3capbd = MOS3f2d+load_vbd*MOS3f3d;
+        MOS9qbd = MOS9f4d+load_vbd*(MOS9f2d+load_vbd*MOS9f3d/2);
+        MOS9capbd = MOS9f2d+load_vbd*MOS9f3d;
       end
     end else begin
-      MOS3qbd = 0;
-      MOS3capbd = 0;
+      MOS9qbd = 0;
+      MOS9capbd = 0;
     end
     geq = 0;
-    MOS3cqbd = ddt(MOS3qbd);
-    ceq = MOS3cqbd;
-    MOS3gbd = MOS3gbd + (geq);
-    MOS3cbd = MOS3cbd + (MOS3cqbd);
-    MOS3cd = MOS3cd - (MOS3cqbd);
+    MOS9cqbd = ddt(MOS9qbd);
+    ceq = MOS9cqbd;
+    MOS9gbd = MOS9gbd + (geq);
+    MOS9cbd = MOS9cbd + (MOS9cqbd);
+    MOS9cd = MOS9cd - (MOS9cqbd);
     geq = 0;
-    MOS3cqbs = ddt(MOS3qbs);
-    ceq = MOS3cqbs;
-    MOS3gbs = MOS3gbs + (geq);
-    MOS3cbs = MOS3cbs + (MOS3cqbs);
-    MOS3vbs = load_vbs;
-    MOS3vbd = load_vbd;
-    MOS3vgs = load_vgs;
-    MOS3vds = load_vds;
-    if (MOS3mode>0) begin
-      DEVqmeyer(load_vgs, vgd, vgb, load_von, load_vdsat, MOS3capgs, MOS3capgd, MOS3capgb, MOS3tPhi, OxideCap);
+    MOS9cqbs = ddt(MOS9qbs);
+    ceq = MOS9cqbs;
+    MOS9gbs = MOS9gbs + (geq);
+    MOS9cbs = MOS9cbs + (MOS9cqbs);
+    MOS9vbs = load_vbs;
+    MOS9vbd = load_vbd;
+    MOS9vgs = load_vgs;
+    MOS9vds = load_vds;
+    if (MOS9mode>0) begin
+      DEVqmeyer(load_vgs, vgd, vgb, load_von, load_vdsat, MOS9capgs, MOS9capgd, MOS9capgb, MOS9tPhi, OxideCap);
     end else begin
-      DEVqmeyer(vgd, load_vgs, vgb, load_von, load_vdsat, MOS3capgd, MOS3capgs, MOS3capgb, MOS3tPhi, OxideCap);
+      DEVqmeyer(vgd, load_vgs, vgb, load_von, load_vdsat, MOS9capgd, MOS9capgs, MOS9capgb, MOS9tPhi, OxideCap);
     end
-    capgs = MOS3capgs+MOS3capgs+GateSourceOverlapCap;
-    capgd = MOS3capgd+MOS3capgd+GateDrainOverlapCap;
-    capgb = MOS3capgb+MOS3capgb+GateBulkOverlapCap;
+    capgs = MOS9capgs+MOS9capgs+GateSourceOverlapCap;
+    capgd = MOS9capgd+MOS9capgd+GateDrainOverlapCap;
+    capgb = MOS9capgb+MOS9capgb+GateBulkOverlapCap;
     if (capgs==0) begin
-      MOS3cqgs = 0;
+      MOS9cqgs = 0;
     end
     if (capgd==0) begin
-      MOS3cqgd = 0;
+      MOS9cqgd = 0;
     end
     if (capgb==0) begin
-      MOS3cqgb = 0;
+      MOS9cqgb = 0;
     end
     gcgs = 0;
     ceqgs = capgs*(ddt(meyer_scale*load_vgs)/meyer_unscale);
-    MOS3cqgs = ceqgs;
+    MOS9cqgs = ceqgs;
     gcgd = 0;
     ceqgd = capgd*(ddt(meyer_scale*vgd)/meyer_unscale);
-    MOS3cqgd = ceqgd;
+    MOS9cqgd = ceqgd;
     gcgb = 0;
     ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
-    MOS3cqgb = ceqgb;
-    ceqbs = MOS3type*(MOS3cbs-MOS3gbs*load_vbs);
-    ceqbd = MOS3type*(MOS3cbd-MOS3gbd*load_vbd);
-    if (MOS3mode>=0) begin
+    MOS9cqgb = ceqgb;
+    ceqbs = MOS9type*(MOS9cbs-MOS9gbs*load_vbs);
+    ceqbd = MOS9type*(MOS9cbd-MOS9gbd*load_vbd);
+    if (MOS9mode>=0) begin
       xnrm = 1;
       xrev = 0;
-      cdreq = MOS3type*cdrain;
+      cdreq = MOS9type*cdrain;
     end else begin
       xnrm = 0;
       xrev = 1;
-      cdreq = -MOS3type*cdrain;
+      cdreq = -MOS9type*cdrain;
     end
     
     // Residuals
-    I(d) <+ MOS3drainConductance*V(d, d_int);
-    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS3type*(ceqgs+ceqgb+ceqgd);
-    I(s) <+ MOS3sourceConductance*V(s, s_int);
-    I(b) <+ MOS3gbd*V(b, d_int)+MOS3gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS3type*ceqgb);
-    I(d_int) <+ MOS3drainConductance*V(d_int, d)+MOS3gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS3type*ceqgd);
-    I(s_int) <+ MOS3gbs*V(s_int, b)+MOS3sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS3type*ceqgs);
+    I(d) <+ MOS9drainConductance*V(d, d_int);
+    I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS9type*(ceqgs+ceqgb+ceqgd);
+    I(s) <+ MOS9sourceConductance*V(s, s_int);
+    I(b) <+ MOS9gbd*V(b, d_int)+MOS9gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS9type*ceqgb);
+    I(d_int) <+ MOS9drainConductance*V(d_int, d)+MOS9gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS9type*ceqgd);
+    I(s_int) <+ MOS9gbs*V(s_int, b)+MOS9sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS9type*ceqgs);
 
-    // Tag: noise, function: MOS3noise
-    if (MOS3tempGiven) begin
-      noise_dtemp = MOS3temp-$temperature+(MOS3tnom-273.15);
-    end else begin
-      noise_dtemp = dtemp;
-    end
-    I(d_int, d) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS3drainConductance)), "rd");
-    I(s_int, s) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*MOS3sourceConductance)), "rs");
-    if (nlev<3) begin
-      Sid = 2.0/3.0*abs(MOS3gm);
-    end else begin
-      noise_vds = MOS3vds;
-      noise_vgs = MOS3vgs;
-      noise_vgd = noise_vgs-noise_vds;
-      vgst = ((MOS3mode==1) ? (noise_vgs) : (noise_vgd))-MOS3type*MOS3von;
-      if (vgst>0) begin
-        if (vgst<=noise_vds*MOS3mode) begin
-          noise_alpha = 0.0;
-        end else begin
-          noise_alpha = 1.0-noise_vds*MOS3mode/(MOS3type*MOS3vdsat);
-        end
-        beta = MOS3tTransconductance*MOS3w/(MOS3l-2*ld);
-        Sid = 2.0/3.0*beta*vgst*(1.0+noise_alpha+noise_alpha*noise_alpha)/(1.0+noise_alpha)*gdsnoi;
-      end else begin
-        Sid = 0.0;
-      end
-    end
-    I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
-    if (nlev==0) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS3cd)>1E-38) ? (abs(MOS3cd)) : (1E-38))))/((MOS3l-2*ld)*(MOS3l-2*ld)*MOS3oxideCapFactor);
-      flicker_exp = 1;
-    end else if (nlev==1) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS3cd)>1E-38) ? (abs(MOS3cd)) : (1E-38))))/((MOS3w-2*wd)*(MOS3l-2*ld)*MOS3oxideCapFactor);
-      flicker_exp = 1;
-    end else if (nlev==2||nlev==3) begin
-      flicker_psd = kf*MOS3gm*MOS3gm/((MOS3w-2*wd)*(MOS3l-2*ld)*MOS3oxideCapFactor);
-      flicker_exp = af;
-    end
+    // Tag: noise, function: MOS9noise
+    I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*MOS9drainConductance)), "rd");
+    I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*MOS9sourceConductance)), "rs");
+    I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0/3.0*abs(MOS9gm)))), "id");
+    flicker_psd = kf*exp(af*ln(((abs(MOS9cd)>1E-38) ? (abs(MOS9cd)) : (1E-38))))/((MOS9w-2*wd)*(MOS9l-2*ld)*MOS9oxideCapFactor*MOS9oxideCapFactor);
+    flicker_exp = 1;
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation
-    i_d = MOS3cd;
-    ibd = MOS3cbd;
-    ibs = MOS3cbs;
-    i_s = -MOS3cd;
-    i_s = i_s - (MOS3cbd+MOS3cbs-MOS3cqgb);
-    i_s = i_s - (MOS3cqgb+MOS3cqgd+MOS3cqgs);
-    i_g = MOS3cqgb+MOS3cqgd+MOS3cqgs;
-    i_b = MOS3cbd+MOS3cbs-MOS3cqgb;
-    vgs = MOS3vgs;
-    vds = MOS3vds;
-    vbs = MOS3vbs;
-    vbd = MOS3vbd;
-    von = MOS3von;
-    vdsat = MOS3vdsat;
-    sourcevcrit = MOS3sourceVcrit;
-    drainvcrit = MOS3drainVcrit;
-    sourceconductance = MOS3sourceConductance;
-    drainconductance = MOS3drainConductance;
-    gm = MOS3gm;
-    gds = MOS3gds;
-    gmb = MOS3gmbs;
-    gbd = MOS3gbd;
-    gbs = MOS3gbs;
-    c_bd = MOS3capbd;
-    c_bs = MOS3capbs;
-    cgs = 2*MOS3capgs;
-    cgs = cgs + (cgso*(MOS3w+xw-2*wd));
-    cgd = 2*MOS3capgd;
-    cgd = cgd + (cgdo*(MOS3w+xw-2*wd));
-    cgb = 2*MOS3capgb;
-    cgb = cgb + (cgbo*(MOS3l+xl-2*ld));
-    cqgs = MOS3cqgs;
-    cqgd = MOS3cqgd;
-    cqgb = MOS3cqgb;
-    cqbd = MOS3cqbd;
-    cqbs = MOS3cqbs;
-    cbd0 = MOS3Cbd;
-    cbdsw0 = MOS3Cbdsw;
-    cbs0 = MOS3Cbs;
-    cbssw0 = MOS3Cbssw;
-    qbs = MOS3qbs;
-    qbd = MOS3qbd;
+    i_d = MOS9cd;
+    ibd = MOS9cbd;
+    ibs = MOS9cbs;
+    i_s = -MOS9cd;
+    i_s = i_s - (MOS9cbd+MOS9cbs-MOS9cqgb);
+    i_s = i_s - (MOS9cqgb+MOS9cqgd+MOS9cqgs);
+    i_g = MOS9cqgb+MOS9cqgd+MOS9cqgs;
+    i_b = MOS9cbd+MOS9cbs-MOS9cqgb;
+    vgs = MOS9vgs;
+    vds = MOS9vds;
+    vbs = MOS9vbs;
+    vbd = MOS9vbd;
+    von = MOS9von;
+    vdsat = MOS9vdsat;
+    sourcevcrit = MOS9sourceVcrit;
+    drainvcrit = MOS9drainVcrit;
+    sourceconductance = MOS9sourceConductance;
+    drainconductance = MOS9drainConductance;
+    gm = MOS9gm;
+    gds = MOS9gds;
+    gmb = MOS9gmbs;
+    gbd = MOS9gbd;
+    gbs = MOS9gbs;
+    c_bd = MOS9capbd;
+    c_bs = MOS9capbs;
+    cgs = 2*MOS9capgs;
+    cgs = cgs + (cgso*(MOS9w+xw-2*wd));
+    cgd = 2*MOS9capgd;
+    cgd = cgd + (cgdo*(MOS9w+xw-2*wd));
+    cgb = 2*MOS9capgb;
+    cgb = cgb + (cgbo*(MOS9l+xl-2*ld));
+    cqgs = MOS9cqgs;
+    cqgd = MOS9cqgd;
+    cqgb = MOS9cqgb;
+    cqbd = MOS9cqbd;
+    cqbs = MOS9cqbs;
+    cbd0 = MOS9Cbd;
+    cbdsw0 = MOS9Cbdsw;
+    cbs0 = MOS9Cbs;
+    cbssw0 = MOS9Cbssw;
+    qbs = MOS9qbs;
+    qbd = MOS9qbd;
+    p = MOS9cd*V(d);
+    p = p + ((MOS9cbd+MOS9cbs-MOS9cqgb)*V(b));
+    p = p + ((MOS9cqgb+MOS9cqgd+MOS9cqgs)*V(g));
+    instask_temp = -MOS9cd;
+    instask_temp = instask_temp - (MOS9cbd+MOS9cbs);
+    instask_temp = instask_temp - (MOS9cqgb+MOS9cqgd+MOS9cqgs);
+    p = p + (instask_temp*V(s));
 
     // Model opvar computation
 

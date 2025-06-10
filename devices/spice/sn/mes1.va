@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-63-g7f6b23354
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-10 11:07:50 UTC
+// Date         : 2025-06-10 11:08:50 UTC
 // Module name  : sp_mes1
-// Model variant: default
+// Model variant: sn
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -26,8 +26,8 @@
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism.
 //
-//   Full noise model used (appropriate for all noise analyses).
-//   OpenVAF may create implicit equations.
+//   Simplified noise model used (ignores capacitive current).
+//   Appropriate only for small-signal noise analysis.
 //
 // CKTcircuit member mapping
 //   CKTgmin -> ('gmin', '$simparam("gmin", 1e-12)')
@@ -597,7 +597,7 @@ module sp_mes1(d, g, s);
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*(MESdrainConduct*area))), "rd");
     I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*(MESsourceConduct*area))), "rs");
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0/3.0*abs(MESgm)))), "id");
-    I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(MEScd)>1E-38) ? (abs(MEScd)) : (1E-38)))), 1, "flicker");
+    I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(MESdcCurrent)>1E-38) ? (abs(MESdcCurrent)) : (1E-38)))), 1, "flicker");
 
     // Instance opvar computation
     vgs = MESvgs;

@@ -1,8 +1,8 @@
 Diode cascade
 
-load "spice/diode.osdi"
 load "spice/resistor.osdi"
 load "spice/capacitor.osdi"
+load "spice/sn/diode.osdi"
 
 model r sp_resistor
 model c sp_capacitor
