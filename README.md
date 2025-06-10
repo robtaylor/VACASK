@@ -13,7 +13,7 @@ The following benchmark results were obtained on the [C6288 16x16 multiplier cir
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 151.57         |1013       |37       |3559       |
 |Ngspice    |  73.16         |1020       |1        |3474       |
-|VACASK     |  61.52         |1021       |7        |3487       |
+|VACASK     |  57.98         |1021       |7        |3487       |
 
 If you want to find out more, there is [a page dedicated to benchmarks](benchmark).
 
@@ -109,7 +109,7 @@ Most devices provide several model variants. The `sn` variant ([devices/spice/sn
 
 The `full` variant  ([devices/spice/full](devices/spice/full) directory) of a model exposes all opvars and the noise model is appropriate for all types of analysis. 
 
-The `default` model variant can be found in the [devices/spice](devices/spice) directory. These models do not expose opvars that introduce extra internal nodes. The noise model, however, is appropriate for all types of noise analysis. If a particular device does not have a `sn` or a `full` variant then that variant is equal to the `default` variant. For more information consult the [Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller) repository. 
+The `default` variant of models can be found in the [devices/spice](devices/spice) directory. These models do not expose opvars that introduce extra internal nodes. The noise model, however, is appropriate for all types of noise analysis. If a particular device does not have a `sn` or a `full` variant then that variant is equal to the `default` variant. For more information consult the [Verilog-A Distiller repository](https://codeberg.org/arpadbuermen/VADistiller). 
 
 Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 

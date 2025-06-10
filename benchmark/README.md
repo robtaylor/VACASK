@@ -14,7 +14,7 @@ configure --with-x --with-readline=yes --enable-osdi --disable-debug --disable-o
 ```
 and then compiled. 
 
-VACASK was compiled with default options. 
+VACASK (version 0.2.2-80-ge15fc2a1) was compiled with default options. All benchmarks were run under Debian Linux. 
 
 # Methodology
 
@@ -103,7 +103,7 @@ The following table was obtained with residual tolerance check disabled (`nr_res
 |---------------------|----------------|-----------|---------|-----------|
 |Ngspice              | 73.16          |1020       |1        |3474       |
 |VACASK, no cb        | 63.19          |1024       |8        |3090       |
-|VACASK, cb (default) | 57.98          |1024       |8        |3090       |
+|VACASK, cb (default) | 48.34          |1024       |8        |3090       |
 
 Disabling continuation bypass slows down the simulation. 
 
