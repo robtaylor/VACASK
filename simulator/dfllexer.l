@@ -500,13 +500,13 @@ after INCEND we have
                 return(token::HEXINTEGER);
             }
 
-<BODY>(0|([1-9][0-9]*))\.([0-9]*)? {
+<BODY>(0|([1-9][0-9]*))?\.([0-9]*)? {
                 // xxx.xxx
                 // xxx.
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
             }
-<BODY>(0|([1-9][0-9]*))(\.([0-9]*)?)?([eE][+-]?[0-9]+) {
+<BODY>(0|([1-9][0-9]*))?(\.([0-9]*)?)?([eE][+-]?[0-9]+) {
                 // [.xxx | xxx[.[xxx]] | xxx] e [+|-] xxx
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
