@@ -1,0 +1,55 @@
+BSIM3 3.3.0 MOSFET inverter
+
+load "spice/bsim3v30.osdi"
+include "bsim3v30.inc"
+
+model v vsource
+
+m1 (out in 0 0) n1 l=0.35u w=10.0u $mfactor=2
+m2 (out in d d) p1 l=0.35u w=10.0u $mfactor=2
+vd (d 0) v dc=2.0
+vin (in 0) v type="pulse" val0=0 val1=2 delay=2n rise=2n fall=2n width=10n period=20n
+
+control
+  analysis tran1 tran step=0.01n stop=60n maxstep=0.01n
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('BSIM 3.3.0 inverter')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+C
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+#ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+#ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['out'])
+
+ax_dict["C"].set_title('Supply current')
+ax_dict["C"].set_ylabel('I [uA]')
+ax_dict["C"].set_xlabel('time [ns]')
+ax_dict["C"].plot(plot['time']*1e9, plot['vin:flow(br)']*1e6)
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+

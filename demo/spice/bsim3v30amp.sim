@@ -1,0 +1,148 @@
+BSIM3 3.3.0 MOSFET amplifier
+
+load "spice/bsim3v30.osdi"
+load "resistor.osdi"
+include "bsim3v30.inc"
+
+model v vsource
+model r resistor
+vdd (vdd 0) v dc=1.8
+  
+subckt namp()
+  m1 (3 2 0 0) n1 l=1u w=2u $mfactor=2
+  rsource (1 2) r r=100k
+  rload (3 vdd) r r=25k
+  vin (1 0) v mag=1 type="sine" sinedc=1.2 ampl=10m freq=100M
+ends
+
+subckt pamp()
+  m1 (3 2 vdd vdd) p1 l=1u w=2u $mfactor=2
+  rsource (1 2) r r=100k
+  rload (3 0) r r=25k
+  vin (1 0) v mag=1 type="sine" sinedc=0.4 ampl=10m freq=100M
+ends
+
+control
+  print devices
+  print device("sp_bsim3v30")
+  
+  elaborate circuit("namp")
+  
+  analysis op1 op
+
+  analysis tran1 tran step=10p stop=40n maxstep=10p
+
+  analysis ac1 ac from=10 to=1T mode="dec" points=50
+  
+
+  elaborate circuit("pamp")
+  
+  analysis op2 op
+
+  analysis tran2 tran step=10p stop=40n maxstep=10p
+
+  analysis ac2 ac from=10 to=1T mode="dec" points=50
+
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+raw = rawread('op1.raw')
+plot = raw.get()
+for name in plot.names:
+    print(name, plot[name])
+
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('BSIM 3.3.0 NMOS amplifier')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+EE
+""")
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['2'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['3'])
+
+
+raw = rawread('ac1.raw')
+plot = raw.get()
+h = plot['3']
+
+ax_dict["C"].set_title('Gain')
+ax_dict["C"].set_ylabel('gain [dB]')
+ax_dict["C"].set_xlabel('f [MHz]')
+ax_dict["C"].semilogx(np.real(plot['frequency'])/1e6, 20*np.log10(np.abs(h)))
+
+ax_dict["D"].set_title('Phase')
+ax_dict["D"].set_ylabel('phase [deg]')
+ax_dict["D"].set_xlabel('f [MHz]')
+ax_dict["D"].semilogx(np.real(plot['frequency'])/1e6, 180/np.pi*np.unwrap(np.angle(h)))
+
+fig1.tight_layout()
+
+
+raw = rawread('op2.raw')
+plot = raw.get()
+for name in plot.names:
+    print(name, plot[name])
+
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('BSIM 3.3.0 PMOS amplifier')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+EE
+""")
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ns]')
+ax_dict["A"].plot(plot['time']*1e9, plot['2'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ns]')
+ax_dict["B"].plot(plot['time']*1e9, plot['3'])
+
+
+raw = rawread('ac2.raw')
+plot = raw.get()
+h = plot['3']
+
+ax_dict["C"].set_title('Gain')
+ax_dict["C"].set_ylabel('gain [dB]')
+ax_dict["C"].set_xlabel('f [MHz]')
+ax_dict["C"].semilogx(np.real(plot['frequency'])/1e6, 20*np.log10(np.abs(h)))
+
+ax_dict["D"].set_title('Phase')
+ax_dict["D"].set_ylabel('phase [deg]')
+ax_dict["D"].set_xlabel('f [MHz]')
+ax_dict["D"].semilogx(np.real(plot['frequency'])/1e6, 180/np.pi*np.unwrap(np.angle(h)))
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+
