@@ -12,7 +12,7 @@ The following benchmark results were obtained on the [C6288 16x16 multiplier cir
 |Simulator  |Time (s)        |Timepoints |Rejected |Iterations |
 |-----------|----------------|-----------|---------|-----------|
 |Xyce       | 151.57         |1013       |37       |3559       |
-|Ngspice    |  73.16         |1020       |1        |3474       |
+|Ngspice    |  71.81         |1020       |1        |3474       |
 |VACASK     |  57.98         |1021       |7        |3487       |
 
 If you want to find out more, there is [a page dedicated to benchmarks](benchmark).

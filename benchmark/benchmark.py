@@ -111,7 +111,7 @@ def run_openvaf(file, output, args=[]):
     return True
 
 ndx = 1
-while True:
+while ndx<len(sys.argv):
     if sys.argv[ndx]=="-n":
         ndx += 1
         count = int(sys.argv[ndx])
