@@ -44,6 +44,7 @@ set(device_sources
     "spice/full/mos3.va"      "spice/full/mos3.osdi"
     "spice/full/mos6.va"      "spice/full/mos6.osdi"
     "spice/full/mos9.va"      "spice/full/mos9.osdi"
+    "spice/full/bsim3v30.va"  "spice/full/bsim3v30.osdi"
 )
 
 # Prepare directory for staging the osdi library

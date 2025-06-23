@@ -36,6 +36,7 @@ model n1 sp_bsim3v30 ( type=1
   ute=-1.48 
   ua1= 3.31e-10  ub1= 2.61e-19 uc1= -3.42e-10 
   kt1l=0  prt=764.3
+  kf=0.032f af=1 rsh=7
 )
 
 model p1 sp_bsim3v30 ( type=-1
@@ -66,4 +67,5 @@ model p1 sp_bsim3v30 ( type=-1
   ute= -1.5 
   ua1= 4.312e-9 ub1= 6.65e-19  uc1= 0 
   kt1l=0
+  kf=0.032f af=1 rsh=7
 )
