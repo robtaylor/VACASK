@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-63-g7f6b23354
+// Version      : ngspice-44-64-gca0c52ba9
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-23 07:32:57 UTC
+// Date         : 2025-06-24 09:40:24 UTC
 // Module name  : sp_bsim3v30
 // Model variant: default
 // 
@@ -19,8 +19,19 @@
 //   
 //   Device type is set by the type parameter to NMOS (1) or PMOS (-1). 
 //   
+//   Instance parameters nqsmod and acnqsmod renamed to instance_nqsmod and 
+//   instance_acnqsmod. 
+//   
 //   Parameters ic, icvds, icvgs, and icvbs were removed. Initial conditions 
-//   should be set via the simulator's initial conditions mechanism.
+//   should be set via the simulator's initial conditions mechanism. 
+//   
+//   Parameters acnqsmod and instance_acnqsmod have no effect because 
+//   Verilog-A does not provide frequency domain modelling for ac analysis. 
+//   The NQS model always uses lumped approximation. Verilog-A provides 
+//   $absdelay() which could model NQS effects in both time and frequency 
+//   domain but is not supported by OpenVAF. Implementations of $absdelay() 
+//   use a lot of memory for storing past samples, and are thus not 
+//   appropriate for simulating circuits with many transistors.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //
@@ -4038,7 +4049,7 @@ module sp_bsim3v30(d, g, s, b);
     if (i_BSIM3nqsMod) begin
       load_T0 = 0;
       ceqqg = ceqqg + (load_T0);
-      load_T1 = 0;
+      load_T1 = qdef*BSIM3gtau;
       ceqqd = ceqqd - (dxpart*load_T0);
       cqdef = BSIM3cqcdump-0*qdef;
       cqcheq = BSIM3cqcheq-(0*vgb-0*vbd-0*load_vbs)+load_T0;
@@ -4092,22 +4103,16 @@ module sp_bsim3v30(d, g, s, b);
       cqdef = -cqdef;
       cqcheq = -cqcheq;
     end
-    if (i_BSIM3nqsMod) begin
-
-    end
-    load_T1 = 0;
-    if (i_BSIM3nqsMod) begin
-
-    end
+    load_T1 = qdef*BSIM3gtau;
     
     // Residuals
     I(d) <+ BSIM3drainConductance*V(d, d_int);
-    I(g) <+ ceqqg;
+    I(g) <+ BSIM3gtau*-V(q_int)+ceqqg;
     I(s) <+ BSIM3sourceConductance*V(s, s_int);
     I(b) <+ BSIM3gbd*V(b, d_int)+BSIM3gbs*V(b, s_int)+(ceqbs+ceqbd+ceqqb);
-    I(d_int) <+ BSIM3drainConductance*V(d_int, d)+BSIM3gbd*V(d_int, b)+-(ceqbd-cdreq-ceqqd);
-    I(s_int) <+ BSIM3gbs*V(s_int, b)+BSIM3sourceConductance*V(s_int, s)+-(cdreq+ceqbs+ceqqg+ceqqb+ceqqd);
-    I(q_int) <+ -(cqcheq-cqdef);
+    I(d_int) <+ BSIM3drainConductance*V(d_int, d)+BSIM3gbd*V(d_int, b)+BSIM3gtau*(dxpart*V(d_int))+-(ceqbd-cdreq-ceqqd);
+    I(s_int) <+ BSIM3gbs*V(s_int, b)+BSIM3gtau*(sxpart*V(s_int))+BSIM3sourceConductance*V(s_int, s)+-(cdreq+ceqbs+ceqqg+ceqqb+ceqqd);
+    I(q_int) <+ BSIM3gtau*V(q_int)+-(cqcheq-cqdef);
 
     // Tag: noise, function: BSIM3noise
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM3drainConductance)), "rd");
