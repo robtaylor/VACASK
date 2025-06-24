@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-63-g7f6b23354
+// Version      : ngspice-44-64-gca0c52ba9
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-16 06:17:38 UTC
+// Date         : 2025-06-24 09:53:58 UTC
 // Module name  : sp_jfet1
 // Model variant: full
 // 
@@ -24,11 +24,7 @@
 //   consistent all current opvars were renamed. 
 //   
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
-//   should be set via the simulator's initial conditions mechanism. 
-//   
-//   Opvars i_g, i_d, i_s, i_gd, and p cause internal nodes to be added 
-//   to the model. If you need them comment out the appropriate section 
-//   of the config and rebuild the model.
+//   should be set via the simulator's initial conditions mechanism.
 //
 //   This model exposes opvars that can lead to creation of
 //   implicit equations by OpenVAF.

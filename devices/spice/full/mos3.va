@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-63-g7f6b23354
+// Version      : ngspice-44-64-gca0c52ba9
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-16 06:18:09 UTC
+// Date         : 2025-06-24 09:54:29 UTC
 // Module name  : sp_mos3
 // Model variant: full
 // 
