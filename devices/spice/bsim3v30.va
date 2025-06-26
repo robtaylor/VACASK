@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-64-gca0c52ba9
+// Version      : ngspice-44-65-g0654f477c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-24 11:20:13 UTC
+// Date         : 2025-06-30 13:21:53 UTC
 // Module name  : sp_bsim3v30
 // Model variant: default
 // 
@@ -1111,8 +1111,6 @@ module sp_bsim3v30(d, g, s, b);
   real dDIBL_Sft_dVd;
   real Lambda;
   real dLambda_dVg;
-  real Idtot;
-  real Ibtot;
   real load_a1;
   real ScalingFactor;
   real Vgsteff;
@@ -2268,7 +2266,7 @@ module sp_bsim3v30(d, g, s, b);
     BSIM3vbs = BSIM3type * $limit(V(b, s_int), DEVlimitOldGet);
     BSIM3vbd = BSIM3type * $limit(V(b, d_int), DEVlimitOldGet);
     
-    von = BSIM3type * i_BSIM3vth0 - sd_BSIM3k1 * BSIM3sqrtPhi;
+    BSIM3von = BSIM3type * i_BSIM3vth0 - sd_BSIM3k1 * BSIM3sqrtPhi;
     load_vbs = BSIM3type*V(b, s_int);
     load_vgs = BSIM3type*V(g, s_int);
     load_vds = BSIM3type*V(d_int, s_int);
@@ -2278,12 +2276,8 @@ module sp_bsim3v30(d, g, s, b);
     vgdo = BSIM3vgs-BSIM3vds;
     delvbs = load_vbs-BSIM3vbs;
     delvbd = vbd-BSIM3vbd;
-    if (BSIM3mode>=0) begin
-      Idtot = BSIM3cd+BSIM3csub-BSIM3cbd;
-      Ibtot = BSIM3cbs+BSIM3cbd-BSIM3csub;
-    end else begin
-      Idtot = BSIM3cd-BSIM3cbd;
-      Ibtot = BSIM3cbs+BSIM3cbd-BSIM3csub;
+    if (!(BSIM3mode>=0)) begin
+
     end
     von = BSIM3von;
     if (BSIM3vds>=0.0) begin
@@ -2332,7 +2326,7 @@ module sp_bsim3v30(d, g, s, b);
     end
     if (load_SourceSatCurrent<=0.0) begin
       BSIM3gbs = lc_gmin;
-      BSIM3cbs = BSIM3gbs*load_vbs;
+      BSIM3cbs = 0;
     end else if (ijth==0.0) begin
       evbs = exp(load_vbs/load_Nvtm);
       BSIM3gbs = load_SourceSatCurrent*evbs/load_Nvtm+lc_gmin;
@@ -2348,7 +2342,7 @@ module sp_bsim3v30(d, g, s, b);
     end
     if (load_DrainSatCurrent<=0.0) begin
       BSIM3gbd = lc_gmin;
-      BSIM3cbd = BSIM3gbd*vbd;
+      BSIM3cbd = 0;
     end else if (ijth==0.0) begin
       evbd = exp(vbd/load_Nvtm);
       BSIM3gbd = load_DrainSatCurrent*evbd/load_Nvtm+lc_gmin;
@@ -4047,9 +4041,9 @@ module sp_bsim3v30(d, g, s, b);
     ceqqb = cqbulk-0*vgb+0*vbd+0*load_vbs;
     ceqqd = cqdrn-0*vgb+0*vbd+0*load_vbs;
     if (i_BSIM3nqsMod) begin
-      load_T0 = ggtg*vgb-ggtd*vbd-ggts*load_vbs;
+      load_T0 = 0;
       ceqqg = ceqqg + (load_T0);
-      load_T1 = qdef*BSIM3gtau;
+      load_T1 = 0;
       ceqqd = ceqqd - (dxpart*load_T0);
       cqdef = BSIM3cqcdump-0*qdef;
       cqcheq = BSIM3cqcheq-(0*vgb-0*vbd-0*load_vbs)+load_T0;
@@ -4092,27 +4086,31 @@ module sp_bsim3v30(d, g, s, b);
       gbspdp = -(gbspg+gbspsp+gbspb);
     end
     if (BSIM3type>0) begin
-      ceqbs = ceqbs + (BSIM3cbs-BSIM3gbs*load_vbs);
-      ceqbd = ceqbd + (BSIM3cbd-BSIM3gbd*vbd);
+      ceqbs = ceqbs + (BSIM3cbs);
+      ceqbd = ceqbd + (BSIM3cbd);
     end else begin
-      ceqbs = ceqbs - (BSIM3cbs-BSIM3gbs*load_vbs);
-      ceqbd = ceqbd - (BSIM3cbd-BSIM3gbd*vbd);
+      ceqbs = ceqbs - (BSIM3cbs);
+      ceqbd = ceqbd - (BSIM3cbd);
       ceqqg = -ceqqg;
       ceqqb = -ceqqb;
       ceqqd = -ceqqd;
       cqdef = -cqdef;
       cqcheq = -cqcheq;
     end
-    load_T1 = qdef*BSIM3gtau;
+    load_T1 = 0;
     
     // Residuals
     I(d) <+ BSIM3drainConductance*V(d, d_int);
-    I(g) <+ BSIM3gtau*-V(q_int)+ggtb*-V(b)+ggtd*-V(d_int)+ggtg*-V(g)+ggts*-V(s_int)+ceqqg;
+    I(g) <+ ceqqg;
     I(s) <+ BSIM3sourceConductance*V(s, s_int);
-    I(b) <+ BSIM3gbd*V(b, d_int)+BSIM3gbs*V(b, s_int)+(ceqbs+ceqbd+ceqqb);
-    I(d_int) <+ BSIM3drainConductance*V(d_int, d)+BSIM3gbd*V(d_int, b)+BSIM3gtau*(dxpart*V(d_int))+ggtb*(dxpart*V(d_int))+ggtd*(dxpart*V(d_int))+ggtg*(dxpart*V(d_int))+ggts*(dxpart*V(d_int))+-(ceqbd-cdreq-ceqqd);
-    I(s_int) <+ BSIM3gbs*V(s_int, b)+BSIM3gtau*(sxpart*V(s_int))+BSIM3sourceConductance*V(s_int, s)+ggtb*(sxpart*V(s_int))+ggtd*(sxpart*V(s_int))+ggtg*(sxpart*V(s_int))+ggts*(sxpart*V(s_int))+-(cdreq+ceqbs+ceqqg+ceqqb+ceqqd);
-    I(q_int) <+ BSIM3gtau*V(q_int)+ggtb*V(b)+ggtd*V(d_int)+ggtg*V(g)+ggts*V(s_int)+-(cqcheq-cqdef);
+    I(b) <+ ceqbs+ceqbd+ceqqb;
+    I(d_int) <+ BSIM3drainConductance*V(d_int, d)+-(ceqbd-cdreq-ceqqd);
+    I(s_int) <+ BSIM3sourceConductance*V(s_int, s)+-(cdreq+ceqbs+ceqqg+ceqqb+ceqqd);
+    I(q_int) <+ -(cqcheq-cqdef);
+    I(q_int) <+ BSIM3gtau * V(q_int);
+    I(d_int) <+ dxpart * BSIM3gtau * V(q_int);
+    I(s_int) <+ sxpart * BSIM3gtau * V(q_int);
+    I(g) <+ - BSIM3gtau * V(q_int);
 
     // Tag: noise, function: BSIM3noise
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM3drainConductance)), "rd");

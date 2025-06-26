@@ -4,7 +4,7 @@
 
 model n1 sp_bsim3v30 ( type=1
   tnom=27.0
-  acnqsmod=1 elm=3
+  nqsmod=1 acnqsmod=0 elm=3
   capmod=3 
   nch= 2.498e+17  tox=9e-09 xj=1.00000e-07
   lint=9.36e-8 wint=1.47e-7
@@ -41,7 +41,7 @@ model n1 sp_bsim3v30 ( type=1
 
 model p1 sp_bsim3v30 ( type=-1
   tnom=27.0
-  acnqsmod=1 elm=3
+  nqsmod=1 acnqsmod=0 elm=3
   nch= 3.533024e+17  tox=9e-09 xj=1.00000e-07
   lint=6.23e-8 wint=1.22e-7
   lintnoi=1e-9
