@@ -8,14 +8,16 @@ include "multiplier.inc"
 model v vsource
 model r sp_resistor
 
+parameters vdd=1.2
+
 subckt drv(out)
   parameters v0=0 v1=1
-  parameters vdd=1.2 rs=1 delay=0.1n rise=0.1n
+  parameters rs=1 delay=0.1n rise=0.1n
   vdrv (int 0) v type="pulse" val0=v0*vdd val1=v1*vdd delay=delay rise=rise
   rdrv (int out) r r=rs
 ends
 
-vdd (vdd 0) v dc=1.2
+vdd (vdd 0) v dc=vdd
 vss (vss 0) v dc=0
 
 //
@@ -23,8 +25,8 @@ vss (vss 0) v dc=0
 //
 
 subckt gatedrv_test()
-  v1 (in1 0) v type="pulse" val0=0 val1=1.2 delay=0.2n rise=1p fall=1p width=0.2n
-  v2 (in2 0) v type="pulse" val0=0 val1=1.2 delay=0.3n rise=1p fall=1p width=0.2n
+  v1 (in1 0) v type="pulse" val0=0 val1=vdd delay=0.2n rise=1p fall=1p width=0.2n
+  v2 (in2 0) v type="pulse" val0=0 val1=vdd delay=0.3n rise=1p fall=1p width=0.2n
   linv (dummy out) not
 ends
 
@@ -138,6 +140,7 @@ from rawfile import rawread
 import numpy as np
 import sys
 
+scaling = 0.8/1.2
 tm = rawread('tranmul.raw').get()
 
 import matplotlib.pyplot as plt 
@@ -149,10 +152,10 @@ fig1.axes[0].set_xlabel('time [ns]')
 for ii in range(16):
   name = "a%d" % ii
   fig1.axes[0].axhline(0-ii, color="black")
-  fig1.axes[0].plot(tm['time']*1e9, tm[name]*0.4-ii, color="blue", label=name)
+  fig1.axes[0].plot(tm['time']*1e9, tm[name]*scaling-ii, color="blue", label=name)
   name = "b%d" % ii
   fig1.axes[0].axhline(-(ii+16), color="black")
-  fig1.axes[0].plot(tm['time']*1e9, tm[name]*0.4-(ii+16), color="green", label=name)
+  fig1.axes[0].plot(tm['time']*1e9, tm[name]*scaling-(ii+16), color="green", label=name)
 
 fig1.axes[1].set_title('Multiplier response')
 fig1.axes[1].set_ylabel('V [V]')
@@ -160,7 +163,7 @@ fig1.axes[1].set_xlabel('time [ns]')
 for ii in range(32):
   name = "p%d" % ii
   fig1.axes[1].axhline(0-ii, color="black")
-  fig1.axes[1].plot(tm['time']*1e9, tm[name]*0.4-ii, color="red", label=name)	
+  fig1.axes[1].plot(tm['time']*1e9, tm[name]*scaling-ii, color="red", label=name)	
 
 
 # tr = rawread('traninv.raw').get()
