@@ -14,13 +14,12 @@ ends
 // Berkeley Spice Compatibility 
 // Lmin= .35 Lmax= 20 Wmin= .6 Wmax= 20
 
-model n1 sp_bsim3v30 ( type=1
+model n1 bsim3 ( type=1
   tnom=27.0
-  nqsmod=0 acnqsmod=0 elm=3
+  nqsmod=0 elm=3
   capmod=3 
   nch= 2.498e+17  tox=9e-09 xj=1.00000e-07
   lint=9.36e-8 wint=1.47e-7
-  lintnoi=1e-9
   vth0= 0.6322    k1= 0.756  k2= -3.83e-2  k3= -2.612 
   dvt0= 2.812  dvt1= 0.462  dvt2=-9.17e-2 
   nlx= 3.52291e-08  w0= 1.163e-6 
@@ -51,12 +50,11 @@ model n1 sp_bsim3v30 ( type=1
   kf=0.032f af=1 rsh=7
 )
 
-model p1 sp_bsim3v30 ( type=-1
+model p1 bsim3 ( type=-1
   tnom=27.0
-  nqsmod=0 acnqsmod=0 elm=3
+  nqsmod=0 elm=3
   nch= 3.533024e+17  tox=9e-09 xj=1.00000e-07
   lint=6.23e-8 wint=1.22e-7
-  lintnoi=1e-9
   vth0=-.6732829 k1= .8362093  k2=-8.606622e-02  k3= 1.82 
   dvt0= 1.903801  dvt1= .5333922  dvt2=-.1862677 
   nlx= 1.28e-8  w0= 2.1e-6 

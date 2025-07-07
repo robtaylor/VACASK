@@ -1,6 +1,6 @@
-C6288 16x16 multiplier, VACASK
+C6288 16x16 multiplier, VACASK with Cogenda model
 
-load "spice/bsim3v30.osdi"
+load "bsim3v3.osdi"
 load "spice/resistor.osdi"
 
 include "models.inc"
