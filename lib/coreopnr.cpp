@@ -715,9 +715,6 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     // Force instance evaluation bypass if requested
     evalSetup_.forceBypass = circuit.simulatorInternals().requestForcedBypass;
     
-    // Skip convergence check if bypass is forced
-    evalSetup_.skipConvergenceCheck = circuit.simulatorInternals().requestForcedBypass;
-    
     // Clear bypass forcing request
     circuit.simulatorInternals().requestForcedBypass = false;
 
@@ -1111,10 +1108,14 @@ bool OpNRSolver::formatError(Status& s, NameResolver* resolver) const {
 
 void OpNRSolver::dumpSolution(std::ostream& os, double* solution, const char* prefix) {
     auto n = circuit.unknownCount();
+    std::ios original_state(nullptr);
+    original_state.copyfmt(os);
+    os << std::setprecision(15);
     for(decltype(n) i=1; i<=n; i++) {
         auto rn = circuit.reprNode(i);
         os << prefix << rn->name() << " : " << solution[i] << "\n";
     }
+    os.copyfmt(original_state);
 }
 
 }

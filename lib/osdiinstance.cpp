@@ -13,7 +13,7 @@ namespace NAMESPACE {
 
 OsdiInstance::OsdiInstance(OsdiModel* model, Id name, Instance* parentInstance, const PTInstance& parsedInstance, Status &s) 
     : Instance(model, name, parentInstance, parsedInstance), core_(nullptr), connectedTerminalCount(0) {
-    core_ = alignedAlloc(sizeof(max_align_t), model->device()->descriptor()->instance_size);
+    core_ = alignedAlloc(sizeof(std::max_align_t), model->device()->descriptor()->instance_size);
     memset(core_, 0, model->device()->descriptor()->instance_size);
 
     // Create nodes (terminals+internal nodes) list
@@ -1111,8 +1111,9 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     bool bypass = false;
     evalSetup.bypassableInstances++;
 
-    // Inactive element bypass enabled
-    if (evalSetup.requestHighPrecision) {
+    if (!device->checkFlags(Device::Flags::Bypassable)) {
+        // Not bypassable, nothing to do
+    } else if (evalSetup.requestHighPrecision) {
         // If high precision is required, bypass is out of question
         bypass = false;
         // If device output is converged, this is a bypass opportunity that was not taken
@@ -1120,22 +1121,21 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
             evalSetup.bypassOpportunuties++;
         }
         // Not bypassed, output no longer converged
-        clearFlags(Flags::Bypassed);
-        clearFlags(Flags::OutputConverged);
-    } else if (evalSetup.forceBypass && device->checkFlags(Device::Flags::Bypassable)) {
+        clearFlags(Flags::Bypassed|Flags::OutputConverged);
+    } else if (evalSetup.forceBypass) {
         // Forcing a bypass (continuation bypass)
         bypass = true;
         // This is a bypass opportunity that was taken
         evalSetup.bypassOpportunuties++;
         // Bypass regardless of converged flag, do not change converged flag
         setFlags(Flags::Bypassed);
-    } else if (evalSetup.allowBypass && device->checkFlags(Device::Flags::Bypassable)) {
+    } else if (evalSetup.allowBypass) {
         // Bypass is allowed (inactive element bypass)
         if (checkFlags(Flags::OutputConverged)) {
             // Device output is converged, this is a bypass opportunity
             evalSetup.bypassOpportunuties++;
             // Converged, check if we can bypass
-            if (bypass = inputBypassCheckCore(circuit, evalSetup)) {
+            if (inputBypassCheckCore(circuit, evalSetup)) {
                 // Bypassing
                 bypass = true;
                 setFlags(Flags::Bypassed);
@@ -1286,11 +1286,11 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     // Convergence check of residuals, update history. 
     // The following must hold to do this:
     // - nr_bypass enabled
+    // - device is bypassable
     // - device is not bypassed
-    //   - evalSetup.skipConvergenceCheck is disabled
-    //     (enabled when bypass was forced due to continuation bypass) and
+    //   - evalSetup.forceBypass is disabled and
     //   - device is not bypassed due to inactive element bypass (Flag::Bypassed)
-    if (nr_bypass && !evalSetup.skipConvergenceCheck && !checkFlags(Flags::Bypassed)) {
+    if (nr_bypass && device->checkFlags(Device::Flags::Bypassable) && !evalSetup.forceBypass && !checkFlags(Flags::Bypassed)) {
         auto converged = outputBypassCheckCore(circuit, evalSetup);
         if (converged) {
             // Mark outputs as converged

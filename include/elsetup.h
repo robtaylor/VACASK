@@ -121,6 +121,14 @@ typedef struct EvalSetup {
 
     // Former members of SimulatorInternals
     double time {0};
+
+    // Convergence check
+    // Check reactive residual and Jacobian for convergence
+    bool checkReactiveConvergece {};
+    // Counter of convergence checks, is reset by initialize()
+    size_t instancesConvergenceChecks;
+    // Counter of convergence checks that resulted in a converged instance, is reset by initialize()
+    size_t convergedInstances;
     
     // 
     // Internals
@@ -130,16 +138,6 @@ typedef struct EvalSetup {
     double* oldSolution; // with bucket
     double* oldStates; // states (current data)
     double* newStates; // can be either from states (future data) or dummyStates (current data)
-
-    // Convergence check
-    // Skip convergence check this time
-    bool skipConvergenceCheck {};
-    // Check reactive residual and Jacobian for convergence
-    bool checkReactiveConvergece {};
-    // Counter of convergence checks
-    size_t instancesConvergenceChecks;
-    // Counter of convergence checks that resulted in a converged instance
-    size_t convergedInstances;
 
     // Methods
     void clearFlags() {

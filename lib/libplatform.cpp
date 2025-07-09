@@ -70,7 +70,10 @@ void alignedFree(void* ptr) {
 }
 #else
 void* alignedAlloc(size_t alignment, size_t size) {
-    return std::aligned_alloc(alignment, size);
+    // Make size a multiple of alignment
+    // Assumes alignment is a power of 2
+    auto aligned_size = (size + alignment - 1) & ~(alignment - 1);
+    return std::aligned_alloc(alignment, aligned_size);
 }
 
 void alignedFree(void* ptr) {
