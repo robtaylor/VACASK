@@ -317,7 +317,6 @@ public:
     
     bool applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet);
     bool evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
-    bool converged(ConvSetup& convSetup);
     
     // Simulator options (Parameterized class with simulator options core)
     // IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };

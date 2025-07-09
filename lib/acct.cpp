@@ -28,11 +28,6 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
 
     os << "\n";
 
-    os << pfx << "Convergence check calls:         " << acctNew.conv << "\n";
-    os << pfx << "Convergence check time:          " << acctNew.tconv << "\n";
-
-    os << "\n";
-
     os << pfx << "NR solver calls:                 " << acctNew.nrcall << "\n";
     os << pfx << "NR solver iterations:            " << acctNew.nriter << "\n";
     os << pfx << "NR solver time:                  " << acctNew.tnr << "\n";
@@ -45,11 +40,6 @@ void Accounting::dumpTotal(int indent, std::ostream& os) const {
         os << pfx << "Bypassed evaluations:            " << acctNew.bpbypassed << "\n";
         os << "\n";
     } 
-    if (acctNew.bpiiconvcheck>0) {
-        os << pfx << "Instance convergence checks:     " << acctNew.bpiiconvcheck << "\n";
-        os << pfx << "Convergence checks passed:       " << acctNew.bpiiconverged << "\n";
-        os << "\n";
-    }
 
     os << pfx << "Real factorizations:             " << acctNew.factor << "\n";
     os << pfx << "Real refactorizations:           " << acctNew.refactor << "\n";

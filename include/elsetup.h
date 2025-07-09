@@ -130,7 +130,17 @@ typedef struct EvalSetup {
     double* oldSolution; // with bucket
     double* oldStates; // states (current data)
     double* newStates; // can be either from states (future data) or dummyStates (current data)
-    
+
+    // Convergence check
+    // Skip convergence check this time
+    bool skipConvergenceCheck {};
+    // Check reactive residual and Jacobian for convergence
+    bool checkReactiveConvergece {};
+    // Counter of convergence checks
+    size_t instancesConvergenceChecks;
+    // Counter of convergence checks that resulted in a converged instance
+    size_t convergedInstances;
+
     // Methods
     void clearFlags() {
         requests.clear();
@@ -162,6 +172,9 @@ typedef struct EvalSetup {
         nextBreakPoint = -1.0;
         boundStep = -1.0;
         maxFreq = 0.0;
+        
+        instancesConvergenceChecks = 0;
+        convergedInstances = 0;
 
         bypassableInstances = 0;
         bypassOpportunuties = 0;
@@ -282,54 +295,6 @@ typedef struct LoadSetup {
         return true;
     };
 } LoadSetup;
-
-
-typedef struct ConvSetup {
-    // {} for default initialization
-    // State and solution repository
-    VectorRepository<double>* solution {};
-    VectorRepository<double>::DepthIndexDelta oldSolutionSlot {0};
-    VectorRepository<double>* states {}; 
-
-    // Skip convergence test and store only device state. 
-    // If set to true the instance state will be stored, but convergence checks will be skipped. 
-    bool storeStateOnly;
-
-    // Data for instance convergence check (previous values)
-    double* deviceStates {};
-
-    // Delta vector for inputs convergence test
-    double* inputDelta {};
-
-    // Check reactive residual and Jacobian for convergence
-    bool checkReactiveConvergece {};
-
-    // Counter of instaces that are not converged, is reset by initialize()
-    size_t instancesConvergenceChecks;
-    size_t convergedInstances;
-
-    // 
-    // Internals
-    // 
-
-    // Fast access pointers - do not set manually
-    double* oldSolution; // with bucket
-    double* oldStates; // states (current data)
-    double* newStates; // can be either from states (future data) or dummyStates (current data)
-    
-    // Methods
-    bool initialize() {
-        instancesConvergenceChecks = 0;
-        convergedInstances = 0;
-
-        oldSolution = solution->data(oldSolutionSlot);
-        
-        oldStates = states->data();
-        newStates = states->futureData();
-        
-        return true;
-    };
-} ConvSetup;
 
 }
 

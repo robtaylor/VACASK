@@ -56,7 +56,6 @@ public:
         Status& s=Status::ignore
     );
     virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup);
-    virtual bool converged(Circuit& circuit, ConvSetup& convSetup);
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& parsedModel, Status& s=Status::ignore);
     virtual void dump(int indent, std::ostream& os) const;
 

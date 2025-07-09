@@ -426,10 +426,6 @@ bool NRSolver::formatError(Status& s, NameResolver* resolver) const {
             s.set(Status::NonlinearSolver, "Evaluation/load error.");
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;
-        case Error::ConvergenceCheck:
-            s.set(Status::NonlinearSolver, "Instance convergence check error.");
-            s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
-            return false;
         case Error::LinearSolver: 
             s.extend("Leaving core NR loop in iteration "+std::to_string(errorIteration)+"."); 
             return false;

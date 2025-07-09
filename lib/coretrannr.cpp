@@ -43,7 +43,7 @@ TranNRSolver::TranNRSolver(
     evalSetup_.computeBoundStep = true;
 
     // Also check reactive residual and Jacobian convergence
-    convSetup_.checkReactiveConvergece = true;
+    evalSetup_.checkReactiveConvergece = true;
     
     
     // Set up Jacobian loading

@@ -96,7 +96,6 @@ public:
         OK, 
         ForcesIndex, 
         EvalAndLoad, 
-        ConvergenceCheck, 
         LinearSolver, 
         SolutionError, 
         Convergence, 

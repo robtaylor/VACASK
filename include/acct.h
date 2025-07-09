@@ -22,7 +22,6 @@ typedef struct AcctData {
     size_t chgelab {0};
     double tchgelab {0};
 
-    size_t conv {0};
     size_t evalload {0};
     size_t resload {0};
     size_t sysload {0};
@@ -40,9 +39,6 @@ typedef struct AcctData {
     size_t bpinst {0};
     size_t bpopport {0};
     size_t bpbypassed {0};
-    size_t bpiiconvcheck {0};
-    size_t bpiiconverged {0};
-    double tconv {0};
     double tevalload {0};
     double teval {0};
     double tload {0};

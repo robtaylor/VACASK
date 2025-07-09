@@ -454,32 +454,6 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
     return true;
 }
 
-// Check instance convergence 
-// Sets Converged and Bypassed flags
-bool OsdiDevice::converged(Circuit& circuit, ConvSetup& convSetup) { 
-    // Skip this step if the device cannot be bypassed
-    if (!checkFlags(Flags::Bypassable)) {
-        return true;
-    }
-    for(auto model : models()) {
-        if (model->instanceCount()==0) {
-            continue;
-        }
-        for(auto instance : model->instances()) {
-            auto inst = static_cast<OsdiInstance*>(instance);
-            // Skip converged instances
-            if (inst->checkFlags(Instance::Flags::Converged)) {
-                continue;
-            }
-            if (!inst->convergedCore(circuit, convSetup)) {
-                return false;
-            }
-        }
-    }
-
-    return true; 
-}
-
 const char* OsdiDevice::simParamNames[] = {
     "iniLim",  
     "gmin", // minimum conductance to place in parallel with nonlinear branches (simulator gmin)

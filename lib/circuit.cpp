@@ -1303,35 +1303,6 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
     return retval;
 }
 
-bool Circuit::converged(ConvSetup& convSetup) {
-    auto t0 = Accounting::wclk();
-    tables_.accounting().acctNew.conv++; 
-
-    if (!convSetup.initialize()) {
-        tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
-        return false;
-    }
-    bool first = true;
-    for(auto& dev : devices) {
-        // Skip first device (this is always the Hierarchical device)
-        // Will save some time
-        if (first) {
-            first = false;
-            continue;
-        }
-        auto* devPtr = dev.get();
-        if (devPtr->instanceCount()==0)  {
-            continue;
-        }
-        if (!devPtr->converged(*this, convSetup)) {
-            tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
-            return false;
-        }
-    }
-    tables_.accounting().acctNew.tconv += Accounting::wclkDelta(t0);
-    return true; 
-}
-
 AnnotatedSolution* Circuit::newStoredSolution(Id typeCode, Id name) {
     AnnotatedSolution* ptr;
     auto it = solutionRepository.find({typeCode, name});

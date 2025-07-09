@@ -117,8 +117,7 @@ public:
     
     EvalSetup& evalSetup() { return evalSetup_; };
     LoadSetup& loadSetup() { return loadSetup_; };
-    ConvSetup& convSetup() { return convSetup_; };
-
+    
     virtual void dumpSolution(std::ostream& os, double* solution, const char* prefix="");
 
 protected:
@@ -137,8 +136,7 @@ protected:
     
     EvalSetup evalSetup_;
     LoadSetup loadSetup_;
-    ConvSetup convSetup_;
-
+    
     // Passed from outside
     Circuit& circuit;
     VectorRepository<double>& states;
@@ -167,9 +165,6 @@ protected:
 
     // Flags indicating nodes are flow nodes
     Vector<bool> isFlow;
-
-    // Flag that skipping of device convergence check
-    bool skipConvergenceCheck;
 
     // Solution natures and residual natures are currently limited to 
     //   0 .. voltage

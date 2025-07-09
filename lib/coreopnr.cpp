@@ -189,11 +189,6 @@ OpNRSolver::OpNRSolver(
         .states = &states, 
         .loadResistiveJacobian = true, 
     };
-
-    convSetup_ = ConvSetup {
-        .solution = &solution, 
-        .states = &states
-    };
 }
 
 bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
@@ -551,8 +546,6 @@ bool OpNRSolver::initialize(bool continuePrevious) {
         return false;
     }
     
-    convSetup_.inputDelta = delta.data();
-
     return true;
 }
 
@@ -565,29 +558,10 @@ bool OpNRSolver::preIteration(bool continuePrevious) {
 }
 
 bool OpNRSolver::postSolve(bool continuePrevious) {
-    // Check convergence if nr_bypass is enabled and convergence check is not to be skipped. 
-    // The test and state storing is skipped if evaluation bypass was forced. 
-    if (circuit.simulatorOptions().core().nr_bypass && !skipConvergenceCheck) {
-        // When high precision is requested we only store instance state 
-        // and assume instance is not converged. 
-        convSetup_.storeStateOnly = highPrecision;
-
-        if (!circuit.converged(convSetup_)) {
-            lastError = Error::ConvergenceCheck;
-            errorIteration = iteration;
-            if (settings.debug>2) {
-                Simulator::dbg() << "Instance convergence check error.\n";
-            }
-            return false;
-        }
-    }
-
     auto& acct = circuit.tables().accounting();
     acct.acctNew.bpinst += evalSetup_.bypassableInstances;
     acct.acctNew.bpopport += evalSetup_.bypassOpportunuties;
     acct.acctNew.bpbypassed += evalSetup_.bypassedInstances;
-    acct.acctNew.bpiiconvcheck += convSetup_.instancesConvergenceChecks;
-    acct.acctNew.bpiiconverged += convSetup_.convergedInstances;
     
     return true;
 }
@@ -725,7 +699,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     // Init limits if not in continue mode and iteration is 1
     evalSetup_.initializeLimiting = !continuePrevious && (iteration==1);
     
-    // Bypass enabled, take it into account at evaluation time
+    // Inactive element bypass enabled, take it into account at evaluation time
     if (circuit.simulatorOptions().core().nr_bypass) {
         // In continue mode bypass is allowed in first iteration
         // Otherwise we allow it starting with the second one 
@@ -736,27 +710,19 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
         }
         // For bypass check
         evalSetup_.deviceStates = deviceStates.data();
-        // For convergence check
-        convSetup_.deviceStates = deviceStates.data();
     }
 
-    
     // Force instance evaluation bypass if requested
     evalSetup_.forceBypass = circuit.simulatorInternals().requestForcedBypass;
     
+    // Skip convergence check if bypass is forced
+    evalSetup_.skipConvergenceCheck = circuit.simulatorInternals().requestForcedBypass;
+    
+    // Clear bypass forcing request
+    circuit.simulatorInternals().requestForcedBypass = false;
+
     // Evaluate and load
     auto evalSt = evalAndLoadWrapper(evalSetup_, loadSetup_);
-    // If bypass forcing was requested clear that request. 
-    // It is allowed for one iteration only. 
-    if (circuit.simulatorInternals().requestForcedBypass) {
-        circuit.simulatorInternals().requestForcedBypass = false;
-        // Skip device convergence checks for one iteration
-        skipConvergenceCheck = true;
-    } else {
-        // This makes sure that the device convergence check is 
-        // skipped only if bypass was forced. 
-        skipConvergenceCheck = false;
-    }
     if (!evalSt) {
         lastError = Error::EvalAndLoad;
         errorIteration = iteration;

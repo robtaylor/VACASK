@@ -83,10 +83,10 @@ public:
         KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
-    bool bypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
+    bool inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
+    bool outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
     bool evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
-    bool convergedCore(Circuit& circuit, ConvSetup& convSetup);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };

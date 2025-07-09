@@ -150,7 +150,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     // Clear instance flags: Converged, Bypassed, HasDeviceHistory
     circuit.applyInstanceFlags(
         Instance::Flags::HasDeviceHistory |
-        Instance::Flags::Converged |
+        Instance::Flags::OutputConverged |
         Instance::Flags::Bypassed, 
         Instance::NoFlags
     );
@@ -303,7 +303,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 // After core rebuild device history is invalidated
                 circuit.applyInstanceFlags(
                     Instance::Flags::HasDeviceHistory |
-                    Instance::Flags::Converged |
+                    Instance::Flags::OutputConverged |
                     Instance::Flags::Bypassed, 
                     Instance::NoFlags
                 );
@@ -476,7 +476,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         // After core rebuild device history is invalidated
         circuit.applyInstanceFlags(
             Instance::Flags::HasDeviceHistory |
-            Instance::Flags::Converged |
+            Instance::Flags::OutputConverged |
             Instance::Flags::Bypassed, 
             Instance::NoFlags
         );

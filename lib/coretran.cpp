@@ -743,7 +743,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     // after the first timepoint is computed. 
     circuit.applyInstanceFlags(
         Instance::Flags::HasDeviceHistory |
-        Instance::Flags::Converged |
+        Instance::Flags::OutputConverged |
         Instance::Flags::Bypassed, 
         Instance::NoFlags
     );
