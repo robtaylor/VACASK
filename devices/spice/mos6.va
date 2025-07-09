@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-64-gca0c52ba9
+// Version      : ngspice-44-65-g0654f477c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-24 09:52:16 UTC
+// Date         : 2025-07-09 08:10:14 UTC
 // Module name  : sp_mos6
 // Model variant: default
 // 
@@ -1201,16 +1201,20 @@ module sp_mos6(d, g, s, b);
         $fatal(0, "nlev>2 is not supported.");
     end
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
-    if (nlev==0) begin
+    case (nlev)
+      0: begin
         flicker_psd = kf*exp(af*ln(((abs(MOS6cd)>1E-38) ? (abs(MOS6cd)) : (1E-38))))/((MOS6l-2*ld)*(MOS6l-2*ld)*MOS6oxideCapFactor);
         flicker_exp = 1;
-    end else if (nlev==1) begin
+      end
+      1: begin
         flicker_psd = kf*exp(af*ln(((abs(MOS6cd)>1E-38) ? (abs(MOS6cd)) : (1E-38))))/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
         flicker_exp = 1;
-    end else if (nlev==2) begin
+      end
+      2: begin
         flicker_psd = kf*MOS6gm*MOS6gm/(MOS6w*(MOS6l-2*ld)*MOS6oxideCapFactor);
         flicker_exp = af;
-    end
+      end
+    endcase
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-64-gca0c52ba9
+// Version      : ngspice-44-65-g0654f477c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-24 09:52:03 UTC
+// Date         : 2025-07-09 08:10:01 UTC
 // Module name  : sp_mos2
 // Model variant: default
 // 
@@ -2060,16 +2060,22 @@ module sp_mos2(d, g, s, b);
       end
     end
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*(($temperature+noise_dtemp)*Sid)), "id");
-    if (nlev==0) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
-      flicker_exp = 1;
-    end else if (nlev==1) begin
-      flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
-      flicker_exp = 1;
-    end else if (nlev==2||nlev==3) begin
-      flicker_psd = kf*MOS2gm*MOS2gm/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
-      flicker_exp = af;
-    end
+    case (nlev)
+      0: begin
+        flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/((MOS2l-2*ld)*(MOS2l-2*ld)*MOS2oxideCapFactor);
+        flicker_exp = 1;
+      end
+      1: begin
+        flicker_psd = kf*exp(af*ln(((abs(MOS2cd)>1E-38) ? (abs(MOS2cd)) : (1E-38))))/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
+        flicker_exp = 1;
+      end
+      2, 
+      3: begin
+        flicker_psd = kf*MOS2gm*MOS2gm/(MOS2w*(MOS2l-2*ld)*MOS2oxideCapFactor);
+        flicker_exp = af;
+      end
+    endcase
+
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation

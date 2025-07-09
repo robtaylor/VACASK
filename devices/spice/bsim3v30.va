@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-65-g0654f477c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-06-30 13:21:53 UTC
+// Date         : 2025-07-09 08:10:33 UTC
 // Module name  : sp_bsim3v30
 // Model variant: default
 // 
@@ -1304,21 +1304,29 @@ module sp_bsim3v30(d, g, s, b);
     real drainResistance;
     real sourceResistance;
     begin
-      if (ACM==1||ACM==11) begin
-        drainResistance = (LD+LDIF)/(w*WMLT+XW)*RD+RSH*drainSquares+RDC;
-        sourceResistance = (LD+LDIF)/(w*WMLT+XW)*RS+RSH*sourceSquares+RSC;
-      end else if (ACM==2||ACM==12||ACM==3||ACM==13) begin
-        if (drainSquaresGiven) begin
+      case (ACM)
+        1, 
+        11: begin
           drainResistance = (LD+LDIF)/(w*WMLT+XW)*RD+RSH*drainSquares+RDC;
-        end else begin
-          drainResistance = ((LD+LDIF)*RD+HDIF*WMLT*RSH)/(w*WMLT+XW)+RDC;
-        end
-        if (sourceSquaresGiven) begin
           sourceResistance = (LD+LDIF)/(w*WMLT+XW)*RS+RSH*sourceSquares+RSC;
-        end else begin
-          sourceResistance = ((LD+LDIF)*RS+HDIF*WMLT*RSH)/(w*WMLT+XW)+RSC;
         end
-      end
+        2, 
+        12, 
+        3, 
+        13: begin
+          if (drainSquaresGiven) begin
+            drainResistance = (LD+LDIF)/(w*WMLT+XW)*RD+RSH*drainSquares+RDC;
+          end else begin
+            drainResistance = ((LD+LDIF)*RD+HDIF*WMLT*RSH)/(w*WMLT+XW)+RDC;
+          end
+          if (sourceSquaresGiven) begin
+            sourceResistance = (LD+LDIF)/(w*WMLT+XW)*RS+RSH*sourceSquares+RSC;
+          end else begin
+            sourceResistance = ((LD+LDIF)*RS+HDIF*WMLT*RSH)/(w*WMLT+XW)+RSC;
+          end
+        end
+      endcase
+
       ACM_SourceDrainResistances = 0;
     end
   endfunction
@@ -4107,71 +4115,89 @@ module sp_bsim3v30(d, g, s, b);
     I(d_int) <+ BSIM3drainConductance*V(d_int, d)+-(ceqbd-cdreq-ceqqd);
     I(s_int) <+ BSIM3sourceConductance*V(s_int, s)+-(cdreq+ceqbs+ceqqg+ceqqb+ceqqd);
     I(q_int) <+ -(cqcheq-cqdef);
-    I(q_int) <+ BSIM3gtau * V(q_int);
-    I(d_int) <+ dxpart * BSIM3gtau * V(q_int);
-    I(s_int) <+ sxpart * BSIM3gtau * V(q_int);
-    I(g) <+ - BSIM3gtau * V(q_int);
+    if (i_BSIM3nqsMod) begin
+        I(q_int) <+ BSIM3gtau * V(q_int);
+        I(d_int) <+ dxpart * BSIM3gtau * V(q_int);
+        I(s_int) <+ sxpart * BSIM3gtau * V(q_int);
+        I(g) <+ - BSIM3gtau * V(q_int);
+    end
 
     // Tag: noise, function: BSIM3noise
     I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM3drainConductance)), "rd");
     I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM3sourceConductance)), "rs");
-    if (noimod==1||noimod==3) begin
-      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0*abs(BSIM3gm+BSIM3gds+BSIM3gmbs)/3.0))), "id");
-    end else if (noimod==5||noimod==6) begin
-      noise_vds = ((BSIM3vds<BSIM3vdsat) ? (BSIM3vds) : (BSIM3vdsat));
-      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*((3.0-noise_vds/BSIM3vdsat)*abs(BSIM3gm+BSIM3gds+BSIM3gmbs)/3.0))), "id");
-    end else if (noimod==2||noimod==4) begin
-      I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM3ueff*abs(BSIM3qinv)/(BSIM3leff*BSIM3leff+BSIM3ueff*abs(BSIM3qinv)*BSIM3rds)))), "id");
-    end
-    if (noimod==1||noimod==4||noimod==5) begin
-      flicker_psd = kf*exp(af*ln(((abs(BSIM3cd)>1E-38) ? (abs(BSIM3cd)) : (1E-38))))/(BSIM3leff*BSIM3leff*BSIM3cox);
-      flicker_exp = ef;
-    end else if (noimod==2||noimod==3||noimod==6) begin
-      noise_vds = BSIM3vds;
-      if (noise_vds<0.0) begin
-        noise_vds = -noise_vds;
+    case (noimod)
+      1, 
+      3: begin
+        I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0*abs(BSIM3gm+BSIM3gds+BSIM3gmbs)/3.0))), "id");
       end
-      // inlined: StrongInversionNoiseEval(vds, model, here, data->freq, ckt->CKTtemp) -> sne_retval
-      cd = abs(BSIM3cd);
-      noise_Leff = BSIM3leff-2.0*lintnoi;
-      Leffsq = noise_Leff*noise_Leff;
-      esat = 2.0*BSIM3vsattemp/BSIM3ueff;
-      if (em<=0.0) begin
-        DelClm = 0.0;
-      end else begin
-        noise_T0 = ((noise_vds-BSIM3Vdseff)/BSIM3litl+em)/esat;
-        DelClm = BSIM3litl*ln(((noise_T0>1E-38) ? (noise_T0) : (1E-38)));
-        if (DelClm<0.0) begin
+      5, 
+      6: begin
+        noise_vds = ((BSIM3vds<BSIM3vdsat) ? (BSIM3vds) : (BSIM3vdsat));
+        I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*((3.0-noise_vds/BSIM3vdsat)*abs(BSIM3gm+BSIM3gds+BSIM3gmbs)/3.0))), "id");
+      end
+      2, 
+      4: begin
+        I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM3ueff*abs(BSIM3qinv)/(BSIM3leff*BSIM3leff+BSIM3ueff*abs(BSIM3qinv)*BSIM3rds)))), "id");
+      end
+    endcase
+
+    case (noimod)
+      1, 
+      4, 
+      5: begin
+        flicker_psd = kf*exp(af*ln(((abs(BSIM3cd)>1E-38) ? (abs(BSIM3cd)) : (1E-38))))/(BSIM3leff*BSIM3leff*BSIM3cox);
+        flicker_exp = ef;
+      end
+      2, 
+      3, 
+      6: begin
+        noise_vds = BSIM3vds;
+        if (noise_vds<0.0) begin
+          noise_vds = -noise_vds;
+        end
+        // inlined: StrongInversionNoiseEval(vds, model, here, data->freq, ckt->CKTtemp) -> sne_retval
+        cd = abs(BSIM3cd);
+        noise_Leff = BSIM3leff-2.0*lintnoi;
+        Leffsq = noise_Leff*noise_Leff;
+        esat = 2.0*BSIM3vsattemp/BSIM3ueff;
+        if (em<=0.0) begin
           DelClm = 0.0;
+        end else begin
+          noise_T0 = ((noise_vds-BSIM3Vdseff)/BSIM3litl+em)/esat;
+          DelClm = BSIM3litl*ln(((noise_T0>1E-38) ? (noise_T0) : (1E-38)));
+          if (DelClm<0.0) begin
+            DelClm = 0.0;
+          end
+        end
+        noise_T1 = 1.6021766208e-19*1.6021766208e-19*8.62e-5*cd*$temperature*BSIM3ueff;
+        noise_T2 = 1.0e8*BSIM3Abulk*BSIM3cox*Leffsq;
+        N0 = BSIM3cox*BSIM3Vgsteff/1.6021766208e-19;
+        Nl = BSIM3cox*BSIM3Vgsteff*(1.0-BSIM3AbovVgst2Vtm*BSIM3Vdseff)/1.6021766208e-19;
+        noise_T3 = BSIM3oxideTrapDensityA*ln((((N0+2.0e14)/(Nl+2.0e14)>1E-38) ? ((N0+2.0e14)/(Nl+2.0e14)) : (1E-38)));
+        noise_T4 = BSIM3oxideTrapDensityB*(N0-Nl);
+        noise_T5 = BSIM3oxideTrapDensityC*0.5*(N0*N0-Nl*Nl);
+        noise_T6 = 8.62e-5*$temperature*cd*cd;
+        noise_T7 = 1.0e8*Leffsq*BSIM3weff;
+        noise_T8 = BSIM3oxideTrapDensityA+BSIM3oxideTrapDensityB*Nl+BSIM3oxideTrapDensityC*Nl*Nl;
+        noise_T9 = (Nl+2.0e14)*(Nl+2.0e14);
+        noise1_Ssi = noise_T1/noise_T2*(noise_T3+noise_T4+noise_T5)+noise_T6/noise_T7*DelClm*noise_T8/noise_T9;
+        sne_retval = noise1_Ssi;
+        // end of inlined: StrongInversionNoiseEval(vds, model, here, data->freq, ckt->CKTtemp) -> sne_retval
+        Ssi = sne_retval;
+        noise_T10 = BSIM3oxideTrapDensityA*8.62e-5*$temperature;
+        noise_T11 = BSIM3weff*BSIM3leff*4.0e36;
+        Swi = noise_T10/noise_T11*BSIM3cd*BSIM3cd;
+        noise_T1 = Swi+Ssi;
+        if (noise_T1>0.0) begin
+          flicker_psd = Ssi*Swi/noise_T1;
+          flicker_exp = ef;
+        end else begin
+          flicker_psd = 0.0;
+          flicker_exp = ef;
         end
       end
-      noise_T1 = 1.6021766208e-19*1.6021766208e-19*8.62e-5*cd*$temperature*BSIM3ueff;
-      noise_T2 = 1.0e8*BSIM3Abulk*BSIM3cox*Leffsq;
-      N0 = BSIM3cox*BSIM3Vgsteff/1.6021766208e-19;
-      Nl = BSIM3cox*BSIM3Vgsteff*(1.0-BSIM3AbovVgst2Vtm*BSIM3Vdseff)/1.6021766208e-19;
-      noise_T3 = BSIM3oxideTrapDensityA*ln((((N0+2.0e14)/(Nl+2.0e14)>1E-38) ? ((N0+2.0e14)/(Nl+2.0e14)) : (1E-38)));
-      noise_T4 = BSIM3oxideTrapDensityB*(N0-Nl);
-      noise_T5 = BSIM3oxideTrapDensityC*0.5*(N0*N0-Nl*Nl);
-      noise_T6 = 8.62e-5*$temperature*cd*cd;
-      noise_T7 = 1.0e8*Leffsq*BSIM3weff;
-      noise_T8 = BSIM3oxideTrapDensityA+BSIM3oxideTrapDensityB*Nl+BSIM3oxideTrapDensityC*Nl*Nl;
-      noise_T9 = (Nl+2.0e14)*(Nl+2.0e14);
-      noise1_Ssi = noise_T1/noise_T2*(noise_T3+noise_T4+noise_T5)+noise_T6/noise_T7*DelClm*noise_T8/noise_T9;
-      sne_retval = noise1_Ssi;
-      // end of inlined: StrongInversionNoiseEval(vds, model, here, data->freq, ckt->CKTtemp) -> sne_retval
-      Ssi = sne_retval;
-      noise_T10 = BSIM3oxideTrapDensityA*8.62e-5*$temperature;
-      noise_T11 = BSIM3weff*BSIM3leff*4.0e36;
-      Swi = noise_T10/noise_T11*BSIM3cd*BSIM3cd;
-      noise_T1 = Swi+Ssi;
-      if (noise_T1>0.0) begin
-        flicker_psd = Ssi*Swi/noise_T1;
-        flicker_exp = ef;
-      end else begin
-        flicker_psd = 0.0;
-        flicker_exp = ef;
-      end
-    end
+    endcase
+
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
     // Instance opvar computation
