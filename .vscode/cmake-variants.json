@@ -22,6 +22,11 @@
             "short": "ReleaseProfile",
             "long": "Build with no optimizations, debuging information, and profiling support.",
             "buildType": "ReleaseProfile"
+        }, 
+        "AsanDebug": {
+            "short": "AsanDebug",
+            "long": "Build with no optimizations, address sanitizer.",
+            "buildType": "AsanDebug"
         }
       }
     }

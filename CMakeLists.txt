@@ -149,6 +149,16 @@ set(CMAKE_EXE_LINKER_FLAGS_RELEASEPROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -pg
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASEPROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -pg" CACHE STRING
 "Flags used by the shared libraries linker during release profile builds." FORCE)
 
+# Address sanitizer debug version
+set(CMAKE_CXX_FLAGS_ASANDEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address" CACHE STRING
+"Flags used by the C++ compiler during address sanitizer debug builds." FORCE)
+set(CMAKE_C_FLAGS_ASANDEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address" CACHE STRING
+"Flags used by the C compiler during address sanitizer debug builds." FORCE)
+set(CMAKE_EXE_LINKER_FLAGS_ASANDEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -static-libasan" CACHE STRING
+"Flags used for linking binaries during address sanitizer debug builds." FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS_ASANDEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -static-libasan" CACHE STRING
+"Flags used by the shared libraries linker during address sanitizer debug builds." FORCE)
+
 MARK_AS_ADVANCED(
     CMAKE_CXX_FLAGS_DEBUGPROFILE
     CMAKE_C_FLAGS_DEBUGPROFILE
@@ -159,11 +169,16 @@ MARK_AS_ADVANCED(
     CMAKE_C_FLAGS_RELEASEPROFILE
     CMAKE_EXE_LINKER_FLAGS_RELEASEPROFILE
     CMAKE_SHARED_LINKER_FLAGS_RELEASEPROFILE
+
+    CMAKE_CXX_FLAGS_ASANDEBUG
+    CMAKE_C_FLAGS_ASANDEBUG
+    CMAKE_EXE_LINKER_FLAGS_ASANDEBUG
+    CMAKE_SHARED_LINKER_FLAGS_ASANDEBUG
 )
 
 IF(NOT CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Debug
-       CACHE STRING "Choose the type of build : None Debug Release DebugProfile ReleaseProfile."
+       CACHE STRING "Choose the type of build : None Debug Release DebugProfile ReleaseProfile AsanDebug."
        FORCE
     )
 ENDIF(NOT CMAKE_BUILD_TYPE)
@@ -179,6 +194,7 @@ add_compile_definitions("$<$<CONFIG:Debug>:SIMDEBUG>")
 add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMDEBUG>")
 add_compile_definitions("$<$<CONFIG:ReleaseProfile>:SIMPROFILE>")
 add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMPROFILE>")
+add_compile_definitions("$<$<CONFIG:AsanDebug>:SIMDEBUG>")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
