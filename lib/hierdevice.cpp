@@ -55,7 +55,7 @@ bool HierarchicalModel::buildTerminalMap(Status& s) {
     // Build map, check for duplicates
     TerminalIndex i=0;
     terminalMap.clear();
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     auto& terminals = parsedSubcircuit.terminals();
     TerminalIndex n = terminals.size();
     for(decltype(n) i=0; i<n; i++) {
@@ -76,7 +76,7 @@ bool HierarchicalModel::buildTerminalMap(Status& s) {
 
 bool HierarchicalModel::buildParameterMap(Status& s) {
     // Check uniqueness 
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     if (!parsedSubcircuit.parameters().verify(s)) {
         return false;
     }
@@ -103,7 +103,7 @@ std::tuple<TerminalIndex, bool> HierarchicalModel::terminalIndex(Id nodeName) co
 }
 
 Id HierarchicalModel::terminalName(TerminalIndex ndx) const {
-    return static_cast<const PTSubcircuitDefinition&>(parsedModel).terminals()[ndx].name(); 
+    return static_cast<const PTSubcircuitDefinition&>(parsedModel_).terminals()[ndx].name(); 
 }
 
 std::tuple<ParameterIndex, bool> HierarchicalModel::parameterIndex(Id name) const {
@@ -115,7 +115,7 @@ std::tuple<ParameterIndex, bool> HierarchicalModel::parameterIndex(Id name) cons
 }
 
 Id HierarchicalModel::parameterName(ParameterIndex ndx) const {
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     if (ndx<parameterCount())
         return parsedSubcircuit.parameters().values().at(ndx).name();
     else
@@ -123,7 +123,7 @@ Id HierarchicalModel::parameterName(ParameterIndex ndx) const {
 }
 
 std::tuple<Value::Type,bool> HierarchicalModel::parameterType(ParameterIndex ndx, Status& s) const {
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     if (ndx>=parameterCount()) {
         s.set(Status::Range, std::string("Parameter index id=")+std::to_string(ndx)+" out of range.");
         return std::make_tuple(Value::Type::Int, false);
@@ -132,7 +132,7 @@ std::tuple<Value::Type,bool> HierarchicalModel::parameterType(ParameterIndex ndx
 }
 
 bool HierarchicalModel::getParameter(ParameterIndex ndx, Value& v, Status& s) const {
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     if (ndx>=parameterCount()) {
         s.set(Status::Range, std::string("Parameter index id=")+std::to_string(ndx)+" out of range.");
         return false;
@@ -148,7 +148,7 @@ std::tuple<bool,bool> HierarchicalModel::setParameter(ParameterIndex ndx, const 
 
 void HierarchicalModel::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
     os << pfx << "Hierarchical model " << std::string(name()) << " of device " << device()->name() << "\n";
     if (terminalCount()>0) {
         os << pfx << "  Terminals: ";
@@ -403,7 +403,7 @@ std::tuple<bool, size_t> HierarchicalInstance::enterContext(Circuit& circuit, Co
         cs.at().clear();
 
         // Get parsed subcircuit definition
-        auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel);
+        auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
         
         // Load value parameters
         for(ParameterIndex i=0; i<parameterCount(); i++) {
@@ -438,11 +438,12 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
     // We already have an established context
     
     // Propagate parameters to submodels
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
     auto nSubModels = parsedSubcircuit.models().size();
     for(decltype(nSubModels) i=0; i<nSubModels; i++) {
         auto subModelPtr = childModels_[i];
-        auto& parsedSubmodel = parsedSubcircuit.models()[i];
+        // auto& parsedSubmodel = parsedSubcircuit.models()[i];
+        auto& parsedSubmodel = subModelPtr->parsedModel();
         // Propagate only expressions
         auto [ok, changed] = subModelPtr->setParameters(parsedSubmodel.parameters().expressions(), evaluator, s);
         if (!ok) {
@@ -457,7 +458,9 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
     auto nSubInstances = parsedSubcircuit.instances().size();
     for(decltype(nSubInstances) i=0; i<nSubInstances; i++) { 
         auto subInstancePtr = childInstances_[i];
-        auto& parsedSubinstance = parsedSubcircuit.instances()[i]; 
+        // auto& parsedSubinstance = parsedSubcircuit.instances()[i]; 
+        auto& parsedSubinstance = subInstancePtr->parsedInstance();
+        // auto& p1 = subInstancePtr->parsedInstance();
         auto [ok, changed] = subInstancePtr->setParameters(parsedSubinstance.parameters().expressions(), evaluator, s);
         if (!ok) {
             return false;
@@ -480,7 +483,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     // We already have an established context
     
     // Get parsed subcircuit
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel);
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
 
     // Bind unconnected terminals to internal nodes
     auto& defTerms = parsedSubcircuit.terminals();

@@ -197,6 +197,27 @@ private:
     Loc loc;
 };
 
+/*
+Block sequence
+  vector<rpncond> 
+  vector<block>
+  vector<cond_index>
+
+Block
+  vector<model>
+  vector<instance> 
+  *vector<block sequence>
+
+Subcircuit definition
+  terminals
+  block
+  vector<subcircuit definition>
+
+Subcircuit instance
+  
+
+*/
+
 class PTSubcircuitDefinition : public PTModel {
 public:
     PTSubcircuitDefinition();

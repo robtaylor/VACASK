@@ -80,7 +80,7 @@ bool InstantiationData::isAncestor(Model* model) {
 
 
 Model::Model(Device* device, Id name, Instance* parent, const PTModel& parsedModel) 
-    : name_(name), device_(device), parent_(parent), parsedModel(parsedModel) {
+    : name_(name), device_(device), parent_(parent), parsedModel_(parsedModel) {
     if (parent) {
         parent->addChild(this);
     }
@@ -102,7 +102,7 @@ bool Model::addInstance(Instance* instance) {
 
 // TODO: maybe find a faster way for checking this instead of linear search
 bool Model::parameterIsFree(Id name) {
-    auto& params = parsedModel.parameters();
+    auto& params = parsedModel_.parameters();
     for(auto& it : params.expressions()) {
         if (it.name()==name) {
             return false;
@@ -112,7 +112,7 @@ bool Model::parameterIsFree(Id name) {
 }
 
 Instance::Instance(Model* model, Id name, Instance* parent, const PTInstance& parsedInstance) 
-    : name_(name), model_(model), parent_(parent), parsedInstance(parsedInstance) {
+    : name_(name), model_(model), parent_(parent), parsedInstance_(parsedInstance) {
     if (parent) {
         parent->addChild(this);
     }
@@ -124,7 +124,7 @@ Instance::~Instance() {
 
 // TODO: maybe find a faster way for checking this instead of linear search
 bool Instance::parameterIsFree(Id name) {
-    auto& params = parsedInstance.parameters();
+    auto& params = parsedInstance_.parameters();
     for(auto& it : params.expressions()) {
         if (it.name()==name) {
             return false;

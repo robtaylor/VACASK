@@ -190,10 +190,13 @@ public:
     Model& operator=(      Model&&) = default;
 
     // Location of this model in input files
-    const Loc location() const { return parsedModel.location(); };
+    const Loc location() const { return parsedModel_.location(); };
     
     // Name of this model
     Id name() const { return name_; };
+
+    // Parsed model
+    const PTModel& parsedModel() const { return parsedModel_; };
     
     // Clears the list of all instances of this model. 
     void clearInstanceList() { instances_.clear(); };
@@ -253,7 +256,7 @@ protected:
     Instance* parent_;
     Flags flags_;
     std::vector<Instance*> instances_;
-    const PTModel& parsedModel;
+    const PTModel& parsedModel_;
 };
 
 
@@ -329,10 +332,13 @@ public:
     Instance& operator=(      Instance&&) = default;
 
     // Location of this instance in input files
-    const Loc location() const { return parsedInstance.location(); };
+    const Loc location() const { return parsedInstance_.location(); };
     
     // Name of this instance
     Id name() const { return name_; };
+
+    // Parsed instance
+    const PTInstance& parsedInstance() const { return parsedInstance_; };
     
     // Returns the generic model to which this instance belongs. 
     Model* model() { return model_; };
@@ -536,7 +542,7 @@ protected:
     Model* model_;
     Instance* parent_;
     Flags flags_;
-    const PTInstance& parsedInstance;
+    const PTInstance& parsedInstance_;
 };
 
 }

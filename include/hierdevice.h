@@ -58,7 +58,7 @@ public:
     HierarchicalModel& operator=(      HierarchicalModel&&) = default;
 
     virtual ParameterIndex parameterCount() const { 
-        return static_cast<const PTSubcircuitDefinition&>(parsedModel).parameters().valueCount(); 
+        return static_cast<const PTSubcircuitDefinition&>(parsedModel_).parameters().valueCount(); 
     };
     virtual std::tuple<ParameterIndex, bool> parameterIndex(Id name) const;
     virtual Id parameterName(ParameterIndex ndx) const;
@@ -74,7 +74,7 @@ public:
     
     // Get terminal count
     TerminalIndex terminalCount() const { 
-        return static_cast<const PTSubcircuitDefinition&>(parsedModel).terminals().size(); 
+        return static_cast<const PTSubcircuitDefinition&>(parsedModel_).terminals().size(); 
     };
     
     // Find terminal by name
@@ -85,7 +85,7 @@ public:
     Id terminalName(TerminalIndex ndx) const;
 
     // Expose parser table
-    const PTSubcircuitDefinition& definition() const { return static_cast<const PTSubcircuitDefinition&>(parsedModel); };
+    const PTSubcircuitDefinition& definition() const { return static_cast<const PTSubcircuitDefinition&>(parsedModel_); };
     
 protected:
     // Build a map from terminal name to terminal index
