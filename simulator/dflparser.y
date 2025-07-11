@@ -77,10 +77,6 @@ typedef struct subckt {
     bool hasControlBlock {false};
     PTSubcircuitDefinition def;
     PTParameters parameters;
-    std::vector<PTModel> models;
-    std::vector<PTModel> parameterizedModels;
-    std::vector<PTInstance> instances;
-    std::vector<PTInstance> parameterizedInstances;
     std::unordered_map<Id,Location> paramLoc;
 } subckt;
 
@@ -185,10 +181,10 @@ typedef struct subckt {
 %token               INNETLIST    "input netlist"
 %token               INEXPR       "input expression"
 
-%token               IF           "@if"
-%token               ELSEIF       "@elseif"
-%token               ELSE         "@else"
-%token               ENDIF        "@endif"
+%token               BLKIF        "@if"
+%token               BLKELSEIF    "@elseif"
+%token               BLKELSE      "@else"
+%token               BLKENDIF     "@endif"
 
 
 // Operator associativity and precedence, lowest first
@@ -224,6 +220,7 @@ typedef struct subckt {
 %type <PTModel>                         model
 %type <PTSubcircuitDefinition>          subckt
 %type <struct subckt>                   subckt_build
+%type <PTBlockSequence>                 condblock_build condblock
 %type <PTLoad>                          load
 %type <Rpn>                             expr
 %type <Id>                              savestr
@@ -243,20 +240,6 @@ typedef struct subckt {
 output
   : INNETLIST subckt_build END {
     // Toplevel circuit definition
-    // Add models and instances to root block
-    // Unparameterized objects are added before parameterized ones
-    // for(auto it=$2.models.begin(); it!=$2.models.end(); ++it) {
-    //     $2.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$2.parameterizedModels.begin(); it!=$2.parameterizedModels.end(); ++it) {
-    //     $2.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$2.instances.begin(); it!=$2.instances.end(); ++it) {
-    //     $2.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$2.parameterizedInstances.begin(); it!=$2.parameterizedInstances.end(); ++it) {
-    //     $2.def.blocks()[0].add(std::move(*it));
-    // }
     $2.def.add(std::move($2.parameters));
     tables.addDefaultSubDef(std::move($2.def));
     tables.defaultGround();
@@ -321,27 +304,16 @@ subckt_build
     $$.paramLoc.merge(std::move($2.locations));
   }
   | subckt_build model {
-    // model
     $$ = std::move($1);
-    // if ($2.isParameterized()) {
-    //     $$.parameterizedModels.push_back(std::move($2));
-    // } else {
-    //     $$.models.push_back(std::move($2));
-    // }
-    $$.def.block(0).add(std::move($2));
+    $$.def.root().add(std::move($2));
   }
   | subckt_build instance {
     $$ = std::move($1);
-    // if ($2.isParameterized()) {
-    //     $$.parameterizedInstances.push_back(std::move($2));
-    // } else {
-    //     $$.instances.push_back(std::move($2));
-    // }
-    $$.def.block(0).add(std::move($2));
+    $$.def.root().add(std::move($2));
   }
   | subckt_build condblock {
-    // TODO: implement
     $$ = std::move($1);
+    $$.def.root().add(std::move($2));
   }
   | subckt_build subckt {
     // subcircuit definition, not allowed inside other subcircuit definitions
@@ -418,37 +390,47 @@ subckt
   : subckt_build ENDS NEWLINE {
     // Subcircuit definition
     $1.def.add(std::move($1.parameters)); 
-    // Add models and instances to root block
-    // Unparameterized objects are added before parameterized ones
-    // for(auto it=$1.models.begin(); it!=$1.models.end(); ++it) {
-    //     $1.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$1.parameterizedModels.begin(); it!=$1.parameterizedModels.end(); ++it) {
-    //     $1.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$1.instances.begin(); it!=$1.instances.end(); ++it) {
-    //     $1.def.blocks()[0].add(std::move(*it));
-    // }
-    // for(auto it=$1.parameterizedInstances.begin(); it!=$1.parameterizedInstances.end(); ++it) {
-    //     $1.def.blocks()[0].add(std::move(*it));
-    // }
     $$ = std::move($1.def);
   }
 
 // Conditional block building
-condblock_build
-  : IF expr NEWLINE
-  | condblock_build instance
-  | condblock_build model
-  | condblock_build condblock 
-  | condblock_build ELSEIF expr NEWLINE
-  | condblock_build ELSE NEWLINE
-  | condblock_build NEWLINE
+condblock_build 
+  : BLKIF expr NEWLINE {
+    PTBlock blk;
+    $$.add(@1.loc(), std::move($2), std::move(blk));
+  }
+  | condblock_build instance {
+    $$ = std::move($1);
+    $$.back().add(std::move($2));
+  }
+  | condblock_build model {
+    $$ = std::move($1);
+    $$.back().add(std::move($2));
+  }
+  | condblock_build condblock {
+    $$ = std::move($1);
+    $$.back().add(std::move($2));
+  }
+  | condblock_build BLKELSEIF expr NEWLINE {
+    $$ = std::move($1);
+    PTBlock blk;
+    $$.add(@2.loc(), std::move($3), std::move(blk));
+  }
+  | condblock_build BLKELSE NEWLINE {
+    $$ = std::move($1);
+    PTBlock blk;
+    $$.add(@2.loc(), std::move(Rpn()), std::move(blk));
+  }
+  | condblock_build NEWLINE {
+    $$ = std::move($1);
+  }
 ;
 
 // End of conditional block
 condblock
-  : condblock_build ENDIF NEWLINE
+  : condblock_build BLKENDIF NEWLINE {
+    $$ = std::move($1);
+  }
 ;
 
 terminal

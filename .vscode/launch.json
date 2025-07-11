@@ -63,7 +63,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/mirror.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/amp.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/diffpair.sim" ], 
-             "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
+            // "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/builtin.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/custom.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/rcl.sim" ], 
@@ -117,6 +117,7 @@
             // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask-ieb/runme.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/vadistiller/bjtring/vacask/runme.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/vadistiller/jfetring/vacask/runme.sim" ], 
+            "args": [ "-df", "-dt",  "${workspaceFolder}/demo/nlblock.sim" ], 
             
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/test/manual_run",

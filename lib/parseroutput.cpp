@@ -138,8 +138,28 @@ void PTInstance::dump(int indent, std::ostream& os) {
 PTBlockSequence::PTBlockSequence() {
 }
 
-void PTBlockSequence::add(const Loc& l, Rpn&& cond, PTBlockIndex blockIndex) {
-    entries_.push_back(std::move(std::make_tuple(l, std::move(cond), blockIndex)));
+void PTBlockSequence::add(const Loc& l, Rpn&& cond, PTBlock&& block) {
+    entries_.push_back(std::move(std::make_tuple(l, std::move(cond), std::move(block))));
+}
+
+void PTBlockSequence::dump(int indent, std::ostream& os) {
+    std::string pfx = std::string(indent, ' ');
+    bool first = true;
+    for(auto& entry : entries_) {
+        auto& [loc, rpn, block] = entry;
+        if (rpn.size()>0) {
+            if (first) {
+                os << pfx << "@if " << rpn << "\n";
+            } else {
+                os << pfx << "@elseif " << rpn << "\n";
+            }
+        } else {
+            os << pfx << "@else\n";
+        }
+        block.dump(indent+2, os);
+        first = false;
+    }
+    os << pfx << "@end\n";
 }
 
 
@@ -155,29 +175,36 @@ void PTBlock::add(PTInstance&& inst) {
 }
 
 void PTBlock::add(PTBlockSequence&& seq) {
-    blockSequences_.push_back(std::move(seq));
+    if (blockSequences_==nullptr) {
+        blockSequences_ = std::make_unique<std::vector<PTBlockSequence>>();
+    }
+    blockSequences_->push_back(std::move(seq));
+}
+
+void PTBlock::dump(int indent, std::ostream& os) {
+    for(auto& mod : models_) {
+        mod.dump(indent, os);
+    }
+    for(auto& inst : instances_) {
+        inst.dump(indent, os);
+    }
+    if (hasBlockSequences()) {
+        for(auto& seq: *blockSequences_) {
+            seq.dump(indent, os);
+        }
+    }
 }
 
 
 PTSubcircuitDefinition::PTSubcircuitDefinition() {
-    // Add root block
-    add(std::move(PTBlock()));
 }
 
 PTSubcircuitDefinition::PTSubcircuitDefinition(const Loc& l, Id name, PTIdentifierList&& terms) 
     : PTModel(l, name, "__hierarchical__"), terminals_(std::move(terms)) {
-    // Add root block
-    add(std::move(PTBlock()));
 }
 
 void PTSubcircuitDefinition::add(PTIdentifierList&& terms) {
     terminals_ = std::move(terms);
-}
-
-PTBlockIndex PTSubcircuitDefinition::add(PTBlock&& block) {
-    auto ndx = blocks_.size();
-    blocks_.push_back(std::move(block));
-    return ndx;
 }
 
 void PTSubcircuitDefinition::add(PTSubcircuitDefinition&& subDef) {
@@ -221,18 +248,10 @@ void PTSubcircuitDefinition::dump(int indent, std::ostream& os) {
     for(auto it=subDefs_.begin(); it!=subDefs_.end(); ++it) {
         it->get()->dump(isToplevel ? indent : indent+2, os);
     }
-    if (block(0).models().size()>0) {
+    if (root_.models().size()>0) {
         os << "\n";
     }
-    for(auto it=block(0).models().begin(); it!=block(0).models().end(); ++it) {
-        it->dump(isToplevel ? indent : indent+2, os);
-    }
-    if (block(0).instances().size()>0) {
-        os << "\n";
-    }
-    for(auto it=block(0).instances().begin(); it!=block(0).instances().end(); ++it) {
-        it->dump(isToplevel ? indent : indent+2, os);
-    }
+    root_.dump(isToplevel ? indent : indent+2, os);
     
     if (!isToplevel) {
         os << pfx << "ends\n";

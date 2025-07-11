@@ -637,19 +637,19 @@ after INCEND we have
 
 <LINESTART>\@if {
                 BEGIN(BODY);
-                return (token::IF);
+                return (token::BLKIF);
             }
 <LINESTART>\@elseif {
                 BEGIN(BODY);
-                return (token::ELSEIF);
+                return (token::BLKELSEIF);
             }
 <LINESTART>\@else {
                 BEGIN(BODY);
-                return (token::ELSE);
+                return (token::BLKELSE);
             }
 <LINESTART>\@end {
                 BEGIN(BODY);
-                return (token::ENDIF);
+                return (token::BLKENDIF);
             }
 <LINESTART>model {
                 BEGIN(BODY);

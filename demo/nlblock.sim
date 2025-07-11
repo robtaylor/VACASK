@@ -1,0 +1,30 @@
+Test netlist blocks
+
+load "resistor.osdi"
+
+model r resistor
+
+r1 (1 2) r r=1k 
+
+parameters a=10 b=20
+
+@if a<=0
+  r2 (2 0) r r=2k 
+@elseif a<10
+  r2 (2 0) r r=3k 
+  @if b<10
+    r3 (2 3) r r=3.1k 
+  @elseif b<20
+    r3 (2 3) r r=3.2k 
+  @end
+  @if a*b<10
+    r4 (3 4) r r=3.3k
+  @else
+    r4 (3 4) r r=3.4k
+  @end
+  @if a+b<10
+    r4 (3 4) r r=3.5k
+  @end
+@else
+  r2 (2 0) r r=4k 
+@end

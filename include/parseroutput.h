@@ -201,29 +201,7 @@ private:
 // Block index
 typedef uint32_t PTBlockIndex; 
 
-// Block sequence with entries of the form (condition, block index)
-// Blocks are stored in a blocks vector within the subcircuit definition
-
-class PTBlockSequence {
-public:
-    PTBlockSequence();
-    
-    PTBlockSequence           (const PTBlockSequence&)  = delete;
-    PTBlockSequence           (      PTBlockSequence&&) = default;
-    PTBlockSequence& operator=(const PTBlockSequence&)  = delete;
-    PTBlockSequence& operator=(      PTBlockSequence&&) = default;
-
-    const std::vector<std::tuple<Loc, Rpn, PTBlockIndex>>& entries() const { return entries_; };
-
-    void add(const Loc& l, Rpn&& cond, PTBlockIndex blockIndex);
-
-    void dump(int indent, std::ostream& os);
-
-private:
-    std::vector<std::tuple<Loc, Rpn, PTBlockIndex>> entries_;
-};
-
-
+class PTBlockSequence;
 
 // A single netlist block comprising models, instances, and block sequences
 class PTBlock {
@@ -235,12 +213,13 @@ public:
     PTBlock& operator=(const PTBlock&)  = delete;
     PTBlock& operator=(      PTBlock&&) = default;
 
+    bool hasBlockSequences() const { return blockSequences_!=nullptr; };
     inline const std::vector<PTModel>& models() const { return models_; };
     inline const std::vector<PTInstance>& instances() const { return instances_; };
-    inline const std::vector<PTBlockSequence>& blockSequences() const { return blockSequences_; };
+    inline const std::vector<PTBlockSequence>& blockSequences() const { return *blockSequences_; };
     inline std::vector<PTModel>& models() { return models_; };
     inline std::vector<PTInstance>& instances() { return instances_; };
-    inline std::vector<PTBlockSequence>& blockSequences() { return blockSequences_; };
+    inline std::vector<PTBlockSequence>& blockSequences() { return *blockSequences_; };
 
     void add(PTModel&& mod);
     void add(PTInstance&& inst);
@@ -251,8 +230,30 @@ public:
 private:
     std::vector<PTModel> models_;
     std::vector<PTInstance> instances_;
-    std::vector<PTBlockSequence> blockSequences_;
+    std::unique_ptr<std::vector<PTBlockSequence>> blockSequences_;
     Loc loc;
+};
+
+
+class PTBlockSequence {
+public:
+    PTBlockSequence();
+    
+    PTBlockSequence           (const PTBlockSequence&)  = delete;
+    PTBlockSequence           (      PTBlockSequence&&) = default;
+    PTBlockSequence& operator=(const PTBlockSequence&)  = delete;
+    PTBlockSequence& operator=(      PTBlockSequence&&) = default;
+
+    const std::vector<std::tuple<Loc, Rpn, PTBlock>>& entries() const { return entries_; };
+
+    void add(const Loc& l, Rpn&& cond, PTBlock&& block);
+
+    PTBlock& back() { return std::get<2>(entries_.back()); }; 
+
+    void dump(int indent, std::ostream& os);
+
+private:
+    std::vector<std::tuple<Loc, Rpn, PTBlock>> entries_;
 };
 
 
@@ -267,14 +268,11 @@ public:
     PTSubcircuitDefinition& operator=(      PTSubcircuitDefinition&&) = default;
 
     inline const PTIdentifierList& terminals() const { return terminals_; };
-    inline const std::vector<PTBlock>& blocks() const { return blocks_; };
-    inline std::vector<PTBlock>& blocks() { return blocks_; };
-    inline const PTBlock& block(PTBlockIndex ndx) const { return blocks_[ndx]; };
-    inline PTBlock& block(PTBlockIndex ndx) { return blocks_[ndx]; };
+    inline const PTBlock& root() const { return root_; };
+    inline PTBlock& root() { return root_; };
     inline const std::vector<std::unique_ptr<PTSubcircuitDefinition>>& subDefs() const { return subDefs_; };
     
     void add(PTIdentifierList&& terms);
-    PTBlockIndex add(PTBlock&& block);
     void add(PTSubcircuitDefinition&& subDef);
 
     using PTModel::add;
@@ -285,7 +283,7 @@ public:
     
 private:
     PTIdentifierList terminals_;
-    std::vector<PTBlock> blocks_;
+    PTBlock root_;
     std::vector<std::unique_ptr<PTSubcircuitDefinition>> subDefs_;
 };
 
