@@ -439,7 +439,7 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
     
     // Propagate parameters to submodels
     auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
-    auto nSubModels = parsedSubcircuit.models().size();
+    auto nSubModels = parsedSubcircuit.block(0).models().size();
     for(decltype(nSubModels) i=0; i<nSubModels; i++) {
         auto subModelPtr = childModels_[i];
         // auto& parsedSubmodel = parsedSubcircuit.models()[i];
@@ -455,7 +455,7 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
         }
     }
     // Propagate parameters to subinstances
-    auto nSubInstances = parsedSubcircuit.instances().size();
+    auto nSubInstances = parsedSubcircuit.block(0).instances().size();
     for(decltype(nSubInstances) i=0; i<nSubInstances; i++) { 
         auto subInstancePtr = childInstances_[i];
         // auto& parsedSubinstance = parsedSubcircuit.instances()[i]; 
@@ -505,7 +505,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     }
 
     // Create models
-    for(auto it=parsedSubcircuit.models().cbegin(); it!=parsedSubcircuit.models().cend(); ++it) {
+    for(auto it=parsedSubcircuit.block(0).models().cbegin(); it!=parsedSubcircuit.block(0).models().cend(); ++it) {
         // Find device
         // This returns a Device* pointer
         auto* dev = circuit.findDevice(it->device());
@@ -524,7 +524,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     }
     
     // Create instances
-    for(auto it=parsedSubcircuit.instances().cbegin(); it!=parsedSubcircuit.instances().cend(); ++it) {
+    for(auto it=parsedSubcircuit.block(0).instances().cbegin(); it!=parsedSubcircuit.block(0).instances().cend(); ++it) {
         // Find master
         // 1) try local models (prefix by instance path)
         auto localMasterId = translate(it->masterName());

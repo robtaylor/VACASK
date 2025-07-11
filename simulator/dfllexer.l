@@ -635,6 +635,22 @@ after INCEND we have
                 return (token::SEMICOLON);
             }
 
+<LINESTART>\@if {
+                BEGIN(BODY);
+                return (token::IF);
+            }
+<LINESTART>\@elseif {
+                BEGIN(BODY);
+                return (token::ELSEIF);
+            }
+<LINESTART>\@else {
+                BEGIN(BODY);
+                return (token::ELSE);
+            }
+<LINESTART>\@end {
+                BEGIN(BODY);
+                return (token::ENDIF);
+            }
 <LINESTART>model {
                 BEGIN(BODY);
                 return (token::MODEL);

@@ -135,23 +135,49 @@ void PTInstance::dump(int indent, std::ostream& os) {
 }
 
 
+PTBlockSequence::PTBlockSequence() {
+}
+
+void PTBlockSequence::add(const Loc& l, Rpn&& cond, PTBlockIndex blockIndex) {
+    entries_.push_back(std::move(std::make_tuple(l, std::move(cond), blockIndex)));
+}
+
+
+PTBlock::PTBlock() {
+}
+
+void PTBlock::add(PTModel&& mod) {
+    models_.push_back(std::move(mod));
+}
+
+void PTBlock::add(PTInstance&& inst) {
+    instances_.push_back(std::move(inst));
+}
+
+void PTBlock::add(PTBlockSequence&& seq) {
+    blockSequences_.push_back(std::move(seq));
+}
+
+
 PTSubcircuitDefinition::PTSubcircuitDefinition() {
+    // Add root block
+    add(std::move(PTBlock()));
 }
 
 PTSubcircuitDefinition::PTSubcircuitDefinition(const Loc& l, Id name, PTIdentifierList&& terms) 
     : PTModel(l, name, "__hierarchical__"), terminals_(std::move(terms)) {
+    // Add root block
+    add(std::move(PTBlock()));
 }
 
 void PTSubcircuitDefinition::add(PTIdentifierList&& terms) {
     terminals_ = std::move(terms);
 }
 
-void PTSubcircuitDefinition::add(PTModel&& mod) {
-    models_.push_back(std::move(mod));
-}
-
-void PTSubcircuitDefinition::add(PTInstance&& inst) {
-    instances_.push_back(std::move(inst));
+PTBlockIndex PTSubcircuitDefinition::add(PTBlock&& block) {
+    auto ndx = blocks_.size();
+    blocks_.push_back(std::move(block));
+    return ndx;
 }
 
 void PTSubcircuitDefinition::add(PTSubcircuitDefinition&& subDef) {
@@ -195,16 +221,16 @@ void PTSubcircuitDefinition::dump(int indent, std::ostream& os) {
     for(auto it=subDefs_.begin(); it!=subDefs_.end(); ++it) {
         it->get()->dump(isToplevel ? indent : indent+2, os);
     }
-    if (models_.size()>0) {
+    if (block(0).models().size()>0) {
         os << "\n";
     }
-    for(auto it=models_.begin(); it!=models_.end(); ++it) {
+    for(auto it=block(0).models().begin(); it!=block(0).models().end(); ++it) {
         it->dump(isToplevel ? indent : indent+2, os);
     }
-    if (instances_.size()>0) {
+    if (block(0).instances().size()>0) {
         os << "\n";
     }
-    for(auto it=instances_.begin(); it!=instances_.end(); ++it) {
+    for(auto it=block(0).instances().begin(); it!=block(0).instances().end(); ++it) {
         it->dump(isToplevel ? indent : indent+2, os);
     }
     
