@@ -248,6 +248,12 @@ Instance* HierarchicalModel::createInstance(Circuit& circuit, Instance* parentIn
     if (!ok2) {
         return nullptr;
     }
+
+    // Compute block conditions
+    auto [ok3, changedHuerarchy] = instance->recomputeBlockConditions(circuit, s);
+    if (!ok3) {
+        return nullptr;
+    }
     
     // Build subhierarchy
     auto hierarchyOk = instance->buildHierarchy(circuit, evaluator, idata, s);
@@ -434,15 +440,28 @@ std::tuple<bool, size_t> HierarchicalInstance::enterContext(Circuit& circuit, Co
     return std::make_tuple(true, stackMarker);
 }
 
+std::tuple<bool, bool> HierarchicalInstance::recomputeBlockConditions(Circuit& circuit, Status& s) { 
+    // TODO: recompute block conditions, check for subierarchy change
+    return std::make_tuple(true, false); 
+}
+
+std::tuple<bool, bool> HierarchicalInstance::subhierarchyChanged(Circuit& circuit, Status& s) { 
+    // Recompute block conditions
+    // New block conditions are stored and can be used for rebuilding the hierarchy
+    auto [ok, changed] = recomputeBlockConditions(circuit, s);
+    if (!ok) {
+        return std::make_tuple(false, false); 
+    }
+    return std::make_tuple(true, changed); 
+}
+
 bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& evaluator, Status& s) {
     // We already have an established context
+
+    // TODO: reevaluate block conditions, check for topology change
     
     // Propagate parameters to submodels
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
-    auto nSubModels = parsedSubcircuit.root().models().size();
-    for(decltype(nSubModels) i=0; i<nSubModels; i++) {
-        auto subModelPtr = childModels_[i];
-        // auto& parsedSubmodel = parsedSubcircuit.models()[i];
+    for(auto subModelPtr : childModels_) {
         auto& parsedSubmodel = subModelPtr->parsedModel();
         // Propagate only expressions
         auto [ok, changed] = subModelPtr->setParameters(parsedSubmodel.parameters().expressions(), evaluator, s);
@@ -455,12 +474,9 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
         }
     }
     // Propagate parameters to subinstances
-    auto nSubInstances = parsedSubcircuit.root().instances().size();
-    for(decltype(nSubInstances) i=0; i<nSubInstances; i++) { 
-        auto subInstancePtr = childInstances_[i];
-        // auto& parsedSubinstance = parsedSubcircuit.instances()[i]; 
+    for(auto subInstancePtr : childInstances_) {
         auto& parsedSubinstance = subInstancePtr->parsedInstance();
-        // auto& p1 = subInstancePtr->parsedInstance();
+        // Propagate only expressions
         auto [ok, changed] = subInstancePtr->setParameters(parsedSubinstance.parameters().expressions(), evaluator, s);
         if (!ok) {
             return false;
@@ -479,33 +495,9 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
     return true;
 }
 
-bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s) {
-    // We already have an established context
-    
-    // Get parsed subcircuit
-    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
-
-    // Bind unconnected terminals to internal nodes
-    auto& defTerms = parsedSubcircuit.terminals();
-    auto i = connectedTerminalCount;
-    for(auto it=defTerms.begin()+connectedTerminalCount; it!=defTerms.end(); ++it, i++) {
-        auto nodeName = it->name();
-        nodeName = parent()->translateNode(circuit, nodeName);
-        auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
-        if (node == nullptr) {
-            s.extend(std::string("Failed to obtain internal node '"+std::string(nodeName)+"'. from simulator"));
-            s.extend(it->location());
-            return false;
-        }
-        if (!bindTerminal(i, node, s)) { 
-            s.extend(std::string("Failed to bind terminal ")+std::to_string(i+1)+".");
-            s.extend(it->location());
-            return false;
-        }
-    }
-
+bool HierarchicalInstance::buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Status& s) {
     // Create models
-    for(auto it=parsedSubcircuit.root().models().cbegin(); it!=parsedSubcircuit.root().models().cend(); ++it) {
+    for(auto it=block.models().cbegin(); it!=block.models().cend(); ++it) {
         // Find device
         // This returns a Device* pointer
         auto* dev = circuit.findDevice(it->device());
@@ -524,7 +516,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     }
     
     // Create instances
-    for(auto it=parsedSubcircuit.root().instances().cbegin(); it!=parsedSubcircuit.root().instances().cend(); ++it) {
+    for(auto it=block.instances().cbegin(); it!=block.instances().cend(); ++it) {
         // Find master
         // 1) try local models (prefix by instance path)
         auto localMasterId = translate(it->masterName());
@@ -566,6 +558,41 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
             return false;
         }
     }
+
+    return true;
+}
+
+bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s) {
+    // We already have an established context
+    
+    // Get parsed subcircuit
+    auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_);
+
+    // Bind unconnected terminals to internal nodes
+    auto& defTerms = parsedSubcircuit.terminals();
+    auto i = connectedTerminalCount;
+    for(auto it=defTerms.begin()+connectedTerminalCount; it!=defTerms.end(); ++it, i++) {
+        auto nodeName = it->name();
+        nodeName = parent()->translateNode(circuit, nodeName);
+        auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
+        if (node == nullptr) {
+            s.extend(std::string("Failed to obtain internal node '"+std::string(nodeName)+"'. from simulator"));
+            s.extend(it->location());
+            return false;
+        }
+        if (!bindTerminal(i, node, s)) { 
+            s.extend(std::string("Failed to bind terminal ")+std::to_string(i+1)+".");
+            s.extend(it->location());
+            return false;
+        }
+    }
+
+    // Build root block
+    if (!buildBlock(circuit, evaluator, idata, parsedSubcircuit.root(), s)) {
+        return false;
+    }
+
+    // TODO: build conditional blocks
 
     // At this point all parameters of the hierarchical instance 
     // we created are propagated down the hierarchy. 
