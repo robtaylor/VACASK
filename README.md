@@ -21,6 +21,7 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 
 - user defined global and ground nodes
 - fully parameterized hierarchical circuit description
+- conditional netlist blocks (@if-@elseif-@else-@end)
 - RPN interpreter for parameterized expression evaluation
 - integer, real, and string data types
 - vectors (homogeneous containers) and lists (heterogeneous containers)
