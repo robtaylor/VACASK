@@ -147,18 +147,23 @@ public:
     virtual bool propagateParameters(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore);
     virtual bool deleteHierarchy(Circuit& circuit, Status& s=Status::ignore);
     virtual bool buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s=Status::ignore);
-    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, Status& s=Status::ignore); 
+    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore); 
 
 protected:
     bool buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Status& s=Status::ignore);
-    std::tuple<bool, bool> recomputeBlockConditions(Circuit& circuit, Status& s=Status::ignore); 
+    bool recomputeBlockConditions(Circuit& circuit, RpnEvaluator& evaluator, std::vector<const PTBlock*>& newBlocks, Status& s=Status::ignore); 
     
 private:
+    // OK, cond value
+    std::tuple<bool, bool> recomputeBlockConditionsWorker(Circuit& circuit, const PTBlockSequenceEntry& seqEntry, RpnEvaluator& evaluator, std::vector<const PTBlock*>& newBlocks, Status& s=Status::ignore); 
+
     std::vector<Node*> connections;
     TerminalIndex connectedTerminalCount;
     Value* parameters;
     std::vector<Instance*> childInstances_;
     std::vector<Model*> childModels_;
+    // Active conditional blocks
+    std::vector<const PTBlock*> activeBlocks;
 };
 
 }

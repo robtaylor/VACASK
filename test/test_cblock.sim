@@ -1,0 +1,81 @@
+Conditional netlist blocks
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+
+v1 (1 0) vsource dc=10
+
+parameters a=1
+parameters b=0
+
+@if a==1
+  r1 (1 0) resistor r=1k
+@elseif a==2
+  r1 (1 0) resistor r=2k 
+  @if b==1
+    r1a (1 0) resistor r=2k
+    r1b (1 0) resistor r=1k 
+    r1c (1 0) resistor r=500
+  @end
+@elseif a==3
+  r1a (1 0) resistor r=1k
+  r1b (1 0) resistor r=1k
+@else
+  r1 (1 0) resistor r=4k 
+@end
+
+control
+  abort always
+  
+  print instance("__topinst__")
+  analysis op1 op 
+  
+  alter instance("__topinst__") a=2
+  print instance("__topinst__")
+  analysis op2 op 
+
+  alter instance("__topinst__") a=3
+  print instance("__topinst__")
+  analysis op3 op 
+
+  alter instance("__topinst__") a=4
+  print instance("__topinst__")
+  analysis op4 op 
+
+  alter instance("__topinst__") a=2 b=1
+  print instance("__topinst__")
+  analysis op5 op 
+  
+  alter instance("__topinst__") a=2 b=0
+  print instance("__topinst__")
+  analysis op6 op 
+
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys, os
+
+tests=[]
+
+exactvec = [1000, 2000, 500, 4000, 250, 2000]
+for ndx, exact in zip(range(1, 7), exactvec):
+    op = rawread('op'+str(ndx)+'.raw').get()
+    r = (-op["1"]/op["v1:flow(br)"])[0]
+    status = relDiff(r, exact, 1e-6) < 1e-3
+    print("r=", r, "exact=", exact, status)
+    tests.append(status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE
+
+

@@ -114,6 +114,18 @@ public:
     bool convert(Type to, Value& dest, Status& s=Status::ignore);
     bool convertInPlace(Type to, Status& s=Status::ignore);
 
+    // Check if value corresponds to true
+    // Return value: ok, condition
+    std::tuple<bool, bool> checkCondition(Status& s=Status::ignore) const {
+        switch (type()) {
+            case Value::Type::Int: return std::make_tuple(true, iVal?1:0);
+            case Value::Type::Real: return std::make_tuple(true, rVal?1:0);
+            case Value::Type::String: return std::make_tuple(true, sVal->size()>0);
+        }
+        s.set(Status::Unsupported, "Don't know how to interpret value as a boolean.");
+        return std::make_tuple(false, false);
+    };
+
     // Size of vector, return -1 on non-vectors
     // Nonnegative for indexable values
     inline size_t size() const noexcept {

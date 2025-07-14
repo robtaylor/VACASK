@@ -445,8 +445,10 @@ public:
     // Check if current parameter values require the subhierarchy of the instance to be rebuilt. 
     // The context of the instance must be established with enterContext(). 
     // By default reports subhierarchy has not changed. 
+    // Because hierarchy depends on parameters and possibly on some expressions 
+    // we need to pass an evaluator, just like when calling propagateParameters(). 
     // Return value: statusOk, subhierarchyChanged
-    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, Status& s=Status::ignore) { return std::make_tuple(true, false); }; 
+    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore) { return std::make_tuple(true, false); }; 
 
     // Propagation by default does nothing and clears the parameters changed flag
     // It is supposed to propagate parameter values to immediate descendents (instances and models)

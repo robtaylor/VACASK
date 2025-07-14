@@ -1,0 +1,48 @@
+Conditional netlist blocks
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+
+v1 (1 0) vsource dc=10
+
+parameters a=1
+
+@if a>=1
+  r1 (1 0) resistor r=1k
+@else
+  r1 (1 0) resistor r=2k 
+@end
+
+control
+  abort always
+  
+  sweep a instance="__topinst__" parameter="a" from=0 to=2 step=0.1
+  analysis op1 op 
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys, os
+
+tests=[]
+
+op = rawread('op1.raw').get()
+exact = np.where(op["a"]>=1, 10.0/1000, 10.0/2000)
+x = -op["v1:flow(br)"]
+status = (relDiff(x, exact, 1e-12) < 1e-3).all()
+tests.append(status)
+print("conditional netlist block sweep", status)
+
+if isTest():
+    sys.exit(not all(tests))
+>>>FILE
+
+

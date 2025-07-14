@@ -224,7 +224,7 @@ public:
     void add(PTModel&& mod);
     void add(PTInstance&& inst);
     void add(PTBlockSequence&& seq);
-    
+
     void dump(int indent, std::ostream& os);
 
 private:
@@ -235,6 +235,8 @@ private:
 };
 
 
+typedef std::tuple<Loc, Rpn, PTBlock> PTBlockSequenceEntry;
+
 class PTBlockSequence {
 public:
     PTBlockSequence();
@@ -244,7 +246,7 @@ public:
     PTBlockSequence& operator=(const PTBlockSequence&)  = delete;
     PTBlockSequence& operator=(      PTBlockSequence&&) = default;
 
-    const std::vector<std::tuple<Loc, Rpn, PTBlock>>& entries() const { return entries_; };
+    const std::vector<PTBlockSequenceEntry>& entries() const { return entries_; };
 
     void add(const Loc& l, Rpn&& cond, PTBlock&& block);
 
@@ -253,7 +255,7 @@ public:
     void dump(int indent, std::ostream& os);
 
 private:
-    std::vector<std::tuple<Loc, Rpn, PTBlock>> entries_;
+    std::vector<PTBlockSequenceEntry> entries_;
 };
 
 

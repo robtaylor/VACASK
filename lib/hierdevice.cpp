@@ -249,8 +249,8 @@ Instance* HierarchicalModel::createInstance(Circuit& circuit, Instance* parentIn
         return nullptr;
     }
 
-    // Compute block conditions
-    auto [ok3, changedHuerarchy] = instance->recomputeBlockConditions(circuit, s);
+    // Compute block conditions, store in activeBlocks vector which is empty at the present (fresh instance)
+    auto ok3 = instance->recomputeBlockConditions(circuit, evaluator, instance->activeBlocks, s);
     if (!ok3) {
         return nullptr;
     }
@@ -440,19 +440,102 @@ std::tuple<bool, size_t> HierarchicalInstance::enterContext(Circuit& circuit, Co
     return std::make_tuple(true, stackMarker);
 }
 
-std::tuple<bool, bool> HierarchicalInstance::recomputeBlockConditions(Circuit& circuit, Status& s) { 
-    // TODO: recompute block conditions, check for subierarchy change
-    return std::make_tuple(true, false); 
+std::tuple<bool, bool> HierarchicalInstance::recomputeBlockConditionsWorker(Circuit& circuit, const PTBlockSequenceEntry& seqEntry, RpnEvaluator& evaluator, std::vector<const PTBlock*>& newBlocks, Status& s) {
+    // Handle one block in a sequence, recurse down if block has a subsequence
+    // Unpack entry
+    auto& [loc, expr, blk] = seqEntry;
+
+    // Evaluate and add to newBlocks if result is true
+    Value res;
+    if (expr.size()==0) {
+        // Else, true by default
+        res = 1;
+    } else if (!evaluator.evaluate(expr, res, s)) {
+        // Evaluation failed, add location
+        s.extend(loc);
+        return std::make_tuple(false, false);
+    }
+    // std::cout << loc << "\n" << "value=" << res << "\n";
+    auto [valOk, cond] = res.checkCondition(s);
+    if (!valOk) {
+        // Expression result cannot be interpreted as boolean, add location
+        s.extend(loc);
+        return std::make_tuple(false, false);
+    }
+    if (cond) {
+        newBlocks.push_back(&blk);
+    }
+    
+    // Does the block have subsequences
+    bool ok = true;
+    if (blk.hasBlockSequences()) {
+        // Process subsequences
+        for(auto& subSeq : blk.blockSequences()) {
+            // Process block entries in a subsequence
+            bool exit = false;
+            for(auto& subEntry : subSeq.entries()) {
+                auto [ok, subCond] = recomputeBlockConditionsWorker(circuit, subEntry, evaluator, newBlocks, s);
+                // Exit
+                // - on error
+                // - on reaching a block with true condition
+                exit = !ok || subCond;
+                if (exit) {
+                    break;
+                }
+            }
+            if (exit) {
+                break;
+            }
+        }
+    }
+
+    return std::make_tuple(ok, cond);
 }
 
-std::tuple<bool, bool> HierarchicalInstance::subhierarchyChanged(Circuit& circuit, Status& s) { 
+bool HierarchicalInstance::recomputeBlockConditions(Circuit& circuit, RpnEvaluator& evaluator, std::vector<const PTBlock*>& newBlocks, Status& s) { 
+    // Parsed subcircuit's root block
+    auto& rootBlock = static_cast<const PTSubcircuitDefinition&>(model()->parsedModel_).root();
+
+    // Stop when there are no more conditional netlist blocks to process
+    bool ok = true;
+    if (rootBlock.hasBlockSequences()) {
+        // Process subsequences
+        for(auto& subSeq : rootBlock.blockSequences()) {
+            // Process block entries in a subsequence
+            bool exit = false;
+            for(auto& subEntry : subSeq.entries()) {
+                // Call worker
+                auto [ok, subCond] = recomputeBlockConditionsWorker(circuit, subEntry, evaluator, newBlocks, s);
+                // Exit
+                // - on error
+                // - on reaching a block with true condition
+                exit = !ok || subCond;
+                if (exit) {
+                    break;
+                }
+            }
+            if (exit) {
+                break;
+            }
+        }
+    }
+    return ok; 
+}
+
+std::tuple<bool, bool> HierarchicalInstance::subhierarchyChanged(Circuit& circuit, RpnEvaluator& evaluator, Status& s) { 
     // Recompute block conditions
     // New block conditions are stored and can be used for rebuilding the hierarchy
-    auto [ok, changed] = recomputeBlockConditions(circuit, s);
-    if (!ok) {
+    std::vector<const PTBlock*> newBlocks;
+    auto evalOk = recomputeBlockConditions(circuit, evaluator, newBlocks, s);
+    if (!evalOk) {
         return std::make_tuple(false, false); 
     }
-    return std::make_tuple(true, changed); 
+    // Compare block conditions to current block conditions
+    if (newBlocks!=activeBlocks) {
+        activeBlocks = std::move(newBlocks);
+        return std::make_tuple(true, true); 
+    }
+    return std::make_tuple(true, false); 
 }
 
 bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& evaluator, Status& s) {
@@ -592,7 +675,12 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
         return false;
     }
 
-    // TODO: build conditional blocks
+    // Build all active conditional blocks
+    for(auto condBlock : activeBlocks) {
+        if (!buildBlock(circuit, evaluator, idata, *condBlock, s)) {
+            return false;
+        }
+    }
 
     // At this point all parameters of the hierarchical instance 
     // we created are propagated down the hierarchy. 
@@ -622,6 +710,9 @@ bool HierarchicalInstance::deleteHierarchy(Circuit& circuit, Status& s) {
         // Delete model
         circuit.remove(*it);
     }
+
+    childInstances_.clear();
+    childModels_.clear();
 
     return true;
 }

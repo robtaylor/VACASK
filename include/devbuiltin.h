@@ -142,7 +142,7 @@ public:
     virtual bool bindTerminal(TerminalIndex n, Node* node, Status& s=Status::ignore);
     virtual Node* terminal(TerminalIndex n, Status& s=Status::ignore) const;
     virtual bool unbindTerminals(Circuit& circuit, Status& s=Status::ignore);
-    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, Status& s=Status::ignore) { return std::make_tuple(true, false); }; 
+    virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore) { return std::make_tuple(true, false); }; 
     virtual bool propagateParameters(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore) { 
         if (checkFlags(Flags::ParamsChanged)) {
             clearFlags(Flags::ParamsChanged); 

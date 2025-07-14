@@ -37,7 +37,10 @@ public:
 
 protected:
     // OK, condition
-    std::tuple<bool, bool> checkCondition();
+    std::tuple<bool, bool> checkCondition(Status& s=Status::ignore) {
+        Value* cond = stack_.get(); 
+        return cond->checkCondition();
+    };
 
 private:
     RpnStack stack_;

@@ -32,6 +32,12 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
     // Propagate variables to toplevel circuits and check for hierarchy change in toplevel instances
     for(decltype(n) i=0; i<n; i++) {
         // Propagate variables
+
+        // If toplevel instance parameters changed, we need to propagate them 
+        // in this toplevel instance and all subsequent ones
+        if (toplevelInstances_[i]->checkFlags(Instance::Flags::ParamsChanged)) {
+            forceParameterPropagation = true;
+        }
         
         // Propagate to the global context of the toplevel instance. 
         // Nothing to propagate to parameters because toplevel instances are
@@ -46,7 +52,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
         // Check for hierarchy change
         if (forceParameterPropagation || forceHierarchyChangeCheck) {
             // Check for hierarchy change
-            auto [ok, changed] = toplevelInstances_[i]->subhierarchyChanged(*this, s);
+            auto [ok, changed] = toplevelInstances_[i]->subhierarchyChanged(*this, paramEvaluator_, s);
             hierarchyChanged |= changed;
             if (!ok) {
                 // Error, revert to initial stack state and abort
@@ -71,7 +77,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
 
     // If there was a hierarchy change this loop will iterate because n>changeAt. 
     // Delete everything in reverse order for i=n-1 down to and including changeAt. 
-    for(decltype(n) i=n-1; i-->changeAt;) {
+    for(decltype(n) i=n-1;i>=changeAt;) {
         // Load the context, add to the path, but do not recompute. 
         // No need to check for error because loading a context cannot produce an error. 
         // Do this only for toplevel instances other than the default instance (0). 
@@ -90,6 +96,11 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
         if (i>0) {
             Instance::revertContext(*this, contextMarker);
         }
+        if (i<=changeAt) {
+            // Just handled changeAt
+            break;
+        }
+        i--;
     }
     
     // Force parameter propagation 
@@ -129,11 +140,12 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
                         return std::make_tuple(false, hierarchyChanged);
                     }
                 }
-                // std::cout << "Context of " << std::string(it->name()) << "\n";
+                std::cout << "Context of " << std::string(it->name()) << "\n";
                 // std::cout << paramEvaluator_.contextStack() << "\n";
+                paramEvaluator_.contextStack().dump(2, std::cout);
 
                 // Check if there was a subhierarchy change
-                auto [ok, instanceSubhierarchyChanged] = it->subhierarchyChanged(*this, s);
+                auto [ok, instanceSubhierarchyChanged] = it->subhierarchyChanged(*this, paramEvaluator_, s);
                 if (!ok) {
                     Instance::revertContext(*this, initialContextMarker);
                     return std::make_tuple(false, hierarchyChanged);

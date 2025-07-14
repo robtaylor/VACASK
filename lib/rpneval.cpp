@@ -30,16 +30,6 @@ void RpnEvaluator::appendLocation(Status& s, const Loc& p) {
     s.extend(p);
 }
 
-std::tuple<bool, bool> RpnEvaluator::checkCondition() {
-    Value* cond = stack_.get(); 
-    switch (cond->type()) {
-        case Value::Type::Int: return std::make_tuple(true, makeBool(cond->val<Int>()));
-        case Value::Type::Real: return std::make_tuple(true, makeBool(cond->val<Real>()));
-        case Value::Type::String: return std::make_tuple(true, cond->val<String>().size()>0);
-        default: return std::make_tuple(false, false);
-    }
-}
-
 bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
     stack_.clear();
     Value *v1p, *v2p;
@@ -217,7 +207,6 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
                 // Get condition
                 auto [ok, cond] = checkCondition();
                 if (!ok) {
-                    s.set(Status::Unsupported, "Don't know how to interpret value as a boolean.");
                     appendLocation(s, loc);
                     return false;
                 }
@@ -238,7 +227,6 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
             case Rpn::TMakeBoolean: {
                 auto [ok, cond] = checkCondition();
                 if (!ok) {
-                    s.set(Status::Unsupported, "Don't know how to interpret value as a boolean.");
                     appendLocation(s, loc);
                     return false;
                 }
