@@ -74,4 +74,30 @@ bool Simulator::setup(
     return ok;
 }
 
+void Simulator::prependModulePath(std::vector<std::string>&& strVec){
+    for(auto item : modulePath_) {
+        strVec.push_back(std::move(item));
+    }
+    modulePath_ = std::move(strVec);
+}
+
+void Simulator::appendModulePath(std::vector<std::string>&& strVec){
+    for(auto item : strVec) {
+        modulePath_.push_back(std::move(item));
+    }
+}
+
+void Simulator::prependIncludePath(std::vector<std::string>&& strVec){
+    for(auto item : includePath_) {
+        strVec.push_back(std::move(item));
+    }
+    includePath_ = std::move(strVec);
+}
+
+void Simulator::appendIncludePath(std::vector<std::string>&& strVec){
+    for(auto item : strVec) {
+        includePath_.push_back(std::move(item));
+    }
+}
+
 }

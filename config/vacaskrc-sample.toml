@@ -1,0 +1,54 @@
+# VACASK configuration file 
+
+# Configuration files are read and processed in the 
+# following order. 
+# 1. System level configuration file
+#   a. Linux
+#      /etc/vacask/vacaskrc.toml
+#   b. Windows
+#      <installation path>/lib/vacaskrc.toml
+# 2. User configuration
+#    <HOME DIRECTORY>/.vacaskrc.toml
+# 3. Local configuration
+#    <STARTUP DIRECTORY>/.vacaskrc.toml
+
+## You can access environmental variables in strings using:
+##   $(ENV_VAR_NAME)
+## If an environmental variable is not set the result is an empty string. 
+
+[Paths]
+## SIM_INCLUDE_PATH environmental variable specifies the override 
+## for the builtin include files path
+
+## Prefix for the include files path
+## (these directories will be checked before the builtin include path)
+# include_path_prefix = [ "path1", "path2" ]
+
+## Suffix for the include files path
+## (these directories will be checked after the builtin include path)
+# include_path_suffix = [ "path5", "path6" ]
+
+
+## SIM_MODULE_PATH environmental variable specifies the override 
+## for the builtin compiled modules path
+
+## Prefix for the compiled modules path
+## (these directories will be checked before the builtin compiled modules path)
+# module_path_prefix = [ "path1", "path2" ]
+
+## Suffix for the compiled modules path
+## (these directories will be checked after the compiled modules path)
+# module_path_suffix = [ "path5", "path6" ]
+
+[Binaries]
+## SIM_OPENVAF overrides the OpenVAF path selected by 
+## the builtin mechanism for finding OpenVAF
+
+## Overrides the OpenVAF binary path
+# openvaf = "/usr/bin/openvaf-r"
+
+## Specifies OpenVAF command line options
+# openvaf_args = [ "--allow", "variant_const_simparam" ]
+
+## Overrides the detected Python interpreter
+# python = "/usr/local/bin/python3"

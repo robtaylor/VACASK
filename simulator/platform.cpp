@@ -15,33 +15,6 @@
 
 namespace NAMESPACE {
 
-std::string Platform::openVafName_;
-std::vector<std::string> Platform::openVafArgs_;
-
-bool Platform::setup(
-    const std::string& openVafName, 
-    const std::vector<std::string>& openVafArgs
-) {
-    if (openVafName.size()>0) {
-        openVafName_ = openVafName;
-    } else {
-        // Default
-        openVafName_ = Platform::defaultOpenVafBinaryName();
-    }
-    openVafArgs_ = openVafArgs;
-
-    return true;
-}
-
-const char* Platform::defaultOpenVafBinaryName() {
-#ifdef SIMWINDOWS
-    static const char binary[] = "openvaf-r.exe"; 
-#else
-    static const char binary[] = "openvaf-r"; 
-#endif
-    return binary;
-}
-
 static std::string initPythonExecutable() {
 #ifdef SIMWINDOWS
     auto [found, pythonExecutable_] =  findFileInSystemPath("python.exe");
@@ -67,9 +40,38 @@ static std::string initPythonExecutable() {
 #endif
 }
 
-const std::string& Platform::pythonExecutable() {
-    static std::string pythonExecutable_ = initPythonExecutable();
-    return pythonExecutable_;
+
+std::string Platform::openVaf_;
+std::vector<std::string> Platform::openVafArgs_;
+std::string Platform::pythonExecutable_;
+
+void Platform::setup() {
+    // Default OpenVAF
+    openVaf_ = Platform::defaultOpenVafBinaryName();
+    
+    // Default Python executable
+    pythonExecutable_ = initPythonExecutable();
+}
+
+void Platform::setOpenVaf(std::string openVaf) {
+    openVaf_ = openVaf;
+}
+
+void Platform::setOpenVafArgs(std::vector<std::string>&& openVafArgs) {
+    openVafArgs_ = std::move(openVafArgs);
+}
+
+void Platform::setPythonExecutable(std::string pythonExecutable) {
+    pythonExecutable_ = pythonExecutable;
+}
+
+const char* Platform::defaultOpenVafBinaryName() {
+#ifdef SIMWINDOWS
+    static const char binary[] = "openvaf-r.exe"; 
+#else
+    static const char binary[] = "openvaf-r"; 
+#endif
+    return binary;
 }
 
 static std::string initPythonPath() {
@@ -93,6 +95,25 @@ const std::filesystem::path& Platform::libraryPath() {
     static auto libPath = std::filesystem::path(executableFile()).parent_path().parent_path() / "lib" / programName;
 #endif
     return libPath;
+}
+
+const std::string& Platform::systemConfig() {
+#ifdef SIMWINDOWS
+    static std::string systemConfig_ = Platform::libraryPath() / "vacaskrc.toml";
+#else
+    static std::string systemConfig_ = "/etc/vacask/vacaskrc.toml";
+#endif
+    return systemConfig_;
+}
+
+const std::string& Platform::userConfig() {
+    static std::string userConfig_ = Platform::homeDir() / ".vacaskrc.toml";
+    return userConfig_;
+}
+
+const std::string& Platform::localConfig() {
+    static std::string localConfig_ = ".vacaskrc.toml";
+    return localConfig_;
 }
 
 int Platform::ttyColumns(std::ostream& os) {
@@ -136,6 +157,29 @@ bool Platform::isTty(std::ostream& os) {
         return false;
     }
 #endif
+}
+
+static std::string initHomeDir() {
+#ifdef SIMWINDOWS
+    // Windows
+    const char* home = std::getenv("USERPROFILE");
+    if (!home) {
+        const char* drive = std::getenv("HOMEDRIVE");
+        const char* path  = std::getenv("HOMEPATH");
+        if (drive && path) {
+            return std::string(drive) + path;
+        }
+    }
+#else
+    // Linux
+    const char* home = std::getenv("HOME");
+#endif
+    return home ? std::string(home) : "";
+}
+
+const std::filesystem::path& Platform::homeDir() {
+    static std::filesystem::path homeDir_ = initHomeDir();
+    return homeDir_;
 }
 
 

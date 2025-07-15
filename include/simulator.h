@@ -26,6 +26,11 @@ public:
     static const std::string& startupPath() { return startupPath_; };
     static const std::vector<std::string>& modulePath() { return modulePath_; };
     static const std::vector<std::string>& includePath() { return includePath_; };
+
+    static void prependModulePath(std::vector<std::string>&& strVec);
+    static void appendModulePath(std::vector<std::string>&& strVec);
+    static void prependIncludePath(std::vector<std::string>&& strVec);
+    static void appendIncludePath(std::vector<std::string>&& strVec);
     
     static const int majorVersion = 0;
     static const int minorVersion = 1;

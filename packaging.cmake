@@ -60,6 +60,13 @@ foreach(item IN ITEMS ${OSDI_FILES})
     )
 endforeach()
 
+# Library: sample configuration file (all directives commented out)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/config" DESTINATION "${PROGRAM_LIB_DIR}"
+	FILE_PERMISSIONS ${install_permissions_file}
+	DIRECTORY_PERMISSIONS ${install_permissions_directory}
+    FILES_MATCHING PATTERN "*.toml"
+)
+
 # Library: simulator includes
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/inc" DESTINATION "${PROGRAM_LIB_DIR}"
 	FILE_PERMISSIONS ${install_permissions_file}

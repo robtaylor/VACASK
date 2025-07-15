@@ -14,6 +14,7 @@ ADD_FLEX_BISON_DEPENDENCY(dfllexer dflparser)
 add_executable(sim 
     platform.h 
     platform.cpp 
+    config.cpp
     location.h
     location.cpp
     main.cpp

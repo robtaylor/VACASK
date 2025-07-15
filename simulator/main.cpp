@@ -6,6 +6,7 @@
 #include "processutils.h"
 #include "platform.h"
 #include "cmd.h"
+#include "config.h"
 #include "common.h"
 #include <filesystem>
 
@@ -39,12 +40,15 @@ int main(int argc, char**argv) {
 
     Status status;
 
-    // Setup platform
+    // Setup platform defaults
+    Platform::setup();
+    
+    // SIM_OPENVAF environmental variable
     auto openvafCstring = std::getenv("SIM_OPENVAF"); 
-    auto openvafStr = openvafCstring ? std::string(openvafCstring) : "";
-    //   openVafName, openVafArgs
-    Platform::setup(openvafStr, {});
-
+    if (openvafCstring) {
+        Platform::setOpenVaf(openvafCstring);
+    }
+    
     // Get path to simulator binary
     auto simulatorBinary = executableFile();
     
@@ -52,12 +56,11 @@ int main(int argc, char**argv) {
     std::string defaultModuleDirectory = (Platform::libraryPath() / "mod").string();
     std::string defaultIncludeDirectory = (Platform::libraryPath() / "inc").string(); 
 
-    // Get SIM_MODULES_PATH and SIM_SOURCES_PATH variables, separator is ":"
+    // Overrides via SIM_MODULES_PATH and SIM_SOURCES_PATH environmental variables
     auto modCstring = std::getenv("SIM_MODULE_PATH"); 
-    // Defaults when env var is not defined
-    auto modStr = modCstring ? std::string(modCstring) : defaultModuleDirectory;
     auto incCstring = std::getenv("SIM_INCLUDE_PATH"); 
     // Defaults when env var is not defined
+    auto modStr = modCstring ? std::string(modCstring) : defaultModuleDirectory;
     auto incStr = incCstring ? std::string(incCstring) : defaultIncludeDirectory;
 
     // Setup simulator
@@ -134,6 +137,27 @@ int main(int argc, char**argv) {
         Simulator::setFileDebug(fileDebug); 
         Simulator::setNoOutput(noOutput); 
 
+        // Read configuration files
+        for(auto& cfg : {
+                Platform::systemConfig(), 
+                Platform::userConfig(), 
+                Platform::localConfig()
+            }
+        ) {
+            // Open file
+            std::ifstream f(cfg);
+            if (f) {
+                // File found, read it
+                if (fileDebug) {
+                    Simulator::dbg() << "Reading config file: " << cfg << "\n";
+                }
+                if (!readConfig(f, cfg, status)) {
+                    Simulator::err() << status.message() << "\n";
+                    return 1;
+                }
+            }
+        }
+
         int fileArgIndex = i;
 
         // Dump paths
@@ -149,8 +173,16 @@ int main(int argc, char**argv) {
                 Simulator::dbg() << "  " << d << "\n";
             }
             std::string openVafPath;
-            if (findProgram(Platform::openVafName(), openVafPath)) {
+            if (findProgram(Platform::openVaf(), openVafPath)) {
                 Simulator::dbg() << "OpenVAF compiler: " << openVafPath << "\n";
+                if (Platform::openVafArgs().size()>0) {
+                    Simulator::dbg() << "OpenVAF arguments: ";
+                    for(auto& arg : Platform::openVafArgs()) {
+                        Simulator::dbg() << arg << " ";
+                    }
+                    
+                    Simulator::dbg() << "\n";
+                }
             } else {
                 Simulator::dbg() << "OpenVAF compiler not found.\n";
             }

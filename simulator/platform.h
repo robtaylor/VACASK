@@ -10,15 +10,23 @@ namespace NAMESPACE {
 
 class Platform {
 public:
-    static bool setup(
-        const std::string& openVafName="", 
-        const std::vector<std::string>& openVafArgs={}
-    );
-    static const std::string& openVafName() { return openVafName_; };
+    static void setup();
+
+    static void setOpenVaf(std::string openVaf);
+    static void setOpenVafArgs(std::vector<std::string>&& openVafArgs);
+    static void setPythonExecutable(std::string pythonExecutable);
+
+    static const std::string& openVaf() { return openVaf_; };
     static const std::vector<std::string>& openVafArgs() { return openVafArgs_; };
+    static const std::string& pythonExecutable() { return pythonExecutable_; };
+    
     static const std::filesystem::path& libraryPath();
-    static const std::string& pythonExecutable();
     static const std::string& pythonPath();
+    static const std::filesystem::path& homeDir();
+
+    static const std::string& systemConfig();
+    static const std::string& userConfig();
+    static const std::string& localConfig();
 
     static bool isTty(std::ostream& os);
     static int ttyColumns(std::ostream& os);
@@ -31,8 +39,9 @@ public:
 
 private:
     static const char* defaultOpenVafBinaryName();
-    static std::string openVafName_;
+    static std::string openVaf_;
     static std::vector<std::string> openVafArgs_;
+    static std::string pythonExecutable_;
 };
 
 }
