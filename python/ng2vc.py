@@ -6,20 +6,44 @@
 
 import re
 import sys
+from pprint import pprint
 
 pat_eolcomment = re.compile(r'(\$|;|//)')
-pat_leadspace = re.compile(r'\S')
+pat_leadspace = re.compile(r'^\s+')
 pat_cidotend = re.compile(r'\.end\s*$', re.IGNORECASE)
 pat_spaceseq = re.compile(r' +')
-pat_spaceseq = re.compile(r'\s*=\s*')
+pat_spaceequal = re.compile(r'\s*=\s*')
 pat_squotepair = re.compile(r"'(.*?)'")
 pat_cbracepair = re.compile(r'\{(.*?)\}')
 
+def remove_paired_parentheses_spaces(l):
+    """
+    Remove spaces from within paired parentheses. 
+    """
+    stack = []
+    result = ""
+    for i, char in enumerate(l):
+        if char == '(':
+            stack.append(i)
+            continue
+        elif char == ')':
+            start = stack.pop()
+            if len(stack)==0:
+                inner = l[start:i].replace(" ", "")
+                result += inner + char
+            continue
+        
+        if len(stack)==0:
+            result += char
+            continue
+
+    return result
+
 def convert(fromFile, toFile):
-    # Read input file, strip CR/LF and leading whitespace
+    # Read input file, strip CR/LF
     try:
         with open(fromFile, 'r') as file:
-            lines = [line.lstrip().rstrip('\r\n') for line in file]
+            lines = [line.rstrip('\r\n') for line in file]
     except:
         print("Failed to open file", fromFile)
         sys.exit(1)
@@ -31,20 +55,25 @@ def convert(fromFile, toFile):
     nlines = []
     comments = []
     is_toplevel = False
-    for l in lines:
+    for lnum, l in enumerate(lines):
         if len(l)==0:
-            # Empty line
-            nlines.append(("", l, ""))
+            # Empty line, add to comments
+            comments.append(("", l, ""))
             continue
         
         # Separate leading whitespace
         match = pat_leadspace.search(l)
         if match:
-            lws = l[:match.start()]
-            l = l[match.start():]
+            lws = l[:match.end()]
+            l = l[match.end():]
         else:
             lws = ""
 
+        # Line comment
+        if len(l)>0 and l[0] == "*":
+            comments.append((lws, l, ""))
+            continue
+        
         # Separate trailing eol comment
         match = pat_eolcomment.search(l)
         if match:
@@ -53,11 +82,11 @@ def convert(fromFile, toFile):
         else:
             eolc = ""
 
-        if l[0] == "*":
-            # Line comment
-            comments.append(("", l, ""))
+        if len(l)==0:
+            # Empty line, add to comments
+            comments.append((lws, l, eolc))
+            continue
         elif l[0]  == "+":
-            # TODO: spaces before +
             # Continuation line
             # Do we have a previous line
             if len(nlines)<=0:
@@ -71,15 +100,18 @@ def convert(fromFile, toFile):
         else:
             # Ordinary line, flush comments
             nlines.extend(comments)
+            comments = []
             nlines.append((lws, l, eolc))
     
+    # Flush trailing comments
+    nlines.extend(comments)
+
     # Lines is now a list of tuples of the form 
     # (leading whitespace, core line, trailing eol comment)
     lines = nlines
 
     # Is it a toplevel file (has .end at the end of file)
     for _, l, _ in reversed(lines):
-        
         match = pat_cidotend.search(l)
         if match:
             is_toplevel = True
@@ -89,6 +121,105 @@ def convert(fromFile, toFile):
     nlines = []
     inside_control = False
     control_block = []
+    models = { None: [] } # manually specify, if models are define in an included file
+    in_sub = None
+    type_map = {
+        # name     params             family
+        "r":     ( {},                "r" ), 
+        "res":   ( {},                "r" ), 
+        "c":     ( {},                "c" ), 
+        "l":     ( {},                "l" ), 
+        "d":     ( {},                "d" ), 
+        "npn":   ( { "type":  1 },    "bjt"  ), 
+        "pnp":   ( { "type": -1 },    "bjt"  ), 
+        "njf":   ( { "type":  1 },    "jfet" ), 
+        "pjf":   ( { "type": -1 },    "jfet" ), 
+        "nmf":   ( { "type":  1 },    "mes"  ), 
+        "pmf":   ( { "type": -1 },    "mes"  ), 
+        "nhfet": ( { "type":  1 },    "hemt" ), 
+        "phfet": ( { "type": -1 },    "hemt" ), 
+        "nmos":  ( { "type":  1 },    "mos"  ), 
+        "pmos":  ( { "type": -1 },    "mos"  ), 
+        "nsoi":  ( { "type":  1 },    "soi"  ), 
+        "psoi":  ( { "type": -1 },    "soi"  ), 
+    }
+    default_lv = {
+        # family  level version
+        "r":    ( None, None ), 
+        "c":    ( None, None ), 
+        "l":    ( None, None ), 
+        "d":    ( 1,    None ), 
+        "bjt":  ( 1,    None ), 
+        "jfet": ( 1,    None ), 
+        "mes":  ( 1,    None ), 
+        "mos":  ( 1,    None ), 
+    }
+    family_map = {
+        # Key is (type, level, version), None stands for level/version not specified
+        # Level 0 is equivalent to None
+        # Level is removed, must be specified explicitly (e.g. for diode and mesa)
+        # Version is compared as prefix (startswith())
+        # If version is default, it is treated as if ommited
+        # family, level, version     file                    module
+        ("r",     None,  None):    ( "spice/resistor.osdi",  "sp_resistor" ), 
+        ("c",     None,  None):    ( "spice/capacitor.osdi", "sp_capacitor" ), 
+        ("l",     None,  None):    ( "spice/inductor.osdi",  "sp_inductor" ), 
+        
+        ("d",     None, None):     ( "spice/diode.osdi",     "sp_diode" ), 
+        ("d",     1,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
+        ("d",     3,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
+
+        ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt" ), 
+        
+        ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
+        ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
+        ("jfet",  2,    None):     ( "spice/jfet2.osdi",     "sp_jfet2" ), 
+        
+        ("mes",   None, None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
+        ("mes",   1,    None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
+
+        ("mos",   None, None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
+        ("mos",   1,    None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
+        ("mos",   2,    None):     ( "spice/mos2.osdi",      "sp_mos2" ), 
+        ("mos",   3,    None):     ( "spice/mos3.osdi",      "sp_mos3" ), 
+        ("mos",   6,    None):     ( "spice/mos6.osdi",      "sp_mos6" ), 
+        ("mos",   9,    None):     ( "spice/mos9.osdi",      "sp_mos9" ), 
+        
+        # TODO: rename 3v30 into 3v3
+        #       3.2.x (x=0, 2, 3, 4) is joined in 3v2
+        #       there is only one version of 3.1 and 3.0
+        #       for 3.2.x version must be passed on to the VACASK model
+        ("mos",   8,    None):     ( "spice/bsim3v3.osdi",  "sp_bsim3v3" ), 
+        ("mos",   8,    "3.3"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v3" ), 
+        ("mos",   8,    "3.2"):    ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
+        ("mos",   8,    "3.1"):    ( "spice/bsim3v1.osdi",  "sp_bsim3v1" ), 
+        ("mos",   8,    "3.0"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v0" ), 
+        
+        ("mos",   49,   None):     ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
+        ("mos",   49,   "3.3"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
+        ("mos",   49,   "3.2"):    ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
+        ("mos",   49,   "3.1"):    ( "spice/bsim3v10.osdi",  "sp_bsim3v1" ), 
+        ("mos",   49,   "3.0"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v0" ), 
+    }
+    version_handling = {
+        # family  level version      params            version type (None = do not pass)
+        # Missing entry .. no special parameters version
+        ("d",     None, None):     ( {},               None ), 
+        ("d",     1,    None):     ( { "level": "1" }, None ), 
+        ("d",     3,    None):     ( { "level": "3" }, None ), 
+        
+        ("mos",   8,    None):     ( {},               "str" ), 
+        ("mos",   8,    "3.3"):    ( {},               "str" ), 
+        ("mos",   8,    "3.2"):    ( {},               "str" ), 
+        ("mos",   8,    "3.1"):    ( {},               "real" ), 
+        ("mos",   8,    "3.0"):    ( {},               None ), 
+
+        ("mos",   49,   None):     ( {},               "str" ), 
+        ("mos",   49,   "3.3"):    ( {},               "str" ), 
+        ("mos",   49,   "3.2"):    ( {},               "str" ), 
+        ("mos",   49,   "3.1"):    ( {},               "real" ), 
+        ("mos",   49,   "3.0"):    ( {},               None ), 
+    }
     for ll in lines:
         lws, l, eol = ll
         if len(l)==0:
@@ -104,11 +235,11 @@ def convert(fromFile, toFile):
         l = l.rstrip()
         
         # Check for .control and .endc
-        if l.lower()==".control":
+        if l.lower().startswith(".control"):
             # Start of control block
             inside_control = True
             continue
-        elif l.lower()==".endc":
+        elif l.lower().startswith(".endc"):
             # End of control block
             inside_control = False
             continue
@@ -118,44 +249,53 @@ def convert(fromFile, toFile):
         # Replace sequences of spaces with single space
         l = pat_spaceseq.sub(' ', l)
         # Remove sequences of spaces before and after =
-        l = pat_spaceseq.sub('=', l)
+        l = pat_spaceequal.sub('=', l)
         # Remove spaces from strings in single quotes, remove single quotes
         l = pat_squotepair.sub(lambda m: m.group(1).replace(' ', ''), l)
         # Remove spaces from strings in curly braces, remove curly braces
         l = pat_cbracepair.sub(lambda m: m.group(1).replace(' ', ''), l)
+        # Remove spaces from within paired parentheses
+        l = remove_paired_parentheses_spaces(l)
         
         # Separate control block, keep case
         if inside_control:
             control_block.append(ll)
             continue
-        else:
-            # Convert to lowercase and store
-            nlines.append((lws, l.lower(), eol))
+        
+        if l.startswith(".subckt"):
+            # Detect subckt
+            parts = l.split(" ")
+            in_sub = parts[1]
+        elif l.startswith(".ends"):
+            # Detect end of subckt
+            in_sub = None
+        elif l.startswith(".model"):
+            # Collect models
+            parts = l.split(" ")
+            if in_sub not in models:
+                models[in_sub] = []
+            models[in_sub].append(parts[1])
+
+            # Detect device type
+            module = parts[2]
+
+            # Extract level and version
+            # Treat level as integer, version as string
+
+
+        # Convert to lowercase and store
+        nlines.append((lws, l.lower(), eol))
     
     # Lines now holds pairs of the form (line, eol comment)
     lines = nlines
 
     # Printout
     print("----")
-    for l, ec, eol in lines:
-        print(l+ec, eol)
-    
+    for lws, l, eol in lines:
+        print(lws+l, eol)
 
+    pprint(models)
     
-    
-
-    # Classify lines, collect subcircuit definitions and models
-    # A line can be
-    # - title
-    # - comment
-    # - instance
-    # - model
-    # - subcircuit header
-    # - subcircuit end
-    # - parameter computation
-    # - include
-    # - lib
-    # - control block
 
 if __name__ == "__main__":
     help="""Ngspice to VACASK netlist converter.")

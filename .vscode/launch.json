@@ -165,7 +165,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "ng2vc.py",
-            "args": [ "test.sp", "test.sim" ],
+            "args": [ "test2.sp", "test2.sim" ],
             "console": "integratedTerminal", 
             "cwd": "${workspaceFolder}/python"
         }
