@@ -252,7 +252,7 @@ bool ParameterSweeper::setup(Status& s) {
         // Check if we have anything to sweep
         int specCount = 0;
         if (comp.variable) {
-            // option given, sweep circuit option
+            // variable given, sweep circuit variable
             specCount++;
             parameterFamily.push_back(ParameterFamily::Variable);
         }
@@ -267,12 +267,13 @@ bool ParameterSweeper::setup(Status& s) {
             parameterFamily.push_back(ParameterFamily::Model);
         }
         if (comp.instance) {
-            // model given, sweep model parameter
+            // instance given, sweep instance parameter
             specCount++;
             parameterFamily.push_back(ParameterFamily::Instance);
         }
         if (specCount<=0) {
             // By default we sweep a toplevel instance parameter
+            // TODO: implement, currently it results in an error. 
             parameterFamily.push_back(ParameterFamily::Instance);
         }
         if (specCount>1) {
