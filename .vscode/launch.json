@@ -158,6 +158,16 @@
                     "ignoreFailures": true
                 }
             ]
+        }, 
+
+        {
+            "name": "Python Debugger: Ngspice to VACASK converter",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "ng2vc.py",
+            "args": [ "test.sp", "test.sim" ],
+            "console": "integratedTerminal", 
+            "cwd": "${workspaceFolder}/python"
         }
 
     ]
