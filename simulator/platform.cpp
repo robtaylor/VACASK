@@ -99,7 +99,7 @@ const std::filesystem::path& Platform::libraryPath() {
 
 const std::string& Platform::systemConfig() {
 #ifdef SIMWINDOWS
-    static std::string systemConfig_ = Platform::libraryPath() / "vacaskrc.toml";
+    static std::string systemConfig_ = (Platform::libraryPath() / "vacaskrc.toml").string();
 #else
     static std::string systemConfig_ = "/etc/vacask/vacaskrc.toml";
 #endif
@@ -107,7 +107,7 @@ const std::string& Platform::systemConfig() {
 }
 
 const std::string& Platform::userConfig() {
-    static std::string userConfig_ = Platform::homeDir() / ".vacaskrc.toml";
+    static std::string userConfig_ = (Platform::homeDir() / ".vacaskrc.toml").string();
     return userConfig_;
 }
 

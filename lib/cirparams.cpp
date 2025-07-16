@@ -140,9 +140,9 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
                         return std::make_tuple(false, hierarchyChanged);
                     }
                 }
-                std::cout << "Context of " << std::string(it->name()) << "\n";
+                // std::cout << "Context of " << std::string(it->name()) << "\n";
                 // std::cout << paramEvaluator_.contextStack() << "\n";
-                paramEvaluator_.contextStack().dump(2, std::cout);
+                // paramEvaluator_.contextStack().dump(2, std::cout);
 
                 // Check if there was a subhierarchy change
                 auto [ok, instanceSubhierarchyChanged] = it->subhierarchyChanged(*this, paramEvaluator_, s);

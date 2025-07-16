@@ -10,7 +10,8 @@
     "cmake.configureSettings": { 
         "Boost_ROOT": "e:/build/boost_1_84_0/stage", 
         "SuiteSparse_DIR": "e:/build/installation/", 
-        "OPENVAF_DIR": "e:/OpenVAF/OpenVAF/target/release"
+        "OPENVAF_DIR": "e:/OpenVAF/OpenVAF/target/release", 
+        "TOMLPP_DIR": "e:/build/tomlplusplus-3.4.0"
     }, 
     
     "files.associations": {

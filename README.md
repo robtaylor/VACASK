@@ -196,6 +196,8 @@ cd \
 mkdir build
 ```
 
+Download the toml++ library from [https://github.com/marzer/tomlplusplus/releases/tag/v3.4.0](https://github.com/marzer/tomlplusplus/releases/tag/v3.4.0). Unpack it in `e:\build`. 
+
 Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Use Boost version 1.84.0. Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
 ```
 cd tools\build
@@ -247,10 +249,10 @@ Replace the `e:\...` paths with your own, if needed. In the end OpenBLAS will be
 ### Building the simulator
 Unpack the sources, create a build directory, and type. 
 ```
-cmake .. -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DSuiteSparse_DIR=e:/build/installation
+cmake -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DTOMLPP_DIR=e:/build/tomlplusplus-3.4.0 -DSuiteSparse_DIR=e:/build/installation -DTOMLPP_DIR=e:/build/tomlpusplus-3.4.0
 cmake --build <build directory>
 ```
-Replace the `e:\...` paths with your own, if needed. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 
+Replace the `e:\...` paths with your own, if needed. All paths must be absolute and therefore include the drive letter. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 
 ```
 cpack
 ```
