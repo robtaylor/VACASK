@@ -7,6 +7,7 @@
 import re
 import sys
 from pprint import pprint
+from ng2vclib.converter import Converter
 
 pat_eolcomment = re.compile(r'(\$|;|//)')
 pat_leadspace = re.compile(r'^\s+')
@@ -15,29 +16,6 @@ pat_spaceseq = re.compile(r' +')
 pat_spaceequal = re.compile(r'\s*=\s*')
 pat_squotepair = re.compile(r"'(.*?)'")
 pat_cbracepair = re.compile(r'\{(.*?)\}')
-
-def remove_paired_parentheses_spaces(l):
-    """
-    Remove spaces from within paired parentheses. 
-    """
-    stack = []
-    result = ""
-    for i, char in enumerate(l):
-        if char == '(':
-            stack.append(i)
-            continue
-        elif char == ')':
-            start = stack.pop()
-            if len(stack)==0:
-                inner = l[start:i].replace(" ", "")
-                result += inner + char
-            continue
-        
-        if len(stack)==0:
-            result += char
-            continue
-
-    return result
 
 def convert(fromFile, toFile):
     # Read input file, strip CR/LF
@@ -123,26 +101,7 @@ def convert(fromFile, toFile):
     control_block = []
     models = { None: [] } # manually specify, if models are define in an included file
     in_sub = None
-    type_map = {
-        # name     params             family
-        "r":     ( {},                "r" ), 
-        "res":   ( {},                "r" ), 
-        "c":     ( {},                "c" ), 
-        "l":     ( {},                "l" ), 
-        "d":     ( {},                "d" ), 
-        "npn":   ( { "type":  1 },    "bjt"  ), 
-        "pnp":   ( { "type": -1 },    "bjt"  ), 
-        "njf":   ( { "type":  1 },    "jfet" ), 
-        "pjf":   ( { "type": -1 },    "jfet" ), 
-        "nmf":   ( { "type":  1 },    "mes"  ), 
-        "pmf":   ( { "type": -1 },    "mes"  ), 
-        "nhfet": ( { "type":  1 },    "hemt" ), 
-        "phfet": ( { "type": -1 },    "hemt" ), 
-        "nmos":  ( { "type":  1 },    "mos"  ), 
-        "pmos":  ( { "type": -1 },    "mos"  ), 
-        "nsoi":  ( { "type":  1 },    "soi"  ), 
-        "psoi":  ( { "type": -1 },    "soi"  ), 
-    }
+    
     default_lv = {
         # family  level version
         "r":    ( None, None ), 
@@ -154,53 +113,7 @@ def convert(fromFile, toFile):
         "mes":  ( 1,    None ), 
         "mos":  ( 1,    None ), 
     }
-    family_map = {
-        # Key is (type, level, version), None stands for level/version not specified
-        # Level 0 is equivalent to None
-        # Level is removed, must be specified explicitly (e.g. for diode and mesa)
-        # Version is compared as prefix (startswith())
-        # If version is default, it is treated as if ommited
-        # family, level, version     file                    module
-        ("r",     None,  None):    ( "spice/resistor.osdi",  "sp_resistor" ), 
-        ("c",     None,  None):    ( "spice/capacitor.osdi", "sp_capacitor" ), 
-        ("l",     None,  None):    ( "spice/inductor.osdi",  "sp_inductor" ), 
-        
-        ("d",     None, None):     ( "spice/diode.osdi",     "sp_diode" ), 
-        ("d",     1,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
-        ("d",     3,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
-
-        ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt" ), 
-        
-        ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
-        ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
-        ("jfet",  2,    None):     ( "spice/jfet2.osdi",     "sp_jfet2" ), 
-        
-        ("mes",   None, None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
-        ("mes",   1,    None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
-
-        ("mos",   None, None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
-        ("mos",   1,    None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
-        ("mos",   2,    None):     ( "spice/mos2.osdi",      "sp_mos2" ), 
-        ("mos",   3,    None):     ( "spice/mos3.osdi",      "sp_mos3" ), 
-        ("mos",   6,    None):     ( "spice/mos6.osdi",      "sp_mos6" ), 
-        ("mos",   9,    None):     ( "spice/mos9.osdi",      "sp_mos9" ), 
-        
-        # TODO: rename 3v30 into 3v3
-        #       3.2.x (x=0, 2, 3, 4) is joined in 3v2
-        #       there is only one version of 3.1 and 3.0
-        #       for 3.2.x version must be passed on to the VACASK model
-        ("mos",   8,    None):     ( "spice/bsim3v3.osdi",  "sp_bsim3v3" ), 
-        ("mos",   8,    "3.3"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v3" ), 
-        ("mos",   8,    "3.2"):    ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
-        ("mos",   8,    "3.1"):    ( "spice/bsim3v1.osdi",  "sp_bsim3v1" ), 
-        ("mos",   8,    "3.0"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v0" ), 
-        
-        ("mos",   49,   None):     ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
-        ("mos",   49,   "3.3"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
-        ("mos",   49,   "3.2"):    ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
-        ("mos",   49,   "3.1"):    ( "spice/bsim3v10.osdi",  "sp_bsim3v1" ), 
-        ("mos",   49,   "3.0"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v0" ), 
-    }
+    
     version_handling = {
         # family  level version      params            version type (None = do not pass)
         # Missing entry .. no special parameters version
@@ -332,6 +245,95 @@ Arguments:
             toFile = sys.argv[ndx+1]
             break
     
+    cfg = {
+        "sourcepath": [ ".", "/home/arpadb/sim/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models" ], 
+        "type_map": {
+            # name     params             family  has level  has version
+            "r":     ( {},                "r",     False,    False), 
+            "res":   ( {},                "r",     False,    False), 
+            "c":     ( {},                "c",     False,    False), 
+            "l":     ( {},                "l",     False,    False), 
+            "d":     ( {},                "d",     True,     False), 
+            "npn":   ( { "type":  1 },    "bjt",   True,     False), 
+            "pnp":   ( { "type": -1 },    "bjt",   True,     False), 
+            "njf":   ( { "type":  1 },    "jfet",  True,     False), 
+            "pjf":   ( { "type": -1 },    "jfet",  True,     False), 
+            "nmf":   ( { "type":  1 },    "mes",   True,     False), 
+            "pmf":   ( { "type": -1 },    "mes",   True,     False), 
+            "nhfet": ( { "type":  1 },    "hemt",  True,     False), 
+            "phfet": ( { "type": -1 },    "hemt",  True,     False), 
+            "nmos":  ( { "type":  1 },    "mos",   True,     True), 
+            "pmos":  ( { "type": -1 },    "mos",   True,     True), 
+            "nsoi":  ( { "type":  1 },    "soi",   True,     True), 
+            "psoi":  ( { "type": -1 },    "soi",   True,     True), 
+        }, 
+        "family_map": {
+            # family, level, version     file                    module
+            ("r",     None,  None):    ( "spice/resistor.osdi",  "sp_resistor" ), 
+            ("c",     None,  None):    ( "spice/capacitor.osdi", "sp_capacitor" ), 
+            ("l",     None,  None):    ( "spice/inductor.osdi",  "sp_inductor" ), 
+            
+            ("d",     None, None):     ( "spice/diode.osdi",     "sp_diode" ), 
+            ("d",     1,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
+            ("d",     3,    None):     ( "spice/diode.osdi",     "sp_diode" ), 
+
+            ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt" ), 
+            
+            ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
+            ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1" ), 
+            ("jfet",  2,    None):     ( "spice/jfet2.osdi",     "sp_jfet2" ), 
+            
+            ("mes",   None, None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
+            ("mes",   1,    None):     ( "spice/mes1.osdi",      "sp_mes1" ), 
+
+            ("mos",   None, None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
+            ("mos",   1,    None):     ( "spice/mos1.osdi",      "sp_mos1" ), 
+            ("mos",   2,    None):     ( "spice/mos2.osdi",      "sp_mos2" ), 
+            ("mos",   3,    None):     ( "spice/mos3.osdi",      "sp_mos3" ), 
+            ("mos",   6,    None):     ( "spice/mos6.osdi",      "sp_mos6" ), 
+            ("mos",   9,    None):     ( "spice/mos9.osdi",      "sp_mos9" ), 
+            
+            ("mos",   8,    None):     ( "spice/bsim3v30.osdi", "sp_bsim3v3" ), 
+            ("mos",   8,    "3.3"):    ( "spice/bsim3v30.osdi", "sp_bsim3v3" ), 
+            ("mos",   8,    "3.3.0"):  ( "spice/bsim3v30.osdi", "sp_bsim3v3" ), 
+            ("mos",   8,    "3.2"):    ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
+            ("mos",   8,    "3.2.2"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
+            ("mos",   8,    "3.2.3"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
+            ("mos",   8,    "3.2.4"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2" ), 
+            ("mos",   8,    "3.1"):    ( "spice/bsim3v1.osdi",  "sp_bsim3v1" ), 
+            ("mos",   8,    "3.0"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v0" ), 
+            
+            ("mos",   49,   None):     ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
+            ("mos",   49,   "3.3"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
+            ("mos",   49,   "3.3.0"):  ( "spice/bsim3v30.osdi",  "sp_bsim3v3" ), 
+            ("mos",   49,   "3.2"):    ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
+            ("mos",   49,   "3.2.2"):  ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
+            ("mos",   49,   "3.2.3"):  ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
+            ("mos",   49,   "3.2.4"):  ( "spice/bsim3v24.osdi",  "sp_bsim3v2" ), 
+            ("mos",   49,   "3.1"):    ( "spice/bsim3v10.osdi",  "sp_bsim3v1" ), 
+            ("mos",   49,   "3.0"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v0" ), 
+        }, 
+    }
+    converter = Converter(cfg)
+    lines = converter.read_file(fromFile)
+
+    def rprint(lines):
+        for lws, l, eol in lines:
+            if isinstance(eol, list):
+                rprint(eol)
+            else:
+                print(lws+l, eol)
+
+    rprint(lines)
+    
+    converter.collect_masters(lines)
+    pprint(converter.data["models"])
+    pprint(converter.data["subckts"])
+    
+
+    sys.exit(0)
+
+
     if fromFile is None or toFile is None:
         print("Must specify input and output file.")
         print(help)
