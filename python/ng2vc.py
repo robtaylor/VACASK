@@ -248,24 +248,24 @@ Arguments:
     cfg = {
         "sourcepath": [ ".", "/home/arpadb/sim/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models" ], 
         "type_map": {
-            # name     params             family  has level  has version
-            "r":     ( {},                "r",     False,    False), 
-            "res":   ( {},                "r",     False,    False), 
-            "c":     ( {},                "c",     False,    False), 
-            "l":     ( {},                "l",     False,    False), 
-            "d":     ( {},                "d",     True,     False), 
-            "npn":   ( { "type":  1 },    "bjt",   True,     False), 
-            "pnp":   ( { "type": -1 },    "bjt",   True,     False), 
-            "njf":   ( { "type":  1 },    "jfet",  True,     False), 
-            "pjf":   ( { "type": -1 },    "jfet",  True,     False), 
-            "nmf":   ( { "type":  1 },    "mes",   True,     False), 
-            "pmf":   ( { "type": -1 },    "mes",   True,     False), 
-            "nhfet": ( { "type":  1 },    "hemt",  True,     False), 
-            "phfet": ( { "type": -1 },    "hemt",  True,     False), 
-            "nmos":  ( { "type":  1 },    "mos",   True,     True), 
-            "pmos":  ( { "type": -1 },    "mos",   True,     True), 
-            "nsoi":  ( { "type":  1 },    "soi",   True,     True), 
-            "psoi":  ( { "type": -1 },    "soi",   True,     True), 
+            # name     params             family  remove level  remove version
+            "r":     ( {},                "r",     False,        False), 
+            "res":   ( {},                "r",     False,        False), 
+            "c":     ( {},                "c",     False,        False), 
+            "l":     ( {},                "l",     False,        False), 
+            "d":     ( {},                "d",     True,         False), 
+            "npn":   ( { "type": "1" },   "bjt",   True,         False), 
+            "pnp":   ( { "type": "-1" },  "bjt",   True,         False), 
+            "njf":   ( { "type": "1" },   "jfet",  True,         False), 
+            "pjf":   ( { "type": "-1" },  "jfet",  True,         False), 
+            "nmf":   ( { "type": "1" },   "mes",   True,         False), 
+            "pmf":   ( { "type": "-1" },  "mes",   True,         False), 
+            "nhfet": ( { "type": "1" },   "hemt",  True,         False), 
+            "phfet": ( { "type": "-1" },  "hemt",  True,         False), 
+            "nmos":  ( { "type": "1" },   "mos",   True,         True), 
+            "pmos":  ( { "type": "-1" },  "mos",   True,         True), 
+            "nsoi":  ( { "type": "1" },   "soi",   True,         True), 
+            "psoi":  ( { "type": "-1" },  "soi",   True,         True), 
         }, 
         "family_map": {
             # family, level, version     file                    module
@@ -313,6 +313,9 @@ Arguments:
             ("mos",   49,   "3.1"):    ( "spice/bsim3v10.osdi",  "sp_bsim3v1" ), 
             ("mos",   49,   "3.0"):    ( "spice/bsim3v30.osdi",  "sp_bsim3v0" ), 
         }, 
+        "as_toplevel": "auto", 
+        "columns": 80, 
+        "flat": False, 
     }
     converter = Converter(cfg)
     lines = converter.read_file(fromFile)
@@ -320,7 +323,7 @@ Arguments:
     def rprint(lines):
         for lws, l, eol in lines:
             if isinstance(eol, list):
-                rprint(eol)
+                rprint(eol[0])
             else:
                 print(lws+l, eol)
 
@@ -330,6 +333,8 @@ Arguments:
     pprint(converter.data["models"])
     pprint(converter.data["subckts"])
     
+    for l in converter.vacask_file():
+        print(l)
 
     sys.exit(0)
 

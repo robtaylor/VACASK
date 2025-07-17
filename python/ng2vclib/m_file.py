@@ -52,7 +52,7 @@ class FileLoaderMixin:
         
         return None
 
-    def read_file(self, filename, recursive=True, section=None):
+    def read_file(self, filename, recursive=True, section=None, depth=0):
         """
         Reads a file. If *recursive* is True, recursively handles 
         .include and .lib directives. 
@@ -67,8 +67,10 @@ class FileLoaderMixin:
         * eol comment
 
         If a line is an .iclude or a .lib directive and *recursive* is 
-        True the eol comment entry is a list holding the included 
-        file's lines. 
+        True the eol comment entry is a list holding 
+        * the included file's lines
+        * file name
+        * optional section
 
         Preprocesses lines, removes trailing whitespace from core line. 
         Merges continued lines (+). 
@@ -88,6 +90,9 @@ class FileLoaderMixin:
         except:
             raise Exception("Failed to open "+fp)
         
+        if depth==0:
+            self.data["title"] = lines[0]
+
         # Split into leading spaces, core, and trailing eol comment
         # Merge lines that start with continuation character. 
         # Line comments between merged lines are dropped. 
@@ -161,7 +166,8 @@ class FileLoaderMixin:
                 if collect:
                     # Remove end-of-line comment from last line, merge with continuation line and its eol comment
                     prev_lws, prev_line, _ = nlines[-1]
-                    nlines[-1] = (prev_lws, prev_line+l[1:], eolc)
+                    # Add extra space
+                    nlines[-1] = (prev_lws, prev_line+" "+l[1:], eolc)
             else:
                 # Ordinary line, flush comments
                 if collect:
@@ -188,6 +194,7 @@ class FileLoaderMixin:
         inside_control = False
         for ll in lines:
             lws, l, eol = ll
+            
             if len(l)==0:
                 # Empty line
                 nlines.append(ll)
@@ -235,35 +242,47 @@ class FileLoaderMixin:
                 not llow.startswith(".lib")
             ):
                 l = llow
-            elif recursive:
+            
+            # Recursively read
+            if recursive:
                 if llow.startswith(".include"):
                     # Extract file name
                     s = l.split(" ")[1]
-                    # Unquote
+                    # Unquote - do not use spaces in file names
                     if s.startswith(("'", '"')) and s.endswith(("'", '"')):
                         s = s[1:-1]
                     # Load include file
-                    eol = self.read_file(s, recursive)
+                    eol = [ self.read_file(s, recursive, depth=depth+1), s ]
                 elif llow.startswith(".lib"):
                     # Extract file name and section
                     lcomp = l.split(" ")
                     s1 = lcomp[1]
                     s2 = lcomp[2]
-                    # Unquote
+                    # Unquote - do not use spaces in file names
                     if s1.startswith(("'", '"')) and s1.endswith(("'", '"')):
                         s1 = s1[1:-1]
                     if s2.startswith(("'", '"')) and s2.endswith(("'", '"')):
                         s2 = s2[1:-1]
                     # Load lib file
-                    eol = self.read_file(s1, recursive, section=s2)
+                    eol = [ self.read_file(s1, recursive, section=s2, depth=depth+1), s1, s2 ]
 
-
-            
-            # Convert to lowercase and store
+            # Store
             nlines.append((lws, l, eol))
         
         # Lines now holds pairs of the form (line, eol comment)
         lines = nlines
+
+        # Detect toplevel circuit
+        self.data["is_toplevel"] = False
+        if self.cfg["as_toplevel"]=="auto":
+            for _, l, _ in lines:
+                if l.strip() == ".end":
+                    self.data["is_toplevel"] = True
+                    break
+
+        else:
+            self.data["is_toplevel"] = self.cfg["as_toplevel"]=="yes"
+        
 
         self.data["lines"] = lines
 

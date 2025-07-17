@@ -1,9 +1,15 @@
 from .m_file import FileLoaderMixin
 from .m_masters import MastersMixin
+from .m_output import OutputMixin
+from .m_model import ModelMixin
+from .m_inst_n import InstanceNMixin
 
 class Converter(
     FileLoaderMixin, 
-    MastersMixin
+    MastersMixin, 
+    OutputMixin, 
+    ModelMixin, 
+    InstanceNMixin
 ):
     """
     Ngspice to VACASK netlist converter. 
@@ -14,8 +20,8 @@ class Converter(
       * SPICE name (npn, pnp, nmos, pmos, ...)
       * parameters to add when converting to VACASK
       * family (used as key in other tables)
-      * has_level .. True if model has level parameter that needs to be collected
-      * has_version .. True if model has version parameter that needs to be collected
+      * remove_level .. True if level parameter should be removed 
+      * remove_version .. True if version parameter should be removed
     * family_map .. maps tuples of the form
       * family
       * level (integer, None is default)
@@ -23,8 +29,15 @@ class Converter(
       into tuples of the form
       * osdi file to load
       * module name
-    
+    * as_toplevel .. treat input file as toiplevel netlist. Possible values 
+      * auto .. detect automatically based on .end
+      * no .. treat as toplevel
+      * yes .. do not treat as toplevel
+    * columns .. number of columns per line
+    * flat .. produce flat netlist (resolve all .incliues and .libs)
+
     The data member dictionary holds the following keys:
+    * title .. unprocessed first line of toplevel file
     * lines .. file lines without control block
     * control .. control block lines
     * models .. a dictionary of models, key is subcircuit name
@@ -41,8 +54,9 @@ class Converter(
     * subckts .. a dictionary of subcircuit definitions with name for key
       and values that are tuples holding
       * depth .. inclusion depth (toplevel in 0)
-      * terminals
-      * parameters
+      * terminals .. list of terminals
+      * parameters .. list of (name, value) pairs for parameters
+    * is_toplevel .. True if input file is a toplevel netlist
     """
     def __init__(self, cfg):
         self.cfg = cfg
