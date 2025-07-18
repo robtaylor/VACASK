@@ -8,6 +8,7 @@ import re
 import sys
 from pprint import pprint
 from ng2vclib.converter import Converter
+from ng2vclib.generators import traverse, format_history
 
 pat_eolcomment = re.compile(r'(\$|;|//)')
 pat_leadspace = re.compile(r'^\s+')
@@ -315,23 +316,23 @@ Arguments:
         }, 
         "as_toplevel": "auto", 
         "columns": 80, 
+        "recursive_read": True, 
+        "recursive_process": True, 
         "flat": False, 
     }
     converter = Converter(cfg)
-    lines = converter.read_file(fromFile)
-
-    def rprint(lines):
-        for lws, l, eol in lines:
-            if isinstance(eol, list):
-                rprint(eol[0])
-            else:
-                print(lws+l, eol)
-
-    rprint(lines)
+    deck = converter.read(fromFile)
     
-    converter.collect_masters(lines)
-    pprint(converter.data["models"])
-    pprint(converter.data["subckts"])
+    # for history, line, control_block in traverse(deck):
+    #     lnum, lws, l, eol = line
+    #     print(lnum, ":", lws+l, eol)
+    # 1/0
+
+    converter.collect_masters()
+    
+    # pprint(converter.data["models"])
+    # pprint(converter.data["subckts"])
+    # sys.exit(0)
     
     for l in converter.vacask_file():
         print(l)

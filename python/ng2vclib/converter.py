@@ -38,13 +38,11 @@ class Converter(
 
     The data member dictionary holds the following keys:
     * title .. unprocessed first line of toplevel file
-    * lines .. file lines without control block
     * control .. control block lines
     * models .. a dictionary of models, key is subcircuit name
       where None represents the toplevel circuit. values are dictionaries
       with model name as key holding tuples of the form
       holding elements:
-      * depth .. inclusion depth (toplevel in 0)
       * builtin .. is it a SPICE builtin
       * model type (npn, pnp, nmos, pmos, ...)
       * level (integer)
@@ -53,7 +51,6 @@ class Converter(
         removed from this list if they had to be collected. 
     * subckts .. a dictionary of subcircuit definitions with name for key
       and values that are tuples holding
-      * depth .. inclusion depth (toplevel in 0)
       * terminals .. list of terminals
       * parameters .. list of (name, value) pairs for parameters
     * is_toplevel .. True if input file is a toplevel netlist
@@ -66,3 +63,8 @@ class Converter(
             "subckts": {}, 
         }
     
+    def read(self, filename):
+        deck = self.read_file(filename)
+        self.data["deck"] = deck
+        return deck
+

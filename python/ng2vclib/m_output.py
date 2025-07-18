@@ -1,5 +1,7 @@
 import re
 
+from .generators import traverse, format_history
+
 pat_siprefix = re.compile(r'\b(\d+\.\d*|\.\d+|\d+\.|\d+)(meg|g|t|mil)\b')
 
 prefix_map = {
@@ -180,10 +182,17 @@ class OutputMixin:
         """
         Returns VACASK file as list of lines. 
         """
+        deck = self.data["deck"]
         out = []
         first = True
         in_sub = None
-        for lws, l, eol in self.data["lines"]:
+        for history, line, in_control_block in traverse(deck, recursive=self.cfg.get("recursive_process", False)):
+            # Skip control block
+            if in_control_block:
+                continue
+
+            lnum, lws, l, eolc = line
+
             # Special handling for title
             if first:
                 first = False
@@ -200,14 +209,14 @@ class OutputMixin:
                 out.append(lws+"//"+l)
             elif l.startswith(".model"):
                 # Model
-                out.append(self.process_model(lws, l, eol, in_sub))
+                out.append(self.process_model(lws, l, eolc, in_sub))
             elif l.startswith(".include"):
                 if self.cfg["flat"]:
                     out.append(lws+"// "+l)
                     # TODO
                     pass
                 else:
-                    subfile, name = eol
+                    subfile, name = eolc
                     out.append(lws+"include \""+name+"\"")
             elif l.startswith(".lib"):
                 if self.cfg["flat"]:
@@ -215,12 +224,12 @@ class OutputMixin:
                     # TODO
                     pass
                 else:
-                    subfile, name, section = eol
+                    subfile, name, section = eolc
                     out.append(lws+"include \""+name+"\" "+section)
             elif l.startswith(".subckt"):
                 name = l.split(" ")[1]
                 in_sub = name
-                depth, terminals, params = self.data["subckts"][name]
+                terminals, params = self.data["subckts"][name]
                 vcline = lws+"subckt "+name+"("
                 vcline += " ".join(terminals)
                 vcline +=")"
@@ -248,8 +257,11 @@ class OutputMixin:
                 if l[0]>="a" and l[0]<="z":
                     method=getattr(self, "process_instance_"+l[0], None)
                     if method is None:
-                        raise Exception("Dont' know how to process instances of type '"+l[0]+"'.")
-                    out.append(method(lws, l, eol, in_sub))
+                        raise Exception(
+                            format_history(history, lnum)+
+                            "\n  Dont' know how to process instances of type '"+l[0]+"'."
+                        )
+                    out.append(method(lws, l, eolc, in_sub))
                 
             
         return out

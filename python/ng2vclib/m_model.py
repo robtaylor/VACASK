@@ -6,7 +6,7 @@ class ModelMixin:
         """
         # Model
         name = line.split(" ")[1]
-        depth, builtin, mtype, level, version, params = self.data["models"][in_sub][name]
+        builtin, mtype, level, version, params = self.data["models"][in_sub][name]
 
         paren = False
         if mtype in self.cfg["type_map"]:

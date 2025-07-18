@@ -1,21 +1,29 @@
 import re
+from .generators import traverse
 
 class MastersMixin:
     pat_paramassign = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 
-    def collect_masters(self, lines, depth=0):
+    def collect_masters(self):
         """
-        Colects defined subcircuits and models. 
+        Colects defined subcircuits and models from deck.  
         """
+        deck = self.data["deck"]
+
         in_sub = None
 
-        for ll in lines:
-            lws, l, eol = ll
-            # Recursively process lines in included files
-            if isinstance(eol, list):
-                self.collect_masters(eol[0], depth+1)
+        for history, line, in_control_block in traverse(deck, recursive=self.cfg.get("recursive_process", False)):
+            # Skip control block
+            if in_control_block:
                 continue
-            
+
+            lnum, lws, l, eolc = line
+
+            # If eolc is a tuple this is an .include/.lib line
+            # We do not process those. 
+            if isinstance(eolc, tuple):
+                continue
+
             # Detect subckt, nested subck definitions are not allowed in Ngspice
             if l.startswith(".subckt"):
                 parts = l.split(" ")
@@ -34,7 +42,7 @@ class MastersMixin:
                 sub_params = [ p.split("=") for p in parts[pstart:]]
 
                 # Store
-                self.data["subckts"][in_sub] = (depth, terminals, sub_params)
+                self.data["subckts"][in_sub] = (terminals, sub_params)
                 
             # End of subcircuit
             if l.startswith(".ends"):
@@ -79,7 +87,7 @@ class MastersMixin:
                 if in_sub not in self.data["models"]:
                     self.data["models"][in_sub] = {}
                 self.data["models"][in_sub][name] = (
-                    depth, builtin, mtype, level, version, params
+                    builtin, mtype, level, version, params
                 )
 
 
