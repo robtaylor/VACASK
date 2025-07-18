@@ -12,12 +12,16 @@ class MastersMixin:
 
         in_sub = None
 
-        for history, line, in_control_block in traverse(deck, recursive=self.cfg.get("recursive_process", False)):
+        for history, line, depth, in_control_block in traverse(deck, depth=self.cfg.get("process_depth", None)):
             # Skip control block
             if in_control_block:
                 continue
 
             lnum, lws, l, eolc = line
+
+            # Skip .include/.lib
+            if isinstance(eolc, tuple):
+                continue
 
             # If eolc is a tuple this is an .include/.lib line
             # We do not process those. 

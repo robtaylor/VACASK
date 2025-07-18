@@ -316,9 +316,9 @@ Arguments:
         }, 
         "as_toplevel": "auto", 
         "columns": 80, 
-        "recursive_read": True, 
-        "recursive_process": True, 
-        "flat": False, 
+        "read_depth": None,    # Fully recursive
+        "process_depth": None, # Fully recursive
+        "output_depth": 0,     # Toplevel only
     }
     converter = Converter(cfg)
     deck = converter.read(fromFile)
@@ -329,6 +329,10 @@ Arguments:
     # 1/0
 
     converter.collect_masters()
+
+    # TODO: collect used models and default models
+    #       so that we can dump only those that are needed
+    #       add annotations to each line
     
     # pprint(converter.data["models"])
     # pprint(converter.data["subckts"])

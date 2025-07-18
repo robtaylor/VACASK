@@ -108,8 +108,11 @@ class FileLoaderMixin:
           * eol comment
 
         If recursive_read is enabled in the configuration and a line is an 
-        .include or a .lib directive the eol comment entry is a deck. 
-
+        .include or a .lib directive the eol comment entry is a tuple holding
+        * file name
+        * section name (None for .include)
+        * a deck
+        
         Preprocesses lines, removes trailing whitespace from core line. 
         Merges continued lines (+). 
         Converts all parts to lowercase, except for the control block and 
@@ -210,40 +213,50 @@ class FileLoaderMixin:
             # Recursively read included files
             
             if isinclude:
-                if self.cfg.get("recursive_read", False):
-                    # Extract file name
-                    # Skip .include, strip whitespace
-                    s = l[8:].strip()
-                    # Unquote
-                    if (
-                        s.startswith(("'")) and s.endswith(("'")) or 
-                        s.startswith(('"')) and s.endswith(('"'))
-                    ):
-                        s = s[1:-1]
-                    # Load include file
-                    inside_control, eolc = self.read_file(s, depth=depth+1, inside_control=inside_control)
+                # Extract file name
+                # Skip .include, strip whitespace
+                s = l[8:].strip()
+                # Unquote
+                if (
+                    s.startswith(("'")) and s.endswith(("'")) or 
+                    s.startswith(('"')) and s.endswith(('"'))
+                ):
+                    s = s[1:-1]
+                # Load include file
+                rd = self.data.get("read_depth", None)
+                if rd is None or depth<rd:
+                    inside_control, subdeck = self.read_file(s, depth=depth+1, inside_control=inside_control)
+                    eolc = subdeck
+                else:
+                    # Not going further, just store extracted filename
+                    eolc = (s, None, None)
             elif islib:
-                if self.cfg.get("recursive_read", False):
-                    # Extract file name and section
-                    # Skip .lib, strip whitespace
-                    s = l[4:].strip()
-                    # Find first whitespace from right to left
-                    sndx = s.rfind(" ")
-                    if sndx<0:
-                        # Not found, must be a stray section marker
-                        raise Exception(filename+", line "+str(lnum+1)+": stray section marker.")
-                    # Extract file name, strip whitespace
-                    lfname = s[:sndx].strip()
-                    # Unquote
-                    if (
-                        lfname.startswith(("'")) and lfname.endswith(("'")) or 
-                        lfname.startswith(('"')) and lfname.endswith(('"'))
-                    ):
-                        lfname = lfname[1:-1]
-                    # Get section name
-                    sname = s[sndx:].strip()
-                    # Load lib file
-                    inside_control, eolc = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
+                # Extract file name and section
+                # Skip .lib, strip whitespace
+                s = l[4:].strip()
+                # Find first whitespace from right to left
+                sndx = s.rfind(" ")
+                if sndx<0:
+                    # Not found, must be a stray section marker
+                    raise Exception(filename+", line "+str(lnum+1)+": stray section marker.")
+                # Extract file name, strip whitespace
+                lfname = s[:sndx].strip()
+                # Unquote
+                if (
+                    lfname.startswith(("'")) and lfname.endswith(("'")) or 
+                    lfname.startswith(('"')) and lfname.endswith(('"'))
+                ):
+                    lfname = lfname[1:-1]
+                # Get section name
+                sname = s[sndx:].strip()
+                # Load lib file
+                rd = self.data.get("read_depth", None)
+                if rd is None or depth<rd:
+                    inside_control, subdeck = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
+                    eolc = subdeck
+                else:
+                    # Not going further, just store extracted filename and section name
+                    eolc = (lfname, sname, None)
             elif not inside_control:
                 # Not .lib, .include, or control block
                 # Separate trailing eol comment

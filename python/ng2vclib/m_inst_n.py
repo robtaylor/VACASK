@@ -14,16 +14,9 @@ class InstanceNMixin:
         model = parts[mod_index]
         params = parts[(mod_index+1):]
 
-        # Split params and check for params without =
-        psplit = []
-        for p in params:
-            split = p.split("=")
-            if len(split)!=2:
-                print(line)
-                raise Exception("Malformed parameter '"+p+"'.")
-            psplit.append(split)
+        psplit = self.split_params(params)
         
-        txt = lws + name + " (" + (" ".join(terminals))+") "
+        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:
             fmted, need_split, split = self.format_params(psplit, len(txt))

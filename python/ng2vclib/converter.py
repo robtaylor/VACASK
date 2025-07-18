@@ -2,6 +2,7 @@ from .m_file import FileLoaderMixin
 from .m_masters import MastersMixin
 from .m_output import OutputMixin
 from .m_model import ModelMixin
+from .m_inst_passive import InstancePassiveMixin
 from .m_inst_n import InstanceNMixin
 
 class Converter(
@@ -9,6 +10,7 @@ class Converter(
     MastersMixin, 
     OutputMixin, 
     ModelMixin, 
+    InstancePassiveMixin, 
     InstanceNMixin
 ):
     """

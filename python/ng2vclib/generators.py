@@ -1,9 +1,12 @@
 
 # A generator that traverses a deck
-def traverse(deck, recursive=True, input_history=[], parent_line=None, inside_control=False):
+def traverse(deck, depth=None, input_history=[], parent_line=None, inside_control=False):
     """
     A generator that traverses a *deck*. 
-    if *recursive* is true it also traverses included files. 
+    
+    *depth* is the lowest level to which we traverse the deck. 
+    0 dumps only the toplevel file. If *depth* is None the deck
+    is traveresed all the way to the bottom. 
 
     *input_history* is the history up to the *deck*. 
 
@@ -24,13 +27,16 @@ def traverse(deck, recursive=True, input_history=[], parent_line=None, inside_co
       * core line
       * eol comment .. a string or a tuple if the line corresponds 
         to a .include or .lib directive
+    * depth at which the line is located
     * a flag indicating this line is a part of control clock
     """
     filename, section, lines = deck
     history = input_history + [ (parent_line, filename, section) ]
     
+    at_depth = len(history)-1
+
     for line in lines:
-        lnum, lws, l, eol = line
+        lnum, lws, l, eolc = line
         # Check for control
         ll = l.lower()
         if ll.startswith(".control"):
@@ -39,15 +45,20 @@ def traverse(deck, recursive=True, input_history=[], parent_line=None, inside_co
             inside_control = False
 
         # Is it a normal line
-        if not isinstance(eol, tuple):
+        if not isinstance(eolc, tuple):
             # Yes
-            yield (history, line, inside_control)
+            yield (history, line, depth, inside_control)
         else:
-            # No, recurse if requested
-            if recursive:
-                for subh, subl, inside_control in traverse(eol, recursive, history, lnum, inside_control=inside_control):
-                    yield (subh, subl, inside_control)
-
+            # No
+            # First yield inclusion line
+            yield (history, line, at_depth, inside_control)
+            
+            # Check if we are not at the bottom
+            if depth is None or at_depth<depth:
+                # Yield subdeck
+                for subh, subl, subd, inside_control in traverse(eolc, depth, history, lnum, inside_control=inside_control):
+                    yield (subh, subl, subd, inside_control)
+            
 def format_history(history, lineno):
     """
     Formats *history* for an error on line number *lineno*. 

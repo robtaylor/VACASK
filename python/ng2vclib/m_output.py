@@ -51,6 +51,16 @@ class OutputMixin:
         
         return intxt+txt
     
+    def format_value(self, valuestr):
+        """
+        Formats a value. Removes curly braces. Changes SI prefixes. 
+        """
+        if valuestr[0]=="{":
+            valuestr = valuestr[1:-1]
+        
+        # Handle SI prefixes
+        return si_replace(valuestr)
+
     def format_params(self, params, atcol=0, indent=2):
         """
         Format parameters, indent them, make sure lines are not too long. 
@@ -70,13 +80,7 @@ class OutputMixin:
         newpar = []
         full_size = 0
         for name, value in params:
-            # Remove curly braces
-            if value[0]=="{":
-                value = value[1:-1]
-            
-            # Handle SI prefixes
-            value = si_replace(value)
-
+            value = self.format_value(value)
             newpar.append((name, value))
 
             full_size += len(name)+1+len(value)+1
@@ -178,6 +182,21 @@ class OutputMixin:
         
         return name, parts, mod_index
     
+    def split_params(self, params):
+        """
+        Splits a list of parameter assignments into a list of 
+        (names, value) pairs. 
+        """
+        psplit = []
+        for p in params:
+            split = p.split("=")
+            if len(split)!=2:
+                print(line)
+                raise Exception("Malformed parameter '"+p+"'.")
+            psplit.append(split)
+        
+        return psplit
+
     def vacask_file(self):
         """
         Returns VACASK file as list of lines. 
@@ -186,7 +205,8 @@ class OutputMixin:
         out = []
         first = True
         in_sub = None
-        for history, line, in_control_block in traverse(deck, recursive=self.cfg.get("recursive_process", False)):
+        target_depth = self.cfg.get("output_depth", None)
+        for history, line, depth, in_control_block in traverse(deck, depth=target_depth):
             # Skip control block
             if in_control_block:
                 continue
@@ -211,20 +231,22 @@ class OutputMixin:
                 # Model
                 out.append(self.process_model(lws, l, eolc, in_sub))
             elif l.startswith(".include"):
-                if self.cfg["flat"]:
+                # Include
+                if target_depth is None or depth<target_depth:
+                    # Not at the deepest level yet, 
+                    # output a comment containing original .include
                     out.append(lws+"// "+l)
-                    # TODO
-                    pass
                 else:
-                    subfile, name = eolc
+                    name, section, subdeck = eolc
                     out.append(lws+"include \""+name+"\"")
             elif l.startswith(".lib"):
-                if self.cfg["flat"]:
+                # Lib
+                if target_depth is None or depth<target_depth:
+                    # Not at the deepest level yet, 
+                    # output a comment containing original .lib
                     out.append(lws+"// "+l)
-                    # TODO
-                    pass
                 else:
-                    subfile, name, section = eolc
+                    name, section, subdeck = eolc
                     out.append(lws+"include \""+name+"\" "+section)
             elif l.startswith(".subckt"):
                 name = l.split(" ")[1]
@@ -261,7 +283,14 @@ class OutputMixin:
                             format_history(history, lnum)+
                             "\n  Dont' know how to process instances of type '"+l[0]+"'."
                         )
-                    out.append(method(lws, l, eolc, in_sub))
+                    try:
+                        txt = method(lws, l, eolc, in_sub)
+                    except Exception as e:
+                        raise Exception(
+                            format_history(history, lnum)+
+                            "\n  "+str(e)
+                        )
+                    out.append(txt)
                 
             
         return out
