@@ -133,7 +133,11 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
 
     // Device index
     for(OsdiDeviceIndex i=0; i<descriptorCount; i++) {
-        deviceNameToIndex[Id(descriptors[i]->name)] = i;
+        // Add name
+        namesArray.push_back(descriptors[i]->name);
+        // Convert to lowercase
+        toLowercase(namesArray.back());
+        deviceNameToIndex[Id(namesArray.back())] = i;
     }
 
     // Build parameter name to id translators and lists of instance parameter ids
@@ -279,7 +283,7 @@ Id OsdiFile::deviceIdentifier(OsdiDeviceIndex index, Status& s) {
         );
         return Id::none;
     }
-    return Id(descriptors[index]->name);
+    return Id(namesArray[index]);
 }
 
 std::tuple<OsdiFile::OsdiDeviceIndex,bool> OsdiFile::deviceIndex(Id name, Status& s) {

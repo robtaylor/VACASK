@@ -250,6 +250,7 @@ private:
     std::string file;
     bool valid;
     void* descriptorArray;
+    std::vector<std::string> namesArray; // (translated) names
     std::vector<OsdiDescriptor*> descriptors;
     OsdiDeviceIndex descriptorCount;
     size_t descriptorSize;

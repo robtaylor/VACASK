@@ -12,7 +12,7 @@
 namespace NAMESPACE {
 
 OsdiDevice::OsdiDevice(OsdiFile* of, int descriptorIndex, Id asName, Loc location, Status &s) 
-    : Device(asName ? asName : Id(of->deviceDescriptor(descriptorIndex)->name), location), osdiFile(of), index_(descriptorIndex) {
+    : Device(asName ? asName : Id(of->deviceIdentifier(descriptorIndex)), location), osdiFile(of), index_(descriptorIndex) {
     descriptor_ = of->deviceDescriptor(descriptorIndex);
     setFlags(Flags::IsValid);
     if (osdiFile->allowsBypass(index_)) {

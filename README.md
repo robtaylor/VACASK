@@ -79,7 +79,7 @@ The following device models are supplied with VACASK.
 |SPICE diode               |diode.va           |diode    |
 |BSIM3v3 MOSFET (Cogenda)  |bsim3v3.va         |bsim3    |
 |BSIM4v8 MOSFET (Cogenda)  |bsim4v8.va         |bsim4    |
-|PSP103.4 MOSFET           |psp103v4/psp103.va |PSP103VA |
+|PSP103.4 MOSFET           |psp103v4/psp103.va |psp103va |
 |BSIMBULK MOSFET 106.2.0   |bsimbulk.va        |bsimbulk |
 
 All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 

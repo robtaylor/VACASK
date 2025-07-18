@@ -8,7 +8,7 @@
   nm d g s b psp103p w={w} l={l} ad={w*ld} as={w*ls} pd={2*(w+ld)} ps={2*(w+ls)}
 .ends
 
-.model psp103n PSP103VA 
+.model psp103n psp103va 
 +    type=1
 +    tr=27.0
 +    dta=0
@@ -279,7 +279,7 @@
 +    pbrstid=4
 +    pbrgatd=4
 
-.model psp103p PSP103VA 
+.model psp103p psp103va 
 +    type=-1
 +    tr=27.0
 +    dta=0

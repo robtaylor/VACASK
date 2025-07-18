@@ -113,7 +113,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/rpn/parser.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/sc/opamp.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/sc/lpfilter.sim" ], 
-            // "args": [ "-df", "${workspaceFolder}/demo/gilbert/gilbert.sim" ], 
+             "args": [ "-df", "${workspaceFolder}/demo/gilbert/gilbert.sim" ], 
             // "args": [ "-dp" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask/runme.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/benchmark/c6288/vacask-ieb/runme.sim" ], 
