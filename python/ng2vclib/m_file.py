@@ -3,6 +3,8 @@ import sys
 import os
 from pprint import pprint
 
+from .exc import ConverterError
+
 pat_eolcomment = re.compile(r'(\$|;|//)')
 pat_leadspace = re.compile(r'^\s+')
 pat_cidotend = re.compile(r'\.end\s*$', re.IGNORECASE)
@@ -106,6 +108,7 @@ class FileLoaderMixin:
           * leading whitespace
           * core line
           * eol comment
+          * annotations dictionary
 
         If recursive_read is enabled in the configuration and a line is an 
         .include or a .lib directive the eol comment entry is a tuple holding
@@ -127,12 +130,12 @@ class FileLoaderMixin:
         # Read input file, strip CR/LF
         fp = self.find_file(filename)
         if fp is None:
-            raise Exception("File "+filename+" not found")
+            raise ConverterError("File "+filename+" not found")
         try:
             with open(fp, 'r') as file:
                 lines = [line.rstrip('\r\n') for line in file]
         except:
-            raise Exception("Failed to open "+fp)
+            raise ConverterError("Failed to open "+fp)
         
         if depth==0:
             self.data["title"] = lines[0]
@@ -149,7 +152,7 @@ class FileLoaderMixin:
             if len(l)==0:
                 # Empty line, add to comments
                 if collect:
-                    comments.append((lnum, "", l, ""))
+                    comments.append((lnum, "", l, "", {}))
                 continue
             
             # Separate leading whitespace
@@ -163,7 +166,7 @@ class FileLoaderMixin:
             # Line comment, keep case
             if len(l)>0 and l[0] == "*":
                 if collect:
-                    comments.append((lnum, lws, l, ""))
+                    comments.append((lnum, lws, l, "", {}))
                 continue
             
             # To lowercase
@@ -238,7 +241,7 @@ class FileLoaderMixin:
                 sndx = s.rfind(" ")
                 if sndx<0:
                     # Not found, must be a stray section marker
-                    raise Exception(filename+", line "+str(lnum+1)+": stray section marker.")
+                    raise ConverterError(filename+", line "+str(lnum+1)+": stray section marker.")
                 # Extract file name, strip whitespace
                 lfname = s[:sndx].strip()
                 # Unquote
@@ -269,27 +272,27 @@ class FileLoaderMixin:
             if len(l)==0:
                 # Empty core line, add to comments
                 if collect:
-                    comments.append((lnum, lws, l, eolc))
+                    comments.append((lnum, lws, l, eolc, {}))
                 continue
             elif l[0]  == "+":
                 # Continuation line
                 # Do we have a previous line
                 if len(nlines)<=0:
-                    raise Exception(filename+", line "+str(lnum+1)+": cannot continue a line without a previous line.")
+                    raise ConverterError(filename+", line "+str(lnum+1)+": cannot continue a line without a previous line.")
                 # Drop collected comments
                 comments = []
                 if collect:
                     # Remove end-of-line comment from last line, merge with continuation line and its eol comment
-                    prev_lnum, prev_lws, prev_line, _ = nlines[-1]
+                    prev_lnum, prev_lws, prev_line, _, _ = nlines[-1]
                     # Add extra space
-                    nlines[-1] = (prev_lnum, prev_lws, self.preprocess_line(prev_line+" "+l[1:]), eolc)
+                    nlines[-1] = (prev_lnum, prev_lws, self.preprocess_line(prev_line+" "+l[1:]), eolc, {})
                     have_line = True
             else:
                 # Ordinary line, flush comments
                 if collect:
                     nlines.extend(comments)
                 comments = []
-                nlines.append((lnum, lws, self.preprocess_line(l), eolc))
+                nlines.append((lnum, lws, self.preprocess_line(l), eolc, {}))
 
         # Flush trailing comments
         nlines.extend(comments)
@@ -302,7 +305,7 @@ class FileLoaderMixin:
             return (inside_control, (filename, section, lines))
         else:
             if inside_control:
-                raise Exception("Unterminated control block found.")
+                raise ConverterError("Unterminated control block found.")
 
             return (filename, section, lines)
         

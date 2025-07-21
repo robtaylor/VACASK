@@ -12,7 +12,7 @@ class ModelMixin:
         if mtype in self.cfg["type_map"]:
             # Builtin model
             extra_params, family, _, _ = self.cfg["type_map"][mtype]
-            osdifile, module = self.cfg["family_map"][family, level, version]
+            osdifile, module, extra_family_params = self.cfg["family_map"][family, level, version]
             vcline = "model "+name+" "+module
             if len(extra_params>0) or len(params)>0:
                 vcline += " ( "+eol
@@ -21,7 +21,10 @@ class ModelMixin:
                 vcline += " "+eol
 
             if len(extra_params)>0:
-                vcline += "\n"+self.format_extra_params(extra_params, lws)
+                vcline += (
+                    "\n"+self.format_extra_params(extra_params, lws)+
+                    self.format_extra_params(extra_family_params, " ")
+                )
         else:
             vcline = "model "+name+" "+mtype
             if len(params)>0:

@@ -1,6 +1,7 @@
 import re
 
 from .generators import traverse, format_history
+from .exc import ConverterError
 
 pat_siprefix = re.compile(r'\b(\d+\.\d*|\.\d+|\d+\.|\d+)(meg|g|t|mil)\b')
 
@@ -152,36 +153,6 @@ class OutputMixin:
 
         return txt
 
-    def split_instance(self, line, in_sub=None):
-        """
-        Splits an instance into fragments. 
-
-        Returns 
-        * name
-        * a list of parts 
-        * index of first model in the list of fragments, None if no model found
-        """
-        parts = line.split()
-        name = parts[0]
-        parts = parts[1:]
-
-        # Find first model
-        mod_index = None
-        for ndx, part in enumerate(parts):
-            # Local models
-            if in_sub is not None:
-                if in_sub in self.data["models"] and part in self.data["models"][in_sub]:
-                    # Found model
-                    mod_index = ndx
-                    break
-            # Global models
-            if None in self.data["models"] and part in self.data["models"][None]:
-                # Found model
-                mod_index = ndx
-                break
-        
-        return name, parts, mod_index
-    
     def split_params(self, params):
         """
         Splits a list of parameter assignments into a list of 
@@ -192,14 +163,14 @@ class OutputMixin:
             split = p.split("=")
             if len(split)!=2:
                 print(line)
-                raise Exception("Malformed parameter '"+p+"'.")
+                raise ConverterError("Malformed parameter '"+p+"'.")
             psplit.append(split)
         
         return psplit
 
     def vacask_file(self):
         """
-        Returns VACASK file as list of lines. 
+        Returns VACASK file as a list of lines. 
         """
         deck = self.data["deck"]
         out = []
@@ -211,7 +182,7 @@ class OutputMixin:
             if in_control_block:
                 continue
 
-            lnum, lws, l, eolc = line
+            lnum, lws, l, eolc, annot = line
 
             # Special handling for title
             if first:
@@ -228,8 +199,12 @@ class OutputMixin:
                 # Comment
                 out.append(lws+"//"+l)
             elif l.startswith(".model"):
-                # Model
-                out.append(self.process_model(lws, l, eolc, in_sub))
+                # Model, output if it is used or output is forced
+                if (
+                    self.cfg.get("all_models", False) or 
+                    len(self.data["model_usage"].get((annot["name"], in_sub), set()))>0
+                ):
+                    out.append(self.process_model(lws, l, eolc, in_sub))
             elif l.startswith(".include"):
                 # Include
                 if target_depth is None or depth<target_depth:
@@ -279,17 +254,11 @@ class OutputMixin:
                 if l[0]>="a" and l[0]<="z":
                     method=getattr(self, "process_instance_"+l[0], None)
                     if method is None:
-                        raise Exception(
-                            format_history(history, lnum)+
-                            "\n  Dont' know how to process instances of type '"+l[0]+"'."
-                        )
+                        raise ConverterError("Dont' know how to process instances of type '"+l[0]+"'.", history, lnum)
                     try:
-                        txt = method(lws, l, eolc, in_sub)
-                    except Exception as e:
-                        raise Exception(
-                            format_history(history, lnum)+
-                            "\n  "+str(e)
-                        )
+                        txt = method(lws, l, eolc, annot, in_sub)
+                    except ConverterError as e:
+                        raise ConverterError(str(e), history, lnum)
                     out.append(txt)
                 
             

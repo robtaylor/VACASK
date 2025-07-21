@@ -31,17 +31,24 @@ class Converter(
       into tuples of the form
       * osdi file to load
       * module name
+    * default_models .. maps device letters to default models
+      Values are tuples holding
+      * osdi file name
+      * module name
+    * default_model_prefix .. prefix for default model names
     * as_toplevel .. treat input file as toiplevel netlist. Possible values 
       * auto .. detect automatically based on .end
       * no .. treat as toplevel
       * yes .. do not treat as toplevel
+    * all_models .. if True writes all models to the output, 
+      otherwise ony used models are written
     * columns .. number of columns per line
     * flat .. produce flat netlist (resolve all .incliues and .libs)
 
     The data member dictionary holds the following keys:
     * title .. unprocessed first line of toplevel file
     * control .. control block lines
-    * models .. a dictionary of models, key is subcircuit name
+    * models .. a dictionary of available models, key is subcircuit name
       where None represents the toplevel circuit. values are dictionaries
       with model name as key holding tuples of the form
       holding elements:
@@ -49,8 +56,12 @@ class Converter(
       * model type (npn, pnp, nmos, pmos, ...)
       * level (integer)
       * version (string)
-      * params .. list of (name, value) pairs. Parameters level and version are 
-        removed from this list if they had to be collected. 
+      * params .. list of (name, value) pairs. 
+    * model_usage .. a dictionary tracking where individual models are used. 
+      Key is a pair of the form (model name, subcircuit where model is defined). 
+      Value is a sets of subcircuit names (None for toplevel circuit) 
+      where this model is used. 
+    * default_models_needed .. set of device letters
     * subckts .. a dictionary of subcircuit definitions with name for key
       and values that are tuples holding
       * terminals .. list of terminals
@@ -63,6 +74,8 @@ class Converter(
             "control": [], 
             "models": {}, 
             "subckts": {}, 
+            "model_usage": {}, 
+            "default_models_needed": set(), 
         }
     
     def read(self, filename):

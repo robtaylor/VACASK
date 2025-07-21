@@ -1,17 +1,27 @@
+from .exc import ConverterError
 
 class InstancePassiveMixin:
-    def process_instance_r(self, lws, line, eol, in_sub):
+    def process_instance_r(self, lws, line, eol, annot, in_sub):
         """
-        Process R instance (resistor).
+        Process R instance (resistor). 
+
+        rname p n <r=value>|<value> [<p1=value1> <p2=value2> ...]
+        rname p n <model> [<p1=value1> <p2=value2> ...]
+        rname p n <value> <model> [<p1=value1> <p2=value2> ...]
         """
-        name, parts, mod_index = self.split_instance(line, in_sub)
+        name = annot["name"]
+        parts = annot["words"]
+        mod_index = annot["mod_index"]
+        model = annot["mod_name"]
         
         terminals = parts[:2]
 
-        if mod_index is None:
+        if model is None:
             # No model specified
-            model = "default_r"
-            # Check if part 3 is not a paremeter assignment
+            model = self.cfg["default_model_prefix"]+"r"
+            self.data["default_models_needed"].add("r")
+
+            # Check if part 3 is not a parameter assignment
             if "=" not in parts[2]:
                 # Part 3 is the resistance, the rest are parameter assignments
                 params = parts[3:]
@@ -39,7 +49,7 @@ class InstancePassiveMixin:
                 params = parts[4:]
             else:
                 # Don't know how to handle
-                raise Exception("Cannot handle model at position "+str(mod_index+1)+".")
+                raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
 
         # Add parameter assignments
         psplit = psplit + split_params(params)

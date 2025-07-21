@@ -36,7 +36,7 @@ def traverse(deck, depth=None, input_history=[], parent_line=None, inside_contro
     at_depth = len(history)-1
 
     for line in lines:
-        lnum, lws, l, eolc = line
+        lnum, lws, l, eolc, annot = line
         # Check for control
         ll = l.lower()
         if ll.startswith(".control"):

@@ -1,19 +1,20 @@
+from .exc import ConverterError
 
 class InstanceNMixin:
-    def process_instance_n(self, lws, line, eol, in_sub):
+    def process_instance_n(self, lws, line, eol, annot, in_sub):
         """
         Process N instance (OSDI device).
         """
-        name, parts, mod_index = self.split_instance(line, in_sub)
+        name = annot["name"]
+        parts = annot["words"]
+        mod_index = annot["mod_index"]
+        model = annot["mod_name"]
         
-        if mod_index is None:
-            print(line)
-            raise Exception("Model not found.")
+        if model is None:
+            raise ConverterError(line+"\nModel not found.")
         
         terminals = parts[:mod_index]
-        model = parts[mod_index]
         params = parts[(mod_index+1):]
-
         psplit = self.split_params(params)
         
         txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
