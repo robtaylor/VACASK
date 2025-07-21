@@ -4,8 +4,10 @@ set(python_files
     ng2vc.py 
     ng2vclib/__init__.py 
     ng2vclib/converter.py 
+    ng2vclib/dfl.py 
     ng2vclib/exc.py 
     ng2vclib/generators.py 
+    ng2vclib/m_devices.py 
     ng2vclib/m_file.py 
     ng2vclib/m_inst_n.py 
     ng2vclib/m_inst_passive.py 

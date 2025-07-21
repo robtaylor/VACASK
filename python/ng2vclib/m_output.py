@@ -164,6 +164,11 @@ class OutputMixin:
             if len(split)!=2:
                 print(line)
                 raise ConverterError("Malformed parameter '"+p+"'.")
+            
+            # Handle mfactor
+            if p[0]=="m" or p[0]=="_mfactor":
+                split = ( "$mfactor", p[1] )
+            
             psplit.append(split)
         
         return psplit
@@ -249,6 +254,9 @@ class OutputMixin:
             elif l.startswith(".endif"):
                 txt = l.replace(".endif", "@end")
                 out.append(lws+txt)
+            elif l.startswith(".end"):
+                # Done. 
+                break
             else:
                 # Instance
                 if l[0]>="a" and l[0]<="z":
@@ -261,7 +269,20 @@ class OutputMixin:
                         raise ConverterError(str(e), history, lnum)
                     out.append(txt)
                 
-            
+        # Dump load statements and default models. 
+        # This will happen only in the toplevel
+        m = self.load_statements()
+        if len(m)>0:
+            out.append("")
+            out.append("// Modules")
+            out.extend(m)
+        
+        m = self.default_models()
+        if len(m)>0:
+            out.append("")
+            out.append("// Default models")
+            out.extend(m)
+        
         return out
                 
 

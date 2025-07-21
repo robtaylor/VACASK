@@ -4,6 +4,9 @@ from .m_output import OutputMixin
 from .m_model import ModelMixin
 from .m_inst_passive import InstancePassiveMixin
 from .m_inst_n import InstanceNMixin
+from .m_devices import DevicesMixin
+
+from . import dfl
 
 class Converter(
     FileLoaderMixin, 
@@ -11,7 +14,8 @@ class Converter(
     OutputMixin, 
     ModelMixin, 
     InstancePassiveMixin, 
-    InstanceNMixin
+    InstanceNMixin, 
+    DevicesMixin
 ):
     """
     Ngspice to VACASK netlist converter. 
@@ -59,16 +63,20 @@ class Converter(
       * params .. list of (name, value) pairs. 
     * model_usage .. a dictionary tracking where individual models are used. 
       Key is a pair of the form (model name, subcircuit where model is defined). 
-      Value is a sets of subcircuit names (None for toplevel circuit) 
+      Value is a set of subcircuit names (None for toplevel circuit) 
       where this model is used. 
     * default_models_needed .. set of device letters
+    * osdi_loads .. set of files loaded by pre_osdi in control block
     * subckts .. a dictionary of subcircuit definitions with name for key
       and values that are tuples holding
       * terminals .. list of terminals
       * parameters .. list of (name, value) pairs for parameters
     * is_toplevel .. True if input file is a toplevel netlist
     """
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
+        # If no config is given, use default config
+        if cfg is None:
+          cfg = dfl.default_config()
         self.cfg = cfg
         self.data = {
             "control": [], 
@@ -76,6 +84,7 @@ class Converter(
             "subckts": {}, 
             "model_usage": {}, 
             "default_models_needed": set(), 
+            "osdi_loads": set(), 
         }
     
     def read(self, filename):
