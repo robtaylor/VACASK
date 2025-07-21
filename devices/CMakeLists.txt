@@ -69,7 +69,7 @@ while(i LESS ${list_len})
     get_filename_component(tmpnamebase "${output}" NAME_WLE)
     # Get <dir_path>
     get_filename_component(tmpdirectory "${output}" DIRECTORY)
-    if ("${tmpdirectory}" EQUAL "")
+    if ("${tmpdirectory}" STREQUAL "")
         # No <dir_path>
         set(tmpdirectory ".")
         set(builddir "${CMAKE_CURRENT_BINARY_DIR}/build-${tmpnamebase}")
