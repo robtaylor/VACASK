@@ -1,50 +1,51 @@
 set(device_sources
-    "opamp.va"           "opamp.osdi"
-    "capacitor.va"       "capacitor.osdi"
-    "inductor.va"        "inductor.osdi"
-    "resistor.va"        "resistor.osdi"
-    "diode.va"           "diode.osdi"
-    "bsim3v3.va"         "bsim3v3.osdi"
-    "bsim4v8.va"         "bsim4v8.osdi"
-    "bsimbulk106.va"     "bsimbulk106.osdi"
-    "psp103v4/psp103.va" "psp103v4.osdi"
-    "spice/resistor.va"  "spice/resistor.osdi"
-    "spice/capacitor.va" "spice/capacitor.osdi"
-    "spice/inductor.va"  "spice/inductor.osdi"
-    "spice/diode.va"     "spice/diode.osdi"
-    "spice/jfet1.va"     "spice/jfet1.osdi"
-    "spice/jfet2.va"     "spice/jfet2.osdi"
-    "spice/mes1.va"      "spice/mes1.osdi"
-    "spice/bjt.va"       "spice/bjt.osdi"
-    "spice/mos1.va"      "spice/mos1.osdi"
-    "spice/mos2.va"      "spice/mos2.osdi"
-    "spice/mos3.va"      "spice/mos3.osdi"
-    "spice/mos6.va"      "spice/mos6.osdi"
-    "spice/mos9.va"      "spice/mos9.osdi"
-    "spice/bsim3v30.va"  "spice/bsim3v30.osdi"
-    "spice/sn/diode.va"     "spice/sn/diode.osdi"
-    "spice/sn/jfet1.va"     "spice/sn/jfet1.osdi"
-    "spice/sn/jfet2.va"     "spice/sn/jfet2.osdi"
-    "spice/sn/mes1.va"      "spice/sn/mes1.osdi"
-    "spice/sn/bjt.va"       "spice/sn/bjt.osdi"
-    "spice/sn/mos1.va"      "spice/sn/mos1.osdi"
-    "spice/sn/mos2.va"      "spice/sn/mos2.osdi"
-    "spice/sn/mos3.va"      "spice/sn/mos3.osdi"
-    "spice/sn/mos6.va"      "spice/sn/mos6.osdi"
-    "spice/sn/mos9.va"      "spice/sn/mos9.osdi"
-    "spice/full/capacitor.va" "spice/full/capacitor.osdi"
-    "spice/full/inductor.va"  "spice/full/inductor.osdi"
-    "spice/full/diode.va"     "spice/full/diode.osdi"
-    "spice/full/jfet1.va"     "spice/full/jfet1.osdi"
-    "spice/full/jfet2.va"     "spice/full/jfet2.osdi"
-    "spice/full/mes1.va"      "spice/full/mes1.osdi"
-    "spice/full/bjt.va"       "spice/full/bjt.osdi"
-    "spice/full/mos1.va"      "spice/full/mos1.osdi"
-    "spice/full/mos2.va"      "spice/full/mos2.osdi"
-    "spice/full/mos3.va"      "spice/full/mos3.osdi"
-    "spice/full/mos6.va"      "spice/full/mos6.osdi"
-    "spice/full/mos9.va"      "spice/full/mos9.osdi"
-    "spice/full/bsim3v30.va"  "spice/full/bsim3v30.osdi"
+    "opamp.va"           "opamp.osdi"            ""
+    "capacitor.va"       "capacitor.osdi"        ""
+    "inductor.va"        "inductor.osdi"         ""
+    "resistor.va"        "resistor.osdi"         ""
+    "diode.va"           "diode.osdi"            ""
+    "bsim3v3.va"         "bsim3v3.osdi"          ""
+    "bsim4v8.va"         "bsim4v8.osdi"          ""
+    "bsimbulk106.va"     "bsimbulk106.osdi"      ""
+    "vbic/vbic_1p3.va"   "vbic_1p3_5t.osdi"      "-DfiveTerminal"
+    "psp103v4/psp103.va" "psp103v4.osdi"         ""
+    "spice/resistor.va"  "spice/resistor.osdi"   ""
+    "spice/capacitor.va" "spice/capacitor.osdi"  ""
+    "spice/inductor.va"  "spice/inductor.osdi"   ""
+    "spice/diode.va"     "spice/diode.osdi"      ""
+    "spice/jfet1.va"     "spice/jfet1.osdi"      ""
+    "spice/jfet2.va"     "spice/jfet2.osdi"      ""
+    "spice/mes1.va"      "spice/mes1.osdi"       ""
+    "spice/bjt.va"       "spice/bjt.osdi"        ""
+    "spice/mos1.va"      "spice/mos1.osdi"       ""
+    "spice/mos2.va"      "spice/mos2.osdi"       ""
+    "spice/mos3.va"      "spice/mos3.osdi"       ""
+    "spice/mos6.va"      "spice/mos6.osdi"       ""
+    "spice/mos9.va"      "spice/mos9.osdi"       ""
+    "spice/bsim3v30.va"  "spice/bsim3v30.osdi"   ""
+    "spice/sn/diode.va"     "spice/sn/diode.osdi"  ""
+    "spice/sn/jfet1.va"     "spice/sn/jfet1.osdi"  ""
+    "spice/sn/jfet2.va"     "spice/sn/jfet2.osdi"  ""
+    "spice/sn/mes1.va"      "spice/sn/mes1.osdi"   ""
+    "spice/sn/bjt.va"       "spice/sn/bjt.osdi"    ""
+    "spice/sn/mos1.va"      "spice/sn/mos1.osdi"   ""
+    "spice/sn/mos2.va"      "spice/sn/mos2.osdi"   ""
+    "spice/sn/mos3.va"      "spice/sn/mos3.osdi"   ""
+    "spice/sn/mos6.va"      "spice/sn/mos6.osdi"   ""
+    "spice/sn/mos9.va"      "spice/sn/mos9.osdi"   ""
+    "spice/full/capacitor.va" "spice/full/capacitor.osdi"  ""
+    "spice/full/inductor.va"  "spice/full/inductor.osdi"   ""
+    "spice/full/diode.va"     "spice/full/diode.osdi"      ""
+    "spice/full/jfet1.va"     "spice/full/jfet1.osdi"      ""
+    "spice/full/jfet2.va"     "spice/full/jfet2.osdi"      ""
+    "spice/full/mes1.va"      "spice/full/mes1.osdi"       ""
+    "spice/full/bjt.va"       "spice/full/bjt.osdi"        ""
+    "spice/full/mos1.va"      "spice/full/mos1.osdi"       ""
+    "spice/full/mos2.va"      "spice/full/mos2.osdi"       ""
+    "spice/full/mos3.va"      "spice/full/mos3.osdi"       ""
+    "spice/full/mos6.va"      "spice/full/mos6.osdi"       ""
+    "spice/full/mos9.va"      "spice/full/mos9.osdi"       ""
+    "spice/full/bsim3v30.va"  "spice/full/bsim3v30.osdi"   ""
 )
 
 # Prepare directory for staging the osdi library
@@ -55,6 +56,7 @@ file(MAKE_DIRECTORY "${STAGED_OSDI_DIRECTORY}")
 set(osdi_built_files "")
 set(osdi_built_files_rel "")
 set(osdi_staged_files "")
+set(osdi_solurce_files "")
 set(osdi_subdirs "")
 list(LENGTH device_sources list_len)
 set(i 0)
@@ -62,7 +64,11 @@ while(i LESS ${list_len})
     list(GET device_sources ${i} source)
     math(EXPR i "${i} + 1")
     list(GET device_sources ${i} output)
+    math(EXPR i "${i} + 1")
+    list(GET device_sources ${i} options)
     set(inputfile "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
+    # Add to source files
+    list(APPEND osdi_source_files "${source}")
     # Destination is <dir_path>/<basename>.osdi
     # Temporary build directory is build-<dir_path> (depth may be >1)
     # Get <basename>
@@ -99,7 +105,7 @@ while(i LESS ${list_len})
         DEPENDS "${inputfile}"
         DEPENDS "${OPENVAF_COMPILER}"
         MAIN_DEPENDENCY "${inputfile}"
-        COMMAND "${OPENVAF_COMPILER}" "--allow" "variant_const_simparam" "-I${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}" -o "${outputfile}"
+        COMMAND "${OPENVAF_COMPILER}" ARGS "${options}" "--allow" "variant_const_simparam" "-I${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}" -o "${outputfile}"
         COMMAND ${CMAKE_COMMAND} ARGS -E copy "${outputfile}" "${built_file}"
         COMMAND ${CMAKE_COMMAND} ARGS -E rm -f "${outputfile}"
         WORKING_DIRECTORY "${builddir}"
@@ -119,7 +125,7 @@ endwhile()
 
 add_custom_target(
     build_and_stage_devices ALL 
-    SOURCES "${device_sources}"
+    SOURCES "${osdi_source_files}"
     DEPENDS "${osdi_staged_files}" "${osdi_built_files}"
 )
 
