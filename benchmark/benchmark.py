@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys, os, time, subprocess, shutil, importlib
+import sys, os, time, subprocess, shutil, importlib, platform
 import numpy as np
 
 # Simple benchmarking framework
@@ -64,32 +64,38 @@ def prepare(wd, subdir):
 
 def find_openvaf():
     openvaf = None
+
+    system = platform.system()
+    if system=="Windows":
+        openvaf_bin = "openvaf-r.exe"
+    else:
+        openvaf_bin = "openvaf-r"
     
     # Check OPENVAF_DIR env variable
     if openvaf is None:
         d = os.environ.get("OPENVAF_DIR")
         if d is not None:
-            openvaf = os.path.join(d, "openvaf-r")
+            openvaf = os.path.join(d, openvaf_bin)
     
     # Check ../../build.VACASK/Debug/simulator
     if openvaf is None:
         if (
             os.path.isdir("../../build.VACASK/Debug/simulator") and
-            os.path.isfile("../../build.VACASK/Debug/simulator/openvaf-r")
+            os.path.isfile("../../build.VACASK/Debug/simulator/"+openvaf_bin)
         ):
-            openvaf = "../../build.VACASK/Debug/simulator/openvaf-r"
+            openvaf = "../../build.VACASK/Debug/simulator/"+openvaf_bin
 
     # Check ../../build.VACASK/Release/simulator
     if openvaf is None:
         if (
             os.path.isdir("../../build.VACASK/Release/simulator") and
-            os.path.isfile("../../build.VACASK/Release/simulator/openvaf-r")
+            os.path.isfile("../../build.VACASK/Release/simulator/"+openvaf_bin)
         ):
-            openvaf = "../../build.VACASK/Release/simulator/openvaf-r"
+            openvaf = "../../build.VACASK/Release/simulator/"+openvaf_bin
 
     # Check system path
     if openvaf is None:
-        openvaf = shutil.which("openvaf-r")
+        openvaf = shutil.which(openvaf_bin)
 
     # Canonical path
     if openvaf is not None:
