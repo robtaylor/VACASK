@@ -4,7 +4,7 @@ def default_config():
     Returns a default configuration. 
     """
     return {
-        "sourcepath": [ ".", "/home/arpadb/sim/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models" ], 
+        "sourcepath": [ "." ], 
         "type_map": {
             # name     params             family  remove level  remove version
             "r":     ( {},                "r",     False,        False), 
@@ -36,6 +36,9 @@ def default_config():
             ("d",     3,    None):     ( "spice/diode.osdi",     "sp_diode",     {} ), 
 
             ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
+            ("bjt",   1,    None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
+            ("bjt",   4,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
+            ("bjt",   9,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
             
             ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 
             ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 

@@ -103,16 +103,17 @@ class MastersMixin:
 
                     if passno==1:
                         # Find first parameter
-                        pstart = 2
-                        for pstart, s in enumerate(parts):
+                        first_param = len(parts)
+                        for ndx, s in enumerate(parts):
                             if self.pat_paramassign.match(s):
+                                first_param = ndx
                                 break
                         
                         # Get terminals
-                        terminals = parts[2:pstart]
+                        terminals = parts[2:first_param]
 
                         # Get parameters, split into name and value
-                        sub_params = [ p.split("=") for p in parts[pstart:]]
+                        sub_params = [ p.split("=") for p in parts[first_param:]]
 
                         # Store
                         self.data["subckts"][in_sub] = (terminals, sub_params)
@@ -130,9 +131,11 @@ class MastersMixin:
                         annot["name"] = name
 
                         # Split params into name-value pairs
-                        params = [p.split("=") for p in params]
+                        params = self.split_params(params, handle_m=False)
+
 
                         # Get information on model type
+                        family = None
                         level = None
                         version = None
                         builtin = False
@@ -161,7 +164,7 @@ class MastersMixin:
                         if in_sub not in self.data["models"]:
                             self.data["models"][in_sub] = {}
                         self.data["models"][in_sub][name] = (
-                            builtin, mtype, level, version, params
+                            builtin, mtype, family, level, version, params
                         )
                 elif not l.startswith("."):
                     if passno==2:

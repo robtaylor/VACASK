@@ -1,6 +1,7 @@
 set(python_files
     rawfile.py
     runtest.py
+    sg13g2tovc.py
     ng2vc.py 
     ng2vclib/__init__.py 
     ng2vclib/converter.py 
@@ -9,8 +10,10 @@ set(python_files
     ng2vclib/generators.py 
     ng2vclib/m_devices.py 
     ng2vclib/m_file.py 
+    ng2vclib/m_inst_d.py 
     ng2vclib/m_inst_n.py 
     ng2vclib/m_inst_passive.py 
+    ng2vclib/m_inst_q.py 
     ng2vclib/m_masters.py 
     ng2vclib/m_model.py 
     ng2vclib/m_output.py 

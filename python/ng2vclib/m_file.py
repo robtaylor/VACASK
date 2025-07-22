@@ -58,6 +58,15 @@ class FileLoaderMixin:
         l = pat_singlequotes.sub(r'{\1}', l)
         # Remove spaces from strings in curly braces, remove curly braces
         l = pat_cbracepair.sub(lambda m: '{' + m.group(1).replace(' ', '') + '}', l)
+
+        # For .model lines, remove parentheses around parameters
+        # .model name type (...)
+        if l.startswith(".model"):
+            mp = l.split(" ", 3)
+            if len(mp)>3 and mp[3].startswith("(") and mp[3].endswith(")"):
+                stripped = mp[3][1:-1].strip()
+                l = " ".join(mp[:3]+[stripped])
+
         # Remove spaces from within paired parentheses
         l = remove_paired_parentheses_spaces(l)
 
@@ -132,7 +141,7 @@ class FileLoaderMixin:
         if fp is None:
             raise ConverterError("File "+filename+" not found")
         try:
-            with open(fp, 'r') as file:
+            with open(fp, 'r', errors='ignore') as file:
                 lines = [line.rstrip('\r\n') for line in file]
         except:
             raise ConverterError("Failed to open "+fp)
@@ -174,11 +183,12 @@ class FileLoaderMixin:
 
             # Is it a .lib or .include line
             islib = llow.startswith(".lib")
+            libmarker = None
             isinclude = llow.startswith(".include")
             isendl = llow.startswith(".endl")
             iscontrol = llow.startswith(".control")
             isendc = llow.startswith(".endc")
-
+            
             if islib:
                 # Check for lib section start
                 # Convert sequences of whitespace to single spaces, strip, and split
@@ -186,19 +196,40 @@ class FileLoaderMixin:
                 # Is it a section marker, i.e. 2 components
                 # Section names do not contain whitespace
                 if len(lcomp)==2:
-                    # Check section
+                    # This is a section marker
                     sec = lcomp[1]
-                    if sec==section:
-                        collect = True
-                        # Do not store
-                        continue
+                    libmarker = sec
+                    if section is not None:
+                        # Looking for section, Check section
+                        if sec==section:
+                            collect = True
+                            # Do not store
+                            continue
+                    elif depth>0:
+                        # Not looking for section, depth>0
+                        # Stray .lib section marker, probably included a .lib file
+                        # Error
+                        raise ConverterError(filename+", line "+str(lnum+1)+": stray section marker.")
+                    else: 
+                        # Not looking for section, depth is 0 
+                        # Store section marker (will do it later)
+                        pass
             elif isendl:
                 # Check for lib section end
                 # Do not check section name, assume file is sane
-                if section is not None and collect:
+                if section is not None:
+                    # Stop collecting
                     collect = False
                     # Do not store
                     continue
+                elif depth>0:
+                    # Not looking for a section, depth>0
+                    # Stray .endl, error
+                    raise ConverterError(filename+", line "+str(lnum+1)+": stray end of section marker.")
+                else:
+                    # Not looking for section, depth is 0 
+                    # Store section marker (will do it later)
+                    pass
             elif iscontrol:
                 # Start of control block
                 inside_control = True
@@ -213,9 +244,8 @@ class FileLoaderMixin:
             # Assume no eol comment
             eolc = ""
 
-            # Recursively read included files
-            
             if isinclude:
+                # Recursively read included files
                 # Extract file name
                 # Skip .include, strip whitespace
                 s = l[8:].strip()
@@ -226,7 +256,7 @@ class FileLoaderMixin:
                 ):
                     s = s[1:-1]
                 # Load include file
-                rd = self.data.get("read_depth", None)
+                rd = self.cfg.get("read_depth", None)
                 if rd is None or depth<rd:
                     inside_control, subdeck = self.read_file(s, depth=depth+1, inside_control=inside_control)
                     eolc = subdeck
@@ -234,32 +264,40 @@ class FileLoaderMixin:
                     # Not going further, just store extracted filename
                     eolc = (s, None, None)
             elif islib:
-                # Extract file name and section
-                # Skip .lib, strip whitespace
-                s = l[4:].strip()
-                # Find first whitespace from right to left
-                sndx = s.rfind(" ")
-                if sndx<0:
-                    # Not found, must be a stray section marker
-                    raise ConverterError(filename+", line "+str(lnum+1)+": stray section marker.")
-                # Extract file name, strip whitespace
-                lfname = s[:sndx].strip()
-                # Unquote
-                if (
-                    lfname.startswith(("'")) and lfname.endswith(("'")) or 
-                    lfname.startswith(('"')) and lfname.endswith(('"'))
-                ):
-                    lfname = lfname[1:-1]
-                # Get section name
-                sname = s[sndx:].strip()
-                # Load lib file
-                rd = self.data.get("read_depth", None)
-                if rd is None or depth<rd:
-                    inside_control, subdeck = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
-                    eolc = subdeck
+                # Handle .lib recursive read and .lib marker                
+                if libmarker is not None:
+                    # This is a section marker, store its data
+                    eolc = (None, libmarker, None)
                 else:
-                    # Not going further, just store extracted filename and section name
-                    eolc = (lfname, sname, None)
+                    # This is a .lib include statement
+                    # Extract file name and section
+                    # Skip .lib, strip whitespace
+                    s = l[4:].strip()
+                    # Find first whitespace from right to left
+                    sndx = s.rfind(" ")
+                    if sndx<0:
+                        # Not found, must be a stray section marker
+                        # This is an error if this is not the top file
+                        if depth>0:
+                            raise ConverterError(filename+", line "+str(lnum+1)+": stray section marker.")
+                    # Extract file name, strip whitespace
+                    lfname = s[:sndx].strip()
+                    # Unquote
+                    if (
+                        lfname.startswith(("'")) and lfname.endswith(("'")) or 
+                        lfname.startswith(('"')) and lfname.endswith(('"'))
+                    ):
+                        lfname = lfname[1:-1]
+                    # Get section name
+                    sname = s[sndx:].strip()
+                    # Load lib file
+                    rd = self.cfg.get("read_depth", None)
+                    if rd is None or depth<rd:
+                        inside_control, subdeck = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
+                        eolc = subdeck
+                    else:
+                        # Not going further, just store extracted filename and section name
+                        eolc = (lfname, sname, None)
             elif not inside_control:
                 # Not .lib, .include, or control block
                 # Separate trailing eol comment

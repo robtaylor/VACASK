@@ -7,6 +7,7 @@
 import sys
 from pprint import pprint
 from ng2vclib.converter import Converter
+from ng2vclib import dfl
 
 if __name__ == "__main__":
     help="""Ngspice to VACASK netlist converter.")
@@ -48,7 +49,13 @@ Arguments:
                 toFile = None
             break
     
-    converter = Converter()
+    cfg = dfl.default_config()
+    cfg["sourcepath"] = [ ".", "/home/arpadb/sim/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models" ]
+    cfg["read_depth"] = 0
+    cfg["process_depth"] = 0
+    cfg["output_depth"] = 0
+
+    converter = Converter(cfg)
     deck = converter.read(fromFile)
     
     # for history, line, control_block in traverse(deck):

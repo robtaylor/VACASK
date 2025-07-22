@@ -6,7 +6,7 @@ class ModelMixin:
         """
         # Model
         name = line.split(" ")[1]
-        builtin, mtype, level, version, params = self.data["models"][in_sub][name]
+        builtin, mtype, family, level, version, params = self.data["models"][in_sub][name]
 
         paren = False
         if mtype in self.cfg["type_map"]:
@@ -14,7 +14,7 @@ class ModelMixin:
             extra_params, family, _, _ = self.cfg["type_map"][mtype]
             osdifile, module, extra_family_params = self.cfg["family_map"][family, level, version]
             vcline = "model "+name+" "+module
-            if len(extra_params>0) or len(params)>0:
+            if len(extra_params)>0 or len(params)>0:
                 vcline += " ( "+eol
                 paren = True
             else:
@@ -22,8 +22,8 @@ class ModelMixin:
 
             if len(extra_params)>0:
                 vcline += (
-                    "\n"+self.format_extra_params(extra_params, lws)+
-                    self.format_extra_params(extra_family_params, " ")
+                    "\n"+self.format_extra_params(extra_params, lws, 0)+
+                    self.format_extra_params(extra_family_params, " ", 0)
                 )
         else:
             vcline = "model "+name+" "+mtype

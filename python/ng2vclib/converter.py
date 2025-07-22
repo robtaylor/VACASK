@@ -3,7 +3,9 @@ from .m_masters import MastersMixin
 from .m_output import OutputMixin
 from .m_model import ModelMixin
 from .m_inst_passive import InstancePassiveMixin
+from .m_inst_d import InstanceDMixin
 from .m_inst_n import InstanceNMixin
+from .m_inst_q import InstanceQMixin
 from .m_devices import DevicesMixin
 
 from . import dfl
@@ -14,7 +16,9 @@ class Converter(
     OutputMixin, 
     ModelMixin, 
     InstancePassiveMixin, 
+    InstanceDMixin, 
     InstanceNMixin, 
+    InstanceQMixin, 
     DevicesMixin
 ):
     """
@@ -58,6 +62,7 @@ class Converter(
       holding elements:
       * builtin .. is it a SPICE builtin
       * model type (npn, pnp, nmos, pmos, ...)
+      * model family
       * level (integer)
       * version (string)
       * params .. list of (name, value) pairs. 
@@ -88,7 +93,26 @@ class Converter(
         }
     
     def read(self, filename):
-        deck = self.read_file(filename)
-        self.data["deck"] = deck
-        return deck
+      """
+      Read a file, store deck. 
+      """
+      deck = self.read_file(filename)
+      self.data["deck"] = deck
+      return deck
+
+    def convert(self, fromFile, toFile=None):
+      self.read(fromFile)
+      
+      self.collect_masters()
+
+      out = self.vacask_file()
+
+      if toFile is None:
+        for l in out:
+          print(l)
+      else:
+        with open(toFile, "w") as f:
+          for l in out:
+            f.write(l)
+            f.write("\n")
 

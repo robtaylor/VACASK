@@ -43,11 +43,10 @@ class OutputMixin:
 
         txt = ""
         first = True
-        for extra in extras:
+        for name, value in extras.items():
             if not first:
                 txt += " "
             first = False
-            name, value = extra
             txt += name+"="+value
         
         return intxt+txt
@@ -153,7 +152,7 @@ class OutputMixin:
 
         return txt
 
-    def split_params(self, params):
+    def split_params(self, params, handle_m=False):
         """
         Splits a list of parameter assignments into a list of 
         (names, value) pairs. 
@@ -162,16 +161,53 @@ class OutputMixin:
         for p in params:
             split = p.split("=")
             if len(split)!=2:
-                print(line)
                 raise ConverterError("Malformed parameter '"+p+"'.")
             
-            # Handle mfactor
-            if p[0]=="m" or p[0]=="_mfactor":
-                split = ( "$mfactor", p[1] )
+            # Handle mfacto
+            if handle_m:
+                if p[0]=="m" or p[0]=="_mfactor":
+                    split = ( "$mfactor", p[1] )
             
             psplit.append(split)
         
         return psplit
+
+    def remove_params(self, params, to_remove=set()):
+        """
+        Removes all parameters listed in set *to_remove*. 
+        Can handle unsplit and split parameters. 
+        """
+        out = []
+        for part in params:
+            if isinstance(part, list):
+                if part[0] in to_remove:
+                    continue
+            elif part in to_remove:
+                    continue
+            out.append(part)
+        return out
+    def merge_vectors(self, params, vecnames=set()):
+        """
+        Merges vector parameters into one string. 
+
+        Assumes *params* is a list of unsplit parameters. 
+        """
+        out = []
+        for ndx in range(len(params)):
+            part = params[ndx]
+            sp = part.split("=", 1)
+            if len(sp)>1 and sp[0] in vecnames:
+                # Start merging
+                merged = ""
+                while ndx<len(params): 
+                    merged += params[ndx]
+                    if params[ndx].strip()[-1]!=",":
+                        break
+                out.append(merged)
+            else:
+                out.append(part)
+        
+        return out
 
     def vacask_file(self):
         """
@@ -221,13 +257,22 @@ class OutputMixin:
                     out.append(lws+"include \""+name+"\"")
             elif l.startswith(".lib"):
                 # Lib
-                if target_depth is None or depth<target_depth:
-                    # Not at the deepest level yet, 
-                    # output a comment containing original .lib
-                    out.append(lws+"// "+l)
+                name, section, subdeck = eolc
+                if name is None:
+                    # Section start marker
+                    out.append(lws+"lib "+section)
                 else:
-                    name, section, subdeck = eolc
-                    out.append(lws+"include \""+name+"\" "+section)
+                    # Library section include
+                    if target_depth is None or depth<target_depth:
+                        # Not at the deepest level yet, 
+                        # output a comment containing original .lib
+                        out.append(lws+"// "+l)
+                    else:
+                        name, section, subdeck = eolc
+                        out.append(lws+"include \""+name+"\" "+section)
+            elif l.startswith(".endl"):
+                # End of section marker
+                out.append(lws+"endl")
             elif l.startswith(".subckt"):
                 name = l.split(" ")[1]
                 in_sub = name
@@ -236,12 +281,14 @@ class OutputMixin:
                 vcline += " ".join(terminals)
                 vcline +=")"
                 out.append(vcline)
-
                 if len(params)>0:
                     out.append(self.format_subckt_params(params, lws))
             elif l.startswith(".ends"):
                 in_sub = None
                 out.append(lws+"ends")
+            elif l.startswith(".param"):
+                txt = l.replace(".param", "parameters")
+                out.append(lws+txt)
             elif l.startswith(".if"):
                 txt = l.replace(".if", "@if")
                 out.append(lws+txt)

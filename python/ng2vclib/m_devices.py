@@ -8,10 +8,10 @@ class DevicesMixin:
         files = []
         for (name, in_sub), in_sub_use_set in self.data["model_usage"].items():
             # Look up model definition
-            builtin, model_type, level, version, _ = self.data["models"][in_sub][name]
+            builtin, model_type, family, level, version, _ = self.data["models"][in_sub][name]
             if builtin:
                 # Look up family
-                file, module = self.cfg["family_map"][model_type, level, version]
+                file, module, _ = self.cfg["family_map"][family, level, version]
                 # Add load 
                 files.append(file)
         

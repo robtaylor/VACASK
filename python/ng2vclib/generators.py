@@ -55,9 +55,12 @@ def traverse(deck, depth=None, input_history=[], parent_line=None, inside_contro
             
             # Check if we are not at the bottom
             if depth is None or at_depth<depth:
-                # Yield subdeck
-                for subh, subl, subd, inside_control in traverse(eolc, depth, history, lnum, inside_control=inside_control):
-                    yield (subh, subl, subd, inside_control)
+                # Do we have a subdeck
+                _, _, sublines = eolc
+                if sublines is not None:
+                    # Yield subdeck
+                    for subh, subl, subd, inside_control in traverse(eolc, depth, history, lnum, inside_control=inside_control):
+                        yield (subh, subl, subd, inside_control)
             
 def format_history(history, lineno):
     """

@@ -38,7 +38,7 @@ class InstancePassiveMixin:
         else:
             # Have model
             if mod_index==2:
-                # Second entry, immediately after terminals, no value
+                # Thrrd entry, immediately after terminals, no value
                 psplit = []
                 model = parts[mod_index]
                 params = parts[3:]
@@ -52,7 +52,131 @@ class InstancePassiveMixin:
                 raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
 
         # Add parameter assignments
-        psplit = psplit + split_params(params)
+        psplit = psplit + self.split_params(params, handle_m=True)
+                
+        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+
+        if len(psplit)>0:
+            fmted, need_split, split = self.format_params(psplit, len(txt))
+            if need_split or split:
+                fmted = self.indent(fmted, len(lws)+2)
+                txt += "(" + eol + "\n" + fmted
+                txt += "\n" + lws + ")"
+            else:
+                txt += " " + fmted
+        
+        return txt
+
+    def process_instance_c(self, lws, line, eol, annot, in_sub):
+        """
+        Process C instance (capacitor). 
+
+        cname p n <value> [<p1=value1> <p2=value2> ...]
+        cname p n <model> [<p1=value1> <p2=value2> ...]
+        cname p n <value> <model> [<p1=value1> <p2=value2> ...]
+
+        Removes ic parameter. 
+        """
+        name = annot["name"]
+        parts = annot["words"]
+        mod_index = annot["mod_index"]
+        model = annot["mod_name"]
+        
+        terminals = parts[:2]
+
+        if model is None:
+            # No model specified
+            model = self.cfg["default_model_prefix"]+"c"
+            self.data["default_models_needed"].add("c")
+
+            # Part 3 is a parameter assignment
+            params = parts[2:]
+
+            # No parameter assignments yet
+            psplit = []
+        else:
+            # Have model
+            if mod_index==2:
+                # Third entry, immediately after terminals, no value
+                psplit = []
+                model = parts[mod_index]
+                params = parts[3:]
+            elif mod_index==3:
+                # Model is 4th entry, 3rd entry must be a value
+                psplit = [("c", self.format_value(parts[2]))]
+                model = parts[mod_index]
+                params = parts[4:]
+            else:
+                # Don't know how to handle
+                raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
+
+        # Add parameter assignments
+        psplit = psplit + self.split_params(params, handle_m=True)
+
+        # Remove ic parameter
+        psplit = self.remove_params(psplit, set(["ic"]))
+                
+        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+
+        if len(psplit)>0:
+            fmted, need_split, split = self.format_params(psplit, len(txt))
+            if need_split or split:
+                fmted = self.indent(fmted, len(lws)+2)
+                txt += "(" + eol + "\n" + fmted
+                txt += "\n" + lws + ")"
+            else:
+                txt += " " + fmted
+        
+        return txt
+
+    def process_instance_l(self, lws, line, eol, annot, in_sub):
+        """
+        Process L instance (inductor). 
+
+        lname p n <value> [<p1=value1> <p2=value2> ...]
+        lname p n <model> [<p1=value1> <p2=value2> ...]
+        lname p n <value> <model> [<p1=value1> <p2=value2> ...]
+
+        Removes ic parameter. 
+        """
+        name = annot["name"]
+        parts = annot["words"]
+        mod_index = annot["mod_index"]
+        model = annot["mod_name"]
+        
+        terminals = parts[:2]
+
+        if model is None:
+            # No model specified
+            model = self.cfg["default_model_prefix"]+"l"
+            self.data["default_models_needed"].add("l")
+
+            # Part 3 is a parameter assignment
+            params = parts[2:]
+
+            # No parameter assignments yet
+            psplit = []
+        else:
+            # Have model
+            if mod_index==2:
+                # Third entry, immediately after terminals, no value
+                psplit = []
+                model = parts[mod_index]
+                params = parts[3:]
+            elif mod_index==3:
+                # Model is 4th entry, 3rd entry must be a value
+                psplit = [("l", self.format_value(parts[2]))]
+                model = parts[mod_index]
+                params = parts[4:]
+            else:
+                # Don't know how to handle
+                raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
+
+        # Add parameter assignments
+        psplit = psplit + self.split_params(params, handle_m=True)
+
+        # Remove ic parameter
+        psplit = self.remove_params(psplit, set(["ic"]))
                 
         txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
 

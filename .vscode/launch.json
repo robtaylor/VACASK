@@ -165,10 +165,25 @@
             "type": "debugpy",
             "request": "launch",
             "program": "ng2vc.py",
-            "args": [ "sg13g2_moslv_mod.lib" ],
+            // "args": [ "sg13g2_moslv_mod.lib" ],
+            "args": [ "cornerMOSlv.lib" ],
             // "args": [ "sg13g2_moslv_parm.lib", "test2.sim" ],
             "console": "integratedTerminal", 
             "cwd": "${workspaceFolder}/python"
+        }, 
+
+        {
+            "name": "Python Debugger: IHP PDK converter",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "sg13g2tovc",
+            "console": "integratedTerminal", 
+            "cwd": "${workspaceFolder}/../IHP-Open-PDK", 
+            "env": { 
+                "PYTHONPATH": "${workspaceFolder}/python", 
+                "PDK_ROOT": "${workspaceFolder}/../IHP-Open-PDK", 
+                "PDK": "ihp-sg13g2"
+            }
         }
 
     ]
