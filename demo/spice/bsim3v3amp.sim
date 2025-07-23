@@ -1,8 +1,8 @@
 BSIM3 3.3.0 MOSFET amplifier
 
-load "spice/bsim3v30.osdi"
+load "spice/bsim3v3.osdi"
 load "resistor.osdi"
-include "bsim3v30.inc"
+include "bsim3v3.inc"
 
 model v vsource
 model r resistor
@@ -24,7 +24,7 @@ ends
 
 control
   print devices
-  print device("sp_bsim3v30")
+  print device("sp_bsim3v3")
   
   elaborate circuit("namp")
   

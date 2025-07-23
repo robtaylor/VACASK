@@ -2,7 +2,7 @@
 // Berkeley Spice Compatibility 
 // Lmin= .35 Lmax= 20 Wmin= .6 Wmax= 20
 
-model n1 sp_bsim3v30 ( type=1
+model n1 sp_bsim3v3 ( type=1
   tnom=27.0
   nqsmod=1 acnqsmod=0 elm=3
   capmod=3 
@@ -39,7 +39,7 @@ model n1 sp_bsim3v30 ( type=1
   kf=0.032f af=1 rsh=7
 )
 
-model p1 sp_bsim3v30 ( type=-1
+model p1 sp_bsim3v3 ( type=-1
   tnom=27.0
   nqsmod=1 acnqsmod=0 elm=3
   nch= 3.533024e+17  tox=9e-09 xj=1.00000e-07

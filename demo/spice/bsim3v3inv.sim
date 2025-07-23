@@ -1,7 +1,7 @@
 BSIM3 3.3.0 MOSFET inverter
 
-load "spice/bsim3v30.osdi"
-include "bsim3v30.inc"
+load "spice/bsim3v3.osdi"
+include "bsim3v3.inc"
 
 model v vsource
 

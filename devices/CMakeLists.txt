@@ -24,7 +24,7 @@ set(device_sources
     "spice/mos3.va"      "spice/mos3.osdi"       ""
     "spice/mos6.va"      "spice/mos6.osdi"       ""
     "spice/mos9.va"      "spice/mos9.osdi"       ""
-    "spice/bsim3v30.va"  "spice/bsim3v30.osdi"   ""
+    "spice/bsim3v3.va"   "spice/bsim3v3.osdi"    ""
     "spice/sn/diode.va"     "spice/sn/diode.osdi"  ""
     "spice/sn/jfet1.va"     "spice/sn/jfet1.osdi"  ""
     "spice/sn/jfet2.va"     "spice/sn/jfet2.osdi"  ""
@@ -47,7 +47,7 @@ set(device_sources
     "spice/full/mos3.va"      "spice/full/mos3.osdi"       ""
     "spice/full/mos6.va"      "spice/full/mos6.osdi"       ""
     "spice/full/mos9.va"      "spice/full/mos9.osdi"       ""
-    "spice/full/bsim3v30.va"  "spice/full/bsim3v30.osdi"   ""
+    "spice/full/bsim3v3.va"   "spice/full/bsim3v3.osdi"    ""
 )
 
 # Prepare directory for staging the osdi library

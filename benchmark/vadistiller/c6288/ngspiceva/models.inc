@@ -8,7 +8,7 @@
   nm1 d g s b p1 w={w} l={l} ad={w*ld} as={w*ls} pd={2*(w+ld)} ps={2*(w+ls)}
 .ends
 
-.model n1 sp_bsim3v30 type=1
+.model n1 sp_bsim3v3 type=1
 + tnom=27.0
 + nqsmod=0 acnqsmod=0 elm=3
 + capmod=3 
@@ -44,7 +44,7 @@
 + kt1l=0  prt=764.3
 + kf=0.032f af=1 rsh=7
 
-.model p1 sp_bsim3v30 type=-1
+.model p1 sp_bsim3v3 type=-1
 + tnom=27.0
 + nqsmod=0 acnqsmod=0 elm=3
 + nch= 3.533024e+17  tox=9e-09 xj=1.00000e-07

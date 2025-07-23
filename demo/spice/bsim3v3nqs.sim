@@ -1,9 +1,9 @@
 BSIM3 3.3.0 MOSFET NQS model test
 
-load "spice/bsim3v30.osdi"
+load "spice/bsim3v3.osdi"
 load "resistor.osdi"
 
-model nch sp_bsim3v30 type=1 cgso=0 cgdo=0 cgsl=0 cgdl=0 cf=0 cgbo=0
+model nch sp_bsim3v3 type=1 cgso=0 cgdo=0 cgsl=0 cgdl=0 cf=0 cgbo=0
 
 model v vsource
 model r resistor

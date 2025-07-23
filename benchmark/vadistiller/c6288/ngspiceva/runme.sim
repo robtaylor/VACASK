@@ -60,7 +60,7 @@ x1  a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15
 .options klu
 
 .control
-  pre_osdi bsim3v30.osdi
+  pre_osdi bsim3v3.osdi
   save v(p0) v(p1) v(p2) v(p3) v(p4) v(p5) v(p6) v(p7) v(p8) v(p9)
   save v(p10) v(p11) v(p12) v(p13) v(p14) v(p15) v(p16) v(p17) v(p18) v(p19)
   save v(p20) v(p21) v(p22) v(p23) v(p24) v(p25) v(p26) v(p27) v(p28) v(p29)

@@ -105,7 +105,7 @@ Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADi
 |MOSFET level 3 (empirical) *        |mos3.va     |sp_mos3      |
 |MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |sp_mos6      |
 |MOSFET level 9 (modified level 3) * |mos9.va     |sp_mos9      |
-|BSIM3 3.3.0                         |bsim3v30.va |sp_bsim3v30  |
+|BSIM3 3.3.0                         |bsim3v3.va  |sp_bsim3v3   |
 
 Devices marked with an asterisk (*) do not conserve charge because of the modeling approach chosen by their respective authors. 
 

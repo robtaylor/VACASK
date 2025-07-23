@@ -5,8 +5,8 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-44-65-g0654f477c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-09 08:10:33 UTC
-// Module name  : sp_bsim3v30
+// Date         : 2025-07-23 10:44:40 UTC
+// Module name  : sp_bsim3v3
 // Model variant: default
 // 
 // Notes:
@@ -117,7 +117,7 @@
 `include "constants.vams"
 `include "disciplines.vams"
 
-module sp_bsim3v30(d, g, s, b);
+module sp_bsim3v3(d, g, s, b);
   inout d, g, s, b;
   electrical d, g, s, b, d_int, s_int, q_int;
 
