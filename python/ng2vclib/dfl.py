@@ -91,8 +91,9 @@ def default_config():
         }, 
         "default_model_prefix": "defmod_", 
         "as_toplevel": "auto", 
-        "columns": 80, 
         "read_depth": None,    # Fully recursive
         "process_depth": None, # Fully recursive
         "output_depth": None,  # Fully recursive
+        "patch": {}, 
+        "columns": 80, 
     }

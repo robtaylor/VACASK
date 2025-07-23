@@ -50,9 +50,19 @@ class Converter(
       * yes .. do not treat as toplevel
     * all_models .. if True writes all models to the output, 
       otherwise ony used models are written
+    * read_depth .. include/lib depth up to which the files are read.
+      Default (None) is equivalent to no depth limit. 
+    * process_depth .. include/lib depth up to which the files are processed. 
+      Default (None) is equivalent to no depth limit. 
+    * output_depth .. include/lib depth up to which the files are written
+      to a VACASK netlist. Default (None) is equivalent to no depth limit. 
+    * patch .. a dictionary of patches with file name for key. Files are 
+      matched to this key with the last part of their name. 
+      Values are lists of pairs of the form (old, new). If the old string is 
+      found in the beginning of a line the whole line is replaced with the 
+      new string. 
     * columns .. number of columns per line
-    * flat .. produce flat netlist (resolve all .incliues and .libs)
-
+    
     The data member dictionary holds the following keys:
     * title .. unprocessed first line of toplevel file
     * control .. control block lines
