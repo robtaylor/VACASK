@@ -260,7 +260,7 @@ class OutputMixin:
                 name, section, subdeck = eolc
                 if name is None:
                     # Section start marker
-                    out.append(lws+"lib "+section)
+                    out.append(lws+"section "+section)
                 else:
                     # Library section include
                     if target_depth is None or depth<target_depth:
@@ -269,10 +269,10 @@ class OutputMixin:
                         out.append(lws+"// "+l)
                     else:
                         name, section, subdeck = eolc
-                        out.append(lws+"include \""+name+"\" "+section)
+                        out.append(lws+"include \""+name+"\" section="+section)
             elif l.startswith(".endl"):
                 # End of section marker
-                out.append(lws+"endl")
+                out.append(lws+"endsection")
             elif l.startswith(".subckt"):
                 name = l.split(" ")[1]
                 in_sub = name
@@ -286,6 +286,9 @@ class OutputMixin:
             elif l.startswith(".ends"):
                 in_sub = None
                 out.append(lws+"ends")
+            elif l.startswith(".params"):
+                txt = l.replace(".params", "parameters")
+                out.append(lws+txt)
             elif l.startswith(".param"):
                 txt = l.replace(".param", "parameters")
                 out.append(lws+txt)
@@ -315,20 +318,21 @@ class OutputMixin:
                     except ConverterError as e:
                         raise ConverterError(str(e), history, lnum)
                     out.append(txt)
-                
-        # Dump load statements and default models. 
-        # This will happen only in the toplevel
-        m = self.load_statements()
-        if len(m)>0:
-            out.append("")
-            out.append("// Modules")
-            out.extend(m)
         
-        m = self.default_models()
-        if len(m)>0:
-            out.append("")
-            out.append("// Default models")
-            out.extend(m)
+        if self.data["is_toplevel"]:
+            # Dump load statements and default models. 
+            # This will happen only in the toplevel
+            m = self.load_statements()
+            if len(m)>0:
+                out.append("")
+                out.append("// Modules")
+                out.extend(m)
+            
+            m = self.default_models()
+            if len(m)>0:
+                out.append("")
+                out.append("// Default models")
+                out.extend(m)
         
         return out
                 

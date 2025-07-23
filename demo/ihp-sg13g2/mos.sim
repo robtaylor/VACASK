@@ -1,0 +1,165 @@
+IHP SG13G2 MOSFET test
+
+include "sg13g2_vacask_common.lib"
+include "cornerMOSlv.lib" section=mos_tt
+include "cornerMOShv.lib" section=mos_tt
+
+model v vsource
+vgs (g 0) v dc=0
+vds (d 0) v dc=0
+  
+subckt lvntest()
+  m1 (d g 0 0) sg13_lv_nmos w=1u l=0.13u
+ends
+
+subckt lvptest()
+  m1 (d g 0 0) sg13_lv_pmos w=1u l=0.13u
+ends
+
+subckt nmoscl2test()
+  m1 (d 0) nmoscl_2 w=10u l=0.3u
+ends
+
+subckt nmoscl4test()
+  m1 (d 0) nmoscl_4 w=10u l=0.3u
+ends
+
+subckt hvntest()
+  m1 (d g 0 0) sg13_hv_nmos w=2u l=0.45u
+ends
+
+subckt hvptest()
+  m1 (d g 0 0) sg13_hv_pmos w=2u l=0.45u
+ends
+
+
+control
+  print models
+  print("")
+  
+  elaborate circuit("lvntest")
+  sweep vgs instance="vgs" parameter="dc" from=0.2 to=1.4 step=0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=1.5 step=0.01
+    analysis oplvn op
+  
+  elaborate circuit("lvptest")
+  sweep vgs instance="vgs" parameter="dc" from=-0.2 to=-1.4 step=-0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=-1.5 step=-0.01
+    analysis oplvp op
+
+  elaborate circuit("nmoscl2test")
+  sweep vds instance="vds" parameter="dc" from=-0.2 to=1.5 step=0.01
+    analysis opnmoscl2 op
+
+  elaborate circuit("nmoscl4test")
+  sweep vds instance="vds" parameter="dc" from=-0.2 to=1.5 step=0.01
+    analysis opnmoscl4 op
+
+  elaborate circuit("hvntest")
+  sweep vgs instance="vgs" parameter="dc" from=0.2 to=1.4 step=0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=3.3 step=0.01
+    analysis ophvn op
+  
+  elaborate circuit("hvptest")
+  sweep vgs instance="vgs" parameter="dc" from=-0.2 to=-1.4 step=-0.2
+  sweep vds instance="vds" parameter="dc" from=0 to=-3.3 step=-0.01
+    analysis ophvp op
+
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig1 = plt.figure(figsize=(12,6), dpi=100)
+fig1.suptitle('IHP SG13G2 MOSFET test')
+ax_dict = fig1.subplot_mosaic("""
+ABC
+EFD
+""")
+
+ax_dict["A"].set_title('LV NMOS 1u/0.13u')
+ax_dict["A"].set_ylabel('Id [uA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+raw = rawread('oplvn.raw')
+plot = raw.get(sweeps=1)
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e6, label=traceName)
+    
+ax_dict["A"].legend(loc='upper left')
+
+ax_dict["B"].set_title('LV PMOS 1u/0.13u')
+ax_dict["B"].set_ylabel('Id [uA]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+raw = rawread('oplvp.raw')
+plot = raw.get(sweeps=1)
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["B"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e6, label=traceName)
+    
+ax_dict["B"].legend(loc='lower right')
+
+raw = rawread('opnmoscl2.raw')
+plot = raw.get()
+ax_dict["C"].plot(plot['d'], -plot['vds:flow(br)']*1e6, label=traceName)
+
+ax_dict["C"].set_title('NMOSCL_2 10u/0.3u')
+ax_dict["C"].set_ylabel('Id [uA]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+raw = rawread('opnmoscl4.raw')
+plot = raw.get()
+ax_dict["D"].plot(plot['d'], -plot['vds:flow(br)']*1e6, label=traceName)
+
+ax_dict["D"].set_title('NMOSCL_4 10u/0.3u')
+ax_dict["D"].set_ylabel('Id [uA]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+ax_dict["E"].set_title('HV NMOS 2u/0.45u')
+ax_dict["E"].set_ylabel('Id [uA]')
+ax_dict["E"].set_xlabel('Vds [V]')
+
+raw = rawread('ophvn.raw')
+plot = raw.get(sweeps=1)
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["E"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e6, label=traceName)
+    
+ax_dict["E"].legend(loc='upper left')
+
+ax_dict["F"].set_title('HV PMOS 2u/0.45u')
+ax_dict["F"].set_ylabel('Id [uA]')
+ax_dict["F"].set_xlabel('Vds [V]')
+
+raw = rawread('ophvp.raw')
+plot = raw.get(sweeps=1)
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["F"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e6, label=traceName)
+    
+ax_dict["F"].legend(loc='lower right')
+
+fig1.tight_layout()
+ 
+plt.show()
+>>>FILE
+
+

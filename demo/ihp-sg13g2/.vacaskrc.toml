@@ -1,0 +1,4 @@
+# VACASK configuration file 
+[Paths]
+include_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/models" ]
+module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]

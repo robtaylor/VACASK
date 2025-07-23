@@ -16,11 +16,11 @@ tech_files = [
     # "capacitors_mod_mismatch.lib", 
     # "capacitors_stat.lib", 
     
-    ( "cornerCAP.lib", 0, None),  
+    ( "cornerCAP.lib", 0, 0),  
     # "cornerHBT.lib", 
-    ( "cornerMOShv.lib", 0, None ), 
-    ( "cornerMOSlv.lib", 0, None ), 
-    ( "cornerRES.lib", 0, None ), 
+    ( "cornerMOShv.lib", 0, 0 ), 
+    ( "cornerMOSlv.lib", 0, 0 ), 
+    ( "cornerRES.lib", 0, 0 ), 
     
     ( "diodes.lib", 1, None ), 
     
@@ -48,7 +48,7 @@ tech_files = [
     # "sg13g2_moslv_parm.lib", # flattened
     # "sg13g2_moslv_stat.lib", 
     
-    # "sg13g2_svaricaphv_mod.lib", 
+    ( "sg13g2_svaricaphv_mod.lib", 1, None),  
     # "sg13g2_svaricaphv_mod_mismatch.lib", 
 
 ]
@@ -60,6 +60,12 @@ patches = {
             ".MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 8 nbv=1.324   eg=1.17 xti=3  )", 
             ".MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 nbv=1.324   eg=1.17 xti=3  )"
         ), 
+    ],
+    "sg13g2_svaricaphv_mod.lib": [
+        (
+            "+ stuac 40", 
+            "+ stuac=40"
+        )
     ]
 }
 
@@ -97,7 +103,7 @@ if __name__=="__main__":
     os.makedirs(dest, exist_ok=True)
 
     # Go through tech files and convert
-    files = set()
+    osdi_files = set()
     dflmods = set()
     for file, read_process_depth, output_depth in tech_files:
         print("Converting:", file)
@@ -124,34 +130,13 @@ if __name__=="__main__":
             k = family, level, version
             if k in cvt.cfg["family_map"]:
                 file, _, _ = cvt.cfg["family_map"][k]
-                files.add(file)
+                osdi_files.add(file)
         
         # OSDI files based on builtin models
         for mt in cvt.data["default_models_needed"]:
             file, module = cvt.cfg["default_models"][mt]
-            files.add(file)
+            osdi_files.add(file)
             dflmods.add((mt, module))
-    
-    # Add OSDI files included with PDK
-    for f, _ in included_va_files:
-        files.add(f)
-
-    # Create an include file with common loads and models
-    print("Creating common include file")
-    txt = ""
-    if len(files)>0:
-        txt += "// OSDI files\n"
-        for f in files:
-            txt += "load \""+f+"\"\n"
-        if len(dflmods)>0:
-            txt +="\n"
-    if len(dflmods)>0:
-        txt += "\n// Default models\n"
-        for mt, module in dflmods:
-            txt += "model "+cvt.cfg["default_model_prefix"]+mt+" "+module+"\n"
-    
-    with open(os.path.join(dest, "common_models.lib"), "w") as f:
-        f.write(txt)
     
     # Create .vacaskrc.toml
     print("Creating sample .vacaskrc.toml")
@@ -209,6 +194,7 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
         f = os.path.join(d, f)
         fb = os.path.basename(f)
         fo = os.path.join(mdir, fb[:-3]+".osdi")
+        osdi_files.add(fo)
         print("Compiling", f)
         cmdline = [ openvaf ] + extra_opts + [ "-o", fo, f ]
         retval = subprocess.run(cmdline)
@@ -216,6 +202,22 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
             print("Verilog-A compiler error.")
             sys.exit(1)
 
+    # Create an include file with common loads and models
+    print("Creating common include file")
+    txt = ""
+    if len(osdi_files)>0:
+        txt += "// OSDI files\n"
+        for f in osdi_files:
+            txt += "load \""+f+"\"\n"
+        if len(dflmods)>0:
+            txt +="\n"
+    if len(dflmods)>0:
+        txt += "\n// Default models\n"
+        for mt, module in dflmods:
+            txt += "model "+cvt.cfg["default_model_prefix"]+mt+" "+module+"\n"
+    
+    with open(os.path.join(dest, "sg13g2_vacask_common.lib"), "w") as f:
+        f.write(txt)
 
 
 

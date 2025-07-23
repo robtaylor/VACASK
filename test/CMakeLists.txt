@@ -31,10 +31,12 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/manual_run")
 
 set(TEST_DEPENDENCIES
     diocalc.py
+    ../demo/ihp-sg13g2/.vacaskrc.toml
 )
 
 foreach(item IN ITEMS ${TEST_DEPENDENCIES})
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${item} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${item} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/manual_run")
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${item} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/manual_run")
 endforeach()
 

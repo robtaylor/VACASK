@@ -21,11 +21,13 @@ PYTHONPATH=/usr/local/lib/vacask/python python3 -m sg13g2tovc
 
 The converter will process the Ngspice models and 
 * create a directory `ihp-sg13g2/libs.tech/vacask/models` with the converted models
-* create an include file `ihp-sg13g2/libs.tech/vacask/models/common_models.lib`
-  (always include this file beside all PDK files)
 * create a VACASK config file `ihp-sg13g2/libs.tech/vacask/.vacaskrc.toml`
   (copy this file to the directory where you will start VACASK)
 * compile the Verilog-A models that are provided with the PDK and place the 
   resulting .osdi files in `ihp-sg13g2/libs.tech/vacask/osdi`
+* create an include file `ihp-sg13g2/libs.tech/vacask/models/sg13g2_vacask_common.lib`
+  (always include this file along with all other PDK files)
 
 In order to use the converted PDK copy the generated VACASK config file to the directory where you intend to run VACASK. 
+
+Some examples and a [.vacaskrc.toml](.vacaskrc.toml) configuration file are available in this directory. Just set the `PDK_ROOT` and the `PDK` environmental variables and run examples with VACASK. The VACASK startup directory must contain the aforementioned [.vacaskrc.toml](.vacaskrc.toml) file. 
