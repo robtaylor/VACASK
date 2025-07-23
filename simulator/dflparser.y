@@ -611,6 +611,9 @@ expr
     $$.extend(std::move($2)); 
     $$.extend(Rpn::Op(Rpn::OpUMinus), @1.loc());  
   }
+  | PLUS expr %prec NEG { 
+    $$.extend(std::move($2)); 
+  }
   | LPAREN expr RPAREN{ 
     $$.extend(std::move($2)); 
   }
