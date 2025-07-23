@@ -46,13 +46,13 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - predictor-corrector local truncation error control in transient analysis
 - numerical solvers based on the KLU sparse matrix library
 - SPICE ASCII/binary raw file output
-- embedded postprocessing scripts and Verilog-A models in the netlist
+- embedded files in the netlist
 - postprocessing of results with external tools (some basic Python/Numpy scripts are provided)
 - a growing [library of Verilog-A models](devices/) (diode, BSIM3, BSIM4, BSIMBULK, ...)
 - simulator library that can be linked to 3rd party software
 - circuit can be built programmatically or read by a custom parser
 - netlist parser with Spectre-like syntax
-- Ngspice netlist converter (under development, at this point it can convert IHP Open PDK)
+- Ngspice netlist converter (under development, at this point it can convert [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK))
  
 Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF-reloaded or even Verilog-A. 
 

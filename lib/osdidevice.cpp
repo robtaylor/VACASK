@@ -282,7 +282,7 @@ std::tuple<bool, bool> OsdiDevice::parameterGiven(OsdiFile::OsdiParameterId osdi
         flag = (bool)(descriptor_->given_flag_model(coreMod, osdiId));
     }
 
-    return std::make_tuple(false, flag);
+    return std::make_tuple(true, flag);
 }
 
 std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
