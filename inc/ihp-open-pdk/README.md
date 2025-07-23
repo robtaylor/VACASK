@@ -4,19 +4,28 @@ Clone IHP SG13G2 PDK
 ```
 git clone https://github.com/IHP-GmbH/IHP-Open-PDK
 ```
-Now you have a directory named IHP-Open-PDK. 
+Now you have a directory named `IHP-Open-PDK`. 
+
+Set environmental variables
+* `PDK_ROOT` to the directory where you downloaded the PDK (e.g. `/home/myname/IHP-Open-PDK`) and
+* `PDK` to `ihp-sg13g2`. 
 
 You will need the path to VACASK's Python scripts. If you don't know where these scripts are, type
 ```
 vacask -dp
 ```
-and look for "Python path addition". Suppose the python path addition is "/usr/local/lib/vacask/python" and the PDK is in "/home/myname/IHP-Open-PDK". Type
+and look for "Python path addition". Suppose the python path addition is `/usr/local/lib/vacask/python`. Type
 ```
-IHPPDK=/home/myname/IHP-Open-PDK PYTHONPATH=/usr/local/lib/vacask/python python3 -m sg13g2tovc
+PYTHONPATH=/usr/local/lib/vacask/python python3 -m sg13g2tovc
 ```
-The converter will process the Ngspice models and create a directory named "ihp-sg13g2/libs.tech/vacask" with the converted models. 
 
+The converter will process the Ngspice models and 
+* create a directory `ihp-sg13g2/libs.tech/vacask/models` with the converted models
+* create an include file `ihp-sg13g2/libs.tech/vacask/models/common_models.lib`
+  (always include this file beside all PDK files)
+* create a VACASK config file `ihp-sg13g2/libs.tech/vacask/.vacaskrc.toml`
+  (copy this file to the directory where you will start VACASK)
+* compile the Verilog-A models that are provided with the PDK and place the 
+  resulting .osdi files in `ihp-sg13g2/libs.tech/vacask/osdi`
 
-
-
-
+In order to use the converted PDK copy the generated VACASK config file to the directory where you intend to run VACASK. 

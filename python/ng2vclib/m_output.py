@@ -163,10 +163,10 @@ class OutputMixin:
             if len(split)!=2:
                 raise ConverterError("Malformed parameter '"+p+"'.")
             
-            # Handle mfacto
+            # Handle mfactor
             if handle_m:
-                if p[0]=="m" or p[0]=="_mfactor":
-                    split = ( "$mfactor", p[1] )
+                if split[0]=="m" or split[0]=="_mfactor":
+                    split = ( "$mfactor", split[1] )
             
             psplit.append(split)
         

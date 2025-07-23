@@ -175,7 +175,6 @@ after INCEND we have
             }
 <LONGQUOTED>\>\>\>[a-zA-Z0-9_]+ {
                 // Possible string end
-                int a=1;
                 if (marker == yytext+3) {
                     yy_pop_state();
                     loc->begin = stringStart;

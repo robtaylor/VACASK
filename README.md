@@ -71,16 +71,19 @@ The following device models are supplied with VACASK.
 |Current-controlled current source|cccs   |
 |Inductive coupling               |mutual |
 
-|Verilog-A device          |File               |Module   |
-|--------------------------|-------------------|---------|
-|Linear resistor           |resistor.va        |resistor |
-|Linear capacitor          |capacitor.va       |capacitor|
-|Linear inductor           |inductor.va        |inductor |
-|SPICE diode               |diode.va           |diode    |
-|BSIM3v3 MOSFET (Cogenda)  |bsim3v3.va         |bsim3    |
-|BSIM4v8 MOSFET (Cogenda)  |bsim4v8.va         |bsim4    |
-|PSP103.4 MOSFET           |psp103v4/psp103.va |psp103va |
-|BSIMBULK MOSFET 106.2.0   |bsimbulk.va        |bsimbulk |
+|Verilog-A device          |File               |OSDI file       |Module   |
+|--------------------------|-------------------|----------------|---------|
+|Linear resistor           |resistor.va        |resistor.osdi   |resistor |
+|Linear capacitor          |capacitor.va       |capacitor.osdi  |capacitor|
+|Linear inductor           |inductor.va        |inductor.osdi   |inductor |
+|SPICE diode               |diode.va           |diode.osdi      |diode    |
+|VBIC 1.3, 3 terminals     |vbic/vbic_1p3.va   |vbic1p3.osdi    |vbic13   |
+|VBIC 1.3, 4 terminals     |vbic/vbic_1p3.va   |vbic1p3_4t.osdi |vbic13_4t|
+|VBIC 1.3, 5 terminals     |vbic/vbic_1p3.va   |vbic1p3_5t.osdi |vbic13_5t|
+|BSIM3v3 MOSFET (Cogenda)  |bsim3v3.va         |bsim3v3.osdi    |bsim3    |
+|BSIM4v8 MOSFET (Cogenda)  |bsim4v8.va         |bsim4v8.osdi    |bsim4    |
+|PSP103.4 MOSFET           |psp103v4/psp103.va |psp103.osdi     |psp103va |
+|BSIMBULK MOSFET 106.2.0   |bsimbulk.va        |bsimbulk.osdi   |bsimbulk |
 
 All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
 

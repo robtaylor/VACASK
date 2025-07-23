@@ -165,9 +165,9 @@
             "type": "debugpy",
             "request": "launch",
             "program": "ng2vc.py",
-            // "args": [ "sg13g2_moslv_mod.lib" ],
-            "args": [ "cornerMOSlv.lib" ],
-            // "args": [ "sg13g2_moslv_parm.lib", "test2.sim" ],
+            // "args": [ "-do", "1", "-sp", "${workspaceFolder}/../IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models", "sg13g2_moslv_mod.lib" ],
+            "args": [ "-dr", "0", "-sp", "${workspaceFolder}/../IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models", "cornerMOSlv.lib" ],
+            // "args": [ "-do", "0", "-sp", "${workspaceFolder}/../IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models", "sg13g2_moslv_parm.lib", "test2.sim" ],
             "console": "integratedTerminal", 
             "cwd": "${workspaceFolder}/python"
         }, 

@@ -22,7 +22,7 @@ class ModelMixin:
 
             if len(extra_params)>0:
                 vcline += (
-                    "\n"+self.format_extra_params(extra_params, lws, 0)+
+                    "\n"+self.format_extra_params(extra_params, lws, 2)+
                     self.format_extra_params(extra_family_params, " ", 0)
                 )
         else:

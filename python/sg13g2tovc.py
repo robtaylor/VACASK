@@ -10,10 +10,6 @@ from pprint import pprint
 from ng2vclib.converter import Converter
 from ng2vclib.dfl import default_config
 
-# Manually fix file libs.tech/ngspice/models/sg13g2_esd.lib
-# .MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 8 nbv=1.324   eg=1.17 xti=3  )
-# ->
-# .MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 nbv=1.324   eg=1.17 xti=3  )
 tech_files = [
     # file  read&process depth  output depth
     ( "capacitors_mod.lib", 1, None ), 
@@ -57,6 +53,21 @@ tech_files = [
 
 ]
 
+# A bug in Ngspice sg13g2_esd.lib
+patches = {
+    "sg13g2_esd.lib": [
+        (
+            ".MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 8 nbv=1.324   eg=1.17 xti=3  )", 
+            ".MODEL diodevss_mod D (tnom = 27 level = 1 is=9.017E-019 rs=200   n=1.03 isr=3.776E-015   ikf=0.0001754 cj0=9.42E-016  m=0.3012  vj=0.6684 bv=11.28 ibv=1E-009 nbv=1.324   eg=1.17 xti=3  )"
+        ), 
+    ]
+}
+
+family_map_update = {
+    ("bjt",   4,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
+    ("bjt",   9,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
+}
+
 included_va_files = [
     # file                                     options
     ( "psp103/psp103.va",     [ "-D__NGSPICE" ] ), 
@@ -97,7 +108,9 @@ if __name__=="__main__":
             "read_depth": read_process_depth, 
             "process_depth": read_process_depth, 
             "output_depth": output_depth, 
+            "patch": patches, 
         })
+        cfg["family_map"].update(family_map_update)
 
         srcfile = os.path.join(src, file)
         destfile = os.path.join(dest, file)
@@ -144,8 +157,8 @@ if __name__=="__main__":
     print("Creating sample .vacaskrc.toml")
     vacask_cfg="""# VACASK configuration file 
 [Paths]
-include_path_prefix = [ "$(PDK_DIR)/$(PDK)/libs.tech/vacask/models" ]
-module_path_prefix = [ "$(PDK_DIR)/$(PDK)/libs.tech/vacask/osdi" ]
+include_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/models" ]
+module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
 """
     with open(os.path.join(pdkroot, pdk, "libs.tech", "vacask", ".vacaskrc.toml"), "w") as f:
         f.write(vacask_cfg)

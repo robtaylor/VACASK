@@ -39,6 +39,7 @@ import numpy as np
 # specified, the work directory is kept. 
 #
 # The script searches for OpenVAF-reloaded in the following locations:
+# - file specified by the SIM_OPENVAF environmental variable
 # - directory specified by the OPENVAF_DIR environmental variable
 # - ../../build.VACASK/Debug/simulator
 # - ../../build.VACASK/Release/simulator
@@ -71,27 +72,35 @@ def find_openvaf():
     else:
         openvaf_bin = "openvaf-r"
     
-    # Check OPENVAF_DIR env variable
+    # Check SIM_OPENVAF env variable
+    if openvaf is None:
+        d = os.environ.get("SIM_OPENVAF")
+        if d is not None:
+            fc = d
+            if os.path.isfile(fc):
+                openvaf = fc
+    
+    # Check OPENVAF_DIR env variabe + binary name
     if openvaf is None:
         d = os.environ.get("OPENVAF_DIR")
         if d is not None:
-            openvaf = os.path.join(d, openvaf_bin)
-    
+            fc = os.path.join(d, openvaf_bin)
+            if os.path.isdir(d) and os.path.isfile(fc):
+                openvaf = fc
+
     # Check ../../build.VACASK/Debug/simulator
     if openvaf is None:
-        if (
-            os.path.isdir("../../build.VACASK/Debug/simulator") and
-            os.path.isfile("../../build.VACASK/Debug/simulator/"+openvaf_bin)
-        ):
-            openvaf = "../../build.VACASK/Debug/simulator/"+openvaf_bin
+        d = "../../build.VACASK/Debug/simulator"
+        fc = os.path.join(d, openvaf_bin)
+        if os.path.isdir(d) and os.path.isfile(fc):
+            openvaf = fc
 
     # Check ../../build.VACASK/Release/simulator
     if openvaf is None:
-        if (
-            os.path.isdir("../../build.VACASK/Release/simulator") and
-            os.path.isfile("../../build.VACASK/Release/simulator/"+openvaf_bin)
-        ):
-            openvaf = "../../build.VACASK/Release/simulator/"+openvaf_bin
+        d = "../../build.VACASK/Release/simulator"
+        fc = os.path.join(d, openvaf_bin)
+        if os.path.isdir(d) and os.path.isfile(fc):
+            openvaf = fc
 
     # Check system path
     if openvaf is None:

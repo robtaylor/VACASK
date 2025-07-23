@@ -146,6 +146,22 @@ class FileLoaderMixin:
         except:
             raise ConverterError("Failed to open "+fp)
         
+        # Canonical path
+        fp = os.path.realpath(fp)
+        
+        # Check if it needs patching
+        for patchfile, pl in self.cfg.get("patch", {}).items():
+            if fp.endswith(patchfile):
+                # Do the patching
+                nlines = []
+                for line in lines:
+                    for porig, pchange in pl:
+                        if line.startswith(porig):
+                            line = pchange
+                    nlines.append(line)
+                lines = nlines
+        
+        # Extract title
         if depth==0:
             self.data["title"] = lines[0]
 

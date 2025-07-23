@@ -47,6 +47,6 @@ class InstanceQMixin:
                 txt += "(" + eol + "\n" + fmted
                 txt += "\n" + lws + ")"
             else:
-                txt += " " + fmted
+                txt += fmted
         
         return txt

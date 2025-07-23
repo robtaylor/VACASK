@@ -37,8 +37,8 @@ def default_config():
 
             ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
             ("bjt",   1,    None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
-            ("bjt",   4,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
-            ("bjt",   9,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
+            ("bjt",   4,    None):     ( "spice/vbic.osdi",      "sp_vbic",      {} ), 
+            ("bjt",   9,    None):     ( "spice/vbic.osdi",      "sp_vbic",      {} ), 
             
             ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 
             ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 
