@@ -1,7 +1,6 @@
 # VACASK configuration file 
 
-# Configuration files are read and processed in the 
-# following order. 
+# Configuration files are read and processed in the following order. 
 # 1. System level configuration file
 #   a. Linux
 #      /etc/vacask/vacaskrc.toml
@@ -10,7 +9,13 @@
 # 2. User configuration
 #    <HOME DIRECTORY>/.vacaskrc.toml
 # 3. Local configuration
+#    If VACASK is started in <STARTUP_DIRECTORY>
+#    the config file is read from 
 #    <STARTUP DIRECTORY>/.vacaskrc.toml
+# 4. Toplevel netlist directory 
+#    If the toplevel netlist is <NETLIST_DIRECTORY>/netlist.sim
+#    the config file is read from 
+#    <NETLIST_DIRECTORY>/.vacaskrc.toml
 
 ## You can access environmental variables in strings using:
 ##   $(ENV_VAR_NAME)

@@ -28,8 +28,8 @@ public:
     Parser& operator=(const Parser&)  = delete;
     Parser& operator=(      Parser&&) = default;
     
-    bool parseNetlistFile(const char* const filename, ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
-
+    bool parseNetlistFile(FileStackFileIndex fileIndex, ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
+    
     bool parseNetlistString(const std::string& input, ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
     bool parseNetlistString(const std::string&& input, ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
     

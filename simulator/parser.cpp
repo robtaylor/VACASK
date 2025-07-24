@@ -15,26 +15,19 @@ Parser::Parser() {
 Parser::~Parser() {
 }
 
-bool Parser::parseNetlistFile(const char* const filename, ParserTables& tab, ParserExtras& extras, Status& s) {
-    assert( filename != nullptr );
-
+bool Parser::parseNetlistFile(FileStackFileIndex stackPosition, ParserTables& tab, ParserExtras& extras, Status& s) {
     auto t0 = Accounting::wclk();
     tab.accounting().acctNew.parse++;
     
+    auto& fileName = tab.fileStack().canonicalName(stackPosition);
+
     if (Simulator::fileDebug()) {
-        Simulator::dbg() << "Opening file '" << filename << "'.\n";
+        Simulator::dbg() << "Reading file '" << fileName << "'.\n";
     }
                     
-    auto stackPosition = tab.fileStack().addFile(filename);
-    if (stackPosition==FileStack::badFileId) {
-        s.set(Status::NotFound, std::string("File '")+filename+"' not found.");
-        tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
-        return false;
-    }
-    
     std::ifstream in_file(tab.fileStack().canonicalName(stackPosition));
     if(!in_file.good()) {
-        s.set(Status::NotFound, std::string("Failed to open file '")+filename+"'.");
+        s.set(Status::NotFound, std::string("Failed to open file '")+fileName+"'.");
         tab.accounting().acctNew.tparse += Accounting::wclkDelta(t0);
         return false;
     }
