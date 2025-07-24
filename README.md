@@ -90,22 +90,22 @@ All Verilog-A models supplied with VACASK are located in [devices](devices). You
 
 Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) whose aim is to create a converter from SPICE3 C model format to Verilog-A took off. At this point the following converted models are available in VACASK. 
 
-|Verilog-A device (SPICE)  |File        |Module       |
-|--------------------------|------------|-------------|
-|Linear resistor           |resistor.va |sp_resistor  |
-|Linear capacitor          |capacitor.va|sp_capacitor |
-|Linear inductor           |inductor.va |sp_inductor  |
-|Diode (levels 1 and 3)    |diode.va    |sp_diode     |
-|Gummel-Poon BJT           |bjt.va      |sp_bjt       |
-|JFET level 1 (Schichman-Hodges)     |jfet1.va    |sp_jfet1     |
-|JFET level 2 (Parker-Skellern) *    |jfet2.va    |sp_jfet2     |
-|MESFET level 1 (Statz et. al.) *    |mes1.va     |sp_mes1      |
-|MOSFET level 1 (Schichman-Hodges) * |mos1.va     |sp_mos1      |
-|MOSFET level 2 (Grove-Frohman) *    |mos2.va     |sp_mos2      |
-|MOSFET level 3 (empirical) *        |mos3.va     |sp_mos3      |
-|MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |sp_mos6      |
-|MOSFET level 9 (modified level 3) * |mos9.va     |sp_mos9      |
-|BSIM3 3.3.0                         |bsim3v3.va  |sp_bsim3v3   |
+|Verilog-A device (SPICE)  |File        |OSDI file      |Module       |
+|--------------------------|------------|---------------|-------------|
+|Linear resistor           |resistor.va |resistor.osdi  |sp_resistor  |
+|Linear capacitor          |capacitor.va|capacitor.osdi |sp_capacitor |
+|Linear inductor           |inductor.va |inductor.osdi  |sp_inductor  |
+|Diode (levels 1 and 3)    |diode.va    |diode.osdi     |sp_diode     |
+|Gummel-Poon BJT           |bjt.va      |bjt.osdi       |sp_bjt       |
+|JFET level 1 (Schichman-Hodges)     |jfet1.va    |jfet1.osdi    |sp_jfet1     |
+|JFET level 2 (Parker-Skellern) *    |jfet2.va    |jfet2.osdi    |sp_jfet2     |
+|MESFET level 1 (Statz et. al.) *    |mes1.va     |mes1.osdi     |sp_mes1      |
+|MOSFET level 1 (Schichman-Hodges) * |mos1.va     |mos1.osdi     |sp_mos1      |
+|MOSFET level 2 (Grove-Frohman) *    |mos2.va     |mos2.osdi     |sp_mos2      |
+|MOSFET level 3 (empirical) *        |mos3.va     |mos3.osdi     |sp_mos3      |
+|MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |mos6.osdi     |sp_mos6      |
+|MOSFET level 9 (modified level 3) * |mos9.va     |mos9.osdi     |sp_mos9      |
+|BSIM3 3.3.0                         |bsim3v3.va  |bsim3v3.osdi  |sp_bsim3v3   |
 
 Devices marked with an asterisk (*) do not conserve charge because of the modeling approach chosen by their respective authors. 
 
@@ -271,3 +271,10 @@ code .
 ```
 
 In Windows select the MinGW64 toolchain. In Linux select GCC. Configure the project with Ctrl+Shift+P 'CMake: Delete Cache and Reconfigure', followed by building with Ctrl+Shift+P 'CMake: Build'. A full debugging setup is available in [`launch.json`](.vscode/launch.json). System tests are located in [`test`](test) and can be run via CMake/CTest. The path to the built debug version (relative to the sources) is `../build.VACASK/Debug`. The release version is built under `../build.VACASK/Release`. 
+
+# Publications mentioning VACASK
+* Á. Bűrmen, ["VACASK: a Verilog-A Circuit Analysis Kernel"](https://wiki.f-si.org/index.php?title=VACASK:_a_Verilog-A_Circuit_Analysis_Kernel), Free Silicon Conference 2024, Paris, June 2024.
+* Á. Bűrmen, ["OpenVAF - status update, ecosystem, and a roadmap"](https://zenodo.org/records/14622027), 17th International MOS-AK Workshop, Silicon Valley, December 2024."
+* Á. Bűrmen, et. al. ["Free software support for compact modelling with Verilog-A"](https://doi.org/10.33180/InfMIDEM2024.404), Informacije MIDEM - Journal of Microelectronics, Electronic Components and Materials, 54 (2024), no. 4: 271-281.
+* Á. Bűrmen, ["VACASK and Verilog-A Distiller - building a device library for an analog circuit simulator"](https://fosdem.org/2025/schedule/event/fosdem-2025-4681-vacask-and-verilog-a-distiller-building-a-device-library-for-an-analog-circuit-simulator/), FOSDEM 2025, Brussels, (February 2025).
+* Á. Bűrmen, ["Recent developments in the Verilog-A circuit analysis kernel"](https://wiki.f-si.org/index.php?title=Recent_developments_in_the_Verilog-A_circuit_analysis_kernel), Free Silicon Conference 2025, Frankfurt (Oder), July 2025.
