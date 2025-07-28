@@ -17,7 +17,7 @@ tech_files = [
     # "capacitors_stat.lib", 
     
     ( "cornerCAP.lib", 0, 0),  
-    # "cornerHBT.lib", 
+    ( "cornerHBT.lib", 0, 0), 
     ( "cornerMOShv.lib", 0, 0 ), 
     ( "cornerMOSlv.lib", 0, 0 ), 
     ( "cornerRES.lib", 0, 0 ), 

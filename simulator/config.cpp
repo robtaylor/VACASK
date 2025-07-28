@@ -2,7 +2,7 @@
 #include "simulator.h"
 #include "platform.h"
 
-#include <toml++/toml.hpp>
+#include <toml++/toml.h>
 #include <iostream>
 #include <string>
 #include <cstdlib>
