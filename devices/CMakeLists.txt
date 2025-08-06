@@ -68,6 +68,7 @@ while(i LESS ${list_len})
     list(GET device_sources ${i} output)
     math(EXPR i "${i} + 1")
     list(GET device_sources ${i} options)
+    string(REPLACE " " ";" options_list "${options}")
     set(inputfile "${CMAKE_CURRENT_SOURCE_DIR}/${source}")
     # Add to source files
     list(APPEND osdi_source_files "${source}")
@@ -102,14 +103,16 @@ while(i LESS ${list_len})
     # Create build directory
     file(MAKE_DIRECTORY "${builddir}")
     # Build command - invoke openvaf, move to destination
+    message(STATUS "${OPENVAF_COMPILER} ${options} --allow variant_const_simparam -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source} -o ${outputfile}")
     add_custom_command(
         OUTPUT "${built_file}"
         DEPENDS "${inputfile}"
         DEPENDS "${OPENVAF_COMPILER}"
         MAIN_DEPENDENCY "${inputfile}"
-        COMMAND "${OPENVAF_COMPILER}" ARGS "${options}" "--allow" "variant_const_simparam" "-I${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}" -o "${outputfile}"
+        COMMAND "${OPENVAF_COMPILER}" ARGS "${options_list}" "--allow" "variant_const_simparam" "-I${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/${source}" -o "${outputfile}"
         COMMAND ${CMAKE_COMMAND} ARGS -E copy "${outputfile}" "${built_file}"
         COMMAND ${CMAKE_COMMAND} ARGS -E rm -f "${outputfile}"
+        COMMAND_EXPAND_LISTS 
         WORKING_DIRECTORY "${builddir}"
         COMMENT "Building osdi model from ${inputfile}"
     )
