@@ -190,11 +190,17 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     
     # Compile modules
     d = os.path.join(pdkroot, pdk, "libs.tech", "verilog-a")
-    for f, extra_opts in included_va_files:
-        f = os.path.join(d, f)
+    lead_path = os.path.normpath(mdir)
+    for fi, extra_opts in included_va_files:
+        f = os.path.join(d, fi)
         fb = os.path.basename(f)
         fo = os.path.join(mdir, fb[:-3]+".osdi")
-        osdi_files.add(fo)
+        
+        # Remove leading part from fo, add to list
+        fo_n = os.path.normpath(fo)
+        fo_r = os.path.relpath(fo_n, lead_path)
+        osdi_files.add(fo_r)
+        
         print("Compiling", f)
         cmdline = [ openvaf ] + extra_opts + [ "-o", fo, f ]
         retval = subprocess.run(cmdline)
