@@ -336,7 +336,7 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
         }
     }
 
-    // Create add variables context to paramEvaluator_ context stack
+    // Add variables context to paramEvaluator_ context stack
     if (!updateGlobalContext(s)) {
         return;
     }

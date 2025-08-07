@@ -529,8 +529,11 @@ std::tuple<bool, bool> ParameterSweeper::write(ParameterFamily types, WriteValue
         
         // Write
         if (parameterFamily[i]==ParameterSweeper::ParameterFamily::Variable) {
-            auto ok = circuit_->setVariable(it->variable, *vPtr, s);
-            return std::make_tuple(ok, circuit_->checkFlags(Circuit::Flags::VariablesChanged));
+            auto [ok, ch] = circuit_->setVariable(it->variable, *vPtr, s);
+            changed |= ch;
+            if (!ok) {
+                return std::make_tuple(false, changed);
+            }
         } else {
             auto [ok, ch] = parameterizedObject[i]->setParameter(parameterIndex[i], *vPtr, s);
             changed |= ch;

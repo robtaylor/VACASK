@@ -184,7 +184,8 @@ public:
 
     // Variables API
     const Value* getVariable(Id name, Status& s=Status::ignore) const;
-    bool setVariable(Id name, const Value& v, Status& s=Status::ignore);
+    // ok, changed
+    std::tuple<bool, bool> setVariable(Id name, const Value& v, Status& s=Status::ignore);
     bool clearVariables(Status& s=Status::ignore);
     
     // Update global context

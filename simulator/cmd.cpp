@@ -41,7 +41,8 @@ bool CommandInterpreter::clearVariables(Status& s) {
     circuit_.clearVariables();
     auto& pythonBinary = Platform::pythonExecutable();
     if (pythonBinary.size()>0) {
-        return circuit_.setVariable("PYTHON", pythonBinary, s);
+        auto [ok, var_changed] = circuit_.setVariable("PYTHON", pythonBinary, s);
+        return ok;
     }
     return true;
 }
@@ -446,7 +447,7 @@ bool cmd_var(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
     // Write values
     for(auto& it : cmd.args().values()) { 
-        auto ok = circuit.setVariable(it.name(), it.val(), s);
+        auto [ok, var_changed] = circuit.setVariable(it.name(), it.val(), s);
         if (!ok) {
             return false;
         }
@@ -454,7 +455,7 @@ bool cmd_var(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
     // Write computed expressions
     for(decltype(n) i=0; i<n; i++) { 
-        auto ok = circuit.setVariable(ex[i].name(), ve[i], s);
+        auto [ok, var_changed] = circuit.setVariable(ex[i].name(), ve[i], s);
         if (!ok) {
             return false;
         }
@@ -585,9 +586,9 @@ bool cmd_elaborate(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
         auto it2 = args.find("topinst");
         if (it2!=args.end()) {
             if (it2->second.type()==Value::Type::String) {
-                topDefName = it2->second.val<String>();
+                topInstName = it2->second.val<String>();
             } else {
-                s.set(Status::BadArguments, "topdef must be a string.");
+                s.set(Status::BadArguments, "topinst must be a string.");
                 return false;
             }
         } else {
