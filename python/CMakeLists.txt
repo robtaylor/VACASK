@@ -15,6 +15,7 @@ set(python_files
     ng2vclib/m_inst_passive.py 
     ng2vclib/m_inst_q.py 
     ng2vclib/m_masters.py 
+    ng2vclib/m_params.py
     ng2vclib/m_model.py 
     ng2vclib/m_output.py 
 )

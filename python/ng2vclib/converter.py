@@ -7,6 +7,7 @@ from .m_inst_d import InstanceDMixin
 from .m_inst_n import InstanceNMixin
 from .m_inst_q import InstanceQMixin
 from .m_devices import DevicesMixin
+from .m_params import ParamsMixin
 
 from . import dfl
 
@@ -19,7 +20,8 @@ class Converter(
     InstanceDMixin, 
     InstanceNMixin, 
     InstanceQMixin, 
-    DevicesMixin
+    DevicesMixin, 
+    ParamsMixin
 ):
     """
     Ngspice to VACASK netlist converter. 

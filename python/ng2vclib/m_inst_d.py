@@ -27,15 +27,9 @@ class InstanceDMixin:
                 # Don't know how to handle
                 raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
         
-        # Remove off
-        params = self.remove_params(params, set(["off"]))
-
-        # Split parameter assignments
-        psplit = self.split_params(params, handle_m=True)
-
-        # Remove ic
-        psplit = self.remove_params(psplit, set(["ic"]))
-                
+        # Process parameters
+        psplit = self.process_instance_params(params, "d", handle_m=True)
+        
         txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:

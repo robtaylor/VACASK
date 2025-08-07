@@ -5,6 +5,19 @@ def default_config():
     """
     return {
         "sourcepath": [ "." ], 
+        "merge_vector_instance_params": {
+            "q": set(["ic"])
+        }, 
+        "remove_instance_params": {
+            "c": set(["ic"]), 
+            "l": set(["ic"]), 
+            "d": set(["ic", "off"]), 
+            "q" : set(["ic", "off"]), 
+        }, 
+        "merge_vector_model_params": {
+        }, 
+        "remove_model_params": {
+        }, 
         "type_map": {
             # name     params             family  remove level  remove version
             "r":     ( {},                "r",     False,        False), 

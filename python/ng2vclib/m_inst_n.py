@@ -15,7 +15,9 @@ class InstanceNMixin:
         
         terminals = parts[:mod_index]
         params = parts[(mod_index+1):]
-        psplit = self.split_params(params, handle_m=True)
+        
+        # Process parameters
+        psplit = self.process_instance_params(params, "n", handle_m=True)
         
         txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
 
