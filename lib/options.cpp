@@ -315,6 +315,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
 instantiateIntrospection(SimulatorOptions);
 
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::mappingAffectingOptions;
+std::unordered_map<Id, ParameterIndex> SimulatorOptions::parametrizationAffectingOptions;
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::hierarchyAffectingOptions;
 
 bool SimulatorOptions::staticInitialize() {
@@ -326,6 +327,13 @@ bool SimulatorOptions::staticInitialize() {
     } ) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         mappingAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
+    }
+
+    for(auto it : std::initializer_list<Id>{
+        Id::createStatic("temp"),
+    } ) {
+        auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
+        parametrizationAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
     }
 
     for(auto it : std::initializer_list<Id>{}) {

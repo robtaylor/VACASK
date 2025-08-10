@@ -1,0 +1,53 @@
+Parameterized expression with $temp
+
+ground 0 
+
+load "resistor.osdi"
+
+model resistor resistor
+model vsource vsource
+
+v1 (1 0) vsource dc=10
+r1 (1 0) resistor r=1k*(1+($temp-30)*0.001)
+
+control
+  abort always
+  
+  sweep temp option="temp" from=0 to=100 step=2
+    analysis op1 op 
+
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys, os
+
+tests=[]
+
+op1 = rawread('op1.raw').get()
+
+temp = op1['temp']
+r = -op1['1']/op1['v1:flow(br)']
+
+exact = 1000*(1+(temp-30)*0.001)
+status = (relDiff(r, exact, 1e-6) < 1e-3).all()
+tests.append(status)
+    
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.suptitle('Temperature dependence')
+    fig1.axes[0].set_ylabel('R [Ohm]')
+    fig1.axes[0].set_xlabel('T [deg C]')
+    fig1.axes[0].plot(temp, r)
+    plt.show()
+
+>>>FILE
+
+

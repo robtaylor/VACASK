@@ -109,7 +109,11 @@ typedef struct SimulatorOptions  {
     static Id rawfileAscii;
     static Id rawfileBinary; 
 
+    // Options that affect mapping (node collapsing)
     static std::unordered_map<Id, ParameterIndex> mappingAffectingOptions;
+    // Options that affect hierarchical parameters 
+    static std::unordered_map<Id, ParameterIndex> parametrizationAffectingOptions;
+    // Options that affect topology
     static std::unordered_map<Id, ParameterIndex> hierarchyAffectingOptions;
 
     static bool staticInitialize();

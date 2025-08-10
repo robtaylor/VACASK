@@ -150,16 +150,31 @@ public:
     virtual std::tuple<bool, bool> compile(const std::string& timeRefCanonicalPath, const std::string& fileName, const std::string& canonicalPath, std::string& outputCanonicalPath, Status& s=Status::ignore) = 0;
 };
 
+// Resolver for accessing $temp from simulator options
+class OptionsResolver : public Resolver {
+public:
+    OptionsResolver(IStruct<SimulatorOptions>& opt);
+
+    virtual const Value* get(Id name);
+
+private:
+    IStruct<SimulatorOptions>& opt;
+    std::unordered_map<Id, std::tuple<size_t, ParameterIndex>> resolverMap;
+    std::vector<Value> values;
+};
+
+// Circuit
 enum class CircuitFlags : uint8_t {
     VariablesChanged = 1, 
     HierarchyAffectingOptionsChanged = 2, 
-    MappingAffectingOptionsChanged = 4, 
+    ParametrizationAffectingOptionsChanged = 4, 
+    MappingAffectingOptionsChanged = 8, 
     
-    // This one should be set manually whenever an instance/model paramater is changed
+    // This one should be set manually whenever an instance/model parameter is changed
     // so that elaborateChanges() will do its job correctly and propagate changes. 
-    HierarchyParametersChanged = 8,  
+    HierarchyParametersChanged = 16,  
 
-    Elaborated = 16,  
+    Elaborated = 32,  
 };
 DEFINE_FLAG_OPERATORS(CircuitFlags);
 
@@ -408,6 +423,9 @@ private:
     // Check if new options values require us to check if node collapsing changed
     bool mappingAffectingOptionsChanged(SimulatorOptions& opt);
 
+    // Check if new options values require us to propagate options across whole hierarchy
+    bool parametrizationAffectingOptionsChanged(SimulatorOptions& opt);
+
     // Check if new options values require us to check if hierarchy changed
     bool hierarchyAffectingOptionsChanged(SimulatorOptions& opt);
 
@@ -480,10 +498,22 @@ private:
     // Device convergence check state count
     GlobalStorageIndex deviceStatesCount_;
 
-    // Evaluator for hierarchy
+    // Evaluator for parameterized expression (parameters netlist lines)
     RpnEvaluator paramEvaluator_;
 
-    // Evaluator for variables
+    // Options resolver
+    OptionsResolver optResolver;
+
+    // Evaluator for variables, used for
+    // - computing analysis parameters given by expressions
+    // - computing sweep parameters given by expressions
+    // - computing options given by expressions in the command interpreter (options)
+    // - evaluating the postprocess command line in the command interpreter (postprocess)
+    // - setting variable values in the command interpreter (var)
+    // - altering parameters in the command interpreter (alter)
+    // - evaluating elaboration arguments in the command interpreter (elaborate)
+    // - evaluating names of objects to print in the command interoreter (print)
+    // - evaluating expressions to print in the command interpreter (print)
     RpnEvaluator variableEvaluator_;
 
     // Context holding the variables

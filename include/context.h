@@ -51,6 +51,13 @@ private:
 };
 
 
+// Abstract class of a resolver that resolves name into Value
+class Resolver {
+public:
+    virtual const Value* get(Id name) = 0;
+};
+
+
 class ContextStack {
 public:
     ContextStack();
@@ -64,6 +71,9 @@ public:
 
     inline int depth() const { return stack.size(); };
     inline bool isGlobal() const { return depth()==1; };
+    
+    // Install a custom resolver
+    void installCustomResolver(Resolver* r) { customResolver = r; };
     
     // Creates a new context
     inline void enter(Context* external=nullptr, bool addToPath=false) { 
@@ -138,6 +148,7 @@ private:
     static Context consts;
     std::vector<StackEntry> stack;
     std::vector<size_t> searchPath;
+    Resolver* customResolver;
 };
 
 }

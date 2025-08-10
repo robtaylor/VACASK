@@ -18,7 +18,10 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
     bool forceHierarchyChangeCheck = checkFlags(Flags::HierarchyAffectingOptionsChanged);
 
     // Do we need to propagate parameters on all instances
-    bool forceParameterPropagation = checkFlags(Flags::VariablesChanged); 
+    bool forceParameterPropagation = (
+        checkFlags(Flags::VariablesChanged) || 
+        checkFlags(Flags::ParametrizationAffectingOptionsChanged)
+    ); 
 
     // If hierarchy changed, at which toplevel instance did it change
     // A value greater or equal to the number of toplevel instances means 
@@ -105,15 +108,20 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
     
     // Force parameter propagation 
     // - if variables changed
+    // - if parametrization affecting options changed
     // - if hierarchy affecting options changed
     //   because they may cause hierarchy change anywhere in the hierarchy
-    bool force = checkFlags(Flags::VariablesChanged) || checkFlags(Flags::HierarchyAffectingOptionsChanged);
+    bool force = (
+        checkFlags(Flags::VariablesChanged) || 
+        checkFlags(Flags::ParametrizationAffectingOptionsChanged) ||
+        checkFlags(Flags::HierarchyAffectingOptionsChanged)
+    );
 
     // Now propagate parameters for i=0 to changeAt-1
     // In this part toplevel instances did not experience topology change
     for(decltype(n) i=0; i<changeAt; i++) {
         auto toplevelInstance = toplevelInstances_[i];
-        // Parameter change in default toplevel instance must be propagated across all instances
+        // Parameter change in default toplevel instance must be propagated across all toplevel instances
         if (i==0) {
             force |= toplevelInstance->checkFlags(Instance::Flags::ParamsChanged);
         }
@@ -150,7 +158,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
                     Instance::revertContext(*this, initialContextMarker);
                     return std::make_tuple(false, hierarchyChanged);
                 }
-                if (hierarchyChanged) {
+                if (instanceSubhierarchyChanged) {
                     // Rebuild instance's subhierarchy
                     // Delete subhierarchy 
                     if (!it->deleteHierarchy(*this, s)) {
@@ -192,7 +200,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
         }
     }
 
-    // Rebuild for i=changeAt to n-1
+    // Rebuild toplevel instances for i=changeAt to n-1
     for(decltype(n) i=changeAt; i<n; i++) {
         // Load the context, add to the path, but do not recompute. 
         // No need to check for error because loading a context cannot produce an error. 
@@ -303,7 +311,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
                 return std::make_tuple(false, false, false);
             }
 
-            // TODO: check if analysis requests a rebuild
+            // Checking if analysis requests a rebuild is done in an.cpp
         }
     }
 
@@ -321,6 +329,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         setOptions(*optPtr);
     }
     bool hierarchyAffectingOptionsChanged = checkFlags(Circuit::Flags::HierarchyAffectingOptionsChanged);
+    bool parametrizationAffectingOptionsChanged = checkFlags(Circuit::Flags::ParametrizationAffectingOptionsChanged);
     bool mappingAffectingOptionsChanged = checkFlags(Circuit::Flags::MappingAffectingOptionsChanged);
 
     // Write instance and model parameters if we have a sweeper
@@ -342,9 +351,10 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     // Propagate parameters and check for hierarchy changes if one of the following is true
     // - variables changed (force propagation on all instances)
     // - hierarchy affecting options changed (propagate only on instances whose parameters changed)
+    // - parametrization affecting options changed (propagate on all instances)
     // - swept instance/model parameters changed (propagate only on instances whose parameters changed)
     bool hierarchyChanged = false;
-    if (variablesChanged || hierarchyParametersChanged || hierarchyAffectingOptionsChanged) {
+    if (variablesChanged || hierarchyParametersChanged || hierarchyAffectingOptionsChanged || parametrizationAffectingOptionsChanged) {
         bool ok;
         std::tie(ok, hierarchyChanged) = propagateDownHierarchy(s);
         if (!ok) {
@@ -354,7 +364,8 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         }
     }
 
-    // If hierarchy changed, rebuild entity lists and node ordering, rebind sweep
+    // If hierarchy changed, rebuild entity lists and node ordering
+    // Sweeper rebinding takes place in an.cpp
     if (hierarchyChanged) {
         if (!buildEntityLists(s)) {
             s.extend("Failed to rebuild entity lists.");
@@ -377,9 +388,13 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     // - variables changed
     // - hierarchical parameters changed
     // - mappingAffectingOptionsChanged (force full setup)
+    // - parametrizationAffectingOptionsChanged
     bool unknownsChanged = false;
     bool sparsityChanged = false;
-    if (hierarchyChanged || variablesChanged || hierarchyParametersChanged || mappingAffectingOptionsChanged) {
+    if (
+        hierarchyChanged || variablesChanged || hierarchyParametersChanged || 
+        parametrizationAffectingOptionsChanged || mappingAffectingOptionsChanged
+    ) {
         bool ok;
         std::tie(ok, unknownsChanged, sparsityChanged) = setup(mappingAffectingOptionsChanged, devReq, s);
         if (!ok) {
@@ -404,7 +419,6 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     // Perform mapping of unknowns to nodes if
     // - hierarchy changed
     // - node collapsing changed
-    // - analysis needs to add sparsity map entries
     bool mapUnknownsNeeded = hierarchyChanged || unknownsChanged;
     if (mapUnknownsNeeded) {
         if (!mapUnknowns(s)) {
@@ -448,6 +462,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     // Circuit is now in a consistent state
     clearFlags(Circuit::Flags::VariablesChanged);
     clearFlags(Circuit::Flags::HierarchyAffectingOptionsChanged);
+    clearFlags(Circuit::Flags::ParametrizationAffectingOptionsChanged);
     clearFlags(Circuit::Flags::MappingAffectingOptionsChanged);
     clearFlags(Circuit::Flags::HierarchyParametersChanged);
 

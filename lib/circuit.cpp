@@ -185,12 +185,15 @@ API:
 Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s) 
     : valid(false), tables_(tab), title_("Untitled"), 
       unknownCountExcludingGround(0), hdev(nullptr), 
-      parameters(nullptr) {
+      parameters(nullptr), optResolver(simOptions) {
     // Construct stuff that is common
+
+    // Prepare parameterized expresions evaluator
+    paramEvaluator_.contextStack().installCustomResolver(&optResolver);
 
     // Prepare variable evaluator
     variableEvaluator_.contextStack().enter(&variables);
-
+    
     // Set title
     title_ = tables_.title();
 

@@ -205,7 +205,7 @@ void Context::dump(int indent, std::ostream& os) const {
     }
 }
 
-ContextStack::ContextStack() {
+ContextStack::ContextStack() : customResolver(nullptr) {
 }
 
 void ContextStack::clear() {
@@ -276,6 +276,14 @@ const Value* ContextStack::get(Id name) const {
         return ptr;
     }
 
+    // Look via custom resolver 
+    if (customResolver) {
+        auto ptr = customResolver->get(name);
+        if (ptr) {
+            return ptr;
+        }
+    }
+    
     return nullptr;
 }
 
