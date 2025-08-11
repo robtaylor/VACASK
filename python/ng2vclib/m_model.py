@@ -13,6 +13,11 @@ class ModelMixin:
             # Builtin model
             extra_params, family, _, _ = self.cfg["type_map"][mtype]
             osdifile, module, extra_family_params = self.cfg["family_map"][family, level, version]
+
+            # Get names of parameters to remove
+            vecnames = self.cfg["remove_model_params"].get(module, None)
+            
+            # Output
             vcline = "model "+name+" "+module
             if len(extra_params)>0 or len(params)>0:
                 vcline += " ( "+eol
@@ -26,14 +31,24 @@ class ModelMixin:
                     self.format_extra_params(extra_family_params, " ", 0)
                 )
         else:
+            # External model (osdi)
+
+            # Get names of parameters to remove
+            vecnames = self.cfg["remove_model_params"].get(mtype, None)
+            
+            # Output
             vcline = "model "+name+" "+mtype
             if len(params)>0:
                 vcline += " ( "+eol
                 paren = True
             else:
                 vcline += " "+eol
-        
+            
         if len(params)>=0:
+            # Remove parameters
+            if vecnames is not None:
+                params = self.remove_params(params, vecnames)
+        
             fmted, _, _ = self.format_params(params, len(vcline))
             fmted = self.indent(fmted, len(lws)+2)
             vcline += "\n" + fmted

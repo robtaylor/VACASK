@@ -4,6 +4,8 @@ from .exc import ConverterError
 
 pat_siprefix = re.compile(r'\b(\d+\.\d*|\.\d+|\d+\.|\d+)(meg|g|t|mil)\b')
 
+pat_temper = re.compile(r"\btemper\b")
+
 prefix_map = {
     "meg": "M", 
     "g": "G", 
@@ -186,7 +188,7 @@ class ParamsMixin:
         """
         out = []
         for part in params:
-            if isinstance(part, list):
+            if isinstance(part, list) or isinstance(part, tuple):
                 if part[0] in to_remove:
                     continue
             elif part in to_remove:
@@ -217,6 +219,18 @@ class ParamsMixin:
         
         return out
 
+    def process_expressions(self, params):
+        """
+        Processes expressions, replace 
+          temper -> $temp
+        """
+        pout = []
+        for p, e in params:
+            e = re.sub(pat_temper, "$temp", e)
+            pout.append((p, e))
+        
+        return pout
+
     def process_instance_params(self, params, insttype, handle_m=False):
         """
         Processes instance parameters. 
@@ -239,6 +253,9 @@ class ParamsMixin:
         vecnames = self.cfg["remove_instance_params"].get(insttype, None)
         if vecnames is not None:
             psplit = self.remove_params(psplit, vecnames)
+        
+        # Process expressions
+        psplit = self.process_expressions(psplit)
 
         return psplit
     

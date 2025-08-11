@@ -133,6 +133,8 @@ class MastersMixin:
                         # Split params into name-value pairs
                         params = self.split_params(params, handle_m=False)
 
+                        # Process expressions
+                        params = self.process_expressions(params)
 
                         # Get information on model type
                         family = None

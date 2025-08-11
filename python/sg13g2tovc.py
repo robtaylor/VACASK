@@ -74,6 +74,11 @@ family_map_update = {
     ("bjt",   9,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
 }
 
+remove_model_params_update = {
+    # translated device name: set of param names
+    "vbic13_5t": set(["vbe_max", "vbc_max", "vce_max"])
+}
+
 included_va_files = [
     # file                                     options
     ( "psp103/psp103.va",     [ "-D__NGSPICE" ] ), 
@@ -117,6 +122,7 @@ if __name__=="__main__":
             "patch": patches, 
         })
         cfg["family_map"].update(family_map_update)
+        cfg["remove_model_params"].update(remove_model_params_update)
 
         srcfile = os.path.join(src, file)
         destfile = os.path.join(dest, file)
