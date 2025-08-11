@@ -4,6 +4,7 @@ def default_config():
     Returns a default configuration. 
     """
     return {
+        "signature": "// Converted by ng2vc converter\n", 
         "sourcepath": [ "." ], 
         "merge_vector_instance_params": {
             "q": set(["ic"])

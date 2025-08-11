@@ -123,6 +123,7 @@ if __name__=="__main__":
         })
         cfg["family_map"].update(family_map_update)
         cfg["remove_model_params"].update(remove_model_params_update)
+        cfg["signature"] = "// Converted from IHP SG13G2 PDK for Ngspice\n"
 
         srcfile = os.path.join(src, file)
         destfile = os.path.join(dest, file)

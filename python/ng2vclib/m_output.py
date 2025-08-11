@@ -25,7 +25,12 @@ class OutputMixin:
                 first = False
                 if self.data["is_toplevel"]:
                     out.append(self.data["title"])
+                    if "signature" in self.cfg:
+                        out.append(self.cfg["signature"])
                     continue
+                else:
+                    if "signature" in self.cfg:
+                        out.append(self.cfg["signature"])
             
             # Handle various lines
             if len(l)==0:
