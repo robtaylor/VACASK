@@ -16,6 +16,11 @@ Usage: python3 -m ng2vc [<args>] <input file> [<output file>]
 If no output file is provided, the converted netlist is printed to 
 the standard output. 
 
+If output file is a relative path it is considered relative to 
+the input file. 
+
+Creates destination directory, if needed. 
+
 Arguments:
   -h --help           print help
   -dr --read-depth    maximal depth to which sources are loaded
@@ -123,7 +128,17 @@ Arguments:
         for l in out:
             print(l)
     else:
-        with open(toFile, "w") as f:
+        if not os.path.isabs(toFile):
+            # Relative path, get directory of input file
+            dest = os.path.join(os.path.dirname(self.data["canonical_input_path"]), toFile)
+        else:
+            dest = toFile
+        
+        # Create destination directory
+        destdir = os.path.dirname(dest)
+        os.makedirs(destdir, exist_ok=True)
+
+        with open(dest, "w") as f:
             for l in out:
                 f.write(l)
                 f.write("\n")

@@ -6,10 +6,13 @@ from .m_inst_passive import InstancePassiveMixin
 from .m_inst_d import InstanceDMixin
 from .m_inst_n import InstanceNMixin
 from .m_inst_q import InstanceQMixin
+from .m_inst_x import InstanceXMixin
 from .m_devices import DevicesMixin
 from .m_params import ParamsMixin
 
 from . import dfl
+
+import os
 
 class Converter(
     FileLoaderMixin, 
@@ -20,6 +23,7 @@ class Converter(
     InstanceDMixin, 
     InstanceNMixin, 
     InstanceQMixin, 
+    InstanceXMixin, 
     DevicesMixin, 
     ParamsMixin
 ):
@@ -104,16 +108,10 @@ class Converter(
             "osdi_loads": set(), 
         }
     
-    def read(self, filename):
-      """
-      Read a file, store deck. 
-      """
-      deck = self.read_file(filename)
-      self.data["deck"] = deck
-      return deck
-
     def convert(self, fromFile, toFile=None):
-      self.read(fromFile)
+      _, deck, canonical_file_path = self.read_file(fromFile)
+      self.data["deck"] = deck
+      self.data["canonical_input_path"] = canonical_file_path
       
       self.collect_masters()
 
@@ -123,7 +121,17 @@ class Converter(
         for l in out:
           print(l)
       else:
-        with open(toFile, "w") as f:
+        if not os.path.isabs(toFile):
+            # Relative path, get directory of input file
+            dest = os.path.join(os.path.dirname(self.data["canonical_input_path"]), toFile)
+        else:
+            dest = toFile
+
+        # Create destination directory
+        destdir = os.path.dirname(dest)
+        os.makedirs(destdir, exist_ok=True)
+
+        with open(dest, "w") as f:
           for l in out:
             f.write(l)
             f.write("\n")

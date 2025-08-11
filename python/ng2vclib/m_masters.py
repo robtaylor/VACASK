@@ -21,29 +21,46 @@ class MastersMixin:
         name = parts[0]
         parts = parts[1:]
 
+        # Is it a subcircuit instance? 
+        issubinst = name[0]=="x"
+
         # Find first model
         mod_index = None
         for ndx, part in enumerate(parts):
-            # Local models
-            if in_sub is not None:
-                if in_sub in self.data["models"] and part in self.data["models"][in_sub]:
+            if issubinst:
+                # Subcircuit instance
+                # Look for first entry of the form name=value
+                if "=" in part:
+                    # Found first parameter
+                    mod_index = ndx-1
+                    break
+            else:
+                # Device instance
+                # Local models
+                if in_sub is not None:
+                    if in_sub in self.data["models"] and part in self.data["models"][in_sub]:
+                        # Found model
+                        mod_index = ndx
+                        key = (part, in_sub)
+                        if key not in self.data["model_usage"]:
+                            self.data["model_usage"][key] = set()
+                        self.data["model_usage"][key].add(in_sub)
+                        break
+                # Global models
+                if None in self.data["models"] and part in self.data["models"][None]:
                     # Found model
                     mod_index = ndx
-                    key = (part, in_sub)
+                    key = (part, None)
                     if key not in self.data["model_usage"]:
                         self.data["model_usage"][key] = set()
                     self.data["model_usage"][key].add(in_sub)
                     break
-            # Global models
-            if None in self.data["models"] and part in self.data["models"][None]:
-                # Found model
-                mod_index = ndx
-                key = (part, None)
-                if key not in self.data["model_usage"]:
-                    self.data["model_usage"][key] = set()
-                self.data["model_usage"][key].add(in_sub)
-                break
         
+        # No parameters found for a subcircuit instance
+        if issubinst and mod_index is None:
+            # Last word is the subcircuit definition name
+            mod_index = len(parts)-1
+
         return name, parts, mod_index
     
     def preprocess_instance(self, lnum, lws, line, eol, annot, in_sub):

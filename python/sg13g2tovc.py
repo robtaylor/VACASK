@@ -11,45 +11,49 @@ from ng2vclib.converter import Converter
 from ng2vclib.dfl import default_config
 
 tech_files = [
-    # file  read&process depth  output depth
-    ( "capacitors_mod.lib", 1, None ), 
+    # file  read&process depth  output depth  destination (relative path)
+    ( "capacitors_mod.lib", 1, None, "../../vacask/models/capacitors_mod.lib" ), 
     # "capacitors_mod_mismatch.lib", 
     # "capacitors_stat.lib", 
     
-    ( "cornerCAP.lib", 0, 0),  
-    ( "cornerHBT.lib", 0, 0), 
-    ( "cornerMOShv.lib", 0, 0 ), 
-    ( "cornerMOSlv.lib", 0, 0 ), 
-    ( "cornerRES.lib", 0, 0 ), 
+    ( "cornerCAP.lib", 0, 0, "../../vacask/models/cornerCAP.lib"),  
+    ( "cornerHBT.lib", 0, 0, "../../vacask/models/cornerHBT.lib"), 
+    ( "cornerMOShv.lib", 0, 0, "../../vacask/models/cornerMOShv.lib" ), 
+    ( "cornerMOSlv.lib", 0, 0, "../../vacask/models/cornerMOSlv.lib" ), 
+    ( "cornerRES.lib", 0, 0, "../../vacask/models/cornerRES.lib" ), 
     
-    ( "diodes.lib", 1, None ), 
+    ( "diodes.lib", 1, None, "../../vacask/models/diodes.lib" ), 
     
-    ( "resistors_mod.lib", 1, None ), 
+    ( "resistors_mod.lib", 1, None, "../../vacask/models/resistors_mod.lib" ), 
     # "resistors_mod_mismatch.lib", 
     # "resistors_stat.lib", 
     
-    ( "sg13g2_bondpad.lib", 1, None ), 
+    ( "sg13g2_bondpad.lib", 1, None, "../../vacask/models/sg13g2_bondpad.lib" ), 
     
-    ( "sg13g2_esd.lib", 1, None ), 
+    ( "sg13g2_esd.lib", 1, None, "../../vacask/models/sg13g2_esd.lib" ), 
     
-    ( "sg13g2_hbt_mod.lib", 1, None ), 
+    ( "sg13g2_hbt_mod.lib", 1, None, "../../vacask/models/sg13g2_hbt_mod.lib" ), 
     # "sg13g2_hbt_mod_mismatch.lib", 
     # "sg13g2_hbt_stat.lib", 
     
     # "sg13g2_moshv_mismatch.lib", 
-    ( "sg13g2_moshv_mod.lib", 1, None ), 
+    ( "sg13g2_moshv_mod.lib", 1, None, "../../vacask/models/sg13g2_moshv_mod.lib" ), 
     # "sg13g2_moshv_mod_mismatch.lib", 
     # "sg13g2_moshv_parm.lib", # flattened
     # "sg13g2_moshv_stat.lib", 
     
     # "sg13g2_moslv_mismatch.lib", 
-    ( "sg13g2_moslv_mod.lib", 1, None ), 
+    ( "sg13g2_moslv_mod.lib", 1, None, "../../vacask/models/sg13g2_moslv_mod.lib" ), 
     # "sg13g2_moslv_mod_mismatch.lib", 
     # "sg13g2_moslv_parm.lib", # flattened
     # "sg13g2_moslv_stat.lib", 
     
-    ( "sg13g2_svaricaphv_mod.lib", 1, None),  
+    ( "sg13g2_svaricaphv_mod.lib", 1, None, "../../vacask/models/sg13g2_svaricaphv_mod.lib"),  
     # "sg13g2_svaricaphv_mod_mismatch.lib", 
+
+    # Standard cells and I/O
+    ( "sg13g2_stdcell.spice", 1, None, "../vacask/sg13g2_stdcell.inc" ), 
+    ( "sg13g2_io.spi", 1, None, "../vacask/sg13g2_io.inc" ), 
 
 ]
 
@@ -99,23 +103,23 @@ if __name__=="__main__":
         pdk = "ihp-sg13g2"
 
     # Source directory (tech)
-    src = os.path.join(pdkroot, pdk, "libs.tech", "ngspice", "models")
-    
-    # Destination directory (tech)
-    dest = os.path.join(pdkroot, pdk, "libs.tech", "vacask", "models")
+    tech_src = os.path.join(pdkroot, pdk, "libs.tech", "ngspice", "models")
 
-    # Create destination
-    os.makedirs(dest, exist_ok=True)
+    # Source directory (stdcell)
+    stdcell_src = os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_stdcell", "spice")
 
+    # Source directory (io)
+    io_src = os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_io", "spice")
+        
     # Go through tech files and convert
     osdi_files = set()
     dflmods = set()
-    for file, read_process_depth, output_depth in tech_files:
+    for file, read_process_depth, output_depth, destpath in tech_files:
         print("Converting:", file)
         cfg = default_config()
         cfg.update({
             "default_model_prefix": "sg13g2_default_mod_", 
-            "sourcepath": [ ".", src ], 
+            "sourcepath": [ ".", tech_src, stdcell_src, io_src ], 
             "read_depth": read_process_depth, 
             "process_depth": read_process_depth, 
             "output_depth": output_depth, 
@@ -125,11 +129,8 @@ if __name__=="__main__":
         cfg["remove_model_params"].update(remove_model_params_update)
         cfg["signature"] = "// Converted from IHP SG13G2 PDK for Ngspice\n"
 
-        srcfile = os.path.join(src, file)
-        destfile = os.path.join(dest, file)
-
         cvt = Converter(cfg)
-        cvt.convert(srcfile, destfile)
+        cvt.convert(file, destpath)
         
         # OSDI files based on defined and used models
         for mname, in_sub in cvt.data["model_usage"]:
@@ -149,7 +150,11 @@ if __name__=="__main__":
     print("Creating sample .vacaskrc.toml")
     vacask_cfg="""# VACASK configuration file 
 [Paths]
-include_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/models" ]
+include_path_prefix = [ 
+  "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/models", 
+  "$(PDK_ROOT)/$(PDK)/libs.ref/sg13g2_stdcell/vacask", 
+  "$(PDK_ROOT)/$(PDK)/libs.ref/sg13g2_io/vacask" 
+]
 module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
 """
     with open(os.path.join(pdkroot, pdk, "libs.tech", "vacask", ".vacaskrc.toml"), "w") as f:
@@ -229,7 +234,7 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
         for mt, module in dflmods:
             txt += "model "+cvt.cfg["default_model_prefix"]+mt+" "+module+"\n"
     
-    with open(os.path.join(dest, "sg13g2_vacask_common.lib"), "w") as f:
+    with open(os.path.join(tech_src, "..", "..", "vacask", "models", "sg13g2_vacask_common.lib"), "w") as f:
         f.write(txt)
 
 

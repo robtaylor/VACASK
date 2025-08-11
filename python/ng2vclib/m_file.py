@@ -106,6 +106,7 @@ class FileLoaderMixin:
         Returns a tuple with two members if depth>0:
         * *inside_control* status after the end of file is reached
         * deck
+        * canonical path to the file that was read
 
         Otherwise returns only the deck. 
 
@@ -274,7 +275,7 @@ class FileLoaderMixin:
                 # Load include file
                 rd = self.cfg.get("read_depth", None)
                 if rd is None or depth<rd:
-                    inside_control, subdeck = self.read_file(s, depth=depth+1, inside_control=inside_control)
+                    inside_control, subdeck, _ = self.read_file(s, depth=depth+1, inside_control=inside_control)
                     eolc = subdeck
                 else:
                     # Not going further, just store extracted filename
@@ -309,7 +310,7 @@ class FileLoaderMixin:
                     # Load lib file
                     rd = self.cfg.get("read_depth", None)
                     if rd is None or depth<rd:
-                        inside_control, subdeck = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
+                        inside_control, subdeck, _ = self.read_file(lfname, section=sname, depth=depth+1, inside_control=inside_control)
                         eolc = subdeck
                     else:
                         # Not going further, just store extracted filename and section name
@@ -356,10 +357,10 @@ class FileLoaderMixin:
         lines = nlines
 
         if depth>0:
-            return (inside_control, (filename, section, lines))
+            return (inside_control, (filename, section, lines), fp)
         else:
             if inside_control:
                 raise ConverterError("Unterminated control block found.")
 
-            return (filename, section, lines)
+            return (inside_control, (filename, section, lines), fp)
         
