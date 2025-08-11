@@ -1,0 +1,79 @@
+IHP SG13G2 standard cell test
+
+include "sg13g2_vacask_common.lib"
+include "cornerMOSlv.lib" section=mos_tt
+include "sg13g2_stdcell.inc"
+
+parameters vdd=1.5 tbit=1n
+
+model v vsource
+vdd (vdd 0) v dc=vdd
+va (a 0) v type="pulse" val0=0 val1=vdd rise=tbit/100 fall=tbit/100 width=tbit delay=tbit period=tbit*2
+vb (b 0) v type="pulse" val0=0 val1=vdd rise=tbit/100 fall=tbit/100 width=tbit*2 delay=tbit*2 period=tbit*4
+  
+subckt nand2test()
+  xnand (out a b vdd 0) sg13g2_nand2_1
+ends
+
+subckt nor2test()
+  xnor (out a b vdd 0) sg13g2_nor2_1
+ends
+
+control
+  elaborate circuit("nand2test")
+  analysis tran1 tran step=0.1n stop=4.5n
+
+  elaborate circuit("nor2test")
+  analysis tran2 tran step=0.1n stop=4.5n
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+fig1 = plt.figure(figsize=(8,10), dpi=100)
+fig1.suptitle('IHP SG13G2 stdcell test')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+C
+D
+E
+F
+""")
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+ax_dict["A"].set_ylabel('Va [V]')
+ax_dict["A"].plot(plot['time']*1e9, plot['a'])
+
+ax_dict["B"].set_ylabel('Vb [V]')
+ax_dict["B"].plot(plot['time']*1e9, plot['b'])
+
+ax_dict["C"].set_ylabel('out_nand [V]')
+ax_dict["C"].plot(plot['time']*1e9, plot['out'])
+
+ax_dict["D"].set_ylabel('I_nand [uA]')
+ax_dict["D"].plot(plot['time']*1e9, -plot['vdd:flow(br)']*1e6)
+
+raw = rawread('tran2.raw')
+plot = raw.get()
+
+ax_dict["E"].set_ylabel('out_nor [V]')
+ax_dict["E"].plot(plot['time']*1e9, plot['out'])
+
+ax_dict["F"].set_ylabel('I_nor [uA]')
+ax_dict["F"].set_xlabel('time [ns]')
+ax_dict["F"].plot(plot['time']*1e9, -plot['vdd:flow(br)']*1e6)
+
+
+fig1.tight_layout()
+ 
+plt.show()
+>>>FILE
+
+

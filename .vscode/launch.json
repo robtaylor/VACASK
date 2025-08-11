@@ -158,7 +158,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             // "args": [ "-dp", "-df", "${workspaceFolder}/demo/ihp-sg13g2/mos.sim" ], 
-            "args": [ "-dp", "-df", "${workspaceFolder}/demo/ihp-sg13g2/hbt.sim" ], 
+            // "args": [ "-dp", "-df", "${workspaceFolder}/demo/ihp-sg13g2/hbt.sim" ], 
+            "args": [ "-dp", "-df", "${workspaceFolder}/demo/ihp-sg13g2/stdcell.sim" ], 
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/test/manual_run",
             "environment": [ 
