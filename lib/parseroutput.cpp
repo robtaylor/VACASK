@@ -23,13 +23,13 @@ std::ostream& operator<<(std::ostream& os, const PTIdentifierList& obj) {
 }
 
 
-void PTParameterValue::dump(int indent, std::ostream& os) {
+void PTParameterValue::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << std::string(id_) << "=" << val_;
 }
 
 
-void PTParameterExpression::dump(int indent, std::ostream& os) {
+void PTParameterExpression::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << std::string(id_) << "=" << rpn_.str();
 }
@@ -114,7 +114,7 @@ void PTModel::add(PTParameters&& par) {
     parameters_.add(std::move(par));
 }
 
-void PTModel::dump(int indent, std::ostream& os) {
+void PTModel::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << "model " << (modelName) << " " << (deviceName) << " ";
     os << parameters_ << "\n";
@@ -128,7 +128,7 @@ PTInstance::PTInstance(const Loc& l, Id name, Id master, PTIdentifierList&& conn
     : loc(l), instanceName_(name), masterName_(master), connections_(std::move(conns)), parameters_(std::move(params)) {
 }
 
-void PTInstance::dump(int indent, std::ostream& os) {
+void PTInstance::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << (instanceName_) << " (" << connections_ << ") ";
     os << masterName_ << " " << parameters_ << "\n";
@@ -142,7 +142,7 @@ void PTBlockSequence::add(const Loc& l, Rpn&& cond, PTBlock&& block) {
     entries_.push_back(std::move(std::make_tuple(l, std::move(cond), std::move(block))));
 }
 
-void PTBlockSequence::dump(int indent, std::ostream& os) {
+void PTBlockSequence::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     bool first = true;
     for(auto& entry : entries_) {
@@ -181,7 +181,7 @@ void PTBlock::add(PTBlockSequence&& seq) {
     blockSequences_->push_back(std::move(seq));
 }
 
-void PTBlock::dump(int indent, std::ostream& os) {
+void PTBlock::dump(int indent, std::ostream& os) const {
     for(auto& mod : models_) {
         mod.dump(indent, os);
     }
@@ -230,7 +230,7 @@ bool PTSubcircuitDefinition::verifyTerminals(Status& s) const {
     return true; 
 }
 
-void PTSubcircuitDefinition::dump(int indent, std::ostream& os) {
+void PTSubcircuitDefinition::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
 
     bool isToplevel = !modelName;
@@ -267,7 +267,7 @@ PTLoad::PTLoad(const Loc& l, const std::string& file, Id module, Id asModule)
     : loc(l), file_(file), module_(module), asModule_(asModule) {
 }
 
-void PTLoad::dump(int indent, std::ostream& os) {
+void PTLoad::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << "load \"" << file_ << "\"";
     if (module_) {
@@ -336,7 +336,7 @@ void PTSweeps::add(PTSweep&& s) {
     sweeps_.push_back(std::move(s));
 }
 
-void PTSweeps::dump(int indent, std::ostream& os) {
+void PTSweeps::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     for(auto it=data().cbegin(); it!=data().cend(); ++it) {
         os << pfx << *it << "\n";
@@ -360,7 +360,7 @@ void PTAnalysis::add(PTSweeps&& sw) {
 }
 
 
-void PTAnalysis::dump(int indent, std::ostream& os) {
+void PTAnalysis::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     if (sweeps_.data().size()>0) {
         sweeps_.dump(indent, os);
@@ -411,7 +411,7 @@ bool ParserTables::verify(Status& s) const {
     return true;
 }
 
-void ParserTables::dump(int indent, std::ostream& os) {
+void ParserTables::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
 
     os << pfx << title_ << "\n\n";

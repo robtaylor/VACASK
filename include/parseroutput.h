@@ -59,7 +59,7 @@ public:
     Loc location() const { return loc_; };
     const Value& val() const { return val_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     Id id_;
@@ -81,7 +81,7 @@ public:
     Loc location() const { return loc_; };
     const Rpn& rpn() const { return rpn_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     Id id_;
@@ -159,7 +159,7 @@ public:
 
     void add(PTParameters&& par);
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 protected:
     Id modelName;
@@ -187,7 +187,7 @@ public:
     inline const PTParameters& parameters() const { return parameters_; };
     inline const PTIdentifierList& connections() const { return connections_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     Id instanceName_;
@@ -225,7 +225,7 @@ public:
     void add(PTInstance&& inst);
     void add(PTBlockSequence&& seq);
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     std::vector<PTModel> models_;
@@ -252,7 +252,7 @@ public:
 
     PTBlock& back() { return std::get<2>(entries_.back()); }; 
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     std::vector<PTBlockSequenceEntry> entries_;
@@ -279,7 +279,7 @@ public:
 
     using PTModel::add;
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
     bool verifyTerminals(Status& s=Status::ignore) const;
     
@@ -306,7 +306,7 @@ public:
     inline Id module() const { return module_; };
     inline Id asModule() const { return asModule_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     std::string file_;
@@ -400,7 +400,7 @@ public:
     void add(PTSweep&& s);
     const std::vector<PTSweep>& data() const { return sweeps_; }; 
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     std::vector<PTSweep> sweeps_;
@@ -427,7 +427,7 @@ public:
     PTParameters& parameters() { return parameters_; };
     const PTSweeps& sweeps() const { return sweeps_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     Id name_;
@@ -471,7 +471,7 @@ public:
     // Accounting
     Accounting& accounting() { return acct_; };
 
-    void dump(int indent, std::ostream& os);
+    void dump(int indent, std::ostream& os) const;
 
 private:
     Accounting acct_;

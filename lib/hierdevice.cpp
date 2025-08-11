@@ -462,11 +462,16 @@ std::tuple<bool, bool> HierarchicalInstance::recomputeBlockConditionsWorker(Circ
         s.extend(loc);
         return std::make_tuple(false, false);
     }
-    if (cond) {
-        newBlocks.push_back(&blk);
+
+    // Condition is false, nothing more to do
+    if (!cond) {
+        return std::make_tuple(true, cond);
     }
-    
-    // Does the block have subsequences
+
+    // Condition true, add to active blocks
+    newBlocks.push_back(&blk);
+
+    // If the block has subsequences, handle them
     bool ok = true;
     if (blk.hasBlockSequences()) {
         // Process subsequences
