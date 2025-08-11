@@ -12,7 +12,7 @@ class InstanceQMixin:
         mod_index = annot["mod_index"]
         model = annot["mod_name"]
         
-        terminals = parts[:mod_index]
+        terminals = self.process_terminals(parts[:mod_index])
 
         if model is None:
             # No model specified

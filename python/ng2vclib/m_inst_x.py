@@ -13,7 +13,7 @@ class InstanceXMixin:
         if model is None:
             raise ConverterError(line+"\nModel not found.")
         
-        terminals = parts[:mod_index]
+        terminals = self.process_terminals(parts[:mod_index])
         params = parts[(mod_index+1):]
         
         # Process parameters, do not handle m (keep its name unchanged)

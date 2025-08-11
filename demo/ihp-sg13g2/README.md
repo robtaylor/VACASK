@@ -21,6 +21,8 @@ PYTHONPATH=/usr/local/lib/vacask/python python3 -m sg13g2tovc
 
 The converter will process the Ngspice models and 
 * create directory `ihp-sg13g2/libs.tech/vacask/models` with the converted models
+* create directory `ihp-sg13g2/libs.ref/sg13g2_stdcell/vacask` with the converted standard cells
+* create directory `ihp-sg13g2/libs.ref/sg13g2_io/vacask` with the converted I/O cells
 * create a VACASK config file `ihp-sg13g2/libs.tech/vacask/.vacaskrc.toml`
   (copy this file to the directory where your top level netlist is located)
 * compile the Verilog-A models that are provided with the PDK and place the 

@@ -73,6 +73,11 @@ class MastersMixin:
         Track used models. 
         """
         name, parts, mod_index = self.split_instance(line, in_sub)
+
+        # Replace [] with _ in name
+        name = name.replace("[", "_")
+        name = name.replace("]", "_")
+
         annot["name"] = name
         annot["words"] = parts
         annot["mod_index"] = mod_index

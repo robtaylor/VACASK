@@ -259,3 +259,8 @@ class ParamsMixin:
 
         return psplit
     
+    def process_terminals(self, terminals):
+        """
+        Processes terminals. For now replaces ! with _. 
+        """
+        return [ t.replace("!", "_") for t in terminals]

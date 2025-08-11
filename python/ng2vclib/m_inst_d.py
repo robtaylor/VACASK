@@ -12,7 +12,7 @@ class InstanceDMixin:
         mod_index = annot["mod_index"]
         model = annot["mod_name"]
         
-        terminals = parts[:2]
+        terminals = self.process_terminals(parts[:2])
 
         if model is None:
             # No model specified
