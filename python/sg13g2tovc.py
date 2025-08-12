@@ -9,6 +9,7 @@ import sys, os, platform, subprocess
 from pprint import pprint
 from ng2vclib.converter import Converter
 from ng2vclib.dfl import default_config
+import xschem2vc
 
 tech_files = [
     # file  read&process depth  output depth  destination (relative path)
@@ -54,7 +55,46 @@ tech_files = [
     # Standard cells and I/O
     ( "sg13g2_stdcell.spice", 1, None, "../vacask/sg13g2_stdcell.inc" ), 
     ( "sg13g2_io.spi", 1, None, "../vacask/sg13g2_io.inc" ), 
+]
 
+symfiles = [
+    # name   manual spectre format
+    [ "sg13g2_pr/annotate_bip_params.sym", None ],
+    [ "sg13g2_pr/annotate_fet_params.sym", None ],
+    [ "sg13g2_pr/bondpad.sym", None ],
+    [ "sg13g2_pr/cap_cmim.sym", None ],
+    [ "sg13g2_pr/cap_cpara.sym", None ],
+    [ "sg13g2_pr/cap_rfcmim.sym", None ],
+    [ "sg13g2_pr/dantenna.sym", None ],
+    [ "sg13g2_pr/diodevdd_2kv.sym", None ],
+    [ "sg13g2_pr/diodevdd_4kv.sym", None ],
+    [ "sg13g2_pr/diodevss_2kv.sym", None ],
+    [ "sg13g2_pr/diodevss_4kv.sym", None ],
+    [ "sg13g2_pr/dpantenna.sym", None ],
+    [ "sg13g2_pr/nmoscl_2.sym", None ],
+    [ "sg13g2_pr/nmoscl_4.sym", None ],
+    [ "sg13g2_pr/npn13G2_5t.sym", None ],
+    [ "sg13g2_pr/npn13G2l_5t.sym", None ],
+    [ "sg13g2_pr/npn13G2l.sym", None ],
+    [ "sg13g2_pr/npn13G2.sym", None ],
+    [ "sg13g2_pr/npn13G2v_5t.sym", None ],
+    [ "sg13g2_pr/npn13G2v.sym", None ],
+    [ "sg13g2_pr/ntap1.sym", None ],
+    [ "sg13g2_pr/pnpMPA.sym", None ],
+    [ "sg13g2_pr/ptap1.sym", None ],
+    [ "sg13g2_pr/rhigh.sym", None ],
+    [ "sg13g2_pr/rppd.sym", None ],
+    [ "sg13g2_pr/rsil.sym", None ],
+    [ "sg13g2_pr/sg13_hv_nmos.sym", None ],
+    [ "sg13g2_pr/sg13_hv_pmos.sym", None ],
+    [ "sg13g2_pr/sg13_hv_rf_nmos.sym", None ],
+    [ "sg13g2_pr/sg13_hv_rf_pmos.sym", None ],
+    [ "sg13g2_pr/sg13_lv_nmos.sym", None ],
+    [ "sg13g2_pr/sg13_lv_pmos.sym", None ],
+    [ "sg13g2_pr/sg13_lv_rf_nmos.sym", None ],
+    [ "sg13g2_pr/sg13_lv_rf_pmos.sym", None ],
+    [ "sg13g2_pr/sg13_svaricap.sym", None ],
+    [ "sg13g2_pr/sub.sym", None ],
 ]
 
 # A bug in Ngspice sg13g2_esd.lib
@@ -102,6 +142,10 @@ if __name__=="__main__":
     if pdk is None:
         pdk = "ihp-sg13g2"
 
+    #
+    # Technology files and standard cells
+    #
+
     # Source directory (tech)
     tech_src = os.path.join(pdkroot, pdk, "libs.tech", "ngspice", "models")
 
@@ -114,8 +158,9 @@ if __name__=="__main__":
     # Go through tech files and convert
     osdi_files = set()
     dflmods = set()
+    print("Converting technology files and standard cells")
     for file, read_process_depth, output_depth, destpath in tech_files:
-        print("Converting:", file)
+        print("  ", file)
         cfg = default_config()
         cfg.update({
             "default_model_prefix": "sg13g2_default_mod_", 
@@ -159,6 +204,24 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
 """
     with open(os.path.join(pdkroot, pdk, "libs.tech", "vacask", ".vacaskrc.toml"), "w") as f:
         f.write(vacask_cfg)
+
+    #
+    # Xschem symbol conversion
+    #
+
+    # Process xschem symbol files
+    xschem_path_pfx = os.path.join(pdkroot, pdk, "libs.tech", "xschem")
+
+    print("Processing Xschem symbol files")
+    for fn, manual in symfiles:
+        print("  ", fn)
+
+        fname = os.path.join(xschem_path_pfx, fn)
+        xschem2vc.convert(fname, manual)
+
+    # 
+    # Compilation of .va files
+    #
 
     # Platform
     system = platform.system()
@@ -220,8 +283,13 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
             print("Verilog-A compiler error.")
             sys.exit(1)
 
+    #
+    # VACASK specific include file
+    #
+
     # Create an include file with common loads and models
     print("Creating common include file")
+    
     txt = ""
     if len(osdi_files)>0:
         txt += "// OSDI files\n"
@@ -234,8 +302,7 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
         for mt, module in dflmods:
             txt += "model "+cvt.cfg["default_model_prefix"]+mt+" "+module+"\n"
     
-    with open(os.path.join(tech_src, "..", "..", "vacask", "models", "sg13g2_vacask_common.lib"), "w") as f:
+    common_include = os.path.join(tech_src, "..", "..", "vacask", "models", "sg13g2_vacask_common.lib")
+    print("  ", common_include)
+    with open(common_include, "w") as f:
         f.write(txt)
-
-
-

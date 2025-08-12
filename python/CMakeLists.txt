@@ -2,6 +2,7 @@ set(python_files
     rawfile.py
     runtest.py
     sg13g2tovc.py
+    xschem2vc.py
     ng2vc.py 
     ng2vclib/__init__.py 
     ng2vclib/converter.py 

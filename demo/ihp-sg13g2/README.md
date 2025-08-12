@@ -25,6 +25,7 @@ The converter will process the Ngspice models and
 * create directory `ihp-sg13g2/libs.ref/sg13g2_io/vacask` with the converted I/O cells
 * create a VACASK config file `ihp-sg13g2/libs.tech/vacask/.vacaskrc.toml`
   (copy this file to the directory where your top level netlist is located)
+* patch xschem symbols with VACASK netlisting pattern (currently only the sg13g2_pr directory is processed)
 * compile the Verilog-A models that are provided with the PDK and place the 
   resulting .osdi files in `ihp-sg13g2/libs.tech/vacask/osdi`
 * create an include file `ihp-sg13g2/libs.tech/vacask/models/sg13g2_vacask_common.lib`

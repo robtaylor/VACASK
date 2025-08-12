@@ -206,6 +206,21 @@
         }, 
 
         {
+            "name": "Python Debugger: Xschem symbol patcher",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "xschem2vc.py",
+            "args": [ ],
+            "console": "integratedTerminal", 
+            "cwd": "${workspaceFolder}/python", 
+            "env": { 
+                "PYTHONPATH": "${workspaceFolder}/python", 
+                "PDK_ROOT": "${workspaceFolder}/../IHP-Open-PDK", 
+                "PDK": "ihp-sg13g2"
+            }
+        }, 
+
+        {
             "name": "Python Debugger: IHP PDK converter",
             "type": "debugpy",
             "request": "launch",
