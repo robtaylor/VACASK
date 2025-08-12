@@ -9,6 +9,7 @@
 #include "config.h"
 #include "common.h"
 #include <filesystem>
+#include <unordered_set>
 
 #include "corehb.h"
 #include "anop.h"
@@ -173,8 +174,14 @@ int main(int argc, char**argv) {
         configFiles.push_back((inputFileDir / ".vacaskrc.toml").string());
     }
 
-    // Read configuration files
+    // Read configuration files, make sure you read each one only once
+    std::unordered_set<std::string> processed_configs;
     for(auto& cfg : configFiles) {
+        // Was it processed already, skip if yes
+        if (processed_configs.contains(cfg)) {
+            continue;
+        }
+        processed_configs.insert(cfg);
         // Open file
         std::ifstream f(cfg);
         if (f) {
