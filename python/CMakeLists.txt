@@ -9,6 +9,7 @@ set(python_files
     ng2vclib/dfl.py 
     ng2vclib/exc.py 
     ng2vclib/generators.py 
+    ng2vclib/patterns.py
     ng2vclib/m_devices.py 
     ng2vclib/m_file.py 
     ng2vclib/m_inst_d.py 

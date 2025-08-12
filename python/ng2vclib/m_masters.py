@@ -2,6 +2,7 @@
 import re
 from .generators import traverse
 from .exc import ConverterError
+from .patterns import *
 
 class MastersMixin:
     pat_paramassign = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
@@ -93,7 +94,7 @@ class MastersMixin:
 
         # Pass 1 - collect models
         # Pass 2 - preprocess instances, construct model usage table
-        for passno in  [1, 2]:
+        for passno in [1, 2]:
             for history, line, depth, in_control_block in traverse(deck, depth=self.cfg.get("process_depth", None)):
                 if in_control_block and passno==1:
                     # In control block, pass 1, look for pre_osdi
@@ -101,7 +102,7 @@ class MastersMixin:
                     l1 = l.strip()
                     if l1.startswith("*"):
                         l1 = l1[1:].strip()
-                        if l1.startswith("pre_osdi"):
+                        if pat_preosdi.match(ll):
                             # Have a pre_osdi, add to list of files
                             osdi_file = l1[8:].strip()
                             self.data["osdi_loads"].add(osdi_file)
@@ -119,7 +120,7 @@ class MastersMixin:
                 elif len(l)==0:
                     # Empty line
                     continue
-                elif l.startswith(".subckt"):
+                elif pat_cidotsubckt.match(l):
                     parts = l.split(" ")
                     in_sub = parts[1]
 
@@ -139,10 +140,10 @@ class MastersMixin:
 
                         # Store
                         self.data["subckts"][in_sub] = (terminals, sub_params)
-                elif l.startswith(".ends"):
+                elif pat_cidotends.match(l):
                     # End of subcircuit
                     in_sub = None
-                elif l.startswith(".model"):
+                elif pat_cidotmodel.match(l):
                     if passno==1:
                         # Detect model
                         parts = l.split(" ")

@@ -1,3 +1,4 @@
+from .patterns import *
 
 # A generator that traverses a deck
 def traverse(deck, depth=None, input_history=[], parent_line=None, inside_control=False):
@@ -39,9 +40,9 @@ def traverse(deck, depth=None, input_history=[], parent_line=None, inside_contro
         lnum, lws, l, eolc, annot = line
         # Check for control
         ll = l.lower()
-        if ll.startswith(".control"):
+        if pat_cidotcontrol.match(ll):
             inside_control = True
-        elif ll.startswith(".endc"):
+        elif pat_cidotendc.match(ll):
             inside_control = False
 
         # Is it a normal line

@@ -4,14 +4,7 @@ import os
 from pprint import pprint
 
 from .exc import ConverterError
-
-pat_eolcomment = re.compile(r'(\$|;|//)')
-pat_leadspace = re.compile(r'^\s+')
-pat_cidotend = re.compile(r'\.end\s*$', re.IGNORECASE)
-pat_singlequotes = re.compile(r"'(.*?)'")
-pat_spaceseq = re.compile(r' +')
-pat_spaceequal = re.compile(r'\s*=\s*')
-pat_cbracepair = re.compile(r'\{(.*?)\}')
+from .patterns import *
 
 def remove_paired_parentheses_spaces(l):
     """
@@ -40,12 +33,13 @@ class FileLoaderMixin:
     def preprocess_line(self, line):
         """
         Preprocesses netlist line, ckeck for toplevel circuit. 
-        """
-        # Convert core line to lowercase
-        l = line.lower()
 
+        All operations here work the same even if the line was processed 
+        with lower() before calling this function. 
+        """
         # Preprocess netlist part (outside control block)
-        
+        l = line
+
         # Strip trailing whitespace from core line
         l = l.rstrip()
         # Replace tabs with spaces
@@ -61,7 +55,7 @@ class FileLoaderMixin:
 
         # For .model lines, remove parentheses around parameters
         # .model name type (...)
-        if l.startswith(".model"):
+        if pat_cidotmodel.search(l):
             mp = l.split(" ", 3)
             if len(mp)>3 and mp[3].startswith("(") and mp[3].endswith(")"):
                 stripped = mp[3][1:-1].strip()
@@ -72,7 +66,7 @@ class FileLoaderMixin:
 
         # Check if this is a toplevel circuit
         if self.cfg["as_toplevel"]=="auto":
-            if l.strip()==".end":
+            if pat_cidotend_line.match(l):
                 self.data["is_toplevel"] = True
 
         return l
@@ -195,16 +189,15 @@ class FileLoaderMixin:
                     comments.append((lnum, lws, l, "", {}))
                 continue
             
-            # To lowercase
-            llow = l.strip().lower()
-
             # Is it a .lib or .include line
-            islib = llow.startswith(".lib")
+            # Look for match at beginning of string (match())
+            # Leading whitespace has been removed
+            islib = pat_cidotlib.match(l)
             libmarker = None
-            isinclude = llow.startswith(".include")
-            isendl = llow.startswith(".endl")
-            iscontrol = llow.startswith(".control")
-            isendc = llow.startswith(".endc")
+            isinclude = pat_cidotinclude.match(l)
+            isendl = pat_cidotendl.match(l)
+            iscontrol = pat_cidotcontrol.match(l)
+            isendc = pat_cidotendc.match(l)
             
             if islib:
                 # Check for lib section start
@@ -324,10 +317,11 @@ class FileLoaderMixin:
                     l = l[:match.start()]
             
             # Conclude processing
+            # Convert to lowercase every non-comment outside control block
             if len(l)==0:
                 # Empty core line, add to comments
                 if collect:
-                    comments.append((lnum, lws, l, eolc, {}))
+                    comments.append((lnum, lws, l, eolc, { "isnl": False }))
                 continue
             elif l[0]  == "+":
                 # Continuation line
@@ -340,22 +334,39 @@ class FileLoaderMixin:
                     # Remove end-of-line comment from last line, merge with continuation line and its eol comment
                     prev_lnum, prev_lws, prev_line, _, _ = nlines[-1]
                     # Add extra space
-                    nlines[-1] = (prev_lnum, prev_lws, self.preprocess_line(prev_line+" "+l[1:]), eolc, {})
-                    have_line = True
+                    nlines[-1] = (prev_lnum, prev_lws, prev_line+" "+l[1:], eolc, { "isnl": not inside_control })
             else:
-                # Ordinary line, flush comments
+                # Ordinary line
+                # Flush comments
                 if collect:
                     nlines.extend(comments)
                 comments = []
-                nlines.append((lnum, lws, self.preprocess_line(l), eolc, {}))
-
+                if collect:
+                    # Convert to lowercase if outside control block
+                    nlines.append((lnum, lws, l, eolc, { "isnl": not inside_control }))
+        
         # Flush trailing comments
         nlines.extend(comments)
 
+        # Go through all lines, preprocess lines outside control block 
+        lines = []
+        for lnum, lws, line, eolc, data in nlines:
+            if data.get("isnl", False):
+                # Netlist lines are converted to lowercase and preprocessed
+                # Preprocess first
+                line = self.preprocess_line(line)
+                
+                # Store original case 
+                data["origline"] = line
+                
+                # To lowercase
+                line = line.lower()
+                
+            lines.append((lnum, lws, line, eolc, data))
+        
         # Lines is now a list of tuples of the form 
-        # (leading whitespace, core line, trailing eol comment)
-        lines = nlines
-
+        # (line number, leading whitespace, core line, trailing eol comment, extra data)
+        
         if depth>0:
             return (inside_control, (filename, section, lines), fp)
         else:

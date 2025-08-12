@@ -2,6 +2,7 @@ import re
 
 from .generators import traverse, format_history
 from .exc import ConverterError
+from .patterns import *
 
 class OutputMixin:
     def vacask_file(self):
@@ -39,14 +40,14 @@ class OutputMixin:
             elif l.startswith("*"):
                 # Comment
                 out.append(lws+"//"+l)
-            elif l.startswith(".model"):
+            elif pat_cidotmodel.match(l):
                 # Model, output if it is used or output is forced
                 if (
                     self.cfg.get("all_models", False) or 
                     len(self.data["model_usage"].get((annot["name"], in_sub), set()))>0
                 ):
                     out.append(self.process_model(lws, l, eolc, in_sub))
-            elif l.startswith(".include"):
+            elif pat_cidotinclude.match(l):
                 # Include
                 if target_depth is None or depth<target_depth:
                     # Not at the deepest level yet, 
@@ -55,7 +56,7 @@ class OutputMixin:
                 else:
                     name, section, subdeck = eolc
                     out.append(lws+"include \""+name+"\"")
-            elif l.startswith(".lib"):
+            elif pat_cidotlib.match(l):
                 # Lib
                 name, section, subdeck = eolc
                 if name is None:
@@ -70,10 +71,11 @@ class OutputMixin:
                     else:
                         name, section, subdeck = eolc
                         out.append(lws+"include \""+name+"\" section="+section)
-            elif l.startswith(".endl"):
+            elif pat_cidotendl.match(l):
                 # End of section marker
                 out.append(lws+"endsection")
-            elif l.startswith(".subckt"):
+            elif pat_cidotsubckt.match(l):
+                # Subcircuit start
                 name = l.split(" ")[1]
                 in_sub = name
                 terminals, params = self.data["subckts"][name]
@@ -83,28 +85,28 @@ class OutputMixin:
                 out.append(vcline)
                 if len(params)>0:
                     out.append(self.format_subckt_params(params, lws))
-            elif l.startswith(".ends"):
+            elif pat_cidotends.match(l):
                 in_sub = None
                 out.append(lws+"ends")
-            elif l.startswith(".params"):
+            elif pat_cidotparams.match(l):
                 txt = l.replace(".params", "parameters")
                 out.append(lws+txt)
-            elif l.startswith(".param"):
+            elif pat_cidotparam.match(l):
                 txt = l.replace(".param", "parameters")
                 out.append(lws+txt)
-            elif l.startswith(".if"):
+            elif pat_cidotif.match(l):
                 txt = l.replace(".if", "@if")
                 out.append(lws+txt)
-            elif l.startswith(".elseif"):
+            elif pat_cidotelseif.match(l):
                 txt = l.replace(".elseif", "@elseif")
                 out.append(lws+txt)
-            elif l.startswith(".else"):
+            elif pat_cidotelse.match(l):
                 txt = l.replace(".else", "@else")
                 out.append(lws+txt)
-            elif l.startswith(".endif"):
+            elif pat_cidotendif.match(l):
                 txt = l.replace(".endif", "@end")
                 out.append(lws+txt)
-            elif l.startswith(".end"):
+            elif pat_cidotend.match(l):
                 # Done. 
                 break
             else:
