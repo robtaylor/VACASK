@@ -1,11 +1,19 @@
 
 class ModelMixin:
-    def process_model(self, lws, line, eol, in_sub):
+    def process_model(self, lws, line, eol, annot, in_sub):
         """
         Process a model line. 
         """
         # Model
         name = line.split(" ")[1]
+        if self.cfg.get("original_case_model", False):
+            output_name = annot["origline"].split(" ")[1]
+        else:
+            output_name = name
+        
+        if in_sub is None and self.debug>0:
+            print((" "*self.dbgindent)+"toplevel model: ", output_name)
+        
         builtin, mtype, family, level, version, params = self.data["models"][in_sub][name]
 
         paren = False
@@ -18,7 +26,7 @@ class ModelMixin:
             vecnames = self.cfg["remove_model_params"].get(module, None)
             
             # Output
-            vcline = "model "+name+" "+module
+            vcline = "model "+output_name+" "+module
             if len(extra_params)>0 or len(params)>0:
                 vcline += " ( "+eol
                 paren = True
@@ -37,7 +45,7 @@ class ModelMixin:
             vecnames = self.cfg["remove_model_params"].get(mtype, None)
             
             # Output
-            vcline = "model "+name+" "+mtype
+            vcline = "model "+output_name+" "+mtype
             if len(params)>0:
                 vcline += " ( "+eol
                 paren = True

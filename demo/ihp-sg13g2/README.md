@@ -32,3 +32,5 @@ The converter will process the Ngspice models and
   (always include this file along with all other PDK files)
 
 Some examples and a [.vacaskrc.toml](.vacaskrc.toml) configuration file are available in this directory. Just set the `PDK_ROOT` and the `PDK` environmental variables and run examples with VACASK. 
+
+Xschem support is under development. Use the latest development version available on [Github](https://github.com/StefanSchippers/xschem) (you will have to compile it yourrself). Copy file `ihp-sg13g2/libs.tech/xschem/xschemrc` to the directory where you want to start xschem. It will load the IHP PDK's extensions and symbols at startup. Select `Options/Netlist format/Spectre` before you dump the netlist or run simulations. 

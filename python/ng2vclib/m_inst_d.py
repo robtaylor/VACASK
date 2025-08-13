@@ -30,7 +30,7 @@ class InstanceDMixin:
         # Process parameters
         psplit = self.process_instance_params(params, "d", handle_m=True)
         
-        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+        txt = lws + annot["output_name"] + " (" + (" ".join(terminals))+") "+annot["output_mod_name"]+" "
 
         if len(psplit)>0:
             fmted, need_split, split = self.format_params(psplit, len(txt))

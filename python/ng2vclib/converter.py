@@ -56,6 +56,12 @@ class Converter(
       * yes .. do not treat as toplevel
     * all_models .. if True writes all models to the output, 
       otherwise ony used models are written
+    * original_case_subckt .. True if you want to keep the original case of 
+      subcircuit definition names 
+    * original_case_model .. True if you want to keep the original case of 
+      model names
+    * original_case_instance .. True if you want to keep the original case of 
+      instance names
     * read_depth .. include/lib depth up to which the files are read.
       Default (None) is equivalent to no depth limit. 
     * process_depth .. include/lib depth up to which the files are processed. 
@@ -94,7 +100,7 @@ class Converter(
       * parameters .. list of (name, value) pairs for parameters
     * is_toplevel .. True if input file is a toplevel netlist
     """
-    def __init__(self, cfg=None):
+    def __init__(self, cfg=None, indent=4, debug=0):
         # If no config is given, use default config
         if cfg is None:
           cfg = dfl.default_config()
@@ -107,6 +113,8 @@ class Converter(
             "default_models_needed": set(), 
             "osdi_loads": set(), 
         }
+        self.dbgindent = indent
+        self.debug = debug
     
     def convert(self, fromFile, toFile=None):
       _, deck, canonical_file_path = self.read_file(fromFile)

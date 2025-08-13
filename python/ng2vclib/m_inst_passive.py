@@ -40,12 +40,12 @@ class InstancePassiveMixin:
             if mod_index==2:
                 # Thrrd entry, immediately after terminals, no value
                 psplit = []
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[3:]
             elif mod_index==3:
                 # Model is 4th entry, 3rd entry must be a value
                 psplit = [("r", self.format_value(parts[2]))]
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[4:]
             else:
                 # Don't know how to handle
@@ -54,7 +54,7 @@ class InstancePassiveMixin:
         # Process parameters
         psplit = self.process_instance_params(params, "r", handle_m=True)
                 
-        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+        txt = lws + annot["output_name"] + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:
             fmted, need_split, split = self.format_params(psplit, len(txt))
@@ -99,12 +99,12 @@ class InstancePassiveMixin:
             if mod_index==2:
                 # Third entry, immediately after terminals, no value
                 psplit = []
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[3:]
             elif mod_index==3:
                 # Model is 4th entry, 3rd entry must be a value
                 psplit = [("c", self.format_value(parts[2]))]
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[4:]
             else:
                 # Don't know how to handle
@@ -113,7 +113,7 @@ class InstancePassiveMixin:
         # Process parameters
         psplit = self.process_instance_params(params, "c", handle_m=True)
                 
-        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+        txt = lws + annot["output_name"] + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:
             fmted, need_split, split = self.format_params(psplit, len(txt))
@@ -158,12 +158,12 @@ class InstancePassiveMixin:
             if mod_index==2:
                 # Third entry, immediately after terminals, no value
                 psplit = []
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[3:]
             elif mod_index==3:
                 # Model is 4th entry, 3rd entry must be a value
                 psplit = [("l", self.format_value(parts[2]))]
-                model = parts[mod_index]
+                model = annot["output_mod_name"]
                 params = parts[4:]
             else:
                 # Don't know how to handle
@@ -172,7 +172,7 @@ class InstancePassiveMixin:
         # Process parameters
         psplit = self.process_instance_params(params, "l", handle_m=True)
                 
-        txt = lws + name + " (" + (" ".join(terminals))+") "+model+" "
+        txt = lws + annot["output_name"] + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:
             fmted, need_split, split = self.format_params(psplit, len(txt))

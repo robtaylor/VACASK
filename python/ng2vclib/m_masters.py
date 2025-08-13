@@ -7,27 +7,33 @@ from .patterns import *
 class MastersMixin:
     pat_paramassign = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
 
-    def split_instance(self, line, in_sub=None):
+    def split_instance(self, line, orig_line, in_sub=None):
         """
-        Splits an instance into fragments. 
+        Splits an instance into fragments, extract model position. 
 
         Returns 
         * name
+        * name with original case
         * a list of parts 
-        * index of first model in the list of fragments, None if no model found. 
+        * a list of parts with original case
+        * index of first model in the list of parts, None if no model found. 
 
         Tracks model usage. 
         """
         parts = line.split()
-        name = parts[0]
-        parts = parts[1:]
-
+        orig_parts = orig_line.split()
+        
         # Is it a subcircuit instance? 
+        name = parts[0]
         issubinst = name[0]=="x"
 
         # Find first model
         mod_index = None
         for ndx, part in enumerate(parts):
+            # Skip first fragment (name)
+            if ndx==0:
+                continue
+
             if issubinst:
                 # Subcircuit instance
                 # Look for first entry of the form name=value
@@ -62,7 +68,7 @@ class MastersMixin:
             # Last word is the subcircuit definition name
             mod_index = len(parts)-1
 
-        return name, parts, mod_index
+        return parts, orig_parts, mod_index
     
     def preprocess_instance(self, lnum, lws, line, eol, annot, in_sub):
         """
@@ -73,16 +79,43 @@ class MastersMixin:
         
         Track used models. 
         """
-        name, parts, mod_index = self.split_instance(line, in_sub)
+        parts, orig_parts, mod_index = self.split_instance(line, annot["origline"], in_sub)
 
-        # Replace [] with _ in name
+        # Extract name and original name
+        name = parts[0]
+        orig_name = orig_parts[0]
+
+        # Remove first fragment (name) from parts
+        parts = parts[1:]
+        orig_parts = orig_parts[1:]
+        if mod_index is not None:
+            mod_index -= 1
+        
+        # Replace [] with _ in name and orignal name
         name = name.replace("[", "_")
         name = name.replace("]", "_")
+        orig_name = orig_name.replace("[", "_")
+        orig_name = orig_name.replace("]", "_")
 
         annot["name"] = name
+        annot["orig_name"] = name
         annot["words"] = parts
+        annot["orig_words"] = orig_parts
         annot["mod_index"] = mod_index
         annot["mod_name"] = parts[mod_index] if mod_index is not None else None
+        annot["orig_mod_name"] = orig_parts[mod_index] if mod_index is not None else None
+
+        # Instance name for output
+        if self.cfg.get("original_case_instance", False):
+            annot["output_name"] = annot["orig_name"]
+        else:
+            annot["output_name"] = annot["name"]
+
+        # Model name for output (for instances)
+        if self.cfg.get("original_case_model", False):
+            annot["output_mod_name"] = annot["orig_mod_name"]
+        else:
+            annot["output_mod_name"] = annot["mod_name"]
 
     def collect_masters(self):
         """

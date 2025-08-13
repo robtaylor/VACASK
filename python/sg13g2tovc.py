@@ -147,20 +147,20 @@ if __name__=="__main__":
     #
 
     # Source directory (tech)
-    tech_src = os.path.join(pdkroot, pdk, "libs.tech", "ngspice", "models")
+    tech_src = os.path.realpath(os.path.join(pdkroot, pdk, "libs.tech", "ngspice", "models"))
 
     # Source directory (stdcell)
-    stdcell_src = os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_stdcell", "spice")
+    stdcell_src = os.path.realpath(os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_stdcell", "spice"))
 
     # Source directory (io)
-    io_src = os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_io", "spice")
+    io_src = os.path.realpath(os.path.join(pdkroot, pdk, "libs.ref", "sg13g2_io", "spice"))
         
     # Go through tech files and convert
     osdi_files = set()
     dflmods = set()
     print("Converting technology files and standard cells")
     for file, read_process_depth, output_depth, destpath in tech_files:
-        print("  ", file)
+        print(" ", file)
         cfg = default_config()
         cfg.update({
             "default_model_prefix": "sg13g2_default_mod_", 
@@ -169,12 +169,14 @@ if __name__=="__main__":
             "process_depth": read_process_depth, 
             "output_depth": output_depth, 
             "patch": patches, 
+            "original_case_subckt": True, 
+            "original_case_model": True, 
         })
         cfg["family_map"].update(family_map_update)
         cfg["remove_model_params"].update(remove_model_params_update)
         cfg["signature"] = "// Converted from IHP SG13G2 PDK for Ngspice\n"
 
-        cvt = Converter(cfg)
+        cvt = Converter(cfg, indent=4, debug=1)
         cvt.convert(file, destpath)
         
         # OSDI files based on defined and used models
@@ -210,11 +212,11 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     #
 
     # Process xschem symbol files
-    xschem_path_pfx = os.path.join(pdkroot, pdk, "libs.tech", "xschem")
+    xschem_path_pfx = os.path.realpath(os.path.join(pdkroot, pdk, "libs.tech", "xschem"))
 
     print("Processing Xschem symbol files")
     for fn, manual in symfiles:
-        print("  ", fn)
+        print(" ", fn)
 
         fname = os.path.join(xschem_path_pfx, fn)
         xschem2vc.convert(fname, manual)
@@ -249,7 +251,8 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     for cand in candidates:
         d = os.path.join(module_path, cand)
         f = os.path.join(d, openvaf_bin)
-        print("  ", f)
+        f = os.path.realpath(f)
+        print(" ", f)
         if (os.path.isdir(d) and os.path.isfile(f)):
             openvaf = f
             print("Found.")
@@ -303,6 +306,7 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
             txt += "model "+cvt.cfg["default_model_prefix"]+mt+" "+module+"\n"
     
     common_include = os.path.join(tech_src, "..", "..", "vacask", "models", "sg13g2_vacask_common.lib")
-    print("  ", common_include)
+    common_include = os.path.realpath(common_include)
+    print(" ", common_include)
     with open(common_include, "w") as f:
         f.write(txt)

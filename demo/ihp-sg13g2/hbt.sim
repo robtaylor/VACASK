@@ -8,19 +8,19 @@ vbe (b 0) v dc=0
 vce (c 0) v dc=0
   
 subckt npn13g2test()
-  q1 (c b 0 0) npn13g2
+  q1 (c b 0 0) npn13G2
 ends
 
 subckt npn13g2ltest()
-  q1 (c b 0 0) npn13g2l
+  q1 (c b 0 0) npn13G2l
 ends
 
 subckt npn13g2vtest()
-  q1 (c b 0 0) npn13g2v
+  q1 (c b 0 0) npn13G2v
 ends
 
 subckt pnpmpatest()
-  q1 (c b 0) pnpmpa
+  q1 (c b 0) pnpMPA
 ends
 
 

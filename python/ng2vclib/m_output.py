@@ -46,7 +46,7 @@ class OutputMixin:
                     self.cfg.get("all_models", False) or 
                     len(self.data["model_usage"].get((annot["name"], in_sub), set()))>0
                 ):
-                    out.append(self.process_model(lws, l, eolc, in_sub))
+                    out.append(self.process_model(lws, l, eolc, annot, in_sub))
             elif pat_cidotinclude.match(l):
                 # Include
                 if target_depth is None or depth<target_depth:
@@ -76,10 +76,20 @@ class OutputMixin:
                 out.append(lws+"endsection")
             elif pat_cidotsubckt.match(l):
                 # Subcircuit start
-                name = l.split(" ")[1]
+                name = l.split(" ", 2)[1]
                 in_sub = name
+                orig_name = annot["origline"].split(" ", 2)[1]
+                
+                if self.cfg.get("original_case_subckt", False):
+                    output_name = orig_name
+                else:
+                    output_name = name
+                
+                if self.debug>0:
+                    print((" "*self.dbgindent)+"toplevel subckt:", output_name)
+                
                 terminals, params = self.data["subckts"][name]
-                vcline = lws+"subckt "+name+"("
+                vcline = lws+"subckt "+output_name+"("
                 vcline += " ".join(terminals)
                 vcline +=")"
                 out.append(vcline)
