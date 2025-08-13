@@ -112,7 +112,7 @@ const std::string& Platform::userConfig() {
 }
 
 const std::string& Platform::localConfig() {
-    static std::string localConfig_ = std::filesystem::canonical(".vacaskrc.toml").string();
+    static std::string localConfig_ = std::filesystem::weakly_canonical(".vacaskrc.toml").string();
     return localConfig_;
 }
 

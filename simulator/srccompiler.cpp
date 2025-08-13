@@ -84,7 +84,7 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& loadDirective
         }
 
         // Set canonical path of .osdi file
-        outputCanonicalPath = std::filesystem::canonical(outputPath).string();
+        outputCanonicalPath = std::filesystem::weakly_canonical(outputPath).string();
 
         std::filesystem::current_path(cwd);
 
