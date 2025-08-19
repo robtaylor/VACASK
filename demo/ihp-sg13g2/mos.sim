@@ -34,7 +34,8 @@ ends
 
 
 control
-  print models
+  print devices
+  print device("pspnqs103va")
   print("")
   
   elaborate circuit("lvntest")

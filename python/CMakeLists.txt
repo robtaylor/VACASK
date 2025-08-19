@@ -3,6 +3,7 @@ set(python_files
     runtest.py
     sg13g2tovc.py
     xschem2vc.py
+    sg13g2xschem.tcl
     ng2vc.py 
     ng2vclib/__init__.py 
     ng2vclib/converter.py 

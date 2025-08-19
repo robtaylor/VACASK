@@ -5,7 +5,7 @@
 # PDK_ROOT .. directory created by cloning the PDK 
 # PDK .. subdirectory with the PDK, by default ihp-sg13g2
 
-import sys, os, platform, subprocess
+import sys, os, platform, subprocess, shutil
 from pprint import pprint
 from ng2vclib.converter import Converter
 from ng2vclib.dfl import default_config
@@ -281,10 +281,10 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
         
         print("Compiling", f)
         cmdline = [ openvaf ] + extra_opts + [ "-o", fo, f ]
-        retval = subprocess.run(cmdline)
-        if retval.returncode != 0:
-            print("Verilog-A compiler error.")
-            sys.exit(1)
+        # retval = subprocess.run(cmdline)
+        # if retval.returncode != 0:
+        #     print("Verilog-A compiler error.")
+        #     sys.exit(1)
 
     #
     # VACASK specific include file
@@ -310,3 +310,61 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     print(" ", common_include)
     with open(common_include, "w") as f:
         f.write(txt)
+
+    #
+    # Xschem config patcher
+    # 
+
+    print("Patching xschem configuration")
+
+    # Original config and old version
+    xsch = os.path.join(pdkroot, pdk, "libs.tech", "xschem", "xschemrc")
+    xschorig = os.path.join(pdkroot, pdk, "libs.tech", "xschem", "xschemrc.orig")
+
+    # Look for old version
+    print(" ", xsch)
+    if not os.path.isfile(xschorig):
+        # Copy
+        shutil.copy(xsch, xschorig)
+    
+    # Read orig file
+    orig_lines = []
+    with open(xschorig, "r") as f:
+        for l in f:
+            orig_lines.append(l)
+    
+    # Write updated file, add VACASK specific part
+    with open(xsch, "w") as f:
+        for l in orig_lines:
+            f.write(l)
+        
+        f.write("""
+# VACASK support
+if {[info exists PDK_ROOT]} {
+  if {[info exists PDK]} {
+    if {[file exists $PDK_ROOT/$PDK/libs.tech/xschem/xschem-vacask]} {
+      source $PDK_ROOT/$PDK/libs.tech/xschem/xschem-vacask
+    }
+  }
+}
+
+# Show netlist
+# set netlist_show 1
+
+# Netlist type
+if {[info exists env(XSCHEM_NETLIST_TYPE)]} {
+  puts "Netlist mode: $::env(XSCHEM_NETLIST_TYPE)"
+  set netlist_type $::env(XSCHEM_NETLIST_TYPE)
+} else {
+  puts "Netlist mode: <default>"
+}
+""")
+
+    # Write xschemrc extension for VACASK
+    xschext = os.path.join(pdkroot, pdk, "libs.tech", "xschem", "xschem-vacask")
+    print(" ", xschext)
+
+    # Get source file
+    src = os.path.join(os.path.dirname(__file__), "sg13g2xschem.tcl")
+    shutil.copy(src, xschext)
+    
