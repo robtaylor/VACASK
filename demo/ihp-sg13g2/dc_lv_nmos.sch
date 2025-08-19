@@ -6,8 +6,8 @@ S {}
 F {}
 E {}
 B 2 600 -400 1160 -100 {flags=graph
-y1=-5.4706947e-05
-y2=0.00031221076
+y1=-0.00020147403
+y2=0.00016544368
 ypos1=0
 ypos2=2
 divy=5
@@ -120,7 +120,6 @@ only_toplevel=false
 value="
 // Use single quotes where possible (Python)
 // If double quotes are needed, escape them. 
-ground GND
 
 control
   // In order to display operating point the 
