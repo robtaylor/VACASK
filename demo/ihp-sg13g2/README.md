@@ -74,6 +74,6 @@ All symbols provided by the PDK in the `ihp-sg13g2/libs.tech/xschem/sg13g2_pr` d
 
 Before you start Xschem make sure the `PDK_ROOT` and the `PDK` environmental variables are set. Set the `XSCHEM_NETLIST_TYPE` environmental variable to `spectre`. and copy the patched Xschem configuration file `ihp-sg13g2/libs.tech/xschem/xschemrc` to the directory where you intend to start Xschem. This file will load the IHP PDK's extensions and symbols at startup. Now you can start Xschem. 
 
-A simple example is provided in file [dc_lv_nmos.sch](dc_lv_nmos.sch). 
+A simple example is provided in file [dc_lv_nmos.sch](dc_lv_nmos.sch). The generated netlist contains a control block that performs an operating point analysis, a 1D operating point Sweep, and a 2D operating point sweep. The 2D sweep is plotted by the embedded Python script. 
 
 Currently HBT operating point backannotation does not work because VACASK uses the Verilog-A version of the VBIC model which does not expose operating point data. Once the VBIC model is converted from Ngspice to Verilog-A this feature will be added. 

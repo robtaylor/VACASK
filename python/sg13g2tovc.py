@@ -116,6 +116,7 @@ patches = {
 family_map_update = {
     ("bjt",   4,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
     ("bjt",   9,    None):     ( "vbic_1p3_5t.osdi",     "vbic13_5t",    {} ), 
+    ("bjt",   1,    None):     ( "spice/full/bjt.osdi",  "sp_bjt",       {} ), 
 }
 
 remove_model_params_update = {
