@@ -281,10 +281,10 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
         
         print("Compiling", f)
         cmdline = [ openvaf ] + extra_opts + [ "-o", fo, f ]
-        # retval = subprocess.run(cmdline)
-        # if retval.returncode != 0:
-        #     print("Verilog-A compiler error.")
-        #     sys.exit(1)
+        retval = subprocess.run(cmdline)
+        if retval.returncode != 0:
+            print("Verilog-A compiler error.")
+            sys.exit(1)
 
     #
     # VACASK specific include file

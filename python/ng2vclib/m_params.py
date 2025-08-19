@@ -96,10 +96,6 @@ class ParamsMixin:
         fragment = ""
         first = True
         for name, value in params:
-            # Remove curly braces
-            if value[0]=="{":
-                value = value[1:-1]
-            
             # Handle SI prefixes
             value = si_replace(value)
 

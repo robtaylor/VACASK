@@ -5,6 +5,20 @@ from .exc import ConverterError
 from .patterns import *
 
 class OutputMixin:
+    def proces_params(self, line):
+        """
+        Splits .param/.params, remove curly braces around expressions. 
+        """
+        parts = line.split(" ")
+        pairs = [p.split("=", 1) for p in parts[1:]]
+        npairs = []
+        for n, v in pairs:
+            if v[0]=="{":
+                v = v[1:-1]
+            npairs.append((n, v))
+        
+        return parts[0]+" "+(" ".join([ p+"="+v for p, v in npairs ]))
+
     def vacask_file(self):
         """
         Returns VACASK file as a list of lines. 
@@ -99,10 +113,14 @@ class OutputMixin:
                 in_sub = None
                 out.append(lws+"ends")
             elif pat_cidotparams.match(l):
-                txt = l.replace(".params", "parameters")
+                # Remove curly braces
+                txt = self.proces_params(l)
+                txt = txt.replace(".params", "parameters")
                 out.append(lws+txt)
             elif pat_cidotparam.match(l):
-                txt = l.replace(".param", "parameters")
+                # Remove curly braces
+                txt = self.proces_params(l)
+                txt = txt.replace(".param", "parameters")
                 out.append(lws+txt)
             elif pat_cidotif.match(l):
                 txt = l.replace(".if", "@if")

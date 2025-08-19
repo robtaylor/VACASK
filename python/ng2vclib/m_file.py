@@ -313,7 +313,7 @@ class FileLoaderMixin:
                 # Separate trailing eol comment
                 match = pat_eolcomment.search(l)
                 if match:
-                    eolc = l[match.start():]
+                    eolc = "//"+l[match.start():]
                     l = l[:match.start()]
             
             # Conclude processing
