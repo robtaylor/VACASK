@@ -52,8 +52,10 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - simulator library that can be linked to 3rd party software
 - circuit can be built programmatically or read by a custom parser
 - netlist parser with Spectre-like syntax
-- Ngspice netlist converter (under development, at this point it can convert [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK))
-- [Xschem](https://xschem.sourceforge.io/stefan/index.html) can be used for schematic entry (use the latest development release). 
+- Ngspice netlist converter (under development)
+- [Xschem](https://xschem.sourceforge.io/stefan/index.html) can be used for schematic entry (use the latest development release). See [demo/xschem](demo/xschem) for more information. 
+- [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK) support. See [demo/ihp-sg13g2](demo/ihp-sg13g2) for more information. 
+
  
 Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF-reloaded or even Verilog-A. 
 

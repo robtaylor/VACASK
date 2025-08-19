@@ -77,7 +77,7 @@ tclcommand="xschem annotate_op"
 C {devices/launcher.sym} 1190 130 0 0 {name=h2
 descr="Load waves" 
 tclcommand="
-xschem raw_read $netlist_dir/dc2.raw dc
+xschem raw_read $netlist_dir/dc2.raw
 xschem setprop rect 2 0 fullxzoom
 "
 }

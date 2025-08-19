@@ -29,19 +29,19 @@ proc write_save_lines_vacask {type model schpath spiceprefix instname} {
     set devpath [ string map {. :} '$schpath$spiceprefix$instname.$m' ]
 
     # TODO: Verilog-A VBIC does not expose opvars
-    append sch_expand(savelist) "save p($devpath,gm)\n"
-    append sch_expand(savelist) "save p($devpath,go)\n"
-    append sch_expand(savelist) "save p($devpath,gmu)\n"
-    append sch_expand(savelist) "save p($devpath,gpi)\n"
-    append sch_expand(savelist) "save p($devpath,gx)\n"
-    append sch_expand(savelist) "save p($devpath,vbe)\n"
-    append sch_expand(savelist) "save p($devpath,vbc)\n"
-    append sch_expand(savelist) "save p($devpath,ib)\n"
-    append sch_expand(savelist) "save p($devpath,ic)\n"
-    append sch_expand(savelist) "save p($devpath,cbe)\n"
-    append sch_expand(savelist) "save p($devpath,cbc)\n"
-    append sch_expand(savelist) "save p($devpath,cbep)\n"
-    append sch_expand(savelist) "save p($devpath,cbcp)\n"
+    # append sch_expand(savelist) "save p($devpath,gm)\n"
+    # append sch_expand(savelist) "save p($devpath,go)\n"
+    # append sch_expand(savelist) "save p($devpath,gmu)\n"
+    # append sch_expand(savelist) "save p($devpath,gpi)\n"
+    # append sch_expand(savelist) "save p($devpath,gx)\n"
+    # append sch_expand(savelist) "save p($devpath,vbe)\n"
+    # append sch_expand(savelist) "save p($devpath,vbc)\n"
+    # append sch_expand(savelist) "save p($devpath,ib)\n"
+    # append sch_expand(savelist) "save p($devpath,ic)\n"
+    # append sch_expand(savelist) "save p($devpath,cbe)\n"
+    # append sch_expand(savelist) "save p($devpath,cbc)\n"
+    # append sch_expand(savelist) "save p($devpath,cbep)\n"
+    # append sch_expand(savelist) "save p($devpath,cbcp)\n"
   }
 }
 
