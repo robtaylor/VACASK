@@ -1,0 +1,17 @@
+if {[info exists ::env(PDK_ROOT)]} {
+  if {[info exists ::env(PDK)]} {
+    set tmp_xschemrc "$::env(PDK_ROOT)/$::env(PDK)/libs.tech/xschem/xschemrc"
+    if {[file exists "$tmp_xschemrc"]} {
+      puts "Sourcing IHP sg13g2 Xschem configuration from $tmp_xschemrc"
+      source $tmp_xschemrc
+    } else {
+      puts "IHP sg13g2 Xschem configuration not found: $tmp_xschemrc"
+    }
+  } else {
+    puts "Set PDK envoronmental variable"
+  }
+} else {
+  puts "Set PDK_ROOT envoronmental variable"
+}
+
+
