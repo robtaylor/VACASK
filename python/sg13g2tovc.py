@@ -110,7 +110,32 @@ patches = {
             "+ stuac 40", 
             "+ stuac=40"
         )
-    ]
+    ],
+    # Remove global SWSOA parameter
+    "sg13g2_moshv_mod.lib": [
+        (
+            ".param SWSOA = 0", 
+            ""
+        )
+    ], 
+    "sg13g2_moshv_mod_mismatch.lib": [
+        (
+            ".param SWSOA = 0", 
+            ""
+        )
+    ], 
+    "sg13g2_moslv_mod.lib": [
+        (
+            ".param SWSOA = 0", 
+            ""
+        )
+    ], 
+    "sg13g2_moslv_mod_mismatch.lib": [
+        (
+            ".param SWSOA = 0", 
+            ""
+        )
+    ], 
 }
 
 family_map_update = {
@@ -296,6 +321,8 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     
     txt = ""
     if len(osdi_files)>0:
+        txt += "// Disable SOA checks\n"
+        txt += "parameters swsoa=0\n"
         txt += "// OSDI files\n"
         for f in osdi_files:
             txt += "load \""+f+"\"\n"

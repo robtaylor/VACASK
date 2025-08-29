@@ -110,38 +110,5 @@ Arguments:
     cfg["all_models"] = all_models
 
     converter = Converter(cfg)
-    deck = converter.read(fromFile)
+    converter.convert(fromFile, toFile)
     
-    # for history, line, control_block in traverse(deck):
-    #     lnum, lws, l, eol = line
-    #     print(lnum, ":", lws+l, eol)
-    # 1/0
-
-    converter.collect_masters()
-
-    # pprint(converter.data["models"])
-    # pprint(converter.data["subckts"])
-    # sys.exit(0)
-    
-    out = converter.vacask_file()
-    if toFile is None:
-        for l in out:
-            print(l)
-    else:
-        if not os.path.isabs(toFile):
-            # Relative path, get directory of input file
-            dest = os.path.join(os.path.dirname(self.data["canonical_input_path"]), toFile)
-        else:
-            dest = toFile
-        
-        # Create destination directory
-        destdir = os.path.dirname(dest)
-        os.makedirs(destdir, exist_ok=True)
-
-        with open(dest, "w") as f:
-            for l in out:
-                f.write(l)
-                f.write("\n")
-
-
-

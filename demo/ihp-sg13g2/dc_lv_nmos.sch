@@ -6,27 +6,30 @@ S {}
 F {}
 E {}
 B 2 600 -400 1160 -100 {flags=graph
-y1=-0.00020147403
-y2=0.00016544368
+y1=-10e-6
+y2=300e-6
 ypos1=0
 ypos2=2
 divy=5
 subdivy=1
 unity=1
-x1=-1.2045975
+x1=0
 divx=5
 subdivx=1
 dataset=-1
 unitx=1
 logx=0
 logy=0
-autoload=1
+autoload=0
 sweep=vds
 hilight_wave=0
 color=4
 node=Vd.flow(br)
 mode=Line
-x2=0.79540241}
+x2=1.48
+x0=0
+y0=-10e-6
+rawfile=$netlist_dir/dc2.raw}
 T {Ctrl-Click to execute launcher} 1130 30 0 0 0.3 0.3 {layer=11}
 T {.save file can be created with IHP->"Create FET and BIP .save file"} 1130 150 0 0 0.3 0.3 {layer=11}
 N 250 -160 250 -140 {
@@ -79,6 +82,10 @@ descr="Load waves"
 tclcommand="
 xschem raw_read $netlist_dir/dc2.raw
 xschem setprop rect 2 0 fullxzoom
+xschem setprop rect 2 0 x1 0
+xschem setprop rect 2 0 x2 1.48
+xschem setprop rect 2 0 y1 -10e-6
+xschem setprop rect 2 0 y2 300e-6
 "
 }
 C {launcher.sym} 1190 70 0 0 {name=h3
@@ -158,7 +165,10 @@ plot = raw.get(sweeps=1)
 for ii in range(plot.sweepGroups):
     sdata = plot.sweepData(ii)
     traceName = 'vgs=%.2e' % sdata['vgs']
-    ax_dict['A'].plot(plot[ii, 'D'], -plot[ii, 'Vds:flow(br)']*1e6, label=traceName)
+    ax_dict['A'].plot(
+        plot[ii, 'D'], -plot[ii, 'Vds:flow(br)']*1e6, 
+        label=traceName
+    )
 ax_dict['A'].legend(loc='upper right')
 fig1.tight_layout()
 plt.show()
