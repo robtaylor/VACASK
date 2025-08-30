@@ -2,7 +2,23 @@
 
 import os, sys, shutil
 
-def convert(fname, manual):
+def simple_patcher(line):
+    """
+    @pinlist -> ( @pinlist ) 
+    """
+    if "format" not in line:
+        return None
+    
+    return line.replace("@pinlist", "( @pinlist )").replace("format=", "spectre_format=")
+
+def convert(fname, cvt=simple_patcher):
+    """
+    If *cvt* is a string, uses exactly that string for spectre_format. 
+
+    If *cvt* is a function, calls it with format line as argument and 
+    uses the return value as the spectre_format line. If None is returned 
+    conversion fails. 
+    """
     # Build orig file name
     origfile = fname+".orig"
 
@@ -25,21 +41,27 @@ def convert(fname, manual):
             
             orig_lines.append(l)
 
-    # No explicitly given format, nor format= found
-    if manual is None and format_line is None:
-        # Nothing to do with this file, delete .orig file
+    # No explicitly given format= found, nothing to patch
+    if format_line is None:
         os.remove(origfile)
         return
-    
-    if manual is not None:
+
+    if isinstance(cvt, str):
         # Explicitly given format
-        fstxt = "spectre_format=\""+manual+"\""
-    else:
+        fstxt = "spectre_format=\""+cvt+"\""
+    elif callable(cvt):
         # Convert automatically
         ftxt = orig_lines[format_line]
 
         # Wrap @pinlist in parentheses
-        fstxt = ftxt.replace("@pinlist", "( @pinlist )").replace("format=", "spectre_format=")
+        fstxt = cvt(ftxt)
+        if fstxt is None:
+            raise Exception("Conversion failed.")
+        # fstxt = ftxt.replace("@pinlist", "( @pinlist )").replace("format=", "spectre_format=")
+    else:
+        # Don't know how to use cvt
+        os.remove(origfile)
+        raise Exception("Don't know how to use specified converter on "+fname)
         
     # Write format_spectre
     if format_spectre_line is not None:

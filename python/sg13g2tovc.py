@@ -57,8 +57,36 @@ tech_files = [
     ( "sg13g2_io.spi", 1, None, "../vacask/sg13g2_io.inc" ), 
 ]
 
+def patch_dig(line):
+    if "format" not in line:
+        return None
+    
+    line = line.replace("format=", "spectre_format=")
+
+    # Split 
+    parts = line.split()
+
+    if len(parts)<2:
+        return line
+
+    # Look for @prefix
+    at = None
+    for ii, p in enumerate(parts):
+        if p.startswith("@prefix"):
+            at = ii
+            break
+    
+    # Not found
+    if at is None:
+        return line
+    
+    # Put terminals in parentheses
+    parts = parts[:1] + [ "(" ] + parts[1:at] + [ ")" ] + parts[at:] + [ "\n" ] 
+
+    return " ".join(parts)
+
 symfiles = [
-    # name   manual spectre format
+    # name   spectre formatter (None uses the default)
     [ "sg13g2_pr/annotate_bip_params.sym", None ],
     [ "sg13g2_pr/annotate_fet_params.sym", None ],
     [ "sg13g2_pr/bondpad.sym", None ],
@@ -95,6 +123,82 @@ symfiles = [
     [ "sg13g2_pr/sg13_lv_rf_pmos.sym", None ],
     [ "sg13g2_pr/sg13_svaricap.sym", None ],
     [ "sg13g2_pr/sub.sym", None ],
+    [ "sg13g2_stdcells/sg13g2_a21o_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_a21o_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_a21oi_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_a21oi_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_a221oi_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_a22oi_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and2_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and3_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and3_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and4_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_and4_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_antennanp.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_buf_16.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_buf_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_buf_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_buf_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_buf_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_decap_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_decap_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dfrbp_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dfrbp_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlhq_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlhr_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlhrq_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dllr_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dllrq_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlygate4sd1_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlygate4sd2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_dlygate4sd3_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_ebufn_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_ebufn_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_ebufn_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_einvn_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_einvn_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_einvn_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_fill_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_fill_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_fill_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_fill_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_inv_16.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_inv_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_inv_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_inv_4.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_inv_8.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_lgcp_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_mux2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_mux2_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_mux4_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand2_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand2b_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand2b_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand3_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand3b_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nand4_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor2_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor2b_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor2b_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor3_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor3_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor4_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_nor4_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_o21ai_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or2_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or3_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or3_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or4_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_or4_2.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_sdfbbp_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_sighold.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_slgcp_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_xnor2_1.sym", patch_dig ], 
+    [ "sg13g2_stdcells/sg13g2_xor2_1.sym", patch_dig ], 
 ]
 
 # A bug in Ngspice sg13g2_esd.lib
@@ -241,12 +345,20 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     xschem_path_pfx = os.path.realpath(os.path.join(pdkroot, pdk, "libs.tech", "xschem"))
 
     print("Processing Xschem symbol files")
-    for fn, manual in symfiles:
+    for fn, cvt in symfiles:
         print(" ", fn)
 
         fname = os.path.join(xschem_path_pfx, fn)
-        xschem2vc.convert(fname, manual)
-
+        try:
+            if cvt is None:
+                xschem2vc.convert(fname)
+            else:
+                xschem2vc.convert(fname, cvt)
+        except:
+            print("    FAILED", )
+            raise
+            
+    sys.exit(0)
     # 
     # Compilation of .va files
     #
