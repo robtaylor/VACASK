@@ -47,6 +47,19 @@ int main(int argc, char**argv) {
     bool progress = true;
     bool noOutput = false;
 
+    // Simulator information
+    Simulator::out() << 
+        "This is "+Platform::programName+" "+Platform::programVersion+".\n"+Platform::programCopyright+"\n";
+    Simulator::out() << 
+        Platform::programHomepage+"\n";
+    #ifdef SIMDEBUG
+    Simulator::out() << "\n" << "Warning! This is a debug build. Simulator will be slow.\n";
+    #endif
+    #ifdef SIMPROFILE
+    Simulator::out() << "\n" << "Warning! This binary is instrumeted for profiling and code coverage.\n";
+    #endif
+    Simulator::out() << "\n";
+    
     if (argc<2) {
         // No arguments, print a hint on help
         Simulator::err() << "To get help, run as: " << Platform::programName << " -h\n"; 
@@ -129,19 +142,6 @@ int main(int argc, char**argv) {
         return 1;
     }
 
-    // Simulator information
-    Simulator::out() << 
-        "This is "+Platform::programName+" "+Platform::programVersion+".\n"+Platform::programCopyright+"\n";
-    Simulator::out() << 
-        Platform::programHomepage+"\n";
-    #ifdef SIMDEBUG
-    Simulator::out() << "\n" << "Warning! This is a debug build. Simulator will be slow.\n";
-    #endif
-    #ifdef SIMPROFILE
-    Simulator::out() << "\n" << "Warning! This binary is instrumeted for profiling and code coverage.\n";
-    #endif
-    Simulator::out() << "\n";
-    
     // Load file passed as argument
     ParserTables tab;
     ParserExtras extras;
