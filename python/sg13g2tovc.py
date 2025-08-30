@@ -345,20 +345,19 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     xschem_path_pfx = os.path.realpath(os.path.join(pdkroot, pdk, "libs.tech", "xschem"))
 
     print("Processing Xschem symbol files")
-    for fn, cvt in symfiles:
+    for fn, symcvt in symfiles:
         print(" ", fn)
 
         fname = os.path.join(xschem_path_pfx, fn)
         try:
-            if cvt is None:
+            if symcvt is None:
                 xschem2vc.convert(fname)
             else:
-                xschem2vc.convert(fname, cvt)
+                xschem2vc.convert(fname, symcvt)
         except:
             print("    FAILED", )
             raise
             
-    sys.exit(0)
     # 
     # Compilation of .va files
     #
