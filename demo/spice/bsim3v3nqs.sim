@@ -31,7 +31,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(6,8), dpi=100)
-fig1.suptitle('BSIM 3.3.0 NQS test')
+fig1.suptitle('BSIM3 3.3.0 NQS test')
 ax_dict = fig1.subplot_mosaic("""
 A
 B

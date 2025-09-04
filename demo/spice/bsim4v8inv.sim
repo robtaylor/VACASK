@@ -1,17 +1,17 @@
-BSIM3 3.3.0 MOSFET inverter
+BSIM3 4.8.2 MOSFET inverter
 
-load "spice/bsim3v3.osdi"
-include "bsim3v3.inc"
+load "spice/bsim4v8.osdi"
+include "bsim4v82.inc"
 
 model v vsource
 
-m1 (out in 0 0) n1 l=0.35u w=10.0u $mfactor=2
-m2 (out in d d) p1 l=0.35u w=10.0u $mfactor=2
-vd (d 0) v dc=2.0
-vin (in 0) v type="pulse" val0=0 val1=2 delay=10p rise=10p fall=10p width=0.5n period=1n
+m1 (out in 0 0) n1 l=0.06u w=10.0u $mfactor=2
+m2 (out in d d) p1 l=0.06u w=10.0u $mfactor=2
+vd (d 0) v dc=1.2
+vin (in 0) v type="pulse" val0=0 val1=1.2 delay=2p rise=2p fall=2p width=100p period=200p
 
 control
-  analysis tran1 tran step=1p stop=5n maxstep=1p
+  analysis tran1 tran step=0.1p stop=1n maxstep=0.1p
   postprocess(PYTHON, "runme.py")
 endc
 
@@ -25,7 +25,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(6,8), dpi=100)
-fig1.suptitle('BSIM3 3.3.0 inverter')
+fig1.suptitle('BSIM4 4.8.2 inverter')
 ax_dict = fig1.subplot_mosaic("""
 A
 B
