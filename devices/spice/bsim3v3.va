@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:44:40 UTC
+// Date         : 2025-09-05 07:03:11 UTC
 // Module name  : sp_bsim3v3
 // Model variant: default
 // 
@@ -1255,6 +1255,7 @@ module sp_bsim3v3(d, g, s, b);
   real noise_Leff;
   real Leffsq;
   real noise_T0;
+  real noise1_T1;
   real noise_T2;
   real noise_T3;
   real noise_T4;
@@ -2284,9 +2285,6 @@ module sp_bsim3v3(d, g, s, b);
     vgdo = BSIM3vgs-BSIM3vds;
     delvbs = load_vbs-BSIM3vbs;
     delvbd = vbd-BSIM3vbd;
-    if (!(BSIM3mode>=0)) begin
-
-    end
     von = BSIM3von;
     if (BSIM3vds>=0.0) begin
       load_vgs = DEVfetlim(load_vgs, BSIM3vgs, von, limited);
@@ -4169,7 +4167,7 @@ module sp_bsim3v3(d, g, s, b);
             DelClm = 0.0;
           end
         end
-        noise_T1 = 1.6021766208e-19*1.6021766208e-19*8.62e-5*cd*$temperature*BSIM3ueff;
+        noise1_T1 = 1.6021766208e-19*1.6021766208e-19*8.62e-5*cd*$temperature*BSIM3ueff;
         noise_T2 = 1.0e8*BSIM3Abulk*BSIM3cox*Leffsq;
         N0 = BSIM3cox*BSIM3Vgsteff/1.6021766208e-19;
         Nl = BSIM3cox*BSIM3Vgsteff*(1.0-BSIM3AbovVgst2Vtm*BSIM3Vdseff)/1.6021766208e-19;
@@ -4180,7 +4178,7 @@ module sp_bsim3v3(d, g, s, b);
         noise_T7 = 1.0e8*Leffsq*BSIM3weff;
         noise_T8 = BSIM3oxideTrapDensityA+BSIM3oxideTrapDensityB*Nl+BSIM3oxideTrapDensityC*Nl*Nl;
         noise_T9 = (Nl+2.0e14)*(Nl+2.0e14);
-        noise1_Ssi = noise_T1/noise_T2*(noise_T3+noise_T4+noise_T5)+noise_T6/noise_T7*DelClm*noise_T8/noise_T9;
+        noise1_Ssi = noise1_T1/noise_T2*(noise_T3+noise_T4+noise_T5)+noise_T6/noise_T7*DelClm*noise_T8/noise_T9;
         sne_retval = noise1_Ssi;
         // end of inlined: StrongInversionNoiseEval(vds, model, here, data->freq, ckt->CKTtemp) -> sne_retval
         Ssi = sne_retval;

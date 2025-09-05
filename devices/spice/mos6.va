@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:44:21 UTC
+// Date         : 2025-09-05 07:02:51 UTC
 // Module name  : sp_mos6
 // Model variant: default
 // 
@@ -60,11 +60,7 @@
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
 //   mos6/mos6.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1989 Takayasu Sakurai
 //   mos6/mos6par.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1989 Takayasu Sakurai
 //   mos6/mos6mpar.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1989 Takayasu Sakurai
@@ -950,9 +946,6 @@ module sp_mos6(d, g, s, b);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgdo = MOS6vgs-MOS6vds;
-    if (!(MOS6mode>=0)) begin
-
-    end
     load_von = MOS6type*MOS6von;
     if (MOS6vds>=0) begin
       load_vgs = DEVfetlim(load_vgs, MOS6vgs, load_von, limited);

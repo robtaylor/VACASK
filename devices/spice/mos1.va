@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:44:00 UTC
+// Date         : 2025-09-05 07:02:30 UTC
 // Module name  : sp_mos1
 // Model variant: default
 // 
@@ -56,9 +56,6 @@
 //
 // Source files and copyright information:
 //   devsup.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
 //   mos1/mos1defs.h
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -82,13 +79,7 @@
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1987 Thomas L. Quarles
 //   mos1/mos1set.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
 //   mos1/mos1temp.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
 //   mos1/mos1load.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -953,9 +944,6 @@ module sp_mos1(d, g, s, b);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgdo = MOS1vgs-MOS1vds;
-    if (!(MOS1mode>=0)) begin
-
-    end
     load_von = MOS1type*MOS1von;
     if (MOS1vds>=0) begin
       load_vgs = DEVfetlim(load_vgs, MOS1vgs, load_von, limited);

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:45:04 UTC
+// Date         : 2025-09-05 07:03:33 UTC
 // Module name  : sp_jfet2
 // Model variant: sn
 // 
@@ -49,6 +49,28 @@
 //
 // Source files and copyright information:
 //   jfet2/psmodel.c
+//      	Parker-Skellern MESFET model
+//      	
+//     	Copyright (C) 1994, 1995, 1996  Macquarie University                    
+//     	All Rights Reserved 
+//     	Author: Anthony Parker
+//     	Date:	2  Feb 1994  created
+//     	        9  Feb 1994  correct NaN problem in strong cut-off region
+//     	        20 MAR 1994  corrected capacitance initialization  
+//     	        24 MAR 1994  added parameter MVST  
+//     	        28 MAR 1994  reorganized declaration scopes 
+//                 19 APR 1994  added new parameters: PS_HFETA, PS_HFE1, PS_HFE2,
+//                                  PS_HFG1, and PS_HFG2
+//                 18 May 1994  corrected 1/0 error when PS_VSUB=0
+//                 15 Jul 1994  corrected errors in acload routine
+//                 10 Aug 1995  added PS_VSUB to gds += gm*PS_VSUB*mvst*(vgt-vgst*(a..
+//     			12 Sep 1995  changed _XXX to PS_XXX to aid portability
+//                 13 Sep 1995  change to give arg=1-1/subfac; 
+//     			                           if(vst!=0) gds+=gm*PS_VSUB..;
+//                                             gm *= arg;
+//     			10 Feb 1996  change to names to match MicroSim code.
+//     			5  Jul 1996  corrected diode eq (change Gmin*vgs to Gmin*vgd).
+//      
 //   jfet2/jfet2defs.h
 //     Based on jfetdefs.h
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
@@ -310,6 +332,8 @@ module sp_jfet2(d, g, s);
   real isat;
   real Vbd;
   real load_ibd;
+  real inlined_gm;
+  real inlined_gds;
   real vdst;
   real vgst;
   real dvgd;
@@ -841,33 +865,33 @@ module sp_jfet2(d, g, s);
       vdt = rpt-a_rpt;
       dvdt_dvdp = za*(aa/rpt-a_aa/a_rpt);
       dvdt_dvgt = (vdt-vdp*dvdt_dvdp)*(1+load_mxi*vsatFac*vsatFac)/(1+vsatFac)/vgt;
-      load_gds = pow(vgt-vdt, mQ-1);
-      load_gm = pow(vgt, mQ-1)-load_gds;
-      idrain = vdt*load_gds+vgt*load_gm;
-      load_gds = load_gds * (mQ);
-      load_gm = load_gm * (mQ);
-      load_gm = load_gm + (load_gds*dvdt_dvgt);
-      load_gds = load_gds * (dvdt_dvdp);
-      load_gm = load_gm + (load_gds*PmQ*vdp/vgt);
-      load_gds = load_gds * (dvpd_dvdst);
+      inlined_gds = pow(vgt-vdt, mQ-1);
+      inlined_gm = pow(vgt, mQ-1)-inlined_gds;
+      idrain = vdt*inlined_gds+vgt*inlined_gm;
+      inlined_gds = inlined_gds * (mQ);
+      inlined_gm = inlined_gm * (mQ);
+      inlined_gm = inlined_gm + (inlined_gds*dvdt_dvgt);
+      inlined_gds = inlined_gds * (dvdt_dvdp);
+      inlined_gm = inlined_gm + (inlined_gds*PmQ*vdp/vgt);
+      inlined_gds = inlined_gds * (dvpd_dvdst);
       load_arg = 1-1/subfac;
       if (load_vst!=0) begin
-        load_gds = load_gds + (load_gm*vst*load_mvst*(vgt-vgst*load_arg)/load_vst);
+        inlined_gds = inlined_gds + (inlined_gm*vst*load_mvst*(vgt-vgst*load_arg)/load_vst);
       end
-      load_gm = load_gm * (load_arg);
+      inlined_gm = inlined_gm * (load_arg);
     end else begin
-      load_gds = 0.0e0;
-      load_gm = load_gds;
-      idrain = load_gm;
+      inlined_gds = 0.0e0;
+      inlined_gm = inlined_gds;
+      idrain = inlined_gm;
     end
     load_arg = HFe1*dvgs-HFg2*dvgd+2*LFg2*vgdtrap-LFg1*vgstrap+LFg;
-    load_gds = load_gds + (load_gm*load_arg);
-    load_gm = load_gm * (1+(HFe2*dvgs-HFg1*dvgd+LFg1*vgdtrap)-load_arg);
+    inlined_gds = inlined_gds + (inlined_gm*load_arg);
+    inlined_gm = inlined_gm * (1+(HFe2*dvgs-HFg1*dvgd+LFg1*vgdtrap)-load_arg);
     load_lambda = lambda;
     load_beta = beta*load_area;
     load_arg = load_beta*(1+load_lambda*vdst);
-    load_gm = load_gm * (load_arg);
-    load_gds = load_beta*load_lambda*idrain+load_gds*load_arg;
+    inlined_gm = inlined_gm * (load_arg);
+    inlined_gds = load_beta*load_lambda*idrain+inlined_gds*load_arg;
     idrain = idrain * (load_arg);
     load_delta = delta/load_area;
     idrain_unscaled = idrain;
@@ -879,8 +903,8 @@ module sp_jfet2(d, g, s);
     pfac = 1+pAverage*load_delta;
     idrain = idrain / (pfac);
     load_arg = 1/pfac/pfac;
-    load_gm = load_gm*load_arg;
-    load_gds = load_gds*load_arg-load_delta*idrain*idrain;
+    load_gm = inlined_gm*load_arg;
+    load_gds = inlined_gds*load_arg-load_delta*idrain*idrain;
     psids_retval = idrain;
     // end of inlined: PSids(ckt, model, here, vgsin, vgdin, cg, cgd, ggs, ggd, gm, gds) -> psids_retval
     cd = psids_retval;

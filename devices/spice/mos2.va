@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:44:08 UTC
+// Date         : 2025-09-05 07:02:37 UTC
 // Module name  : sp_mos2
 // Model variant: default
 // 
@@ -60,9 +60,6 @@
 //     Author: 1985 Thomas L. Quarles
 //     Modified: 2000 AlansFixes
 //   mos2/mos2defs.h
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFIxes
 //   mos2/mos2.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -82,9 +79,6 @@
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
 //   mos2/mos2set.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
 //   mos2/mos2temp.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -1115,9 +1109,6 @@ module sp_mos2(d, g, s, b);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgdo = MOS2vgs-MOS2vds;
-    if (!(MOS2mode>=0)) begin
-
-    end
     load_von = MOS2type*MOS2von;
     if (MOS2vds>=0) begin
       load_vgs = DEVfetlim(load_vgs, MOS2vgs, load_von, limited);

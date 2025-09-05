@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:45:42 UTC
+// Date         : 2025-09-05 07:04:11 UTC
 // Module name  : sp_mos9
 // Model variant: sn
 // 
@@ -66,9 +66,6 @@
 //     Author: 1987 Thomas L. Quarles
 //     Modified: Alan Gillespie
 //   mos9/mos9par.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: Alan Gillespie
 //   mos9/mos9mpar.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -82,13 +79,7 @@
 //     Author: 1987 Thomas L. Quarles
 //     Modified: Alan Gillespie
 //   mos9/mos9set.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: Alan Gillespie
 //   mos9/mos9temp.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: Alan Gillespie
 //   mos9/mos9load.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -1023,9 +1014,6 @@ module sp_mos9(d, g, s, b);
     load_vbd = load_vbs-load_vds;
     vgd = load_vgs-load_vds;
     vgdo = MOS9vgs-MOS9vds;
-    if (!(MOS9mode>=0)) begin
-
-    end
     load_von = MOS9type*MOS9von;
     if (MOS9vds>=0) begin
       load_vgs = DEVfetlim(load_vgs, MOS9vgs, load_von, limited);

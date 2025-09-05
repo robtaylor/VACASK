@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-65-g0654f477c
+// Version      : ngspice-44-68-g89e7c6708
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-07-23 10:43:32 UTC
+// Date         : 2025-09-05 07:02:03 UTC
 // Module name  : sp_diode
 // Model variant: default
 // 
@@ -44,39 +44,16 @@
 //
 // Source files and copyright information:
 //   dio/diodefs.h
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/dio.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/dioparam.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/diompar.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/dioask.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/diomask.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
 //     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/diosetup.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/diotemp.c
-//     Copyright 1990 Regents of the University of California.  All rights reserved.
-//     Author: 1985 Thomas L. Quarles
-//     Modified: 2000 AlansFixes
-//     Modified by Paolo Nenzi 2003 and Dietmar Warning 2012
 //   dio/dioload.c
 //     Copyright 1990 Regents of the University of California.  All rights reserved.
 //     Author: 1985 Thomas L. Quarles
@@ -700,105 +677,12 @@ module sp_diode(a, c);
       end else begin
         tol = reltol*cbv;
         xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(1+cbv/DIOtSatCur);
-        if (!(abs(xcbv-cbv)<=tol)) begin
+        for(iter = 0; iter<25; iter = iter+1) begin
           xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
           xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
-        end
-        if (!(abs(xcbv-cbv)<=tol)) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          if (abs(xcbv-cbv)<=tol) begin
+            iter = 25;
+          end
         end
         if (!(abs(xcbv-cbv)<tol)) begin
           $warning("unable to match forward and reverse diode regions: bv = %g, ibv = %g", xbv, xcbv);
