@@ -1,30 +1,30 @@
-BSIM3 3.3.0 MOSFET amplifier
+BSIM4 4.8.2 MOSFET amplifier
 
-load "spice/bsim3v3.osdi"
+load "spice/bsim4v8.osdi"
 load "resistor.osdi"
-include "bsim3v3.inc"
+include "bsim4v82.inc"
 
 model v vsource
 model r resistor
-vdd (vdd 0) v dc=1.8
+vdd (vdd 0) v dc=1.2
   
 subckt namp()
-  m1 (3 2 0 0) n1 l=1u w=2u $mfactor=2 nrs=1 nrd=1
+  m1 (3 2 0 0) n1 l=0.1u w=2u $mfactor=2 nrs=1 nrd=1
   rsource (1 2) r r=100k
   rload (3 vdd) r r=25k
-  vin (1 0) v mag=1 type="sine" sinedc=1.2 ampl=10m freq=100M
+  vin (1 0) v mag=1 type="sine" sinedc=0.35 ampl=10m freq=100M
 ends
 
 subckt pamp()
-  m1 (3 2 vdd vdd) p1 l=1u w=2u $mfactor=2 nrs=1 nrd=1
+  m1 (3 2 vdd vdd) p1 l=0.1u w=2u $mfactor=2 nrs=1 nrd=1
   rsource (1 2) r r=100k
   rload (3 0) r r=25k
-  vin (1 0) v mag=1 type="sine" sinedc=0.4 ampl=10m freq=100M
+  vin (1 0) v mag=1 type="sine" sinedc=0.77 ampl=10m freq=100M
 ends
 
 control
   print devices
-  print device("sp_bsim3v3")
+  print device("sp_bsim4v8")
   
   elaborate circuit("namp")
   
@@ -65,13 +65,13 @@ for name in plot.names:
     print(name, plot[name])
 
 
-fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('BSIM3 3.3.0 NMOS amplifier')
+fig1 = plt.figure(figsize=(8,10), dpi=100)
+fig1.suptitle('BSIM4 4.8.2 NMOS amplifier')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
 EE
-""")
+""", gridspec_kw={"height_ratios": [1, 1, 2]})
 
 raw = rawread('tran1.raw')
 plot = raw.get()
@@ -110,6 +110,16 @@ ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,flicker)'], label="M1,flic
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,id)'], label="M1,Id")
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rs)'], label="M1,Rs")
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rd)'], label="M1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rg)'], label="M1,Rg")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbsb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbdb)'], label="M1,Rbdb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbps")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbpd")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbpb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igs")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igd")
+# rg3 (rgatemod=3), corl (tnoimod=2)
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1)'], label="M1")
 ax_dict["E"].legend(loc='upper right')
 
@@ -122,13 +132,13 @@ for name in plot.names:
     print(name, plot[name])
 
 
-fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('BSIM3 3.3.0 PMOS amplifier')
+fig1 = plt.figure(figsize=(8,10), dpi=100)
+fig1.suptitle('BSIM4 4.8.2 PMOS amplifier')
 ax_dict = fig1.subplot_mosaic("""
 AC
 BD
 EE
-""")
+""", gridspec_kw={"height_ratios": [1, 1, 2]})
 
 raw = rawread('tran2.raw')
 plot = raw.get()
@@ -168,6 +178,16 @@ ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,flicker)'], label="M1,flic
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,id)'], label="M1,Id")
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rs)'], label="M1,Rs")
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rd)'], label="M1,Rd")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rg)'], label="M1,Rg")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbsb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbdb)'], label="M1,Rbdb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbps")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbpd")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,rbsb)'], label="M1,Rbpb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igb")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igs")
+ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1,igb)'], label="M1,Igd")
+# rg3 (rgatemod=3), corl (tnoimod=2)
 ax_dict["E"].loglog(plot['frequency']/1e6, plot['n(m1)'], label="M1")
 ax_dict["E"].legend(loc='upper right')
 
