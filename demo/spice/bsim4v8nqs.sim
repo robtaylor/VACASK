@@ -1,0 +1,57 @@
+BSIM4 4.8.2 MOSFET NQS model test
+
+load "spice/bsim4v8.osdi"
+load "resistor.osdi"
+
+model nch sp_bsim4v8 type=1 cgso=0 cgdo=0 cgsl=0 cgdl=0 cf=0 cgbo=0
+
+model v vsource
+model r resistor
+
+// Ramp gate voltage from -2 to 2 for 10s
+vg1 (0 g1) v type="pulse" val0=2 val1=-2 delay=0m rise=10
+vg2 (0 g2) v type="pulse" val0=2 val1=-2 delay=0m rise=10
+
+m_qs  (0 g1 0 0) nch w=10.0u l=5.0u instance_trnqsmod=0
+m_nqs (0 g2 0 0) nch w=10.0u l=5.0u instance_trnqsmod=1
+
+control
+  analysis op1 op
+  analysis tran1 tran step=5m stop=10 maxstep=2m
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(6,8), dpi=100)
+fig1.suptitle('BSIM4 4.8.2 NQS test')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+""")
+
+ax_dict["A"].set_title('Gate voltage')
+ax_dict["A"].set_ylabel('Gate voltage [V]')
+ax_dict["A"].set_xlabel('time [s]')
+ax_dict["A"].plot(plot['time'], plot['g1'])
+
+ax_dict["B"].set_title('Gate current')
+ax_dict["B"].set_ylabel('Gate current [A]')
+ax_dict["B"].set_xlabel('time [s]')
+ax_dict["B"].plot(plot['time'], plot['vg1:flow(br)'], label="no NQS")
+ax_dict["B"].plot(plot['time'], plot['vg2:flow(br)'], label="NQS")
+ax_dict["B"].legend(loc='upper left')
+
+fig1.tight_layout()
+
+plt.show()
+>>>FILE
+
+
