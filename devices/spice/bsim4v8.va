@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-11 10:52:33 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:18:53 UTC
 // Module name  : sp_bsim4v8
 // Model variant: default
 // 
@@ -69,29 +69,25 @@
 //   bsim4/b4ld.c
 //   bsim4/b4noi.c
 //        ******************************************************************************
-//        *  BSIM4 4.8.2 released by Chetan Kumar Dabhi 01/01/2020                     *
+//        *  BSIM4 4.8.3 released on 05/19/2025                                        *
 //        *  BSIM4 Model Equations                                                     *
 //        ******************************************************************************
 //     
 //        ******************************************************************************
-//        *  Copyright (c) 2020 University of California                               *
+//        *  Copyright (c) 2025 University of California                               *
 //        *                                                                            *
-//        *  Project Director: Prof. Chenming Hu.                                      *
-//        *  Current developers: Chetan Kumar Dabhi   (Ph.D. student, IIT Kanpur)      *
-//        *                      Prof. Yogesh Chauhan (IIT Kanpur)                     *
-//        *                      Dr. Pragya Kushwaha  (Postdoc, UC Berkeley)           *
-//        *                      Dr. Avirup Dasgupta  (Postdoc, UC Berkeley)           *
-//        *                      Ming-Yen Kao         (Ph.D. student, UC Berkeley)     *
-//        *  Authors: Gary W. Ng, Weidong Liu, Xuemei Xi, Mohan Dunga, Wenwei Yang     *
-//        *           Ali Niknejad, Chetan Kumar Dabhi, Yogesh Singh Chauhan,          *
-//        *           Sayeef Salahuddin, Chenming Hu                                   * 
+//        *  Project Directors: Prof. Sayeef Salahuddin and Prof. Chenming Hu          *
+//        *  Developers list: https://www.bsim.berkeley.edu/models/bsim4/auth_bsim4/   *
 //        ******************************************************************************
 //     Licensed under Educational Community License, Version 2.0 (the "License"); you may
 //     not use this file except in compliance with the License. You may obtain a copy of the license at
 //     http://opensource.org/licenses/ECL-2.0
-//     Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT 
+//     Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 //     WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations
 //     under the License.
+//     
+//     BSIM4 model is supported by the members of Silicon Integration Initiative's Compact Model Coalition. A link to the most recent version of this
+//     standard can be found at: http://www.si2.org/cmc
 
 `include "constants.vams"
 `include "disciplines.vams"
@@ -138,6 +134,9 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Gate resistance model selector", type = "instance" *) parameter integer instance_rgatemod = 0;
   (* desc = "Geometry dependent parasitics model selector", type = "instance" *) parameter integer instance_geomod = 0;
   (* desc = "S/D resistance and contact model selector", type = "instance" *) parameter integer instance_rgeomod = 0;
+  (* desc = "Variability in current", type = "instance" *) parameter real mult_i = 1.0;
+  (* desc = "Variability in charge", type = "instance" *) parameter real mult_q = 1.0;
+  (* desc = "Variability in flicker noise", type = "instance" *) parameter real mult_fn = 0;
 
   // Model parameters
   (* desc = "Capacitance Charge model selector" *) parameter integer cvchargemod = 0;
@@ -151,7 +150,6 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Gate R model selector" *) parameter integer rgatemod = 0;
   (* desc = "Pd and Ps model selector" *) parameter integer permod = 1;
   (* desc = "Geometry dependent parasitics model selector" *) parameter integer geomod = 0;
-  (* desc = "S/D resistance and contact model selector" *) parameter integer rgeomod = 0;
   (* desc = "Flicker noise model selector" *) parameter integer fnoimod = 1;
   (* desc = "Thermal noise model selector" *) parameter integer tnoimod = 0;
   (* desc = "parameter for non-silicon substrate or metal gate selector" *) parameter integer mtrlmod = 0;
@@ -162,7 +160,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "parameter for GIDL selector" *) parameter integer gidlmod = 0;
   (* desc = "Model parameter checking selector" *) parameter integer paramchk = 1;
   (* desc = "Bin  unit  selector" *) parameter integer binunit = 1;
-  (* desc = "parameter for model version" *) parameter string version = "4.8.2";
+  (* desc = "parameter for model version" *) parameter string version = "4.8.3";
   (* desc = "Equivalent gate oxide thickness in meters" *) parameter real eot = 1.5e-09;
   (* desc = "Voltage for extraction of Equivalent gate oxide thickness" *) parameter real vddeot = 0;
   (* desc = " Temperature for extraction of EOT" *) parameter real tempeot = 300.15;
@@ -189,6 +187,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Non-saturation effect coefficient" *) parameter real a1 = 0.0;
   (* desc = "Non-saturation effect coefficient" *) parameter real a2 = 1.0;
   (* desc = "Body-bias coefficient of non-uniform depletion width effect." *) parameter real keta = 0;
+  (* desc = "Body-bias coefficient of non-uniform depletion width effect in dynamic evaluation." *) parameter real ketac = 0;
   (* desc = "Work function of gate" *) parameter real phig = 4.05;
   (* desc = "Dielectric constant of gate relative to vacuum" *) parameter real epsrgate = 11.7;
   (* desc = "Electron affinity of substrate" *) parameter real easub = 4.05;
@@ -440,7 +439,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Drain STI sidewall trap-assisted saturation current density" *) parameter real jtsswd = 0;
   (* desc = "Source gate-edge sidewall trap-assisted saturation current density" *) parameter real jtsswgs = 0.0;
   (* desc = "Drain gate-edge sidewall trap-assisted saturation current density" *) parameter real jtsswgd = 0;
-  (* desc = "TAT current width dependence" *) parameter real jtweff = 0.0;
+  (* desc = "TAT current width dependance" *) parameter real jtweff = 0.0;
   (* desc = "Non-ideality factor for bottom junction" *) parameter real njts = 20.0;
   (* desc = "Non-ideality factor for STI sidewall junction" *) parameter real njtssw = 20.0;
   (* desc = "Non-ideality factor for gate-edge sidewall junction" *) parameter real njtsswg = 20.0;
@@ -510,6 +509,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Length dependence of a1" *) parameter real la1 = 0.0;
   (* desc = "Length dependence of a2" *) parameter real la2 = 0.0;
   (* desc = "Length dependence of keta" *) parameter real lketa = 0.0;
+  (* desc = "Length dependence of ketac" *) parameter real lketac = 0;
   (* desc = "Length dependence of nsub" *) parameter real lnsub = 0.0;
   (* desc = "Length dependence of ndep" *) parameter real lndep = 0.0;
   (* desc = "Length dependence of nsd" *) parameter real lnsd = 0.0;
@@ -544,7 +544,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Length dependence of dvt2w" *) parameter real ldvt2w = 0.0;
   (* desc = "Length dependence of drout" *) parameter real ldrout = 0.0;
   (* desc = "Length dependence of dsub" *) parameter real ldsub = 0.0;
-  (* desc = "Length dependence of vth0" *) parameter real lvth0 = 0.0;
+  (* desc = "Length dependence of vto" *) parameter real lvth0 = 0.0;
   aliasparam lvtho = lvth0;
   (* desc = "Length dependence of ua" *) parameter real lua = 0.0;
   (* desc = "Length dependence of ua1" *) parameter real lua1 = 0.0;
@@ -667,6 +667,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Width dependence of a1" *) parameter real wa1 = 0.0;
   (* desc = "Width dependence of a2" *) parameter real wa2 = 0.0;
   (* desc = "Width dependence of keta" *) parameter real wketa = 0.0;
+  (* desc = "Width dependence of ketac" *) parameter real wketac = 0;
   (* desc = "Width dependence of nsub" *) parameter real wnsub = 0.0;
   (* desc = "Width dependence of ndep" *) parameter real wndep = 0.0;
   (* desc = "Width dependence of nsd" *) parameter real wnsd = 0.0;
@@ -701,7 +702,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Width dependence of dvt2w" *) parameter real wdvt2w = 0.0;
   (* desc = "Width dependence of drout" *) parameter real wdrout = 0.0;
   (* desc = "Width dependence of dsub" *) parameter real wdsub = 0.0;
-  (* desc = "Width dependence of vth0" *) parameter real wvth0 = 0.0;
+  (* desc = "Width dependence of vto" *) parameter real wvth0 = 0.0;
   aliasparam wvtho = wvth0;
   (* desc = "Width dependence of ua" *) parameter real wua = 0.0;
   (* desc = "Width dependence of ua1" *) parameter real wua1 = 0.0;
@@ -824,6 +825,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Cross-term dependence of a1" *) parameter real pa1 = 0.0;
   (* desc = "Cross-term dependence of a2" *) parameter real pa2 = 0.0;
   (* desc = "Cross-term dependence of keta" *) parameter real pketa = 0.0;
+  (* desc = "Cross-term dependence of ketac" *) parameter real pketac = 0;
   (* desc = "Cross-term dependence of nsub" *) parameter real pnsub = 0.0;
   (* desc = "Cross-term dependence of ndep" *) parameter real pndep = 0.0;
   (* desc = "Cross-term dependence of nsd" *) parameter real pnsd = 0.0;
@@ -858,7 +860,7 @@ module sp_bsim4v8(d, g, s, b);
   (* desc = "Cross-term dependence of dvt2w" *) parameter real pdvt2w = 0.0;
   (* desc = "Cross-term dependence of drout" *) parameter real pdrout = 0.0;
   (* desc = "Cross-term dependence of dsub" *) parameter real pdsub = 0.0;
-  (* desc = "Cross-term dependence of vth0" *) parameter real pvth0 = 0.0;
+  (* desc = "Cross-term dependence of vto" *) parameter real pvth0 = 0.0;
   aliasparam pvtho = pvth0;
   (* desc = "Cross-term dependence of ua" *) parameter real pua = 0.0;
   (* desc = "Cross-term dependence of ua1" *) parameter real pua1 = 0.0;
@@ -1093,191 +1095,191 @@ module sp_bsim4v8(d, g, s, b);
   // Model opvars
 
   // Instance fields
-  real BSIM4ueff;
-  real BSIM4thetavth;
-  real BSIM4von;
-  real BSIM4vdsat;
-  real i_BSIM4cgdo;
-  real BSIM4qgdo;
-  real i_BSIM4cgso;
-  real BSIM4qgso;
-  real BSIM4grbsb;
-  real BSIM4grbdb;
-  real BSIM4grbpb;
-  real BSIM4grbps;
-  real BSIM4grbpd;
-  real BSIM4vjsmFwd;
-  real BSIM4vjsmRev;
-  real BSIM4vjdmFwd;
-  real BSIM4vjdmRev;
-  real BSIM4XExpBVS;
-  real BSIM4XExpBVD;
-  real BSIM4SslpFwd;
-  real BSIM4SslpRev;
-  real BSIM4DslpFwd;
-  real BSIM4DslpRev;
-  real BSIM4IVjsmFwd;
-  real BSIM4IVjsmRev;
-  real BSIM4IVjdmFwd;
-  real BSIM4IVjdmRev;
-  real BSIM4grgeltd;
-  real BSIM4Pseff;
-  real BSIM4Pdeff;
-  real BSIM4Aseff;
-  real BSIM4Adeff;
-  real BSIM4l;
-  real BSIM4w;
-  real BSIM4drainArea;
-  real BSIM4sourceArea;
-  real BSIM4drainPerimeter;
-  real BSIM4sourcePerimeter;
-  real BSIM4sourceConductance;
-  real BSIM4drainConductance;
-  real BSIM4sd;
-  real BSIM4sca;
-  real BSIM4scb;
-  real BSIM4scc;
-  real BSIM4sc;
-  real i_BSIM4rbdb;
-  real i_BSIM4rbsb;
-  real i_BSIM4rbpb;
-  real i_BSIM4rbps;
-  real i_BSIM4rbpd;
-  real i_BSIM4xgw;
-  real i_BSIM4ngcon;
-  real BSIM4u0temp;
-  real BSIM4vsattemp;
-  real i_BSIM4vth0;
-  real i_BSIM4vfb;
-  real BSIM4vfbzb;
-  real BSIM4vtfbphi1;
-  real BSIM4vtfbphi2;
-  real i_BSIM4k2;
-  real BSIM4vbsc;
-  real BSIM4k2ox;
-  real i_BSIM4eta0;
-  real i_BSIM4toxp;
-  real i_BSIM4coxp;
-  integer BSIM4mode;
-  integer i_BSIM4trnqsMod;
-  integer i_BSIM4acnqsMod;
-  integer i_BSIM4rbodyMod;
-  integer i_BSIM4rgateMod;
-  integer i_BSIM4geoMod;
-  integer i_BSIM4rgeoMod;
-  real BSIM4Vgsteff;
-  real BSIM4vgs_eff;
-  real BSIM4vgd_eff;
-  real BSIM4dvgs_eff_dvg;
-  real BSIM4dvgd_eff_dvg;
-  real BSIM4Vdseff;
-  real BSIM4nstar;
-  real BSIM4Abulk;
-  real BSIM4EsatL;
-  real BSIM4AbovVgst2Vtm;
-  real BSIM4qinv;
-  real BSIM4cd;
-  real BSIM4cbs;
-  real BSIM4cbd;
-  real BSIM4csub;
-  real BSIM4Igidl;
-  real BSIM4Igisl;
-  real BSIM4gm;
-  real BSIM4gds;
-  real BSIM4gmbs;
-  real BSIM4gbd;
-  real BSIM4gbs;
-  real BSIM4noiGd0;
-  real BSIM4Coxeff;
-  real BSIM4gbbs;
-  real BSIM4gbgs;
-  real BSIM4gbds;
-  real BSIM4ggidld;
-  real BSIM4ggidlg;
-  real BSIM4ggidls;
-  real BSIM4ggidlb;
-  real BSIM4ggisld;
-  real BSIM4ggislg;
-  real BSIM4ggisls;
-  real BSIM4ggislb;
-  real BSIM4Igcs;
-  real BSIM4gIgcsg;
-  real BSIM4gIgcsd;
-  real BSIM4gIgcss;
-  real BSIM4gIgcsb;
-  real BSIM4Igcd;
-  real BSIM4gIgcdg;
-  real BSIM4gIgcdd;
-  real BSIM4gIgcds;
-  real BSIM4gIgcdb;
-  real BSIM4Igs;
-  real BSIM4gIgsg;
-  real BSIM4gIgss;
-  real BSIM4Igd;
-  real BSIM4gIgdg;
-  real BSIM4gIgdd;
-  real BSIM4Igb;
-  real BSIM4gIgbg;
-  real BSIM4gIgbd;
-  real BSIM4gIgbs;
-  real BSIM4gIgbb;
-  real BSIM4grdsw;
-  real BSIM4IdovVds;
-  real BSIM4gcrg;
-  real BSIM4gcrgd;
-  real BSIM4gcrgg;
-  real BSIM4gcrgs;
-  real BSIM4gcrgb;
-  real BSIM4gstot;
-  real BSIM4gstotd;
-  real BSIM4gstotg;
-  real BSIM4gstots;
-  real BSIM4gstotb;
-  real BSIM4gdtot;
-  real BSIM4gdtotd;
-  real BSIM4gdtotg;
-  real BSIM4gdtots;
-  real BSIM4gdtotb;
-  real BSIM4cggb;
-  real BSIM4cgdb;
-  real BSIM4cgsb;
-  real BSIM4cbgb;
-  real BSIM4cbdb;
-  real BSIM4cbsb;
-  real BSIM4cdgb;
-  real BSIM4cddb;
-  real BSIM4cdsb;
-  real BSIM4csgb;
-  real BSIM4csdb;
-  real BSIM4cssb;
-  real BSIM4cgbb;
-  real BSIM4cdbb;
-  real BSIM4csbb;
-  real BSIM4cbbb;
-  real BSIM4capbd;
-  real BSIM4capbs;
-  real BSIM4cqgb;
-  real BSIM4cqdb;
-  real BSIM4cqsb;
-  real BSIM4cqbb;
-  real BSIM4qgate;
-  real BSIM4qbulk;
-  real BSIM4qdrn;
-  real BSIM4qsrc;
-  real i_BSIM4qdef;
-  real BSIM4qchqs;
-  real BSIM4taunet;
-  real BSIM4gtau;
-  real BSIM4gtg;
-  real BSIM4gtd;
-  real BSIM4gts;
-  real BSIM4gtb;
-  real BSIM4SjctTempRevSatCur;
-  real BSIM4DjctTempRevSatCur;
-  real BSIM4SswTempRevSatCur;
-  real BSIM4DswTempRevSatCur;
-  real BSIM4SswgTempRevSatCur;
-  real BSIM4DswgTempRevSatCur;
+  real BSIM4ueff = 0;
+  real BSIM4thetavth = 0;
+  real BSIM4von = 0;
+  real BSIM4vdsat = 0;
+  real i_BSIM4cgdo = 0;
+  real BSIM4qgdo = 0;
+  real i_BSIM4cgso = 0;
+  real BSIM4qgso = 0;
+  real BSIM4grbsb = 0;
+  real BSIM4grbdb = 0;
+  real BSIM4grbpb = 0;
+  real BSIM4grbps = 0;
+  real BSIM4grbpd = 0;
+  real BSIM4vjsmFwd = 0;
+  real BSIM4vjsmRev = 0;
+  real BSIM4vjdmFwd = 0;
+  real BSIM4vjdmRev = 0;
+  real BSIM4XExpBVS = 0;
+  real BSIM4XExpBVD = 0;
+  real BSIM4SslpFwd = 0;
+  real BSIM4SslpRev = 0;
+  real BSIM4DslpFwd = 0;
+  real BSIM4DslpRev = 0;
+  real BSIM4IVjsmFwd = 0;
+  real BSIM4IVjsmRev = 0;
+  real BSIM4IVjdmFwd = 0;
+  real BSIM4IVjdmRev = 0;
+  real BSIM4grgeltd = 0;
+  real BSIM4Pseff = 0;
+  real BSIM4Pdeff = 0;
+  real BSIM4Aseff = 0;
+  real BSIM4Adeff = 0;
+  real BSIM4l = 0;
+  real BSIM4w = 0;
+  real BSIM4drainArea = 0;
+  real BSIM4sourceArea = 0;
+  real BSIM4drainPerimeter = 0;
+  real BSIM4sourcePerimeter = 0;
+  real BSIM4sourceConductance = 0;
+  real BSIM4drainConductance = 0;
+  real BSIM4sd = 0;
+  real BSIM4sca = 0;
+  real BSIM4scb = 0;
+  real BSIM4scc = 0;
+  real BSIM4sc = 0;
+  real i_BSIM4rbdb = 0;
+  real i_BSIM4rbsb = 0;
+  real i_BSIM4rbpb = 0;
+  real i_BSIM4rbps = 0;
+  real i_BSIM4rbpd = 0;
+  real i_BSIM4xgw = 0;
+  real i_BSIM4ngcon = 0;
+  real BSIM4u0temp = 0;
+  real BSIM4vsattemp = 0;
+  real i_BSIM4vth0 = 0;
+  real i_BSIM4vfb = 0;
+  real BSIM4vfbzb = 0;
+  real BSIM4vtfbphi1 = 0;
+  real BSIM4vtfbphi2 = 0;
+  real i_BSIM4k2 = 0;
+  real BSIM4vbsc = 0;
+  real BSIM4k2ox = 0;
+  real i_BSIM4eta0 = 0;
+  real i_BSIM4toxp = 0;
+  real i_BSIM4coxp = 0;
+  real BSIM4mult_fn = 0;
+  integer BSIM4mode = 0;
+  integer i_BSIM4trnqsMod = 0;
+  integer i_BSIM4acnqsMod = 0;
+  integer i_BSIM4rbodyMod = 0;
+  integer i_BSIM4rgateMod = 0;
+  integer i_BSIM4geoMod = 0;
+  real BSIM4Vgsteff = 0;
+  real BSIM4vgs_eff = 0;
+  real BSIM4vgd_eff = 0;
+  real BSIM4dvgs_eff_dvg = 0;
+  real BSIM4dvgd_eff_dvg = 0;
+  real BSIM4Vdseff = 0;
+  real BSIM4nstar = 0;
+  real BSIM4Abulk = 0;
+  real BSIM4EsatL = 0;
+  real BSIM4AbovVgst2Vtm = 0;
+  real BSIM4qinv = 0;
+  real BSIM4cd = 0;
+  real BSIM4cbs = 0;
+  real BSIM4cbd = 0;
+  real BSIM4csub = 0;
+  real BSIM4Igidl = 0;
+  real BSIM4Igisl = 0;
+  real BSIM4gm = 0;
+  real BSIM4gds = 0;
+  real BSIM4gmbs = 0;
+  real BSIM4gbd = 0;
+  real BSIM4gbs = 0;
+  real BSIM4noiGd0 = 0;
+  real BSIM4Coxeff = 0;
+  real BSIM4gbbs = 0;
+  real BSIM4gbgs = 0;
+  real BSIM4gbds = 0;
+  real BSIM4ggidld = 0;
+  real BSIM4ggidlg = 0;
+  real BSIM4ggidls = 0;
+  real BSIM4ggidlb = 0;
+  real BSIM4ggisld = 0;
+  real BSIM4ggislg = 0;
+  real BSIM4ggisls = 0;
+  real BSIM4ggislb = 0;
+  real BSIM4Igcs = 0;
+  real BSIM4gIgcsg = 0;
+  real BSIM4gIgcsd = 0;
+  real BSIM4gIgcss = 0;
+  real BSIM4gIgcsb = 0;
+  real BSIM4Igcd = 0;
+  real BSIM4gIgcdg = 0;
+  real BSIM4gIgcdd = 0;
+  real BSIM4gIgcds = 0;
+  real BSIM4gIgcdb = 0;
+  real BSIM4Igs = 0;
+  real BSIM4gIgsg = 0;
+  real BSIM4gIgss = 0;
+  real BSIM4Igd = 0;
+  real BSIM4gIgdg = 0;
+  real BSIM4gIgdd = 0;
+  real BSIM4Igb = 0;
+  real BSIM4gIgbg = 0;
+  real BSIM4gIgbd = 0;
+  real BSIM4gIgbs = 0;
+  real BSIM4gIgbb = 0;
+  real BSIM4grdsw = 0;
+  real BSIM4IdovVds = 0;
+  real BSIM4gcrg = 0;
+  real BSIM4gcrgd = 0;
+  real BSIM4gcrgg = 0;
+  real BSIM4gcrgs = 0;
+  real BSIM4gcrgb = 0;
+  real BSIM4gstot = 0;
+  real BSIM4gstotd = 0;
+  real BSIM4gstotg = 0;
+  real BSIM4gstots = 0;
+  real BSIM4gstotb = 0;
+  real BSIM4gdtot = 0;
+  real BSIM4gdtotd = 0;
+  real BSIM4gdtotg = 0;
+  real BSIM4gdtots = 0;
+  real BSIM4gdtotb = 0;
+  real BSIM4cggb = 0;
+  real BSIM4cgdb = 0;
+  real BSIM4cgsb = 0;
+  real BSIM4cbgb = 0;
+  real BSIM4cbdb = 0;
+  real BSIM4cbsb = 0;
+  real BSIM4cdgb = 0;
+  real BSIM4cddb = 0;
+  real BSIM4cdsb = 0;
+  real BSIM4csgb = 0;
+  real BSIM4csdb = 0;
+  real BSIM4cssb = 0;
+  real BSIM4cgbb = 0;
+  real BSIM4cdbb = 0;
+  real BSIM4csbb = 0;
+  real BSIM4cbbb = 0;
+  real BSIM4capbd = 0;
+  real BSIM4capbs = 0;
+  real BSIM4cqgb = 0;
+  real BSIM4cqdb = 0;
+  real BSIM4cqsb = 0;
+  real BSIM4cqbb = 0;
+  real BSIM4qgate = 0;
+  real BSIM4qbulk = 0;
+  real BSIM4qdrn = 0;
+  real BSIM4qsrc = 0;
+  real i_BSIM4qdef = 0;
+  real BSIM4qchqs = 0;
+  real BSIM4taunet = 0;
+  real BSIM4gtau = 0;
+  real BSIM4gtg = 0;
+  real BSIM4gtd = 0;
+  real BSIM4gts = 0;
+  real BSIM4gtb = 0;
+  real BSIM4SjctTempRevSatCur = 0;
+  real BSIM4DjctTempRevSatCur = 0;
+  real BSIM4SswTempRevSatCur = 0;
+  real BSIM4DswTempRevSatCur = 0;
+  real BSIM4SswgTempRevSatCur = 0;
+  real BSIM4DswgTempRevSatCur = 0;
   integer BSIM4lGiven = 0;
   integer BSIM4wGiven = 0;
   integer BSIM4drainAreaGiven = 0;
@@ -1286,1167 +1288,1178 @@ module sp_bsim4v8(d, g, s, b);
   integer BSIM4sourcePerimeterGiven = 0;
 
   // Model fields
-  integer BSIM4mobMod;
-  integer BSIM4capMod;
-  integer BSIM4dioMod;
-  integer BSIM4trnqsMod;
-  integer BSIM4acnqsMod;
-  integer BSIM4fnoiMod;
-  integer BSIM4tnoiMod;
-  integer BSIM4rdsMod;
-  integer BSIM4rbodyMod;
-  integer BSIM4rgateMod;
-  integer BSIM4perMod;
-  integer BSIM4rgeoMod;
-  integer BSIM4mtrlMod;
-  integer BSIM4mtrlCompatMod;
-  integer BSIM4igcMod;
-  integer BSIM4igbMod;
-  integer BSIM4tempMod;
-  integer BSIM4v48intVersion;
-  real BSIM4eot;
-  real BSIM4vddeot;
-  real BSIM4toxe;
-  real BSIM4toxp;
-  real BSIM4toxm;
-  real BSIM4keta;
-  real BSIM4vbm;
-  real BSIM4kt1;
-  real BSIM4dvt2;
-  real BSIM4dvt2w;
-  real BSIM4dsub;
-  real BSIM4vth0;
-  real BSIM4eu;
-  real BSIM4ucs;
-  real BSIM4ua;
-  real BSIM4ub1;
-  real BSIM4uc;
-  real BSIM4uc1;
-  real BSIM4u0;
-  real BSIM4ute;
-  real BSIM4ucste;
-  real BSIM4voff;
-  real BSIM4etab;
-  real BSIM4agisl;
-  real BSIM4bgisl;
-  real BSIM4cgisl;
-  real BSIM4egisl;
-  real BSIM4fgisl;
-  real BSIM4kgisl;
-  real BSIM4rgisl;
-  real BSIM4aigc;
-  real BSIM4bigc;
-  real BSIM4cigc;
-  real BSIM4aigsd;
-  real BSIM4bigsd;
-  real BSIM4cigsd;
-  real BSIM4aigs;
-  real BSIM4bigs;
-  real BSIM4cigs;
-  real BSIM4aigd;
-  real BSIM4bigd;
-  real BSIM4cigd;
-  real BSIM4ijthdfwd;
-  real BSIM4ijthsfwd;
-  real BSIM4ijthdrev;
-  real BSIM4ijthsrev;
-  real BSIM4xjbvd;
-  real BSIM4xjbvs;
-  real BSIM4bvd;
-  real BSIM4bvs;
-  real BSIM4jtsd;
-  real BSIM4jtsswd;
-  real BSIM4jtsswgd;
-  real BSIM4jtweff;
-  real BSIM4njtsd;
-  real BSIM4njtsswd;
-  real BSIM4njtsswgd;
-  real BSIM4xtsd;
-  real BSIM4xtsswd;
-  real BSIM4xtsswgd;
-  real BSIM4tnjtsd;
-  real BSIM4tnjtsswd;
-  real BSIM4tnjtsswgd;
-  real BSIM4vtsd;
-  real BSIM4vtsswd;
-  real BSIM4vtsswgd;
-  real BSIM4vfb;
-  real BSIM4ckappad;
-  real BSIM4cf;
-  real BSIM4vfbcv;
-  real BSIM4dwc;
-  real BSIM4dlc;
-  real BSIM4dlcig;
-  real BSIM4dlcigd;
-  real BSIM4dwj;
-  real BSIM4dmci;
-  real BSIM4letab;
-  real BSIM4lagisl;
-  real BSIM4lbgisl;
-  real BSIM4lcgisl;
-  real BSIM4legisl;
-  real BSIM4lfgisl;
-  real BSIM4lkgisl;
-  real BSIM4lrgisl;
-  real BSIM4laigs;
-  real BSIM4lbigs;
-  real BSIM4lcigs;
-  real BSIM4laigd;
-  real BSIM4lbigd;
-  real BSIM4lcigd;
-  real BSIM4wagisl;
-  real BSIM4wbgisl;
-  real BSIM4wcgisl;
-  real BSIM4wegisl;
-  real BSIM4wfgisl;
-  real BSIM4wkgisl;
-  real BSIM4wrgisl;
-  real BSIM4waigs;
-  real BSIM4wbigs;
-  real BSIM4wcigs;
-  real BSIM4waigd;
-  real BSIM4wbigd;
-  real BSIM4wcigd;
-  real BSIM4pagisl;
-  real BSIM4pbgisl;
-  real BSIM4pcgisl;
-  real BSIM4pegisl;
-  real BSIM4pfgisl;
-  real BSIM4pkgisl;
-  real BSIM4prgisl;
-  real BSIM4paigs;
-  real BSIM4pbigs;
-  real BSIM4pcigs;
-  real BSIM4paigd;
-  real BSIM4pbigd;
-  real BSIM4pcigd;
-  real BSIM4tnom;
-  real BSIM4cgso;
-  real BSIM4cgdo;
-  real BSIM4cgbo;
-  real BSIM4cFringOut;
-  real BSIM4cFringMax;
-  real BSIM4DjctSatCurDensity;
-  real BSIM4DjctSidewallSatCurDensity;
-  real BSIM4DjctGateSidewallSatCurDensity;
-  real BSIM4SbulkJctPotential;
-  real BSIM4DbulkJctPotential;
-  real BSIM4DbulkJctBotGradingCoeff;
-  real BSIM4DbulkJctSideGradingCoeff;
-  real BSIM4SbulkJctGateSideGradingCoeff;
-  real BSIM4DbulkJctGateSideGradingCoeff;
-  real BSIM4SsidewallJctPotential;
-  real BSIM4DsidewallJctPotential;
-  real BSIM4SGatesidewallJctPotential;
-  real BSIM4DGatesidewallJctPotential;
-  real BSIM4DunitAreaJctCap;
-  real BSIM4SunitLengthSidewallJctCap;
-  real BSIM4DunitLengthSidewallJctCap;
-  real BSIM4SunitLengthGateSidewallJctCap;
-  real BSIM4DunitLengthGateSidewallJctCap;
-  real BSIM4DjctEmissionCoeff;
-  real BSIM4DjctTempExponent;
-  real BSIM4njtsstemp;
-  real BSIM4njtsswstemp;
-  real BSIM4njtsswgstemp;
-  real BSIM4njtsdtemp;
-  real BSIM4njtsswdtemp;
-  real BSIM4njtsswgdtemp;
-  real BSIM4Llc;
-  real BSIM4Lwc;
-  real BSIM4Lwlc;
-  real BSIM4Wlc;
-  real BSIM4Wwc;
-  real BSIM4Wwlc;
-  real BSIM4wpemod;
-  real BSIM4Eg0;
-  real BSIM4vtm;
-  real BSIM4vtm0;
-  real BSIM4coxe;
-  real BSIM4coxp;
-  real BSIM4cof1;
-  real BSIM4cof2;
-  real BSIM4cof3;
-  real BSIM4cof4;
-  real BSIM4vcrit;
-  real BSIM4factor1;
-  real BSIM4PhiBS;
-  real BSIM4PhiBSWS;
-  real BSIM4PhiBSWGS;
-  real BSIM4SjctTempSatCurDensity;
-  real BSIM4SjctSidewallTempSatCurDensity;
-  real BSIM4SjctGateSidewallTempSatCurDensity;
-  real BSIM4PhiBD;
-  real BSIM4PhiBSWD;
-  real BSIM4PhiBSWGD;
-  real BSIM4DjctTempSatCurDensity;
-  real BSIM4DjctSidewallTempSatCurDensity;
-  real BSIM4DjctGateSidewallTempSatCurDensity;
-  real BSIM4SunitAreaTempJctCap;
-  real BSIM4DunitAreaTempJctCap;
-  real BSIM4SunitLengthSidewallTempJctCap;
-  real BSIM4DunitLengthSidewallTempJctCap;
-  real BSIM4SunitLengthGateSidewallTempJctCap;
-  real BSIM4DunitLengthGateSidewallTempJctCap;
-  real BSIM4oxideTrapDensityA;
-  real BSIM4oxideTrapDensityB;
-  real BSIM4gidlclamp;
-  integer BSIM4type;
+  integer BSIM4mobMod = 0;
+  integer BSIM4capMod = 0;
+  integer BSIM4dioMod = 0;
+  integer BSIM4trnqsMod = 0;
+  integer BSIM4acnqsMod = 0;
+  integer BSIM4fnoiMod = 0;
+  integer BSIM4tnoiMod = 0;
+  integer BSIM4rdsMod = 0;
+  integer BSIM4rbodyMod = 0;
+  integer BSIM4rgateMod = 0;
+  integer BSIM4perMod = 0;
+  integer BSIM4mtrlMod = 0;
+  integer BSIM4mtrlCompatMod = 0;
+  integer BSIM4igcMod = 0;
+  integer BSIM4igbMod = 0;
+  integer BSIM4tempMod = 0;
+  integer BSIM4v48intVersion = 0;
+  real BSIM4eot = 0;
+  real BSIM4vddeot = 0;
+  real BSIM4toxe = 0;
+  real BSIM4toxp = 0;
+  real BSIM4toxm = 0;
+  real BSIM4keta = 0;
+  real BSIM4ketac = 0;
+  real BSIM4vbm = 0;
+  real BSIM4kt1 = 0;
+  real BSIM4dvt2 = 0;
+  real BSIM4dvt2w = 0;
+  real BSIM4dsub = 0;
+  real BSIM4vth0 = 0;
+  real BSIM4eu = 0;
+  real BSIM4ucs = 0;
+  real BSIM4ua = 0;
+  real BSIM4ub1 = 0;
+  real BSIM4uc = 0;
+  real BSIM4uc1 = 0;
+  real BSIM4u0 = 0;
+  real BSIM4ute = 0;
+  real BSIM4ucste = 0;
+  real BSIM4voff = 0;
+  real BSIM4etab = 0;
+  real BSIM4agisl = 0;
+  real BSIM4bgisl = 0;
+  real BSIM4cgisl = 0;
+  real BSIM4egisl = 0;
+  real BSIM4fgisl = 0;
+  real BSIM4kgisl = 0;
+  real BSIM4rgisl = 0;
+  real BSIM4aigc = 0;
+  real BSIM4bigc = 0;
+  real BSIM4cigc = 0;
+  real BSIM4aigsd = 0;
+  real BSIM4bigsd = 0;
+  real BSIM4cigsd = 0;
+  real BSIM4aigs = 0;
+  real BSIM4bigs = 0;
+  real BSIM4cigs = 0;
+  real BSIM4aigd = 0;
+  real BSIM4bigd = 0;
+  real BSIM4cigd = 0;
+  real BSIM4ijthdfwd = 0;
+  real BSIM4ijthsfwd = 0;
+  real BSIM4ijthdrev = 0;
+  real BSIM4ijthsrev = 0;
+  real BSIM4xjbvd = 0;
+  real BSIM4xjbvs = 0;
+  real BSIM4bvd = 0;
+  real BSIM4bvs = 0;
+  real BSIM4jtsd = 0;
+  real BSIM4jtsswd = 0;
+  real BSIM4jtsswgd = 0;
+  real BSIM4jtweff = 0;
+  real BSIM4njtsd = 0;
+  real BSIM4njtsswd = 0;
+  real BSIM4njtsswgd = 0;
+  real BSIM4xtsd = 0;
+  real BSIM4xtsswd = 0;
+  real BSIM4xtsswgd = 0;
+  real BSIM4tnjtsd = 0;
+  real BSIM4tnjtsswd = 0;
+  real BSIM4tnjtsswgd = 0;
+  real BSIM4vtsd = 0;
+  real BSIM4vtsswd = 0;
+  real BSIM4vtsswgd = 0;
+  real BSIM4vfb = 0;
+  real BSIM4ckappad = 0;
+  real BSIM4cf = 0;
+  real BSIM4vfbcv = 0;
+  real BSIM4dwc = 0;
+  real BSIM4dlc = 0;
+  real BSIM4dlcig = 0;
+  real BSIM4dlcigd = 0;
+  real BSIM4dwj = 0;
+  real BSIM4dmci = 0;
+  real BSIM4lketac = 0;
+  real BSIM4letab = 0;
+  real BSIM4lagisl = 0;
+  real BSIM4lbgisl = 0;
+  real BSIM4lcgisl = 0;
+  real BSIM4legisl = 0;
+  real BSIM4lfgisl = 0;
+  real BSIM4lkgisl = 0;
+  real BSIM4lrgisl = 0;
+  real BSIM4laigs = 0;
+  real BSIM4lbigs = 0;
+  real BSIM4lcigs = 0;
+  real BSIM4laigd = 0;
+  real BSIM4lbigd = 0;
+  real BSIM4lcigd = 0;
+  real BSIM4wketac = 0;
+  real BSIM4wagisl = 0;
+  real BSIM4wbgisl = 0;
+  real BSIM4wcgisl = 0;
+  real BSIM4wegisl = 0;
+  real BSIM4wfgisl = 0;
+  real BSIM4wkgisl = 0;
+  real BSIM4wrgisl = 0;
+  real BSIM4waigs = 0;
+  real BSIM4wbigs = 0;
+  real BSIM4wcigs = 0;
+  real BSIM4waigd = 0;
+  real BSIM4wbigd = 0;
+  real BSIM4wcigd = 0;
+  real BSIM4pketac = 0;
+  real BSIM4pagisl = 0;
+  real BSIM4pbgisl = 0;
+  real BSIM4pcgisl = 0;
+  real BSIM4pegisl = 0;
+  real BSIM4pfgisl = 0;
+  real BSIM4pkgisl = 0;
+  real BSIM4prgisl = 0;
+  real BSIM4paigs = 0;
+  real BSIM4pbigs = 0;
+  real BSIM4pcigs = 0;
+  real BSIM4paigd = 0;
+  real BSIM4pbigd = 0;
+  real BSIM4pcigd = 0;
+  real BSIM4tnom = 0;
+  real BSIM4cgso = 0;
+  real BSIM4cgdo = 0;
+  real BSIM4cgbo = 0;
+  real BSIM4cFringOut = 0;
+  real BSIM4cFringMax = 0;
+  real BSIM4DjctSatCurDensity = 0;
+  real BSIM4DjctSidewallSatCurDensity = 0;
+  real BSIM4DjctGateSidewallSatCurDensity = 0;
+  real BSIM4SbulkJctPotential = 0;
+  real BSIM4DbulkJctPotential = 0;
+  real BSIM4DbulkJctBotGradingCoeff = 0;
+  real BSIM4DbulkJctSideGradingCoeff = 0;
+  real BSIM4SbulkJctGateSideGradingCoeff = 0;
+  real BSIM4DbulkJctGateSideGradingCoeff = 0;
+  real BSIM4SsidewallJctPotential = 0;
+  real BSIM4DsidewallJctPotential = 0;
+  real BSIM4SGatesidewallJctPotential = 0;
+  real BSIM4DGatesidewallJctPotential = 0;
+  real BSIM4DunitAreaJctCap = 0;
+  real BSIM4SunitLengthSidewallJctCap = 0;
+  real BSIM4DunitLengthSidewallJctCap = 0;
+  real BSIM4SunitLengthGateSidewallJctCap = 0;
+  real BSIM4DunitLengthGateSidewallJctCap = 0;
+  real BSIM4DjctEmissionCoeff = 0;
+  real BSIM4DjctTempExponent = 0;
+  real BSIM4njtsstemp = 0;
+  real BSIM4njtsswstemp = 0;
+  real BSIM4njtsswgstemp = 0;
+  real BSIM4njtsdtemp = 0;
+  real BSIM4njtsswdtemp = 0;
+  real BSIM4njtsswgdtemp = 0;
+  real BSIM4Llc = 0;
+  real BSIM4Lwc = 0;
+  real BSIM4Lwlc = 0;
+  real BSIM4Wlc = 0;
+  real BSIM4Wwc = 0;
+  real BSIM4Wwlc = 0;
+  real BSIM4wpemod = 0;
+  real BSIM4Eg0 = 0;
+  real BSIM4vtm = 0;
+  real BSIM4vtm0 = 0;
+  real BSIM4coxe = 0;
+  real BSIM4coxp = 0;
+  real BSIM4cof1 = 0;
+  real BSIM4cof2 = 0;
+  real BSIM4cof3 = 0;
+  real BSIM4cof4 = 0;
+  real BSIM4vcrit = 0;
+  real BSIM4factor1 = 0;
+  real BSIM4PhiBS = 0;
+  real BSIM4PhiBSWS = 0;
+  real BSIM4PhiBSWGS = 0;
+  real BSIM4SjctTempSatCurDensity = 0;
+  real BSIM4SjctSidewallTempSatCurDensity = 0;
+  real BSIM4SjctGateSidewallTempSatCurDensity = 0;
+  real BSIM4PhiBD = 0;
+  real BSIM4PhiBSWD = 0;
+  real BSIM4PhiBSWGD = 0;
+  real BSIM4DjctTempSatCurDensity = 0;
+  real BSIM4DjctSidewallTempSatCurDensity = 0;
+  real BSIM4DjctGateSidewallTempSatCurDensity = 0;
+  real BSIM4SunitAreaTempJctCap = 0;
+  real BSIM4DunitAreaTempJctCap = 0;
+  real BSIM4SunitLengthSidewallTempJctCap = 0;
+  real BSIM4DunitLengthSidewallTempJctCap = 0;
+  real BSIM4SunitLengthGateSidewallTempJctCap = 0;
+  real BSIM4DunitLengthGateSidewallTempJctCap = 0;
+  real BSIM4oxideTrapDensityA = 0;
+  real BSIM4oxideTrapDensityB = 0;
+  real BSIM4gidlclamp = 0;
+  integer BSIM4type = 0;
   integer BSIM4tnomGiven = 0;
 
   // Structure: size dependent parameters
-  real Width;
-  real Length;
-  real NFinger;
-  real sd_BSIM4cdsc;
-  real sd_BSIM4cdscb;
-  real sd_BSIM4cdscd;
-  real sd_BSIM4cit;
-  real sd_BSIM4nfactor;
-  real sd_BSIM4xj;
-  real sd_BSIM4vsat;
-  real sd_BSIM4at;
-  real sd_BSIM4a0;
-  real sd_BSIM4ags;
-  real sd_BSIM4a1;
-  real sd_BSIM4a2;
-  real sd_BSIM4keta;
-  real sd_BSIM4nsub;
-  real sd_BSIM4ndep;
-  real sd_BSIM4nsd;
-  real sd_BSIM4phin;
-  real sd_BSIM4ngate;
-  real sd_BSIM4gamma1;
-  real sd_BSIM4gamma2;
-  real sd_BSIM4vbx;
-  real BSIM4vbi;
-  real sd_BSIM4vbm;
-  real sd_BSIM4xt;
-  real BSIM4phi;
-  real BSIM4litl;
-  real sd_BSIM4k1;
-  real sd_BSIM4kt1;
-  real sd_BSIM4kt1l;
-  real sd_BSIM4kt2;
-  real sd_BSIM4k2;
-  real sd_BSIM4k3;
-  real sd_BSIM4k3b;
-  real sd_BSIM4w0;
-  real sd_BSIM4dvtp0;
-  real sd_BSIM4dvtp1;
-  real sd_BSIM4dvtp2;
-  real sd_BSIM4dvtp3;
-  real sd_BSIM4dvtp4;
-  real sd_BSIM4dvtp5;
-  real sd_BSIM4lpe0;
-  real sd_BSIM4lpeb;
-  real sd_BSIM4dvt0;
-  real sd_BSIM4dvt1;
-  real sd_BSIM4dvt2;
-  real sd_BSIM4dvt0w;
-  real sd_BSIM4dvt1w;
-  real sd_BSIM4dvt2w;
-  real sd_BSIM4drout;
-  real sd_BSIM4dsub;
-  real sd_BSIM4vth0;
-  real sd_BSIM4ua;
-  real sd_BSIM4ua1;
-  real sd_BSIM4ub;
-  real sd_BSIM4ub1;
-  real sd_BSIM4uc;
-  real sd_BSIM4uc1;
-  real sd_BSIM4ud;
-  real sd_BSIM4ud1;
-  real sd_BSIM4up;
-  real sd_BSIM4lp;
-  real sd_BSIM4u0;
-  real sd_BSIM4eu;
-  real sd_BSIM4ucs;
-  real sd_BSIM4ute;
-  real sd_BSIM4ucste;
-  real sd_BSIM4voff;
-  real sd_BSIM4tvoff;
-  real sd_BSIM4tnfactor;
-  real sd_BSIM4teta0;
-  real sd_BSIM4tvoffcv;
-  real sd_BSIM4minv;
-  real sd_BSIM4minvcv;
-  real sd_BSIM4vfb;
-  real sd_BSIM4delta;
-  real sd_BSIM4rdsw;
-  real BSIM4rds0;
-  real BSIM4rs0;
-  real BSIM4rd0;
-  real sd_BSIM4rsw;
-  real sd_BSIM4rdw;
-  real sd_BSIM4prwg;
-  real sd_BSIM4prwb;
-  real sd_BSIM4prt;
-  real sd_BSIM4eta0;
-  real sd_BSIM4etab;
-  real sd_BSIM4pclm;
-  real sd_BSIM4pdibl1;
-  real sd_BSIM4pdibl2;
-  real sd_BSIM4pdiblb;
-  real sd_BSIM4fprout;
-  real sd_BSIM4pdits;
-  real sd_BSIM4pditsd;
-  real sd_BSIM4pscbe1;
-  real sd_BSIM4pscbe2;
-  real sd_BSIM4pvag;
-  real sd_BSIM4wr;
-  real sd_BSIM4dwg;
-  real sd_BSIM4dwb;
-  real sd_BSIM4b0;
-  real sd_BSIM4b1;
-  real sd_BSIM4alpha0;
-  real sd_BSIM4alpha1;
-  real sd_BSIM4beta0;
-  real sd_BSIM4agidl;
-  real sd_BSIM4bgidl;
-  real sd_BSIM4cgidl;
-  real sd_BSIM4egidl;
-  real sd_BSIM4fgidl;
-  real sd_BSIM4kgidl;
-  real sd_BSIM4rgidl;
-  real sd_BSIM4agisl;
-  real sd_BSIM4bgisl;
-  real sd_BSIM4cgisl;
-  real sd_BSIM4egisl;
-  real sd_BSIM4fgisl;
-  real sd_BSIM4kgisl;
-  real sd_BSIM4rgisl;
-  real sd_BSIM4aigc;
-  real sd_BSIM4bigc;
-  real sd_BSIM4cigc;
-  real sd_BSIM4aigsd;
-  real sd_BSIM4bigsd;
-  real sd_BSIM4cigsd;
-  real sd_BSIM4aigs;
-  real sd_BSIM4bigs;
-  real sd_BSIM4cigs;
-  real sd_BSIM4aigd;
-  real sd_BSIM4bigd;
-  real sd_BSIM4cigd;
-  real sd_BSIM4aigbacc;
-  real sd_BSIM4bigbacc;
-  real sd_BSIM4cigbacc;
-  real sd_BSIM4aigbinv;
-  real sd_BSIM4bigbinv;
-  real sd_BSIM4cigbinv;
-  real sd_BSIM4nigc;
-  real sd_BSIM4nigbacc;
-  real sd_BSIM4nigbinv;
-  real sd_BSIM4ntox;
-  real sd_BSIM4eigbinv;
-  real sd_BSIM4pigcd;
-  real sd_BSIM4poxedge;
-  real sd_BSIM4xrcrg1;
-  real sd_BSIM4xrcrg2;
-  real sd_BSIM4lambda;
-  real sd_BSIM4vtl;
-  real sd_BSIM4xn;
-  real sd_BSIM4lc;
-  real BSIM4tfactor;
-  real sd_BSIM4vfbsdoff;
-  real sd_BSIM4tvfbsdoff;
-  real sd_BSIM4ku0;
-  real sd_BSIM4kvth0;
-  real BSIM4ku0temp;
-  real BSIM4rho_ref;
-  real BSIM4inv_od_ref;
-  real sd_BSIM4kvth0we;
-  real sd_BSIM4k2we;
-  real sd_BSIM4ku0we;
-  real sd_BSIM4cgsl;
-  real sd_BSIM4cgdl;
-  real sd_BSIM4ckappas;
-  real sd_BSIM4ckappad;
-  real sd_BSIM4cf;
-  real sd_BSIM4clc;
-  real sd_BSIM4cle;
-  real sd_BSIM4vfbcv;
-  real sd_BSIM4noff;
-  real sd_BSIM4voffcv;
-  real sd_BSIM4acde;
-  real sd_BSIM4moin;
-  real BSIM4dw;
-  real BSIM4dl;
-  real BSIM4leff;
-  real BSIM4weff;
-  real sd_BSIM4dwc;
-  real sd_BSIM4dlc;
-  real sd_BSIM4dwj;
-  real BSIM4leffCV;
-  real BSIM4weffCV;
-  real BSIM4weffCJ;
-  real BSIM4abulkCVfactor;
-  real sd_BSIM4cgso;
-  real sd_BSIM4cgdo;
-  real sd_BSIM4cgbo;
-  real sd_BSIM4u0temp;
-  real sd_BSIM4vsattemp;
-  real BSIM4sqrtPhi;
-  real BSIM4phis3;
-  real BSIM4Xdep0;
-  real BSIM4sqrtXdep0;
-  real BSIM4theta0vb0;
-  real BSIM4thetaRout;
-  real BSIM4mstar;
-  real BSIM4VgsteffVth;
-  real BSIM4mstarcv;
-  real BSIM4voffcbn;
-  real BSIM4voffcbncv;
-  real sd_BSIM4rdswmin;
-  real sd_BSIM4rdwmin;
-  real sd_BSIM4rswmin;
-  real BSIM4vfbsd;
-  real sd_BSIM4cof1;
-  real sd_BSIM4cof2;
-  real sd_BSIM4cof3;
-  real sd_BSIM4cof4;
-  real BSIM4cdep0;
-  real BSIM4ToxRatio;
-  real BSIM4Aechvb;
-  real BSIM4Bechvb;
-  real BSIM4ToxRatioEdge;
-  real BSIM4AechvbEdgeS;
-  real BSIM4AechvbEdgeD;
-  real BSIM4BechvbEdge;
-  real BSIM4ldeb;
-  real BSIM4k1ox;
-  real sd_BSIM4k2ox;
-  real BSIM4vfbzbfactor;
-  real BSIM4dvtp2factor;
+  real Width = 0;
+  real Length = 0;
+  real NFinger = 0;
+  real sd_BSIM4cdsc = 0;
+  real sd_BSIM4cdscb = 0;
+  real sd_BSIM4cdscd = 0;
+  real sd_BSIM4cit = 0;
+  real sd_BSIM4nfactor = 0;
+  real sd_BSIM4xj = 0;
+  real sd_BSIM4vsat = 0;
+  real sd_BSIM4at = 0;
+  real sd_BSIM4a0 = 0;
+  real sd_BSIM4ags = 0;
+  real sd_BSIM4a1 = 0;
+  real sd_BSIM4a2 = 0;
+  real sd_BSIM4keta = 0;
+  real sd_BSIM4ketac = 0;
+  real sd_BSIM4nsub = 0;
+  real sd_BSIM4ndep = 0;
+  real sd_BSIM4nsd = 0;
+  real sd_BSIM4phin = 0;
+  real sd_BSIM4ngate = 0;
+  real sd_BSIM4gamma1 = 0;
+  real sd_BSIM4gamma2 = 0;
+  real sd_BSIM4vbx = 0;
+  real BSIM4vbi = 0;
+  real sd_BSIM4vbm = 0;
+  real sd_BSIM4xt = 0;
+  real BSIM4phi = 0;
+  real BSIM4litl = 0;
+  real sd_BSIM4k1 = 0;
+  real sd_BSIM4kt1 = 0;
+  real sd_BSIM4kt1l = 0;
+  real sd_BSIM4kt2 = 0;
+  real sd_BSIM4k2 = 0;
+  real sd_BSIM4k3 = 0;
+  real sd_BSIM4k3b = 0;
+  real sd_BSIM4w0 = 0;
+  real sd_BSIM4dvtp0 = 0;
+  real sd_BSIM4dvtp1 = 0;
+  real sd_BSIM4dvtp2 = 0;
+  real sd_BSIM4dvtp3 = 0;
+  real sd_BSIM4dvtp4 = 0;
+  real sd_BSIM4dvtp5 = 0;
+  real sd_BSIM4lpe0 = 0;
+  real sd_BSIM4lpeb = 0;
+  real sd_BSIM4dvt0 = 0;
+  real sd_BSIM4dvt1 = 0;
+  real sd_BSIM4dvt2 = 0;
+  real sd_BSIM4dvt0w = 0;
+  real sd_BSIM4dvt1w = 0;
+  real sd_BSIM4dvt2w = 0;
+  real sd_BSIM4drout = 0;
+  real sd_BSIM4dsub = 0;
+  real sd_BSIM4vth0 = 0;
+  real sd_BSIM4ua = 0;
+  real sd_BSIM4ua1 = 0;
+  real sd_BSIM4ub = 0;
+  real sd_BSIM4ub1 = 0;
+  real sd_BSIM4uc = 0;
+  real sd_BSIM4uc1 = 0;
+  real sd_BSIM4ud = 0;
+  real sd_BSIM4ud1 = 0;
+  real sd_BSIM4up = 0;
+  real sd_BSIM4lp = 0;
+  real sd_BSIM4u0 = 0;
+  real sd_BSIM4eu = 0;
+  real sd_BSIM4ucs = 0;
+  real sd_BSIM4ute = 0;
+  real sd_BSIM4ucste = 0;
+  real sd_BSIM4voff = 0;
+  real sd_BSIM4tvoff = 0;
+  real sd_BSIM4tnfactor = 0;
+  real sd_BSIM4teta0 = 0;
+  real sd_BSIM4tvoffcv = 0;
+  real sd_BSIM4minv = 0;
+  real sd_BSIM4minvcv = 0;
+  real sd_BSIM4vfb = 0;
+  real sd_BSIM4delta = 0;
+  real sd_BSIM4rdsw = 0;
+  real BSIM4rds0 = 0;
+  real BSIM4rs0 = 0;
+  real BSIM4rd0 = 0;
+  real sd_BSIM4rsw = 0;
+  real sd_BSIM4rdw = 0;
+  real sd_BSIM4prwg = 0;
+  real sd_BSIM4prwb = 0;
+  real sd_BSIM4prt = 0;
+  real sd_BSIM4eta0 = 0;
+  real sd_BSIM4etab = 0;
+  real sd_BSIM4pclm = 0;
+  real sd_BSIM4pdibl1 = 0;
+  real sd_BSIM4pdibl2 = 0;
+  real sd_BSIM4pdiblb = 0;
+  real sd_BSIM4fprout = 0;
+  real sd_BSIM4pdits = 0;
+  real sd_BSIM4pditsd = 0;
+  real sd_BSIM4pscbe1 = 0;
+  real sd_BSIM4pscbe2 = 0;
+  real sd_BSIM4pvag = 0;
+  real sd_BSIM4wr = 0;
+  real sd_BSIM4dwg = 0;
+  real sd_BSIM4dwb = 0;
+  real sd_BSIM4b0 = 0;
+  real sd_BSIM4b1 = 0;
+  real sd_BSIM4alpha0 = 0;
+  real sd_BSIM4alpha1 = 0;
+  real sd_BSIM4beta0 = 0;
+  real sd_BSIM4agidl = 0;
+  real sd_BSIM4bgidl = 0;
+  real sd_BSIM4cgidl = 0;
+  real sd_BSIM4egidl = 0;
+  real sd_BSIM4fgidl = 0;
+  real sd_BSIM4kgidl = 0;
+  real sd_BSIM4rgidl = 0;
+  real sd_BSIM4agisl = 0;
+  real sd_BSIM4bgisl = 0;
+  real sd_BSIM4cgisl = 0;
+  real sd_BSIM4egisl = 0;
+  real sd_BSIM4fgisl = 0;
+  real sd_BSIM4kgisl = 0;
+  real sd_BSIM4rgisl = 0;
+  real sd_BSIM4aigc = 0;
+  real sd_BSIM4bigc = 0;
+  real sd_BSIM4cigc = 0;
+  real sd_BSIM4aigsd = 0;
+  real sd_BSIM4bigsd = 0;
+  real sd_BSIM4cigsd = 0;
+  real sd_BSIM4aigs = 0;
+  real sd_BSIM4bigs = 0;
+  real sd_BSIM4cigs = 0;
+  real sd_BSIM4aigd = 0;
+  real sd_BSIM4bigd = 0;
+  real sd_BSIM4cigd = 0;
+  real sd_BSIM4aigbacc = 0;
+  real sd_BSIM4bigbacc = 0;
+  real sd_BSIM4cigbacc = 0;
+  real sd_BSIM4aigbinv = 0;
+  real sd_BSIM4bigbinv = 0;
+  real sd_BSIM4cigbinv = 0;
+  real sd_BSIM4nigc = 0;
+  real sd_BSIM4nigbacc = 0;
+  real sd_BSIM4nigbinv = 0;
+  real sd_BSIM4ntox = 0;
+  real sd_BSIM4eigbinv = 0;
+  real sd_BSIM4pigcd = 0;
+  real sd_BSIM4poxedge = 0;
+  real sd_BSIM4xrcrg1 = 0;
+  real sd_BSIM4xrcrg2 = 0;
+  real sd_BSIM4lambda = 0;
+  real sd_BSIM4vtl = 0;
+  real sd_BSIM4xn = 0;
+  real sd_BSIM4lc = 0;
+  real BSIM4tfactor = 0;
+  real sd_BSIM4vfbsdoff = 0;
+  real sd_BSIM4tvfbsdoff = 0;
+  real sd_BSIM4ku0 = 0;
+  real sd_BSIM4kvth0 = 0;
+  real BSIM4ku0temp = 0;
+  real BSIM4rho_ref = 0;
+  real BSIM4inv_od_ref = 0;
+  real sd_BSIM4kvth0we = 0;
+  real sd_BSIM4k2we = 0;
+  real sd_BSIM4ku0we = 0;
+  real sd_BSIM4cgsl = 0;
+  real sd_BSIM4cgdl = 0;
+  real sd_BSIM4ckappas = 0;
+  real sd_BSIM4ckappad = 0;
+  real sd_BSIM4cf = 0;
+  real sd_BSIM4clc = 0;
+  real sd_BSIM4cle = 0;
+  real sd_BSIM4vfbcv = 0;
+  real sd_BSIM4noff = 0;
+  real sd_BSIM4voffcv = 0;
+  real sd_BSIM4acde = 0;
+  real sd_BSIM4moin = 0;
+  real BSIM4dw = 0;
+  real BSIM4dl = 0;
+  real BSIM4leff = 0;
+  real BSIM4weff = 0;
+  real sd_BSIM4dwc = 0;
+  real sd_BSIM4dlc = 0;
+  real sd_BSIM4dwj = 0;
+  real BSIM4leffCV = 0;
+  real BSIM4weffCV = 0;
+  real BSIM4weffCJ = 0;
+  real BSIM4abulkCVfactor = 0;
+  real sd_BSIM4cgso = 0;
+  real sd_BSIM4cgdo = 0;
+  real sd_BSIM4cgbo = 0;
+  real sd_BSIM4u0temp = 0;
+  real sd_BSIM4vsattemp = 0;
+  real BSIM4sqrtPhi = 0;
+  real BSIM4phis3 = 0;
+  real BSIM4Xdep0 = 0;
+  real BSIM4sqrtXdep0 = 0;
+  real BSIM4theta0vb0 = 0;
+  real BSIM4thetaRout = 0;
+  real BSIM4mstar = 0;
+  real BSIM4VgsteffVth = 0;
+  real BSIM4mstarcv = 0;
+  real BSIM4voffcbn = 0;
+  real BSIM4voffcbncv = 0;
+  real sd_BSIM4rdswmin = 0;
+  real sd_BSIM4rdwmin = 0;
+  real sd_BSIM4rswmin = 0;
+  real BSIM4vfbsd = 0;
+  real sd_BSIM4cof1 = 0;
+  real sd_BSIM4cof2 = 0;
+  real sd_BSIM4cof3 = 0;
+  real sd_BSIM4cof4 = 0;
+  real BSIM4cdep0 = 0;
+  real BSIM4ToxRatio = 0;
+  real BSIM4Aechvb = 0;
+  real BSIM4Bechvb = 0;
+  real BSIM4ToxRatioEdge = 0;
+  real BSIM4AechvbEdgeS = 0;
+  real BSIM4AechvbEdgeD = 0;
+  real BSIM4BechvbEdge = 0;
+  real BSIM4ldeb = 0;
+  real BSIM4k1ox = 0;
+  real sd_BSIM4k2ox = 0;
+  real BSIM4vfbzbfactor = 0;
+  real BSIM4dvtp2factor = 0;
 
   // States
-  real BSIM4vbd;
-  real BSIM4vbs;
-  real BSIM4vgs;
-  real BSIM4vds;
-  real BSIM4vdbs;
-  real BSIM4vdbd;
-  real BSIM4vsbs;
-  real BSIM4vges;
-  real BSIM4vgms;
-  real BSIM4vses;
-  real BSIM4vdes;
-  real BSIM4qb;
-  real BSIM4cqb;
-  real BSIM4qg;
-  real BSIM4cqg;
-  real BSIM4qd;
-  real BSIM4cqd;
-  real BSIM4qgmid;
-  real BSIM4cqgmid;
-  real BSIM4qbs;
-  real BSIM4cqbs;
-  real BSIM4qbd;
-  real BSIM4cqbd;
-  real BSIM4qcheq;
-  real BSIM4cqcheq;
-  real BSIM4qcdump;
-  real BSIM4cqcdump;
-  real BSIM4qdef;
-  real BSIM4qs;
+  real BSIM4vbd = 0;
+  real BSIM4vbs = 0;
+  real BSIM4vgs = 0;
+  real BSIM4vds = 0;
+  real BSIM4vdbs = 0;
+  real BSIM4vdbd = 0;
+  real BSIM4vsbs = 0;
+  real BSIM4vges = 0;
+  real BSIM4vgms = 0;
+  real BSIM4vses = 0;
+  real BSIM4vdes = 0;
+  real BSIM4qb = 0;
+  real BSIM4cqb = 0;
+  real BSIM4qg = 0;
+  real BSIM4cqg = 0;
+  real BSIM4qd = 0;
+  real BSIM4cqd = 0;
+  real BSIM4qgmid = 0;
+  real BSIM4cqgmid = 0;
+  real BSIM4qbs = 0;
+  real BSIM4cqbs = 0;
+  real BSIM4qbd = 0;
+  real BSIM4cqbd = 0;
+  real BSIM4qcheq = 0;
+  real BSIM4cqcheq = 0;
+  real BSIM4qcdump = 0;
+  real BSIM4cqcdump = 0;
+  real BSIM4qdef = 0;
+  real BSIM4qs = 0;
 
   // Model parameter access locals
 
   // Instance parameter access locals
 
   // Device setup locals
-  integer createNode;
-  real Rtot;
-  real DMCGeff;
-  real DMCIeff;
-  real DMDGeff;
+  integer createNode = 0;
+  real Rtot = 0;
+  real DMCGeff = 0;
+  real DMCIeff = 0;
+  real DMDGeff = 0;
 
   // Device temperature dependence locals
-  real tmp;
-  real tmp1;
-  real tmp2;
-  real tmp3;
-  real Eg;
-  real Eg0;
-  real ni;
-  real epssub;
-  real T0;
-  real T1;
-  real T2;
-  real T3;
-  real T4;
-  real T5;
-  real T6;
-  real T7;
-  real T8;
-  real T9;
-  real Lnew;
-  real Wnew;
-  real delTemp;
-  real Temp;
-  real TRatio;
-  real Inv_L;
-  real Inv_W;
-  real Inv_LW;
-  real Vtm0;
-  real Tnom;
-  real dumPs;
-  real dumPd;
-  real dumAs;
-  real dumAd;
-  real PowWeffWr;
-  real temp_DMCGeff;
-  real temp_DMCIeff;
-  real temp_DMDGeff;
-  real Nvtms;
-  real Nvtmd;
-  real SourceSatCurrent;
-  real DrainSatCurrent;
-  real T10;
-  real T11;
-  real Inv_saref;
-  real Inv_sbref;
-  real Inv_sa;
-  real Inv_sb;
-  real rho;
-  real Ldrn;
-  real dvth0_lod;
-  real W_tmp;
-  real Inv_ODeff;
-  real OD_offset;
-  real dk2_lod;
-  real deta0_lod;
-  real lnl;
-  real lnw;
-  real lnnf;
-  real rbpbx;
-  real rbpby;
-  real rbsbx;
-  real rbsby;
-  real rbdbx;
-  real rbdby;
-  real bodymode;
-  real temp_kvsat;
-  real temp_wlod;
-  real sceff;
-  real Wdrn;
-  real V0;
-  real lt1;
-  real ltw;
-  real Theta0;
-  real Delt_vth;
-  real Vth_NarrowW;
-  real Lpe_Vb;
-  real Vth;
-  real n;
-  real n0;
-  real Vgsteff;
-  real Vgs_eff;
-  real niter;
-  real toxpf;
-  real toxpi;
-  real Tcen;
-  real temp_toxe;
-  real temp_epsrox;
-  real temp_vddeot;
-  real vtfbphi2eot;
-  real phieot;
-  real TempRatioeot;
-  real Vtm0eot;
-  real Vtmeot;
-  real vbieot;
-  integer i;
-  real chktol;
-  integer createnode_d;
-  integer createnode_s;
+  real tmp = 0;
+  real tmp1 = 0;
+  real tmp2 = 0;
+  real tmp3 = 0;
+  real Eg = 0;
+  real Eg0 = 0;
+  real ni = 0;
+  real epssub = 0;
+  real T0 = 0;
+  real T1 = 0;
+  real T2 = 0;
+  real T3 = 0;
+  real T4 = 0;
+  real T5 = 0;
+  real T6 = 0;
+  real T7 = 0;
+  real T8 = 0;
+  real T9 = 0;
+  real Lnew = 0;
+  real Wnew = 0;
+  real delTemp = 0;
+  real Temp = 0;
+  real TRatio = 0;
+  real Inv_L = 0;
+  real Inv_W = 0;
+  real Inv_LW = 0;
+  real Vtm0 = 0;
+  real Tnom = 0;
+  real dumPs = 0;
+  real dumPd = 0;
+  real dumAs = 0;
+  real dumAd = 0;
+  real PowWeffWr = 0;
+  real temp_DMCGeff = 0;
+  real temp_DMCIeff = 0;
+  real temp_DMDGeff = 0;
+  real Nvtms = 0;
+  real Nvtmd = 0;
+  real SourceSatCurrent = 0;
+  real DrainSatCurrent = 0;
+  real T10 = 0;
+  real T11 = 0;
+  real Inv_saref = 0;
+  real Inv_sbref = 0;
+  real Inv_sa = 0;
+  real Inv_sb = 0;
+  real rho = 0;
+  real Ldrn = 0;
+  real dvth0_lod = 0;
+  real W_tmp = 0;
+  real Inv_ODeff = 0;
+  real OD_offset = 0;
+  real dk2_lod = 0;
+  real deta0_lod = 0;
+  real lnl = 0;
+  real lnw = 0;
+  real lnnf = 0;
+  real rbpbx = 0;
+  real rbpby = 0;
+  real rbsbx = 0;
+  real rbsby = 0;
+  real rbdbx = 0;
+  real rbdby = 0;
+  real bodymode = 0;
+  real temp_kvsat = 0;
+  real temp_wlod = 0;
+  real sceff = 0;
+  real Wdrn = 0;
+  real V0 = 0;
+  real lt1 = 0;
+  real ltw = 0;
+  real Theta0 = 0;
+  real Delt_vth = 0;
+  real Vth_NarrowW = 0;
+  real Lpe_Vb = 0;
+  real Vth = 0;
+  real n = 0;
+  real n0 = 0;
+  real Vgsteff = 0;
+  real Vgs_eff = 0;
+  real niter = 0;
+  real toxpf = 0;
+  real toxpi = 0;
+  real Tcen = 0;
+  real temp_toxe = 0;
+  real temp_epsrox = 0;
+  real temp_vddeot = 0;
+  real vtfbphi2eot = 0;
+  real phieot = 0;
+  real TempRatioeot = 0;
+  real Vtm0eot = 0;
+  real Vtmeot = 0;
+  real vbieot = 0;
+  integer i = 0;
+  integer Fatal_Flag = 0;
+  real chktol = 0;
+  integer createnode_d = 0;
+  integer createnode_s = 0;
 
   // Device load locals
-  integer limited;
-  real ceqgstot;
-  real dgstot_dvd;
-  real dgstot_dvg;
-  real dgstot_dvs;
-  real dgstot_dvb;
-  real ceqgdtot;
-  real dgdtot_dvd;
-  real dgdtot_dvg;
-  real dgdtot_dvs;
-  real dgdtot_dvb;
-  real gstot;
-  real gstotd;
-  real gstotg;
-  real gstots;
-  real gstotb;
-  real gspr;
-  real Rs;
-  real Rd;
-  real gdtot;
-  real gdtotd;
-  real gdtotg;
-  real gdtots;
-  real gdtotb;
-  real gdpr;
-  real vgs_eff;
-  real vgd_eff;
-  real dvgs_eff_dvg;
-  real dvgd_eff_dvg;
-  real dRs_dvg;
-  real dRd_dvg;
-  real dRs_dvb;
-  real dRd_dvb;
-  real dT0_dvg;
-  real dT1_dvb;
-  real dT3_dvg;
-  real dT3_dvb;
-  real vses;
-  real vdes;
-  real geltd;
-  real load_gcrg;
-  real gcrgg;
-  real gcrgd;
-  real gcrgs;
-  real gcrgb;
-  real ceqgcrg;
-  real vges;
-  real vgms;
-  real vgedo;
-  real vgmdo;
-  real vged;
-  real vgmd;
-  real vgmb;
-  real qgmb;
-  real qgmid;
-  real ceqqgmid;
-  real vbd;
-  real load_vbs;
-  real load_vds;
-  real vgb;
-  real vgd;
-  real load_vgs;
-  real vgdo;
-  real vdbs;
-  real vdbd;
-  real vsbs;
-  real vsbdo;
-  real vsbd;
-  real vbs_jct;
-  real vbd_jct;
-  real load_SourceSatCurrent;
-  real load_DrainSatCurrent;
-  real qgb;
-  real von;
-  real VgstNVt;
-  real ExpVgst;
-  real ceqqb;
-  real ceqqd;
-  real ceqqg;
-  real ceqqjd;
-  real ceqqjs;
-  real ceq;
-  real geq;
-  real cdrain;
-  real ceqdrn;
-  real ceqbd;
-  real ceqbs;
-  real ceqjd;
-  real ceqjs;
-  real gjbd;
-  real gjbs;
-  real czbd;
-  real czbdsw;
-  real czbdswg;
-  real czbs;
-  real czbssw;
-  real czbsswg;
-  real evbd;
-  real evbs;
-  real arg;
-  real sarg;
-  real Vfbeff;
-  real dVfbeff_dVg;
-  real dVfbeff_dVb;
-  real V3;
-  real V4;
-  real MJD;
-  real MJSWD;
-  real MJSWGD;
-  real MJS;
-  real MJSWS;
-  real MJSWGS;
-  real qgate;
-  real qbulk;
-  real qdrn;
-  real qsrc;
-  real cqgate;
-  real cqbody;
-  real cqdrn;
-  real Vdb;
-  real Vds;
-  real Vgs;
-  real Vbs;
-  real Gmbs;
-  real FwdSum;
-  real RevSum;
-  real Igidl;
-  real Ggidld;
-  real Ggidlg;
-  real Ggidlb;
-  real Voxacc;
-  real dVoxacc_dVg;
-  real dVoxacc_dVb;
-  real Voxdepinv;
-  real dVoxdepinv_dVg;
-  real dVoxdepinv_dVd;
-  real dVoxdepinv_dVb;
-  real VxNVt;
-  real ExpVxNVt;
-  real Vaux;
-  real dVaux_dVg;
-  real dVaux_dVd;
-  real dVaux_dVb;
-  real Igc;
-  real dIgc_dVg;
-  real dIgc_dVd;
-  real dIgc_dVb;
-  real Igcs;
-  real dIgcs_dVg;
-  real dIgcs_dVd;
-  real dIgcs_dVb;
-  real Igcd;
-  real dIgcd_dVg;
-  real dIgcd_dVd;
-  real dIgcd_dVb;
-  real Igs;
-  real dIgs_dVg;
-  real dIgs_dVs;
-  real Igd;
-  real dIgd_dVg;
-  real dIgd_dVd;
-  real Igbacc;
-  real dIgbacc_dVg;
-  real dIgbacc_dVb;
-  real Igbinv;
-  real dIgbinv_dVg;
-  real dIgbinv_dVd;
-  real dIgbinv_dVb;
-  real Pigcd;
-  real dPigcd_dVg;
-  real dPigcd_dVd;
-  real dPigcd_dVb;
-  real Istoteq;
-  real gIstotg;
-  real gIstotd;
-  real gIstots;
-  real gIstotb;
-  real Idtoteq;
-  real gIdtotg;
-  real gIdtotd;
-  real gIdtots;
-  real gIdtotb;
-  real Ibtoteq;
-  real gIbtotg;
-  real gIbtotd;
-  real gIbtots;
-  real gIbtotb;
-  real Igtoteq;
-  real gIgtotg;
-  real gIgtotd;
-  real gIgtots;
-  real gIgtotb;
-  real load_Vgs_eff;
-  real Vfb;
-  real load_Vth_NarrowW;
-  real Phis;
-  real dPhis_dVb;
-  real sqrtPhis;
-  real dsqrtPhis_dVb;
-  real load_Vth;
-  real dVth_dVb;
-  real dVth_dVd;
-  real Vgst;
-  real dVgst_dVg;
-  real dVgst_dVb;
-  real dVgs_eff_dVg;
-  real load_Nvtms;
-  real load_Nvtmd;
-  real Vtm;
-  real load_Vtm0;
-  real load_n;
-  real dn_dVb;
-  real dn_dVd;
-  real load_voffcv;
-  real load_noff;
-  real dnoff_dVd;
-  real dnoff_dVb;
-  real load_V0;
-  real CoxWLcen;
-  real QovCox;
-  real LINK;
-  real DeltaPhi;
-  real dDeltaPhi_dVg;
-  real VgDP;
-  real dVgDP_dVg;
-  real Cox;
-  real Tox;
-  real load_Tcen;
-  real dTcen_dVg;
-  real dTcen_dVd;
-  real dTcen_dVb;
-  real Ccen;
-  real Coxeff;
-  real dCoxeff_dVd;
-  real dCoxeff_dVg;
-  real dCoxeff_dVb;
-  real Denomi;
-  real dDenomi_dVg;
-  real dDenomi_dVd;
-  real dDenomi_dVb;
-  real ueff;
-  real dueff_dVg;
-  real dueff_dVd;
-  real dueff_dVb;
-  real Esat;
-  real Vdsat;
-  real EsatL;
-  real dEsatL_dVg;
-  real dEsatL_dVd;
-  real dEsatL_dVb;
-  real dVdsat_dVg;
-  real dVdsat_dVb;
-  real dVdsat_dVd;
-  real Vasat;
-  real dAlphaz_dVg;
-  real dAlphaz_dVb;
-  real dVasat_dVg;
-  real dVasat_dVb;
-  real dVasat_dVd;
-  real Va;
-  real dVa_dVd;
-  real dVa_dVg;
-  real dVa_dVb;
-  real Vbseff;
-  real dVbseff_dVb;
-  real VbseffCV;
-  real dVbseffCV_dVb;
-  real VgsteffVth;
-  real dT11_dVg;
-  real Arg1;
-  real One_Third_CoxWL;
-  real Two_Third_CoxWL;
-  real Alphaz;
-  real CoxWL;
-  real load_T0;
-  real dT0_dVg;
-  real dT0_dVd;
-  real dT0_dVb;
-  real load_T1;
-  real dT1_dVg;
-  real dT1_dVd;
-  real dT1_dVb;
-  real load_T2;
-  real dT2_dVg;
-  real dT2_dVd;
-  real dT2_dVb;
-  real load_T3;
-  real dT3_dVg;
-  real dT3_dVd;
-  real dT3_dVb;
-  real load_T4;
-  real dT4_dVd;
-  real dT4_dVb;
-  real load_T5;
-  real dT5_dVg;
-  real dT5_dVd;
-  real dT5_dVb;
-  real load_T6;
-  real dT6_dVg;
-  real dT6_dVd;
-  real dT6_dVb;
-  real load_T7;
-  real dT7_dVg;
-  real dT7_dVd;
-  real dT7_dVb;
-  real load_T8;
-  real dT8_dVg;
-  real dT8_dVd;
-  real dT8_dVb;
-  real load_T9;
-  real dT9_dVg;
-  real dT9_dVd;
-  real dT9_dVb;
-  real load_T10;
-  real dT10_dVg;
-  real dT10_dVb;
-  real dT10_dVd;
-  real load_T11;
-  real T12;
-  real T13;
-  real T14;
-  real load_tmp;
-  real Abulk;
-  real dAbulk_dVb;
-  real Abulk0;
-  real dAbulk0_dVb;
-  real Cclm;
-  real dCclm_dVg;
-  real dCclm_dVd;
-  real dCclm_dVb;
-  real FP;
-  real dFP_dVg;
-  real PvagTerm;
-  real dPvagTerm_dVg;
-  real dPvagTerm_dVd;
-  real dPvagTerm_dVb;
-  real VADITS;
-  real dVADITS_dVg;
-  real dVADITS_dVd;
-  real load_Lpe_Vb;
-  real dDITS_Sft_dVb;
-  real dDITS_Sft_dVd;
-  real DITS_Sft2;
-  real dDITS_Sft2_dVd;
-  real VACLM;
-  real dVACLM_dVg;
-  real dVACLM_dVd;
-  real dVACLM_dVb;
-  real VADIBL;
-  real dVADIBL_dVg;
-  real dVADIBL_dVd;
-  real dVADIBL_dVb;
-  real Xdep;
-  real dXdep_dVb;
-  real load_lt1;
-  real dlt1_dVb;
-  real load_ltw;
-  real dltw_dVb;
-  real load_Delt_vth;
-  real dDelt_vth_dVb;
-  real load_Theta0;
-  real dTheta0_dVb;
-  real TempRatio;
-  real load_tmp1;
-  real load_tmp2;
-  real load_tmp3;
-  real tmp4;
-  real DIBL_Sft;
-  real dDIBL_Sft_dVd;
-  real Lambda;
-  real dLambda_dVg;
-  real load_a1;
-  real ScalingFactor;
-  real load_Vgsteff;
-  real dVgsteff_dVg;
-  real dVgsteff_dVd;
-  real dVgsteff_dVb;
-  real Vdseff;
-  real dVdseff_dVg;
-  real dVdseff_dVd;
-  real dVdseff_dVb;
-  real VdseffCV;
-  real dVdseffCV_dVg;
-  real dVdseffCV_dVd;
-  real dVdseffCV_dVb;
-  real diffVds;
-  real dAbulk_dVg;
-  real beta;
-  real dbeta_dVg;
-  real dbeta_dVd;
-  real dbeta_dVb;
-  real gche;
-  real dgche_dVg;
-  real dgche_dVd;
-  real dgche_dVb;
-  real fgche1;
-  real dfgche1_dVg;
-  real dfgche1_dVd;
-  real dfgche1_dVb;
-  real fgche2;
-  real dfgche2_dVg;
-  real dfgche2_dVd;
-  real dfgche2_dVb;
-  real Idl;
-  real dIdl_dVg;
-  real dIdl_dVd;
-  real dIdl_dVb;
-  real Idsa;
-  real dIdsa_dVg;
-  real dIdsa_dVd;
-  real dIdsa_dVb;
-  real Ids;
-  real Gm;
-  real Gds;
-  real Gmb;
-  real devbs_dvb;
-  real devbd_dvb;
-  real Isub;
-  real Gbd;
-  real Gbg;
-  real Gbb;
-  real VASCBE;
-  real dVASCBE_dVg;
-  real dVASCBE_dVd;
-  real dVASCBE_dVb;
-  real CoxeffWovL;
-  real Rds;
-  real dRds_dVg;
-  real dRds_dVb;
-  real WVCox;
-  real WVCoxRds;
-  real Vgst2Vtm;
-  real VdsatCV;
-  real Leff;
-  real Weff;
-  real dWeff_dVg;
-  real dWeff_dVb;
-  real AbulkCV;
-  real dAbulkCV_dVb;
-  real qcheq;
-  real load_qdef;
-  real cqdef;
-  real cqcheq;
-  real dxpart;
-  real sxpart;
-  real ggtg;
-  real ggtd;
-  real ggts;
-  real ggtb;
-  real ddxpart_dVd;
-  real ddxpart_dVg;
-  real ddxpart_dVb;
-  real ddxpart_dVs;
-  real dsxpart_dVd;
-  real dsxpart_dVg;
-  real dsxpart_dVb;
-  real dsxpart_dVs;
-  real gbspsp;
-  real gbbdp;
-  real gbbsp;
-  real gbspg;
-  real gbspb;
-  real gbspdp;
-  real gbdpdp;
-  real gbdpg;
-  real gbdpb;
-  real gbdpsp;
-  real qgdo;
-  real qgso;
-  real load_cgdo;
-  real load_cgso;
-  real Cgg;
-  real Cgd;
-  real Cgb;
-  real Cdg;
-  real Cdd;
-  real Cds;
-  real Csg;
-  real Csd;
-  real Css;
-  real Csb;
-  real Cbg;
-  real Cbd;
-  real Cbb;
-  real Cgg1;
-  real Cgd1;
-  real Cgb1;
-  real Cbg1;
-  real Cbb1;
-  real Cbd1;
-  real Qac0;
-  real Qsub0;
-  real dQac0_dVg;
-  real dQac0_dVb;
-  real dQsub0_dVg;
-  real dQsub0_dVd;
-  real dQsub0_dVb;
-  real ggidld;
-  real ggidlg;
-  real ggidlb;
-  real ggislg;
-  real ggislb;
-  real ggisls;
-  real Igisl;
-  real Ggislg;
-  real Ggislb;
-  real Ggisls;
-  real Nvtmrss;
-  real Nvtmrssws;
-  real Nvtmrsswgs;
-  real Nvtmrsd;
-  real Nvtmrsswd;
-  real Nvtmrsswgd;
-  real vs;
-  real Fsevl;
-  real dvs_dVg;
-  real dvs_dVd;
-  real dvs_dVb;
-  real dFsevl_dVg;
-  real dFsevl_dVd;
-  real dFsevl_dVb;
-  real vgdx;
-  real vgsx;
-  real load_epssub;
-  real load_toxe;
-  real load_epsrox;
+  integer limited = 0;
+  real ceqgstot = 0;
+  real dgstot_dvd = 0;
+  real dgstot_dvg = 0;
+  real dgstot_dvs = 0;
+  real dgstot_dvb = 0;
+  real ceqgdtot = 0;
+  real dgdtot_dvd = 0;
+  real dgdtot_dvg = 0;
+  real dgdtot_dvs = 0;
+  real dgdtot_dvb = 0;
+  real gstot = 0;
+  real gstotd = 0;
+  real gstotg = 0;
+  real gstots = 0;
+  real gstotb = 0;
+  real gspr = 0;
+  real Rs = 0;
+  real Rd = 0;
+  real gdtot = 0;
+  real gdtotd = 0;
+  real gdtotg = 0;
+  real gdtots = 0;
+  real gdtotb = 0;
+  real gdpr = 0;
+  real vgs_eff = 0;
+  real vgd_eff = 0;
+  real dvgs_eff_dvg = 0;
+  real dvgd_eff_dvg = 0;
+  real dRs_dvg = 0;
+  real dRd_dvg = 0;
+  real dRs_dvb = 0;
+  real dRd_dvb = 0;
+  real dT0_dvg = 0;
+  real dT1_dvb = 0;
+  real dT3_dvg = 0;
+  real dT3_dvb = 0;
+  real vses = 0;
+  real vdes = 0;
+  real geltd = 0;
+  real load_gcrg = 0;
+  real gcrgg = 0;
+  real gcrgd = 0;
+  real gcrgs = 0;
+  real gcrgb = 0;
+  real ceqgcrg = 0;
+  real vges = 0;
+  real vgms = 0;
+  real vgedo = 0;
+  real vgmdo = 0;
+  real vged = 0;
+  real vgmd = 0;
+  real vgmb = 0;
+  real qgmb = 0;
+  real qgmid = 0;
+  real ceqqgmid = 0;
+  real vbd = 0;
+  real load_vbs = 0;
+  real load_vds = 0;
+  real vgb = 0;
+  real vgd = 0;
+  real load_vgs = 0;
+  real vgdo = 0;
+  real vdbs = 0;
+  real vdbd = 0;
+  real vsbs = 0;
+  real vsbdo = 0;
+  real vsbd = 0;
+  real vbs_jct = 0;
+  real vbd_jct = 0;
+  real load_SourceSatCurrent = 0;
+  real load_DrainSatCurrent = 0;
+  real qgb = 0;
+  real von = 0;
+  real VgstNVt = 0;
+  real ExpVgst = 0;
+  real ceqqb = 0;
+  real ceqqd = 0;
+  real ceqqg = 0;
+  real ceqqjd = 0;
+  real ceqqjs = 0;
+  real ceq = 0;
+  real geq = 0;
+  real cdrain = 0;
+  real ceqdrn = 0;
+  real ceqbd = 0;
+  real ceqbs = 0;
+  real ceqjd = 0;
+  real ceqjs = 0;
+  real gjbd = 0;
+  real gjbs = 0;
+  real czbd = 0;
+  real czbdsw = 0;
+  real czbdswg = 0;
+  real czbs = 0;
+  real czbssw = 0;
+  real czbsswg = 0;
+  real evbd = 0;
+  real evbs = 0;
+  real arg = 0;
+  real sarg = 0;
+  real Vfbeff = 0;
+  real dVfbeff_dVg = 0;
+  real dVfbeff_dVb = 0;
+  real V3 = 0;
+  real V4 = 0;
+  real MJD = 0;
+  real MJSWD = 0;
+  real MJSWGD = 0;
+  real MJS = 0;
+  real MJSWS = 0;
+  real MJSWGS = 0;
+  real qgate = 0;
+  real qbulk = 0;
+  real qdrn = 0;
+  real qsrc = 0;
+  real cqgate = 0;
+  real cqbody = 0;
+  real cqdrn = 0;
+  real Vdb = 0;
+  real Vds = 0;
+  real Vgs = 0;
+  real Vbs = 0;
+  real Gmbs = 0;
+  real FwdSum = 0;
+  real RevSum = 0;
+  real Igidl = 0;
+  real Ggidld = 0;
+  real Ggidlg = 0;
+  real Ggidlb = 0;
+  real Voxacc = 0;
+  real dVoxacc_dVg = 0;
+  real dVoxacc_dVb = 0;
+  real Voxdepinv = 0;
+  real dVoxdepinv_dVg = 0;
+  real dVoxdepinv_dVd = 0;
+  real dVoxdepinv_dVb = 0;
+  real VxNVt = 0;
+  real ExpVxNVt = 0;
+  real Vaux = 0;
+  real dVaux_dVg = 0;
+  real dVaux_dVd = 0;
+  real dVaux_dVb = 0;
+  real Igc = 0;
+  real dIgc_dVg = 0;
+  real dIgc_dVd = 0;
+  real dIgc_dVb = 0;
+  real Igcs = 0;
+  real dIgcs_dVg = 0;
+  real dIgcs_dVd = 0;
+  real dIgcs_dVb = 0;
+  real Igcd = 0;
+  real dIgcd_dVg = 0;
+  real dIgcd_dVd = 0;
+  real dIgcd_dVb = 0;
+  real Igs = 0;
+  real dIgs_dVg = 0;
+  real dIgs_dVs = 0;
+  real Igd = 0;
+  real dIgd_dVg = 0;
+  real dIgd_dVd = 0;
+  real Igbacc = 0;
+  real dIgbacc_dVg = 0;
+  real dIgbacc_dVb = 0;
+  real Igbinv = 0;
+  real dIgbinv_dVg = 0;
+  real dIgbinv_dVd = 0;
+  real dIgbinv_dVb = 0;
+  real Pigcd = 0;
+  real dPigcd_dVg = 0;
+  real dPigcd_dVd = 0;
+  real dPigcd_dVb = 0;
+  real Istoteq = 0;
+  real gIstotg = 0;
+  real gIstotd = 0;
+  real gIstots = 0;
+  real gIstotb = 0;
+  real Idtoteq = 0;
+  real gIdtotg = 0;
+  real gIdtotd = 0;
+  real gIdtots = 0;
+  real gIdtotb = 0;
+  real Ibtoteq = 0;
+  real gIbtotg = 0;
+  real gIbtotd = 0;
+  real gIbtots = 0;
+  real gIbtotb = 0;
+  real Igtoteq = 0;
+  real gIgtotg = 0;
+  real gIgtotd = 0;
+  real gIgtots = 0;
+  real gIgtotb = 0;
+  real load_Vgs_eff = 0;
+  real Vfb = 0;
+  real load_Vth_NarrowW = 0;
+  real Phis = 0;
+  real dPhis_dVb = 0;
+  real sqrtPhis = 0;
+  real dsqrtPhis_dVb = 0;
+  real load_Vth = 0;
+  real dVth_dVb = 0;
+  real dVth_dVd = 0;
+  real Vgst = 0;
+  real dVgst_dVg = 0;
+  real dVgst_dVb = 0;
+  real dVgs_eff_dVg = 0;
+  real load_Nvtms = 0;
+  real load_Nvtmd = 0;
+  real Vtm = 0;
+  real load_Vtm0 = 0;
+  real load_n = 0;
+  real dn_dVb = 0;
+  real dn_dVd = 0;
+  real load_voffcv = 0;
+  real load_noff = 0;
+  real dnoff_dVd = 0;
+  real dnoff_dVb = 0;
+  real load_V0 = 0;
+  real CoxWLcen = 0;
+  real QovCox = 0;
+  real LINK = 0;
+  real DeltaPhi = 0;
+  real dDeltaPhi_dVg = 0;
+  real VgDP = 0;
+  real dVgDP_dVg = 0;
+  real Cox = 0;
+  real Tox = 0;
+  real load_Tcen = 0;
+  real dTcen_dVg = 0;
+  real dTcen_dVd = 0;
+  real dTcen_dVb = 0;
+  real Ccen = 0;
+  real Coxeff = 0;
+  real dCoxeff_dVd = 0;
+  real dCoxeff_dVg = 0;
+  real dCoxeff_dVb = 0;
+  real Denomi = 0;
+  real dDenomi_dVg = 0;
+  real dDenomi_dVd = 0;
+  real dDenomi_dVb = 0;
+  real ueff = 0;
+  real dueff_dVg = 0;
+  real dueff_dVd = 0;
+  real dueff_dVb = 0;
+  real Esat = 0;
+  real Vdsat = 0;
+  real EsatL = 0;
+  real dEsatL_dVg = 0;
+  real dEsatL_dVd = 0;
+  real dEsatL_dVb = 0;
+  real dVdsat_dVg = 0;
+  real dVdsat_dVb = 0;
+  real dVdsat_dVd = 0;
+  real Vasat = 0;
+  real dAlphaz_dVg = 0;
+  real dAlphaz_dVb = 0;
+  real dVasat_dVg = 0;
+  real dVasat_dVb = 0;
+  real dVasat_dVd = 0;
+  real Va = 0;
+  real dVa_dVd = 0;
+  real dVa_dVg = 0;
+  real dVa_dVb = 0;
+  real Vbseff = 0;
+  real dVbseff_dVb = 0;
+  real VbseffCV = 0;
+  real dVbseffCV_dVb = 0;
+  real VgsteffVth = 0;
+  real dT11_dVg = 0;
+  real Arg1 = 0;
+  real One_Third_CoxWL = 0;
+  real Two_Third_CoxWL = 0;
+  real Alphaz = 0;
+  real CoxWL = 0;
+  real load_T0 = 0;
+  real dT0_dVg = 0;
+  real dT0_dVd = 0;
+  real dT0_dVb = 0;
+  real load_T1 = 0;
+  real dT1_dVg = 0;
+  real dT1_dVd = 0;
+  real dT1_dVb = 0;
+  real load_T2 = 0;
+  real dT2_dVg = 0;
+  real dT2_dVd = 0;
+  real dT2_dVb = 0;
+  real load_T3 = 0;
+  real dT3_dVg = 0;
+  real dT3_dVd = 0;
+  real dT3_dVb = 0;
+  real load_T4 = 0;
+  real dT4_dVd = 0;
+  real dT4_dVb = 0;
+  real load_T5 = 0;
+  real dT5_dVg = 0;
+  real dT5_dVd = 0;
+  real dT5_dVb = 0;
+  real load_T6 = 0;
+  real dT6_dVg = 0;
+  real dT6_dVd = 0;
+  real dT6_dVb = 0;
+  real load_T7 = 0;
+  real dT7_dVg = 0;
+  real dT7_dVd = 0;
+  real dT7_dVb = 0;
+  real load_T8 = 0;
+  real dT8_dVg = 0;
+  real dT8_dVd = 0;
+  real dT8_dVb = 0;
+  real load_T9 = 0;
+  real dT9_dVg = 0;
+  real dT9_dVd = 0;
+  real dT9_dVb = 0;
+  real load_T10 = 0;
+  real dT10_dVg = 0;
+  real dT10_dVb = 0;
+  real dT10_dVd = 0;
+  real load_T11 = 0;
+  real T12 = 0;
+  real T13 = 0;
+  real T14 = 0;
+  real load_tmp = 0;
+  real Abulk = 0;
+  real dAbulk_dVb = 0;
+  real Abulk0 = 0;
+  real Abulk0_Q = 0;
+  real dAbulk0_dVb = 0;
+  real dAbulk0_Q_dVb = 0;
+  real Cclm = 0;
+  real dCclm_dVg = 0;
+  real dCclm_dVd = 0;
+  real dCclm_dVb = 0;
+  real FP = 0;
+  real dFP_dVg = 0;
+  real PvagTerm = 0;
+  real dPvagTerm_dVg = 0;
+  real dPvagTerm_dVd = 0;
+  real dPvagTerm_dVb = 0;
+  real VADITS = 0;
+  real dVADITS_dVg = 0;
+  real dVADITS_dVd = 0;
+  real load_Lpe_Vb = 0;
+  real dDITS_Sft_dVb = 0;
+  real dDITS_Sft_dVd = 0;
+  real DITS_Sft2 = 0;
+  real dDITS_Sft2_dVd = 0;
+  real VACLM = 0;
+  real dVACLM_dVg = 0;
+  real dVACLM_dVd = 0;
+  real dVACLM_dVb = 0;
+  real VADIBL = 0;
+  real dVADIBL_dVg = 0;
+  real dVADIBL_dVd = 0;
+  real dVADIBL_dVb = 0;
+  real Xdep = 0;
+  real dXdep_dVb = 0;
+  real load_lt1 = 0;
+  real dlt1_dVb = 0;
+  real load_ltw = 0;
+  real dltw_dVb = 0;
+  real load_Delt_vth = 0;
+  real dDelt_vth_dVb = 0;
+  real load_Theta0 = 0;
+  real dTheta0_dVb = 0;
+  real TempRatio = 0;
+  real load_tmp1 = 0;
+  real load_tmp2 = 0;
+  real load_tmp3 = 0;
+  real tmp4 = 0;
+  real DIBL_Sft = 0;
+  real dDIBL_Sft_dVd = 0;
+  real Lambda = 0;
+  real dLambda_dVg = 0;
+  real load_a1 = 0;
+  real ScalingFactor = 0;
+  real load_Vgsteff = 0;
+  real dVgsteff_dVg = 0;
+  real dVgsteff_dVd = 0;
+  real dVgsteff_dVb = 0;
+  real Vdseff = 0;
+  real dVdseff_dVg = 0;
+  real dVdseff_dVd = 0;
+  real dVdseff_dVb = 0;
+  real VdseffCV = 0;
+  real dVdseffCV_dVg = 0;
+  real dVdseffCV_dVd = 0;
+  real dVdseffCV_dVb = 0;
+  real diffVds = 0;
+  real dAbulk_dVg = 0;
+  real beta = 0;
+  real dbeta_dVg = 0;
+  real dbeta_dVd = 0;
+  real dbeta_dVb = 0;
+  real gche = 0;
+  real dgche_dVg = 0;
+  real dgche_dVd = 0;
+  real dgche_dVb = 0;
+  real fgche1 = 0;
+  real dfgche1_dVg = 0;
+  real dfgche1_dVd = 0;
+  real dfgche1_dVb = 0;
+  real fgche2 = 0;
+  real dfgche2_dVg = 0;
+  real dfgche2_dVd = 0;
+  real dfgche2_dVb = 0;
+  real Idl = 0;
+  real dIdl_dVg = 0;
+  real dIdl_dVd = 0;
+  real dIdl_dVb = 0;
+  real Idsa = 0;
+  real dIdsa_dVg = 0;
+  real dIdsa_dVd = 0;
+  real dIdsa_dVb = 0;
+  real Ids = 0;
+  real Gm = 0;
+  real Gds = 0;
+  real Gmb = 0;
+  real devbs_dvb = 0;
+  real devbd_dvb = 0;
+  real Isub = 0;
+  real Gbd = 0;
+  real Gbg = 0;
+  real Gbb = 0;
+  real VASCBE = 0;
+  real dVASCBE_dVg = 0;
+  real dVASCBE_dVd = 0;
+  real dVASCBE_dVb = 0;
+  real CoxeffWovL = 0;
+  real Rds = 0;
+  real dRds_dVg = 0;
+  real dRds_dVb = 0;
+  real WVCox = 0;
+  real WVCoxRds = 0;
+  real Vgst2Vtm = 0;
+  real VdsatCV = 0;
+  real Leff = 0;
+  real Weff = 0;
+  real dWeff_dVg = 0;
+  real dWeff_dVb = 0;
+  real AbulkCV = 0;
+  real dAbulkCV_dVb = 0;
+  real qcheq = 0;
+  real load_qdef = 0;
+  real cqdef = 0;
+  real cqcheq = 0;
+  real dxpart = 0;
+  real sxpart = 0;
+  real ggtg = 0;
+  real ggtd = 0;
+  real ggts = 0;
+  real ggtb = 0;
+  real ddxpart_dVd = 0;
+  real ddxpart_dVg = 0;
+  real ddxpart_dVb = 0;
+  real ddxpart_dVs = 0;
+  real dsxpart_dVd = 0;
+  real dsxpart_dVg = 0;
+  real dsxpart_dVb = 0;
+  real dsxpart_dVs = 0;
+  real gbspsp = 0;
+  real gbbdp = 0;
+  real gbbsp = 0;
+  real gbspg = 0;
+  real gbspb = 0;
+  real gbspdp = 0;
+  real gbdpdp = 0;
+  real gbdpg = 0;
+  real gbdpb = 0;
+  real gbdpsp = 0;
+  real qgdo = 0;
+  real qgso = 0;
+  real load_cgdo = 0;
+  real load_cgso = 0;
+  real Cgg = 0;
+  real Cgd = 0;
+  real Cgb = 0;
+  real Cdg = 0;
+  real Cdd = 0;
+  real Cds = 0;
+  real Csg = 0;
+  real Csd = 0;
+  real Css = 0;
+  real Csb = 0;
+  real Cbg = 0;
+  real Cbd = 0;
+  real Cbb = 0;
+  real Cgg1 = 0;
+  real Cgb1 = 0;
+  real Cgd1 = 0;
+  real Cbg1 = 0;
+  real Cbb1 = 0;
+  real Cbd1 = 0;
+  real Qac0 = 0;
+  real Qsub0 = 0;
+  real dQac0_dVg = 0;
+  real dQac0_dVb = 0;
+  real dQsub0_dVg = 0;
+  real dQsub0_dVd = 0;
+  real dQsub0_dVb = 0;
+  real ggidld = 0;
+  real ggidlg = 0;
+  real ggidlb = 0;
+  real ggislg = 0;
+  real ggislb = 0;
+  real ggisls = 0;
+  real Igisl = 0;
+  real Ggislg = 0;
+  real Ggislb = 0;
+  real Ggisls = 0;
+  real Nvtmrss = 0;
+  real Nvtmrssws = 0;
+  real Nvtmrsswgs = 0;
+  real Nvtmrsd = 0;
+  real Nvtmrsswd = 0;
+  real Nvtmrsswgd = 0;
+  real vs = 0;
+  real Fsevl = 0;
+  real dvs_dVg = 0;
+  real dvs_dVd = 0;
+  real dvs_dVb = 0;
+  real dFsevl_dVg = 0;
+  real dFsevl_dVd = 0;
+  real dFsevl_dVb = 0;
+  real vgdx = 0;
+  real vgsx = 0;
+  real load_epssub = 0;
+  real load_toxe = 0;
+  real load_epsrox = 0;
+  real load_mult_i = 0;
+  real load_mult_q = 0;
   integer finished1 = 0;
   integer goto_destination = -1;
-  integer dummy_limited;
+  integer dummy_limited = 0;
 
   // Device noise locals
-  real noise_T0;
-  real noise_T1;
-  real noise_T2;
-  real noise_T3;
-  real noise_T4;
-  real noise_T5;
-  real noise_T6;
-  real noise_T7;
-  real noise_T8;
-  real noise_T9;
-  real noise_T10;
-  real noise_T11;
-  real noise_Vds;
-  real Ssi;
-  real Swi;
-  real noise_tmp;
-  real noise_gdpr;
-  real noise_gspr;
-  real npart_theta;
-  real npart_beta;
-  real igsquare;
-  real noise_bodymode;
-  real eta;
-  real noise_Leff;
-  real Lvsat;
-  real gamma;
-  real noise_delta;
-  real epsilon;
-  real GammaGd0;
-  real npart_c;
-  real sigrat;
-  real C0;
-  real ctnoi;
-  real cd;
-  real esat;
-  real DelClm;
-  real N0;
-  real Nl;
-  real noise1_Leff;
-  real Leffsq;
-  real noise1_T0;
-  real noise1_T1;
-  real noise1_T2;
-  real noise1_T3;
-  real noise1_T4;
-  real noise1_T5;
-  real noise1_T6;
-  real noise1_T7;
-  real noise1_T8;
-  real noise1_T9;
-  real noise1_Ssi;
-  real efn_retval;
-  real tn2dspsd;
-  real tn2gspsd;
-  real tn2sigrat;
+  real noise_T0 = 0;
+  real noise_T1 = 0;
+  real noise_T2 = 0;
+  real noise_T3 = 0;
+  real noise_T4 = 0;
+  real noise_T5 = 0;
+  real noise_T6 = 0;
+  real noise_T7 = 0;
+  real noise_T8 = 0;
+  real noise_T9 = 0;
+  real noise_T10 = 0;
+  real noise_T11 = 0;
+  real noise_Vds = 0;
+  real Ssi = 0;
+  real Swi = 0;
+  real noise_tmp = 0;
+  real noise_gdpr = 0;
+  real noise_gspr = 0;
+  real npart_theta = 0;
+  real npart_beta = 0;
+  real igsquare = 0;
+  real noise_bodymode = 0;
+  real eta = 0;
+  real noise_Leff = 0;
+  real Lvsat = 0;
+  real gamma = 0;
+  real noise_delta = 0;
+  real epsilon = 0;
+  real GammaGd0 = 0;
+  real npart_c = 0;
+  real sigrat = 0;
+  real C0 = 0;
+  real ctnoi = 0;
+  real noise_mult_i = 0;
+  real noise_mult_fn = 0;
+  real cd = 0;
+  real esat = 0;
+  real DelClm = 0;
+  real N0 = 0;
+  real Nl = 0;
+  real noise1_Leff = 0;
+  real Leffsq = 0;
+  real noise1_T0 = 0;
+  real noise1_T1 = 0;
+  real noise1_T2 = 0;
+  real noise1_T3 = 0;
+  real noise1_T4 = 0;
+  real noise1_T5 = 0;
+  real noise1_T6 = 0;
+  real noise1_T7 = 0;
+  real noise1_T8 = 0;
+  real noise1_T9 = 0;
+  real noise1_Ssi = 0;
+  real efn_retval = 0;
+  real tn2dspsd = 0;
+  real tn2gspsd = 0;
+  real tn2sigrat = 0;
   real rg_psd = 0;
   real rbps_psd = 0;
   real rbpd_psd = 0;
@@ -3237,8 +3250,8 @@ module sp_bsim4v8(d, g, s, b);
     if ($param_given(instance_geomod)) begin
       i_BSIM4geoMod = instance_geomod;
     end
-    if ($param_given(instance_rgeomod)) begin
-      i_BSIM4rgeoMod = instance_rgeomod;
+    if ($param_given(mult_fn)) begin
+      BSIM4mult_fn = mult_fn;
     end
 
     // Model field assignments
@@ -3268,9 +3281,6 @@ module sp_bsim4v8(d, g, s, b);
     end
     if ($param_given(permod)) begin
       BSIM4perMod = permod;
-    end
-    if ($param_given(rgeomod)) begin
-      BSIM4rgeoMod = rgeomod;
     end
     if ($param_given(fnoimod)) begin
       BSIM4fnoiMod = fnoimod;
@@ -3310,6 +3320,9 @@ module sp_bsim4v8(d, g, s, b);
     end
     if ($param_given(keta)) begin
       BSIM4keta = keta;
+    end
+    if ($param_given(ketac)) begin
+      BSIM4ketac = ketac;
     end
     if ($param_given(vbm)) begin
       BSIM4vbm = vbm;
@@ -3612,6 +3625,9 @@ module sp_bsim4v8(d, g, s, b);
     if ($param_given(vtsswgd)) begin
       BSIM4vtsswgd = vtsswgd;
     end
+    if ($param_given(lketac)) begin
+      BSIM4lketac = lketac;
+    end
     if ($param_given(letab)) begin
       BSIM4letab = letab;
     end
@@ -3654,6 +3670,9 @@ module sp_bsim4v8(d, g, s, b);
     if ($param_given(lcigd)) begin
       BSIM4lcigd = lcigd;
     end
+    if ($param_given(wketac)) begin
+      BSIM4wketac = wketac;
+    end
     if ($param_given(wagisl)) begin
       BSIM4wagisl = wagisl;
     end
@@ -3692,6 +3711,9 @@ module sp_bsim4v8(d, g, s, b);
     end
     if ($param_given(wcigd)) begin
       BSIM4wcigd = wcigd;
+    end
+    if ($param_given(pketac)) begin
+      BSIM4pketac = pketac;
     end
     if ($param_given(pagisl)) begin
       BSIM4pagisl = pagisl;
@@ -3792,12 +3814,6 @@ module sp_bsim4v8(d, g, s, b);
       BSIM4perMod = 1;
       $warning("perMod has been set to its default value: 1.");
     end
-    if (!$param_given(rgeomod)) begin
-      BSIM4rgeoMod = 0;
-    end else if (BSIM4rgeoMod!=0&&BSIM4rgeoMod!=1) begin
-      BSIM4rgeoMod = 1;
-      $warning("rgeoMod has been set to its default value: 1.");
-    end
     if (!$param_given(fnoimod)) begin
       BSIM4fnoiMod = 1;
     end else if (BSIM4fnoiMod!=0&&BSIM4fnoiMod!=1) begin
@@ -3852,15 +3868,17 @@ module sp_bsim4v8(d, g, s, b);
       BSIM4tempMod = 0;
       $warning("tempMod has been set to its default value: 0.");
     end
-    if (version=="4.8.2"||version=="4.82") begin
+    if (version=="4.8.3"||version=="4.83") begin
+      BSIM4v48intVersion = 483;
+    end else if (version=="4.8.2"||version=="4.82") begin
       BSIM4v48intVersion = 482;
     end else if (version=="4.8.1"||version=="4.81") begin
       BSIM4v48intVersion = 481;
     end else if (version=="4.8.0"||version=="4.80"||version=="4.8") begin
-      BSIM4v48intVersion = 48;
+      BSIM4v48intVersion = 480;
     end else begin
-      $warning("unknown BSIM4 version. Working now with BSIM4.8.2.");
-      BSIM4v48intVersion = 482;
+      $warning("unknown BSIM4 version. Working now with BSIM4.8.3.");
+      BSIM4v48intVersion = 483;
     end
     if (!$param_given(eot)) begin
       BSIM4eot = 15.0e-10;
@@ -3879,6 +3897,9 @@ module sp_bsim4v8(d, g, s, b);
     end
     if (!$param_given(keta)) begin
       BSIM4keta = -0.047;
+    end
+    if (!$param_given(ketac)) begin
+      BSIM4ketac = BSIM4keta;
     end
     if (!$param_given(vbm)) begin
       BSIM4vbm = -3.0;
@@ -3907,7 +3928,7 @@ module sp_bsim4v8(d, g, s, b);
     if (!$param_given(ucs)) begin
       BSIM4ucs = ((BSIM4type==1) ? (1.67) : (1.0));
     end
-    if (BSIM4v48intVersion<=48) begin
+    if (BSIM4v48intVersion<=480) begin
       if (!$param_given(ua)) begin
         BSIM4ua = ((BSIM4mobMod==2) ? (1.0e-15) : (1.0e-9));
       end
@@ -4048,6 +4069,9 @@ module sp_bsim4v8(d, g, s, b);
     if (!$param_given(dmci)) begin
       BSIM4dmci = dmcg;
     end
+    if (!$param_given(lketac)) begin
+      BSIM4lketac = lketa;
+    end
     if (!$param_given(letab)) begin
       BSIM4letab = -0.0;
     end
@@ -4105,6 +4129,9 @@ module sp_bsim4v8(d, g, s, b);
       BSIM4lcigd = lcigsd;
       BSIM4lcigs = BSIM4lcigd;
     end
+    if (!$param_given(wketac)) begin
+      BSIM4wketac = wketa;
+    end
     if (!$param_given(wagisl)) begin
       BSIM4wagisl = wagidl;
     end
@@ -4158,6 +4185,9 @@ module sp_bsim4v8(d, g, s, b);
     end else begin
       BSIM4wcigd = wcigsd;
       BSIM4wcigs = BSIM4wcigd;
+    end
+    if (!$param_given(pketac)) begin
+      BSIM4pketac = pketa;
     end
     if (!$param_given(pagisl)) begin
       BSIM4pagisl = pagidl;
@@ -4414,6 +4444,9 @@ module sp_bsim4v8(d, g, s, b);
     if (!BSIM4wGiven) begin
       BSIM4w = 5.0e-6;
     end
+    if (!$param_given(mult_fn)) begin
+      BSIM4mult_fn = mult_i;
+    end
     if (!BSIM4drainAreaGiven) begin
       BSIM4drainArea = 0.0;
     end
@@ -4462,12 +4495,6 @@ module sp_bsim4v8(d, g, s, b);
     if (!$param_given(instance_geomod)) begin
       i_BSIM4geoMod = geomod;
     end
-    if (!$param_given(instance_rgeomod)) begin
-      i_BSIM4rgeoMod = BSIM4rgeoMod;
-    end else if (i_BSIM4rgeoMod!=0&&i_BSIM4rgeoMod!=1) begin
-      i_BSIM4rgeoMod = BSIM4rgeoMod;
-      $warning("rgeoMod has been set to its global value %d.", BSIM4rgeoMod);
-    end
     if (!$param_given(instance_trnqsmod)) begin
       i_BSIM4trnqsMod = BSIM4trnqsMod;
     end else if (i_BSIM4trnqsMod!=0&&i_BSIM4trnqsMod!=1) begin
@@ -4501,14 +4528,14 @@ module sp_bsim4v8(d, g, s, b);
     end else if (rsh>0) begin
       if ($param_given(nrd)&&nrd>0) begin
         createNode = 1;
-      end else if (!$param_given(nrd)&&i_BSIM4rgeoMod!=0) begin
-        BSIM4RdseffGeo(nf, i_BSIM4geoMod, i_BSIM4rgeoMod, instance_min, BSIM4w, rsh, DMCGeff, DMCIeff, DMDGeff, 0, Rtot);
+      end else if (!$param_given(nrd)&&instance_rgeomod!=0) begin
+        BSIM4RdseffGeo(nf, i_BSIM4geoMod, instance_rgeomod, instance_min, BSIM4w, rsh, DMCGeff, DMCIeff, DMDGeff, 0, Rtot);
         if (Rtot>0) begin
           createNode = 1;
         end
       end
     end
-    if (!(createNode!=0)) begin
+    if (!(createNode!=0&&1)) begin
       V(d_int, d) <+ 0;
     end
     createnode_d = createNode;
@@ -4518,21 +4545,21 @@ module sp_bsim4v8(d, g, s, b);
     end else if (rsh>0) begin
       if ($param_given(nrs)&&nrs>0) begin
         createNode = 1;
-      end else if (!$param_given(nrs)&&i_BSIM4rgeoMod!=0) begin
-        BSIM4RdseffGeo(nf, i_BSIM4geoMod, i_BSIM4rgeoMod, instance_min, BSIM4w, rsh, DMCGeff, DMCIeff, DMDGeff, 1, Rtot);
+      end else if (!$param_given(nrs)&&instance_rgeomod!=0) begin
+        BSIM4RdseffGeo(nf, i_BSIM4geoMod, instance_rgeomod, instance_min, BSIM4w, rsh, DMCGeff, DMCIeff, DMDGeff, 1, Rtot);
         if (Rtot>0) begin
           createNode = 1;
         end
       end
     end
-    if (!(createNode!=0)) begin
+    if (!(createNode!=0&&1)) begin
       V(s_int, s) <+ 0;
     end
     createnode_s = createNode;
-    if (!(i_BSIM4rgateMod>0)) begin
+    if (!(i_BSIM4rgateMod>0&&1)) begin
       V(g_int, g) <+ 0;
     end
-    if (!(i_BSIM4rgateMod==3)) begin
+    if (!(i_BSIM4rgateMod==3&&1)) begin
       V(gmid_int, g) <+ 0;
     end
     if (!(i_BSIM4rbodyMod==1||i_BSIM4rbodyMod==2)) begin
@@ -4540,7 +4567,7 @@ module sp_bsim4v8(d, g, s, b);
       V(b_int, sb_int) <+ 0;
       V(db_int, b_int) <+ 0;
     end
-    if (!i_BSIM4trnqsMod) begin
+    if (!(i_BSIM4trnqsMod&&1)) begin
       V(q_int) <+ 0;
     end
     if (BSIM4tnoiMod!=2) begin
@@ -4550,6 +4577,7 @@ module sp_bsim4v8(d, g, s, b);
 
     // Tag: temp, function: BSIM4temp
     Lnew = 0.0;
+    Fatal_Flag = 0;
     Temp = $temperature;
     if (BSIM4SbulkJctPotential<0.1) begin
       BSIM4SbulkJctPotential = 0.1;
@@ -4594,9 +4622,6 @@ module sp_bsim4v8(d, g, s, b);
           BSIM4toxm = BSIM4toxe;
         end
       end
-      if (!$param_given(cf)) begin
-        BSIM4cf = 2.0*epsrox*8.85418e-12/3.141592654*ln(1.0+0.4e-6/BSIM4toxe);
-      end
     end else if (BSIM4mtrlCompatMod!=0) begin
       T0 = epsrox/3.9;
       if ($param_given(eot)&&$param_given(toxp)&&$param_given(dtox)&&((BSIM4eot*T0-(BSIM4toxp+dtox)<0.0) ? (-(BSIM4eot*T0-(BSIM4toxp+dtox))) : (BSIM4eot*T0-(BSIM4toxp+dtox)))>1.0e-20) begin
@@ -4618,6 +4643,9 @@ module sp_bsim4v8(d, g, s, b);
       temp_epsrox = epsrox;
       temp_toxe = BSIM4toxe;
       epssub = 1.03594e-10;
+    end
+    if (!$param_given(cf)) begin
+      BSIM4cf = 2.0*temp_epsrox*8.85418e-12/3.141592654*ln(1.0+0.4e-6/temp_toxe);
     end
     BSIM4coxe = temp_epsrox*8.85418e-12/temp_toxe;
     if (BSIM4mtrlMod==0||BSIM4mtrlCompatMod!=0) begin
@@ -4762,22 +4790,22 @@ module sp_bsim4v8(d, g, s, b);
       $warning("Temperature effect has caused pbd to be less than 0.01. Pbd is clamped to 0.01.");
     end
     BSIM4PhiBSWS = BSIM4SsidewallJctPotential-tpbsw*delTemp;
-    if (BSIM4PhiBSWS<=0.01) begin
+    if (BSIM4PhiBSWS<0.01) begin
       BSIM4PhiBSWS = 0.01;
       $warning("Temperature effect has caused pbsws to be less than 0.01. Pbsws is clamped to 0.01.");
     end
     BSIM4PhiBSWD = BSIM4DsidewallJctPotential-tpbsw*delTemp;
-    if (BSIM4PhiBSWD<=0.01) begin
+    if (BSIM4PhiBSWD<0.01) begin
       BSIM4PhiBSWD = 0.01;
       $warning("Temperature effect has caused pbswd to be less than 0.01. Pbswd is clamped to 0.01.");
     end
     BSIM4PhiBSWGS = BSIM4SGatesidewallJctPotential-tpbswg*delTemp;
-    if (BSIM4PhiBSWGS<=0.01) begin
+    if (BSIM4PhiBSWGS<0.01) begin
       BSIM4PhiBSWGS = 0.01;
       $warning("Temperature effect has caused pbswgs to be less than 0.01. Pbswgs is clamped to 0.01.");
     end
     BSIM4PhiBSWGD = BSIM4DGatesidewallJctPotential-tpbswg*delTemp;
-    if (BSIM4PhiBSWGD<=0.01) begin
+    if (BSIM4PhiBSWGD<0.01) begin
       BSIM4PhiBSWGD = 0.01;
       $warning("Temperature effect has caused pbswgd to be less than 0.01. Pbswgd is clamped to 0.01.");
     end
@@ -4882,6 +4910,7 @@ module sp_bsim4v8(d, g, s, b);
     sd_BSIM4a1 = a1+la1*Inv_L+wa1*Inv_W+pa1*Inv_LW;
     sd_BSIM4a2 = a2+la2*Inv_L+wa2*Inv_W+pa2*Inv_LW;
     sd_BSIM4keta = BSIM4keta+lketa*Inv_L+wketa*Inv_W+pketa*Inv_LW;
+    sd_BSIM4ketac = BSIM4ketac+BSIM4lketac*Inv_L+BSIM4wketac*Inv_W+BSIM4pketac*Inv_LW;
     sd_BSIM4nsub = nsub+lnsub*Inv_L+wnsub*Inv_W+pnsub*Inv_LW;
     sd_BSIM4ndep = ndep+lndep*Inv_L+wndep*Inv_W+pndep*Inv_LW;
     sd_BSIM4nsd = nsd+lnsd*Inv_L+wnsd*Inv_W+pnsd*Inv_LW;
@@ -5128,6 +5157,11 @@ module sp_bsim4v8(d, g, s, b);
       sd_BSIM4ndep = 3.01248e22*T0*T0;
     end
     BSIM4phi = Vtm0*ln(sd_BSIM4ndep/ni)+sd_BSIM4phin+0.4;
+    if (BSIM4phi<=0.0) begin
+      $warning("Fatal: Phi = %g is not positive. Please check Phin and Ndep", BSIM4phi);
+      $warning("       Phin = %g  Ndep = %g ", sd_BSIM4phin, sd_BSIM4ndep);
+      Fatal_Flag = 1;
+    end
     BSIM4sqrtPhi = sqrt(BSIM4phi);
     BSIM4phis3 = BSIM4sqrtPhi*BSIM4phi;
     BSIM4Xdep0 = sqrt(2.0*epssub/(1.60219e-19*sd_BSIM4ndep*1.0e6))*BSIM4sqrtPhi;
@@ -5158,7 +5192,7 @@ module sp_bsim4v8(d, g, s, b);
     BSIM4ToxRatioEdge = exp(sd_BSIM4ntox*ln(toxref/(temp_toxe*sd_BSIM4poxedge)))/temp_toxe/temp_toxe/sd_BSIM4poxedge/sd_BSIM4poxedge;
     BSIM4Aechvb = ((BSIM4type==1) ? (4.97232e-7) : (3.42537e-7));
     BSIM4Bechvb = ((BSIM4type==1) ? (7.45669e11) : (1.16645e12));
-    if (BSIM4v48intVersion<=48) begin
+    if (BSIM4v48intVersion<=480) begin
       BSIM4AechvbEdgeS = BSIM4Aechvb*BSIM4weff*BSIM4dlcig*BSIM4ToxRatioEdge;
       BSIM4AechvbEdgeD = BSIM4Aechvb*BSIM4weff*BSIM4dlcigd*BSIM4ToxRatioEdge;
     end else begin
@@ -5632,8 +5666,8 @@ module sp_bsim4v8(d, g, s, b);
       BSIM4sourceConductance = 0.0;
       if ($param_given(nrs)) begin
         BSIM4sourceConductance = rsh*nrs;
-      end else if (i_BSIM4rgeoMod>0) begin
-        BSIM4RdseffGeo(nf, i_BSIM4geoMod, i_BSIM4rgeoMod, instance_min, BSIM4weffCJ, rsh, temp_DMCGeff, temp_DMCIeff, temp_DMDGeff, 1, BSIM4sourceConductance);
+      end else if (instance_rgeomod>0) begin
+        BSIM4RdseffGeo(nf, i_BSIM4geoMod, instance_rgeomod, instance_min, BSIM4weffCJ, rsh, temp_DMCGeff, temp_DMCIeff, temp_DMDGeff, 1, BSIM4sourceConductance);
       end else begin
         BSIM4sourceConductance = 0.0;
       end
@@ -5650,8 +5684,8 @@ module sp_bsim4v8(d, g, s, b);
       BSIM4drainConductance = 0.0;
       if ($param_given(nrd)) begin
         BSIM4drainConductance = rsh*nrd;
-      end else if (i_BSIM4rgeoMod>0) begin
-        BSIM4RdseffGeo(nf, i_BSIM4geoMod, i_BSIM4rgeoMod, instance_min, BSIM4weffCJ, rsh, temp_DMCGeff, temp_DMCIeff, temp_DMDGeff, 0, BSIM4drainConductance);
+      end else if (instance_rgeomod>0) begin
+        BSIM4RdseffGeo(nf, i_BSIM4geoMod, instance_rgeomod, instance_min, BSIM4weffCJ, rsh, temp_DMCGeff, temp_DMCIeff, temp_DMDGeff, 0, BSIM4drainConductance);
       end else begin
         BSIM4drainConductance = 0.0;
       end
@@ -5833,6 +5867,11 @@ module sp_bsim4v8(d, g, s, b);
       Vtmeot = Vtm0eot;
       vbieot = Vtm0eot*ln(sd_BSIM4nsd*sd_BSIM4ndep/(ni*ni));
       phieot = Vtm0eot*ln(sd_BSIM4ndep/ni)+sd_BSIM4phin+0.4;
+      if (phieot<=0.0) begin
+        $warning("Fatal: phieot = %g is not positive. Please Check Phin and Ndep", BSIM4phi);
+        $warning("phieot = %g Ndep = %g ", sd_BSIM4phin, sd_BSIM4ndep);
+        Fatal_Flag = 1;
+      end
       tmp2 = i_BSIM4vfb+phieot;
       temp_vddeot = BSIM4type*BSIM4vddeot;
       T0 = epsrgate*8.85418e-12;
@@ -6754,9 +6793,27 @@ module sp_bsim4v8(d, g, s, b);
     end
     dAbulk_dVg = dAbulk_dVg * (load_T0);
     dAbulk_dVb = dAbulk_dVb*load_T0+Abulk*dT0_dVb;
+    dAbulk0_Q_dVb = dAbulk0_dVb;
     dAbulk0_dVb = dAbulk0_dVb*load_T0+Abulk0*dT0_dVb;
     Abulk = Abulk * (load_T0);
+    Abulk0_Q = Abulk0;
     Abulk0 = Abulk0 * (load_T0);
+    if (sd_BSIM4ketac!=sd_BSIM4keta) begin
+      load_T2 = sd_BSIM4ketac*Vbseff;
+      if (load_T2>=-0.9) begin
+        load_T0 = 1.0/(1.0+load_T2);
+        dT0_dVb = -sd_BSIM4ketac*load_T0*load_T0;
+      end else begin
+        load_T1 = 1.0/(0.8+load_T2);
+        load_T0 = (17.0+20.0*load_T2)*load_T1;
+        dT0_dVb = -sd_BSIM4ketac*load_T1*load_T1;
+      end
+      dAbulk0_Q_dVb = dAbulk0_Q_dVb*load_T0+Abulk0_Q*dT0_dVb;
+      Abulk0_Q = Abulk0_Q * (load_T0);
+    end else begin
+      dAbulk0_Q_dVb = dAbulk0_dVb;
+      Abulk0_Q = Abulk0;
+    end
     if (BSIM4mtrlMod&&BSIM4mtrlCompatMod==0) begin
       T14 = 2.0*BSIM4type*(phig-easub-0.5*BSIM4Eg0+0.45);
     end else begin
@@ -7723,10 +7780,10 @@ module sp_bsim4v8(d, g, s, b);
         end
         dVaux_dVg = dVaux_dVg * (dVgs_eff_dVg);
       end
-      load_T2 = load_Vgs_eff*Vaux;
-      dT2_dVg = dVgs_eff_dVg*Vaux+load_Vgs_eff*dVaux_dVg;
-      dT2_dVd = load_Vgs_eff*dVaux_dVd;
-      dT2_dVb = load_Vgs_eff*dVaux_dVb;
+      load_T2 = Vgs*Vaux;
+      dT2_dVg = Vaux+Vgs*dVaux_dVg;
+      dT2_dVd = Vgs*dVaux_dVd;
+      dT2_dVb = Vgs*dVaux_dVb;
       load_T11 = BSIM4Aechvb;
       T12 = BSIM4Bechvb;
       load_T3 = sd_BSIM4aigc*sd_BSIM4cigc-sd_BSIM4bigc;
@@ -7906,9 +7963,9 @@ module sp_bsim4v8(d, g, s, b);
         dVaux_dVb = ExpVxNVt/(1.0+ExpVxNVt);
         dVaux_dVg = -dVaux_dVb*dVgs_eff_dVg;
       end
-      load_T2 = (load_Vgs_eff-Vbseff)*Vaux;
-      dT2_dVg = dVgs_eff_dVg*Vaux+(load_Vgs_eff-Vbseff)*dVaux_dVg;
-      dT2_dVb = -Vaux+(load_Vgs_eff-Vbseff)*dVaux_dVb;
+      load_T2 = (Vgs-Vbs)*Vaux;
+      dT2_dVg = Vaux+(Vgs-Vbs)*dVaux_dVg;
+      dT2_dVb = -Vaux+(Vgs-Vbs)*dVaux_dVb;
       load_T11 = 4.97232e-7*BSIM4weff*BSIM4leff*BSIM4ToxRatio;
       T12 = -7.45669e11*load_toxe;
       load_T3 = sd_BSIM4aigbacc*sd_BSIM4cigbacc-sd_BSIM4bigbacc;
@@ -7952,10 +8009,10 @@ module sp_bsim4v8(d, g, s, b);
         dVaux_dVb = dVaux_dVg*dVoxdepinv_dVb;
         dVaux_dVg = dVaux_dVg * (dVoxdepinv_dVg);
       end
-      load_T2 = (load_Vgs_eff-Vbseff)*Vaux;
-      dT2_dVg = dVgs_eff_dVg*Vaux+(load_Vgs_eff-Vbseff)*dVaux_dVg;
-      dT2_dVd = (load_Vgs_eff-Vbseff)*dVaux_dVd;
-      dT2_dVb = -Vaux+(load_Vgs_eff-Vbseff)*dVaux_dVb;
+      load_T2 = (Vgs-Vbs)*Vaux;
+      dT2_dVg = Vaux+(Vgs-Vbs)*dVaux_dVg;
+      dT2_dVd = (Vgs-Vbs)*dVaux_dVd;
+      dT2_dVb = -Vaux+(Vgs-Vbs)*dVaux_dVb;
       load_T11 = load_T11 * (0.75610);
       T12 = T12 * (1.31724);
       load_T3 = sd_BSIM4aigbinv*sd_BSIM4cigbinv-sd_BSIM4bigbinv;
@@ -8037,7 +8094,7 @@ module sp_bsim4v8(d, g, s, b);
     BSIM4gIgcds = -(BSIM4gIgcdg+BSIM4gIgcdd+BSIM4gIgcdb);
     BSIM4cd = cdrain;
     if (BSIM4tnoiMod==0) begin
-      Abulk = Abulk0*BSIM4abulkCVfactor;
+      Abulk = Abulk0_Q*BSIM4abulkCVfactor;
       Vdsat = load_Vgsteff/Abulk;
       load_T0 = Vdsat-Vds-0.02;
       load_T1 = sqrt(load_T0*load_T0+4.0*0.02*Vdsat);
@@ -8135,8 +8192,8 @@ module sp_bsim4v8(d, g, s, b);
       end else begin
         One_Third_CoxWL = CoxWL/3.0;
         Two_Third_CoxWL = 2.0*One_Third_CoxWL;
-        AbulkCV = Abulk0*BSIM4abulkCVfactor;
-        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_dVb*dVbseff_dVb;
+        AbulkCV = Abulk0_Q*BSIM4abulkCVfactor;
+        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_Q_dVb*dVbseff_dVb;
         dVdsat_dVg = 1.0/AbulkCV;
         Vdsat = Vgst*dVdsat_dVg;
         dVdsat_dVb = -(Vdsat*dAbulkCV_dVb+dVth_dVb)*dVdsat_dVg;
@@ -8423,8 +8480,8 @@ module sp_bsim4v8(d, g, s, b);
         dQsub0_dVg = load_T2*(dVgs_eff_dVg-dVfbeff_dVg-dVgsteff_dVg);
         dQsub0_dVd = -load_T2*dVgsteff_dVd;
         dQsub0_dVb = -load_T2*(dVfbeff_dVb+dVbseffCV_dVb+dVgsteff_dVb);
-        AbulkCV = Abulk0*BSIM4abulkCVfactor;
-        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_dVb;
+        AbulkCV = Abulk0_Q*BSIM4abulkCVfactor;
+        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_Q_dVb;
         VdsatCV = load_Vgsteff/AbulkCV;
         load_T0 = VdsatCV-Vds-0.02;
         dT0_dVg = 1.0/AbulkCV;
@@ -8626,8 +8683,8 @@ module sp_bsim4v8(d, g, s, b);
         dCoxeff_dVb = dCoxeff_dVg*dTcen_dVb;
         dCoxeff_dVg = dCoxeff_dVg * (dTcen_dVg);
         CoxWLcen = CoxWL*Coxeff/BSIM4coxe;
-        AbulkCV = Abulk0*BSIM4abulkCVfactor;
-        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_dVb;
+        AbulkCV = Abulk0_Q*BSIM4abulkCVfactor;
+        dAbulkCV_dVb = BSIM4abulkCVfactor*dAbulk0_Q_dVb;
         VdsatCV = VgDP/AbulkCV;
         load_T0 = VdsatCV-Vds-0.02;
         dT0_dVg = dVgDP_dVg/AbulkCV;
@@ -9381,6 +9438,8 @@ module sp_bsim4v8(d, g, s, b);
         ceqqgmid = -ceqqgmid;
       end
     end
+    load_mult_i = mult_i;
+    load_mult_q = mult_q;
     if (!i_BSIM4rbodyMod) begin
       gjbd = BSIM4gbd;
       gjbs = BSIM4gbs;
@@ -9403,84 +9462,89 @@ module sp_bsim4v8(d, g, s, b);
     ggislg = BSIM4ggislg;
     ggisls = BSIM4ggisls;
     ggislb = BSIM4ggislb;
-    I(d_int) <+ -( 
+    I(d_int) <+ -load_mult_i * ( 
           ceqjd 
         - ceqbd 
         - ceqdrn 
-        - ceqqd
         + Idtoteq
-    );
+    ) + load_mult_q * ceqqd;
     I(g_int) <+ (
-          ceqqg 
-        + Igtoteq
+          load_mult_q * ceqqg 
+        + load_mult_i * Igtoteq
     );
     
     // Substrate resistance network
     if (!i_BSIM4rbodyMod) begin
         // Disabled substrate resistance network
         // Diodes b_int-s_int and b_int-d_int
-        I(b_int) <+ -( 
+        I(b_int) <+ -load_mult_i * ( 
               ceqbd 
             + ceqbs 
             - ceqjd 
             - ceqjs 
-            - ceqqb 
             + Ibtoteq 
-        );
-        I(s_int) <+ -( 
+        ) + load_mult_q * ceqqb ;
+        I(s_int) <+ -load_mult_i * ( 
               ceqdrn 
             - ceqbs 
             + ceqjs 
+            + Istoteq
+        ) - load_mult_q * (
             + ceqqg 
             + ceqqb 
             + ceqqd
             + ceqqgmid 
-            + Istoteq 
         );
     end else begin
         // Enabled substrate resistance network
         // Nonlinear/capacitive part
         // Diodes sb_int-s_int and sb_int-s_int
         // Capacitive current flowing towards d_int/s_int is ceqqjd/ceqqjs 
-        I(db_int) <+ ceqjd + ceqqjd;
-        I(b_int) <+ -( ceqbd + ceqbs - ceqqb + Ibtoteq );
-        I(sb_int) <+ ceqjs + ceqqjs;
-        I(s_int) <+ -( 
+        I(db_int) <+ load_mult_i * ceqjd + load_mult_q * ceqqjd; 
+        I(b_int) <+ -load_mult_i * ( 
+              ceqbd 
+            + ceqbs 
+            + Ibtoteq 
+        ) + load_mult_q * ceqqb;
+        I(sb_int) <+ load_mult_i * ceqjs + load_mult_q * ceqqjs;
+        I(s_int) <+ -load_mult_i * ( 
               ceqdrn 
             - ceqbs 
             + ceqjs 
+            + Istoteq
+        ) - load_mult_q * (
+              ceqqd 
             + ceqqg 
             + ceqqb 
-            + ceqqd 
             + ceqqjd // qs = -(qg+qd+qb), ceqqd is ddt(qd-qbd), ceqqjd=ddt(qbd)
                                 // therefore ddt(qd)=ceqqd+ceqqjd
-            + ceqqgmid 
-            + Istoteq
             + ceqqjs // ceqjs=ddt(qbs) flows into s_int, we must add it here
+            + ceqqgmid 
         );
+    
         // Linear resistive part
-        I(b, db_int) <+ BSIM4grbdb * V(b, db_int);
-        I(b, b_int) <+ BSIM4grbpb * V(b, b_int);
-        I(b_int, db_int) <+ BSIM4grbpd * V(b_int, db_int);
-        I(b_int, sb_int) <+ BSIM4grbps * V(b_int, sb_int);
-        I(b, sb_int) <+ BSIM4grbsb * V(b, sb_int);
+        I(b, db_int) <+ load_mult_i * BSIM4grbdb * V(b, db_int);
+        I(b, b_int) <+ load_mult_i * BSIM4grbpb * V(b, b_int);
+        I(b_int, db_int) <+ load_mult_i * BSIM4grbpd * V(b_int, db_int);
+        I(b_int, sb_int) <+ load_mult_i * BSIM4grbps * V(b_int, sb_int);
+        I(b, sb_int) <+ load_mult_i * BSIM4grbsb * V(b, sb_int);
     end
     
     // Gate series resistance 
     // It was eliminated during nonlinear term processing. 
     if (i_BSIM4rgateMod==1) begin
         // geltd is the conductance of Rgeltd
-        I(g, g_int) <+ geltd * V(g, g_int);
+        I(g, g_int) <+ load_mult_i * geltd * V(g, g_int);
     end else if (i_BSIM4rgateMod==2) begin
         // BSIM4gcrg is the conductance of Rgeltd and Rii in series
-        I(g, g_int) <+ BSIM4gcrg * V(g, g_int);
+        I(g, g_int) <+ load_mult_i * BSIM4gcrg * V(g, g_int);
     end else if (i_BSIM4rgateMod==3) begin
         // geltd is the conductance of Rgeltd
-        I(g, gmid_int) <+ geltd * V(g, gmid_int);
+        I(g, gmid_int) <+ load_mult_i * geltd * V(g, gmid_int);
         // BSIM4gcrg is the conductance of Rii
-        I(gmid_int, g_int) <+ BSIM4gcrg * V(gmid_int, g_int);
+        I(gmid_int, g_int) <+ load_mult_i * BSIM4gcrg * V(gmid_int, g_int);
         // Capacitors connected to gmid
-        I(gmid_int) <+ ceqqgmid;
+        I(gmid_int) <+ load_mult_q * ceqqgmid;
     end
     
     // Series resistance of D/S
@@ -9488,26 +9552,26 @@ module sp_bsim4v8(d, g, s, b);
         // Internal Rds model (rdsmod=0)
         // Voltage-dependent Rds is symmetric wrt. D/S and accounted for in Ids characteristic
         // Drain series resistance Rddiff
-        I(d, d_int) <+ gdpr * V(d, d_int);
+        I(d, d_int) <+ load_mult_i * gdpr * V(d, d_int);
         // Source series resistance Rsdiff
-        I(s, s_int) <+ gspr * V(s, s_int);
+        I(s, s_int) <+ load_mult_i * gspr * V(s, s_int);
     end else begin
         // External Rd/Rs model (included in series resistances of D/S)
         // Rd and Rs are voltage dependent 
         // Drain series resistance: Rddiff + Rd(V)
         // Source series resistance: Rsdiff + Rs(V)
-        I(d, d_int) <+ BSIM4gdtot * V(d, d_int);
-        I(s, s_int) <+ BSIM4gstot * V(s, s_int);
+        I(d, d_int) <+ load_mult_i * BSIM4gdtot * V(d, d_int);
+        I(s, s_int) <+ load_mult_i * BSIM4gstot * V(s, s_int);
     end
     
     // NQS model
     if (i_BSIM4trnqsMod) begin
-        // Internal charge node
+        // Internal charge node, input is unscaled charge, output is unscaled delayed charge
         I(q_int) <+ -(cqcheq-cqdef) + BSIM4gtau * V(q_int);
-        // Contributions to d_int, g_int, and s_int
-        I(d_int) <+ dxpart * BSIM4gtau * V(q_int);
-        I(s_int) <+ sxpart * BSIM4gtau * V(q_int);
-        I(g_int) <+ - BSIM4gtau * V(q_int);
+        // Contributions to d_int, g_int, and s_int, scaled with mult_q
+        I(d_int) <+ load_mult_q * dxpart * BSIM4gtau * V(q_int);
+        I(s_int) <+ load_mult_q * sxpart * BSIM4gtau * V(q_int);
+        I(g_int) <+ - load_mult_q * BSIM4gtau * V(q_int);
     end
 
     // Tag: noise, function: BSIM4noise
@@ -9517,6 +9581,8 @@ module sp_bsim4v8(d, g, s, b);
     GammaGd0 = 0.0;
     sigrat = 0.0;
     ctnoi = 0.0;
+    noise_mult_i = mult_i;
+    noise_mult_fn = BSIM4mult_fn;
     if (BSIM4tnoiMod==0) begin
       if (BSIM4rdsMod==0) begin
         noise_gspr = BSIM4sourceConductance;
@@ -9561,19 +9627,19 @@ module sp_bsim4v8(d, g, s, b);
       noise_gspr = BSIM4gstot;
       noise_gdpr = BSIM4gdtot;
     end
-    I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*noise_gdpr)), "rd");
-    I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*noise_gspr)), "rs");
+    I(d_int, d) <+ white_noise(4*(VACONSTboltz*($temperature*(noise_gdpr*noise_mult_i))), "rd");
+    I(s_int, s) <+ white_noise(4*(VACONSTboltz*($temperature*(noise_gspr*noise_mult_i))), "rs");
     if (i_BSIM4rgateMod==1) begin
-      rg_psd = 4*(VACONSTboltz*($temperature*BSIM4grgeltd));
+      rg_psd = 4*(VACONSTboltz*($temperature*(BSIM4grgeltd*noise_mult_i)));
     end else if (i_BSIM4rgateMod==2) begin
       noise_T0 = 1.0+BSIM4grgeltd/BSIM4gcrg;
       noise_T1 = noise_T0*noise_T0;
-      rg_psd = 4*(VACONSTboltz*($temperature*(BSIM4grgeltd/noise_T1)));
+      rg_psd = 4*(VACONSTboltz*($temperature*(BSIM4grgeltd*noise_mult_i/noise_T1)));
     end else if (i_BSIM4rgateMod==3) begin
       `ifdef __NGSPICE__
-      I(gmid_int, g) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM4grgeltd)), "rg3");
+      I(gmid_int, g) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM4grgeltd*noise_mult_i))), "rg3");
       `else
-      I(gmid_int, g) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM4grgeltd)), "rg");
+      I(gmid_int, g) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM4grgeltd*noise_mult_i))), "rg");
       `endif
     end
     noise_bodymode = 5;
@@ -9586,19 +9652,19 @@ module sp_bsim4v8(d, g, s, b);
     end
     if (i_BSIM4rbodyMod) begin
       if (noise_bodymode==5) begin
-        rbps_psd = 4*(VACONSTboltz*($temperature*BSIM4grbps));
-        rbpd_psd = 4*(VACONSTboltz*($temperature*BSIM4grbpd));
-        rbpb_psd = 4*(VACONSTboltz*($temperature*BSIM4grbpb));
-        I(b, sb_int) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM4grbsb)), "rbsb");
-        I(b, db_int) <+ white_noise(4*(VACONSTboltz*($temperature*BSIM4grbdb)), "rbdb");
+        rbps_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbps*noise_mult_i)));
+        rbpd_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbpd*noise_mult_i)));
+        rbpb_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbpb*noise_mult_i)));
+        I(b, sb_int) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM4grbsb*noise_mult_i))), "rbsb");
+        I(b, db_int) <+ white_noise(4*(VACONSTboltz*($temperature*(BSIM4grbdb*noise_mult_i))), "rbdb");
       end
       if (noise_bodymode==3) begin
-        rbps_psd = 4*(VACONSTboltz*($temperature*BSIM4grbps));
-        rbpd_psd = 4*(VACONSTboltz*($temperature*BSIM4grbpd));
-        rbpb_psd = 4*(VACONSTboltz*($temperature*BSIM4grbpb));
+        rbps_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbps*noise_mult_i)));
+        rbpd_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbpd*noise_mult_i)));
+        rbpb_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbpb*noise_mult_i)));
       end
       if (noise_bodymode==1) begin
-        rbpb_psd = 4*(VACONSTboltz*($temperature*BSIM4grbpb));
+        rbpb_psd = 4*(VACONSTboltz*($temperature*(BSIM4grbpb*noise_mult_i)));
       end
     end
     if (BSIM4tnoiMod==2) begin
@@ -9618,7 +9684,7 @@ module sp_bsim4v8(d, g, s, b);
       epsilon = (noise_T7-noise_T7*noise_T7*noise_T7/3.0)/(6.0*noise_T6);
       noise_T8 = BSIM4Vgsteff/BSIM4EsatL;
       noise_T8 = noise_T8 * (noise_T8);
-      if (BSIM4v48intVersion!=481) begin
+      if (BSIM4v48intVersion<=480) begin
         npart_c = rnoic*(1.0+noise_T8*tnoic*noise_Leff);
         ctnoi = epsilon/sqrt(gamma*noise_delta)*(2.5316*npart_c);
         npart_beta = rnoia*(1.0+noise_T8*tnoia*noise_Leff);
@@ -9659,38 +9725,38 @@ module sp_bsim4v8(d, g, s, b);
     end
     case (BSIM4tnoiMod)
       0: begin
-        if (BSIM4v48intVersion!=481) begin
+        if (BSIM4v48intVersion<=480) begin
           noise_T0 = BSIM4ueff*abs(BSIM4qinv);
           noise_T1 = noise_T0*noise_tmp+BSIM4leff*BSIM4leff;
-          id_psd = 4*(VACONSTboltz*($temperature*(noise_T0/noise_T1*ntnoi)));
+          id_psd = 4*(VACONSTboltz*($temperature*(noise_T0/noise_T1*ntnoi*noise_mult_i)));
         end else begin
           noise_T0 = BSIM4ueff*abs(BSIM4qinv);
           noise_T1 = noise_T0*noise_tmp+BSIM4leff*BSIM4leff;
-          id_psd = 4*(VACONSTboltz*($temperature*(noise_T0/noise_T1*ntnoi)));
+          id_psd = 4*(VACONSTboltz*($temperature*(noise_T0/noise_T1*ntnoi*noise_mult_i)));
         end
       end
       1: begin
-        if (BSIM4v48intVersion!=481) begin
+        if (BSIM4v48intVersion<=480) begin
           noise_T0 = BSIM4gm+BSIM4gmbs+BSIM4gds;
           noise_T0 = noise_T0 * (noise_T0);
           igsquare = npart_theta*npart_theta*noise_T0/BSIM4IdovVds;
           noise_T1 = npart_beta*(BSIM4gm+BSIM4gmbs)+BSIM4gds;
           noise_T2 = noise_T1*noise_T1/BSIM4IdovVds;
-          id_psd = 4*(VACONSTboltz*($temperature*(noise_T2-igsquare)));
+          id_psd = 4*(VACONSTboltz*($temperature*((noise_T2-igsquare)*noise_mult_i)));
         end else begin
           noise_T0 = BSIM4gm+BSIM4gmbs+BSIM4gds;
           noise_T0 = noise_T0 * (noise_T0);
           igsquare = npart_theta*npart_theta*noise_T0/BSIM4IdovVds;
           noise_T1 = npart_beta*(BSIM4gm+BSIM4gmbs)+BSIM4gds;
           noise_T2 = noise_T1*noise_T1/BSIM4IdovVds;
-          id_psd = 4*(VACONSTboltz*($temperature*(noise_T2-igsquare)));
+          id_psd = 4*(VACONSTboltz*($temperature*((noise_T2-igsquare)*noise_mult_i)));
         end
       end
       2: begin
         noise_T2 = GammaGd0;
         noise_T3 = ctnoi*ctnoi;
         noise_T4 = 1.0-noise_T3;
-        id_psd = 4*(VACONSTboltz*($temperature*(noise_T2*noise_T4)));
+        id_psd = 4*(VACONSTboltz*($temperature*(noise_T2*noise_T4*noise_mult_i)));
         tn2dspsd = 4 * VACONSTboltz * $temperature * noise_T2 * noise_T3;
         tn2gspsd = 4 * VACONSTboltz * $temperature * noise_T2;
         tn2sigrat = sigrat;
@@ -9699,7 +9765,7 @@ module sp_bsim4v8(d, g, s, b);
 
     case (BSIM4fnoiMod)
       0: begin
-        flicker_psd = kf*exp(af*ln(((abs(BSIM4cd)>1E-38) ? (abs(BSIM4cd)) : (1E-38))))/(BSIM4leff*BSIM4leff*BSIM4coxe);
+        flicker_psd = noise_mult_fn*kf*exp(af*ln(((abs(BSIM4cd)>1E-38) ? (abs(BSIM4cd)) : (1E-38))))/(BSIM4leff*BSIM4leff*BSIM4coxe);
         flicker_exp = ef;
       end
       1: begin
@@ -9708,7 +9774,6 @@ module sp_bsim4v8(d, g, s, b);
           noise_Vds = -noise_Vds;
         end
         // inlined: Eval1ovFNoise(Vds, model, here, data->freq, ckt->CKTtemp) -> efn_retval
-        noise1_T0 = 0.0;
         cd = abs(BSIM4cd);
         noise1_Leff = BSIM4leff-2.0*lintnoi;
         Leffsq = noise1_Leff*noise1_Leff;
@@ -9742,7 +9807,7 @@ module sp_bsim4v8(d, g, s, b);
         Swi = noise_T10/noise_T11*BSIM4cd*BSIM4cd;
         noise_T1 = Swi+Ssi;
         if (noise_T1>0.0) begin
-          flicker_psd = Ssi*Swi/noise_T1;
+          flicker_psd = noise_mult_fn*(Ssi*Swi)/noise_T1;
           flicker_exp = ef;
         end else begin
           flicker_psd = 0.0;
@@ -9752,13 +9817,13 @@ module sp_bsim4v8(d, g, s, b);
     endcase
 
     if (BSIM4mode>=0) begin
-      igs_psd = 2*(VACONSTcharge*(BSIM4Igs+BSIM4Igcs));
-      igd_psd = 2*(VACONSTcharge*(BSIM4Igd+BSIM4Igcd));
+      igs_psd = 2*(VACONSTcharge*(noise_mult_i*(BSIM4Igs+BSIM4Igcs)));
+      igd_psd = 2*(VACONSTcharge*(noise_mult_i*(BSIM4Igd+BSIM4Igcd)));
     end else begin
-      igs_psd = 2*(VACONSTcharge*(BSIM4Igs+BSIM4Igcd));
-      igd_psd = 2*(VACONSTcharge*(BSIM4Igd+BSIM4Igcs));
+      igs_psd = 2*(VACONSTcharge*(noise_mult_i*(BSIM4Igs+BSIM4Igcd)));
+      igd_psd = 2*(VACONSTcharge*(noise_mult_i*(BSIM4Igd+BSIM4Igcs)));
     end
-    I(g_int, b_int) <+ white_noise(2*(VACONSTcharge*BSIM4Igb), "igb");
+    I(g_int, b_int) <+ white_noise(2*(VACONSTcharge*(noise_mult_i*BSIM4Igb)), "igb");
     I(g_int, g) <+ white_noise(rg_psd, "rg");
     I(b_int, sb_int) <+ white_noise(rbps_psd, "rbps");
     I(b_int, db_int) <+ white_noise(rbpd_psd, "rbpd");
@@ -9783,57 +9848,99 @@ module sp_bsim4v8(d, g, s, b);
 
     // Instance opvar computation
     gmbs = BSIM4gmbs;
+    gmbs = gmbs * (mult_i);
     gm = BSIM4gm;
+    gm = gm * (mult_i);
     gds = BSIM4gds;
+    gds = gds * (mult_i);
     vdsat = BSIM4vdsat;
     vth = BSIM4von;
     id = BSIM4cd;
+    id = id * (mult_i);
     ibd = BSIM4cbd;
+    ibd = ibd * (mult_i);
     ibs = BSIM4cbs;
+    ibs = ibs * (mult_i);
     gbd = BSIM4gbd;
+    gbd = gbd * (mult_i);
     gbs = BSIM4gbs;
+    gbs = gbs * (mult_i);
     isub = BSIM4csub;
+    isub = isub * (mult_i);
     igidl = BSIM4Igidl;
+    igidl = igidl * (mult_i);
     igisl = BSIM4Igisl;
+    igisl = igisl * (mult_i);
     igs = BSIM4Igs;
+    igs = igs * (mult_i);
     igd = BSIM4Igd;
+    igd = igd * (mult_i);
     igb = BSIM4Igb;
+    igb = igb * (mult_i);
     igcs = BSIM4Igcs;
+    igcs = igcs * (mult_i);
     igcd = BSIM4Igcd;
+    igcd = igcd * (mult_i);
     vbs = BSIM4vbs;
     vgs = BSIM4vgs;
     vds = BSIM4vds;
     cgg = BSIM4cggb;
+    cgg = cgg * (mult_q);
     cgs = BSIM4cgsb;
+    cgs = cgs * (mult_q);
     cgd = BSIM4cgdb;
+    cgd = cgd * (mult_q);
     cbg = BSIM4cbgb;
+    cbg = cbg * (mult_q);
     cbd = BSIM4cbdb;
+    cbd = cbd * (mult_q);
     cbs = BSIM4cbsb;
+    cbs = cbs * (mult_q);
     cdg = BSIM4cdgb;
+    cdg = cdg * (mult_q);
     cdd = BSIM4cddb;
+    cdd = cdd * (mult_q);
     cds = BSIM4cdsb;
+    cds = cds * (mult_q);
     csg = BSIM4csgb;
+    csg = csg * (mult_q);
     csd = BSIM4csdb;
+    csd = csd * (mult_q);
     css = BSIM4cssb;
+    css = css * (mult_q);
     cgb = BSIM4cgbb;
+    cgb = cgb * (mult_q);
     cdb = BSIM4cdbb;
+    cdb = cdb * (mult_q);
     csb = BSIM4csbb;
+    csb = csb * (mult_q);
     cbb = BSIM4cbbb;
+    cbb = cbb * (mult_q);
     capbd = BSIM4capbd;
+    capbd = capbd * (mult_q);
     capbs = BSIM4capbs;
+    capbs = capbs * (mult_q);
     qg = BSIM4qgate;
+    qg = qg * (mult_q);
     qb = BSIM4qbulk;
+    qb = qb * (mult_q);
     qd = BSIM4qdrn;
+    qd = qd * (mult_q);
     qs = BSIM4qsrc;
+    qs = qs * (mult_q);
     qinv = BSIM4qinv;
     qdef = BSIM4qdef;
     gcrg = BSIM4gcrg;
+    gcrg = gcrg * (mult_i);
     gtau = BSIM4gtau;
     vgsteff = BSIM4Vgsteff;
     vdseff = BSIM4Vdseff;
     c_gso = i_BSIM4cgso;
+    c_gso = c_gso * (mult_q);
     c_gdo = i_BSIM4cgdo;
+    c_gdo = c_gdo * (mult_q);
     c_gbo = sd_BSIM4cgbo;
+    c_gbo = c_gbo * (mult_q);
     weff = BSIM4weff;
     leff = BSIM4leff;
 

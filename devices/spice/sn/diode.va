@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-05 07:03:17 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:19:02 UTC
 // Module name  : sp_diode
 // Model variant: sn
 // 
@@ -119,6 +119,7 @@ module sp_diode(a, c);
   aliasparam ik = ikf;
   (* desc = "Reverse Knee current" *) parameter real ikr = 0;
   (* desc = "Breakdown Emission Coefficient" *) parameter real nbv = 0;
+  aliasparam nz = nbv;
   (* desc = "Area factor" *) parameter real model_area = 1.0;
   (* desc = "Perimeter factor" *) parameter real model_pj = 0.0;
   (* desc = "Diode temperature equation selector" *) parameter integer tlev = 0;
@@ -149,6 +150,7 @@ module sp_diode(a, c);
   (* desc = "Current at reverse breakdown voltage" *) parameter real ibv = 0.001;
   aliasparam ib = ibv;
   (* desc = "Reverse breakdown voltage temperature coefficient" *) parameter real tcv = 0.0;
+  aliasparam tbv1 = tcv;
   (* desc = "Recombination saturation current" *) parameter real isr = 1e-14;
   (* desc = "Recombination current emission coefficient" *) parameter real nr = 2;
   (* desc = "maximum voltage in forward direction" *) parameter real fv_max = 1e+99;
@@ -176,50 +178,50 @@ module sp_diode(a, c);
   (* desc = "Ohmic conductance" *) real cond;
 
   // Instance fields
-  integer DIOtempNode;
-  real DIOcap;
-  real i_DIOarea;
-  real i_DIOpj;
-  real DIOtemp;
-  real DIOtJctPot;
-  real DIOtJctCap;
-  real DIOtJctSWPot;
-  real DIOtJctSWCap;
-  real DIOtTransitTime;
-  real DIOtGradingCoeff;
-  real DIOtConductance;
-  real DIOtDepCap;
-  real DIOtDepSWCap;
-  real DIOtSatCur;
-  real DIOtSatSWCur;
-  real DIOtTunSatCur;
-  real DIOtTunSatSWCur;
-  real DIOtVcrit;
-  real DIOtF1;
-  real DIOtBrkdwnV;
-  real DIOtF2;
-  real DIOtF3;
-  real DIOtF2SW;
-  real DIOtF3SW;
-  real i_DIOforwardKneeCurrent;
-  real i_DIOreverseKneeCurrent;
-  real i_DIOjunctionCap;
-  real i_DIOjunctionSWCap;
-  real DIOtRecSatCur;
-  real DIOgcTt;
-  real DIOcmetal;
-  real DIOcpoly;
-  real DIOdcCurrent;
+  integer DIOtempNode = 0;
+  real DIOcap = 0;
+  real i_DIOarea = 0;
+  real i_DIOpj = 0;
+  real DIOtemp = 0;
+  real DIOtJctPot = 0;
+  real DIOtJctCap = 0;
+  real DIOtJctSWPot = 0;
+  real DIOtJctSWCap = 0;
+  real DIOtTransitTime = 0;
+  real DIOtGradingCoeff = 0;
+  real DIOtConductance = 0;
+  real DIOtDepCap = 0;
+  real DIOtDepSWCap = 0;
+  real DIOtSatCur = 0;
+  real DIOtSatSWCur = 0;
+  real DIOtTunSatCur = 0;
+  real DIOtTunSatSWCur = 0;
+  real DIOtVcrit = 0;
+  real DIOtF1 = 0;
+  real DIOtBrkdwnV = 0;
+  real DIOtF2 = 0;
+  real DIOtF3 = 0;
+  real DIOtF2SW = 0;
+  real DIOtF3SW = 0;
+  real i_DIOforwardKneeCurrent = 0;
+  real i_DIOreverseKneeCurrent = 0;
+  real i_DIOjunctionCap = 0;
+  real i_DIOjunctionSWCap = 0;
+  real DIOtRecSatCur = 0;
+  real DIOgcTt = 0;
+  real DIOcmetal = 0;
+  real DIOcpoly = 0;
+  real DIOdcCurrent = 0;
   integer DIOtempGiven = 0;
 
   // Model fields
-  real DIOsatCur;
-  real DIOconductance;
-  real DIObrkdEmissionCoeff;
-  real DIOactivationEnergy;
-  real DIOnomTemp;
-  real DIOmetalOxideThick;
-  real DIOpolyOxideThick;
+  real DIOsatCur = 0;
+  real DIOconductance = 0;
+  real DIObrkdEmissionCoeff = 0;
+  real DIOactivationEnergy = 0;
+  real DIOnomTemp = 0;
+  real DIOmetalOxideThick = 0;
+  real DIOpolyOxideThick = 0;
   integer DIOnomTempGiven = 0;
   integer DIOforwardKneeCurrentGiven = 0;
   integer DIOreverseKneeCurrentGiven = 0;
@@ -227,120 +229,121 @@ module sp_diode(a, c);
   integer DIOpolyOxideThickGiven = 0;
 
   // States
-  real DIOvoltage;
-  real DIOcurrent;
-  real DIOconduct;
-  real DIOcapCharge;
-  real DIOcapCurrent;
+  real DIOvoltage = 0;
+  real DIOcurrent = 0;
+  real DIOconduct = 0;
+  real DIOcapCharge = 0;
+  real DIOcapCurrent = 0;
 
   // Model parameter access locals
 
   // Instance parameter access locals
 
   // Device setup locals
-  real scale;
-  real setup_wm;
-  real setup_lm;
-  real setup_wp;
-  real setup_lp;
+  real scale = 0;
+  real setup_wm = 0;
+  real setup_lm = 0;
+  real setup_wp = 0;
+  real setup_lp = 0;
 
   // Device temperature dependence locals
-  real xfc;
-  real xfcs;
-  real vt;
-  real vte;
-  real vts;
-  real vtt;
-  real vtr;
-  real cbv;
-  real xbv;
-  real xcbv;
-  real tol;
-  real vtnom;
-  integer iter;
-  real dt;
-  real factor;
-  real tBreakdownVoltage;
-  real egfet1;
-  real arg1;
-  real fact1;
-  real pbfact1;
-  real pbo;
-  real gmaold;
-  real pboSW;
-  real gmaSWold;
-  real fact2;
-  real pbfact;
-  real arg;
-  real egfet;
-  real gmanew;
-  real gmaSWnew;
-  real arg2;
-  real lnTRatio;
-  real arg0;
+  real xfc = 0;
+  real xfcs = 0;
+  real vt = 0;
+  real vte = 0;
+  real vts = 0;
+  real vtt = 0;
+  real vtr = 0;
+  real cbv = 0;
+  real xbv = 0;
+  real xcbv = 0;
+  real tol = 0;
+  real vtnom = 0;
+  integer iter = 0;
+  real dt = 0;
+  real factor = 0;
+  real tBreakdownVoltage = 0;
+  real egfet1 = 0;
+  real arg1 = 0;
+  real fact1 = 0;
+  real pbfact1 = 0;
+  real pbo = 0;
+  real gmaold = 0;
+  real pboSW = 0;
+  real gmaSWold = 0;
+  real fact2 = 0;
+  real pbfact = 0;
+  real arg = 0;
+  real egfet = 0;
+  real gmanew = 0;
+  real gmaSWnew = 0;
+  real arg2 = 0;
+  real lnTRatio = 0;
+  real arg0 = 0;
+  real totalSatCur = 0;
 
   // Device load locals
-  integer limited;
-  real load_arg;
-  real argsw;
-  real capd;
-  real load_cd;
-  real cdb;
-  real cdsw;
-  real cdeq;
-  real ceq;
-  real csat;
-  real csatsw;
-  real czero;
-  real czof2;
-  real argSW;
-  real czeroSW;
-  real czof2SW;
-  real sargSW;
-  real sqrt_ikr;
-  real sqrt_ikf;
-  real ikf_area_m;
-  real ikr_area_m;
-  real delvd;
-  real evd;
-  real evrev;
-  real load_gd;
-  real gdb;
-  real gdsw;
-  real gen_fac;
-  real gen_fac_vd;
-  real t1;
-  real evd_rec;
-  real cdb_rec;
-  real gdb_rec;
-  real geq;
-  real gspr;
-  real sarg;
-  real load_vd;
-  real vdtemp;
-  real load_vt;
-  real load_vte;
-  real vtesw;
-  real vtetun;
-  real vtebrk;
-  real diffcharge;
-  real deplcharge;
-  real deplchargeSW;
-  real diffcap;
-  real deplcap;
-  real deplcapSW;
-  real delTemp;
-  real Temp;
-  real ceqqth;
-  real Ith;
-  real gcTt;
-  real vrs;
-  real dIth_dVdio;
-  real dIth_dVrs;
-  real vterec;
+  integer limited = 0;
+  real load_arg = 0;
+  real argsw = 0;
+  real capd = 0;
+  real load_cd = 0;
+  real cdb = 0;
+  real cdsw = 0;
+  real cdeq = 0;
+  real ceq = 0;
+  real csat = 0;
+  real csatsw = 0;
+  real czero = 0;
+  real czof2 = 0;
+  real argSW = 0;
+  real czeroSW = 0;
+  real czof2SW = 0;
+  real sargSW = 0;
+  real sqrt_ikr = 0;
+  real sqrt_ikf = 0;
+  real ikf_area_m = 0;
+  real ikr_area_m = 0;
+  real delvd = 0;
+  real evd = 0;
+  real evrev = 0;
+  real load_gd = 0;
+  real gdb = 0;
+  real gdsw = 0;
+  real gen_fac = 0;
+  real gen_fac_vd = 0;
+  real t1 = 0;
+  real evd_rec = 0;
+  real cdb_rec = 0;
+  real gdb_rec = 0;
+  real geq = 0;
+  real gspr = 0;
+  real sarg = 0;
+  real load_vd = 0;
+  real vdtemp = 0;
+  real load_vt = 0;
+  real load_vte = 0;
+  real vtesw = 0;
+  real vtetun = 0;
+  real vtebrk = 0;
+  real diffcharge = 0;
+  real deplcharge = 0;
+  real deplchargeSW = 0;
+  real diffcap = 0;
+  real deplcap = 0;
+  real deplcapSW = 0;
+  real delTemp = 0;
+  real Temp = 0;
+  real ceqqth = 0;
+  real Ith = 0;
+  real gcTt = 0;
+  real vrs = 0;
+  real dIth_dVdio = 0;
+  real dIth_dVrs = 0;
+  real vterec = 0;
 
   // Device noise locals
-  real noise_dtemp;
+  real noise_dtemp = 0;
 
   // Global constants
   real CONSTroot2 = sqrt(2.0);
@@ -660,7 +663,8 @@ module sp_diode(a, c);
     DIOtF1 = DIOtJctPot*(1-exp((1-DIOtGradingCoeff)*xfc))/(1-DIOtGradingCoeff);
     DIOtDepCap = fc*DIOtJctPot;
     DIOtDepSWCap = fcs*DIOtJctSWPot;
-    DIOtVcrit = vte*ln(vte/(CONSTroot2*DIOtSatCur));
+    totalSatCur = DIOtSatCur+DIOtSatSWCur;
+    DIOtVcrit = vte*ln(vte/(CONSTroot2*totalSatCur));
     if ($param_given(bv)) begin
       if (tlev==0) begin
         tBreakdownVoltage = bv-tcv*dt;
@@ -672,14 +676,14 @@ module sp_diode(a, c);
       end else begin
         cbv = ibv*i_DIOarea;
       end
-      if (cbv<DIOtSatCur*tBreakdownVoltage/vt) begin
+      if (cbv<totalSatCur*tBreakdownVoltage/vt) begin
         xbv = tBreakdownVoltage;
       end else begin
         tol = reltol*cbv;
-        xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(1+cbv/DIOtSatCur);
+        xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(1+cbv/totalSatCur);
         for(iter = 0; iter<25; iter = iter+1) begin
-          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/DIOtSatCur+1-xbv/vt);
-          xcbv = DIOtSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
+          xbv = tBreakdownVoltage-DIObrkdEmissionCoeff*vt*ln(cbv/totalSatCur+1-xbv/vt);
+          xcbv = totalSatCur*(exp((tBreakdownVoltage-xbv)/(DIObrkdEmissionCoeff*vt))-1+xbv/vt);
           if (abs(xcbv-cbv)<=tol) begin
             iter = 25;
           end

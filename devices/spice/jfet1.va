@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-05 07:02:14 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:17:20 UTC
 // Module name  : sp_jfet1
 // Model variant: default
 // 
@@ -135,46 +135,46 @@ module sp_jfet1(d, g, s);
   (* desc = "Source conductance" *) real gs;
 
   // Instance fields
-  integer JFETmode;
-  real JFETtemp;
-  real JFETtSatCur;
-  real JFETtGatePot;
-  real JFETtCGS;
-  real JFETtCGD;
-  real JFETcorDepCap;
-  real JFETvcrit;
-  real JFETf1;
-  real JFETtThreshold;
-  real JFETtBeta;
-  real JFETdcCurrent;
+  integer JFETmode = 0;
+  real JFETtemp = 0;
+  real JFETtSatCur = 0;
+  real JFETtGatePot = 0;
+  real JFETtCGS = 0;
+  real JFETtCGD = 0;
+  real JFETcorDepCap = 0;
+  real JFETvcrit = 0;
+  real JFETf1 = 0;
+  real JFETtThreshold = 0;
+  real JFETtBeta = 0;
+  real JFETdcCurrent = 0;
   integer JFETtempGiven = 0;
 
   // Model fields
-  real JFETthreshold;
-  real JFETdepletionCapCoeff;
-  real JFETdrainConduct;
-  real JFETsourceConduct;
-  real JFETf2;
-  real JFETf3;
-  real JFETbFac;
-  real JFETtnom;
-  integer JFETtype;
+  real JFETthreshold = 0;
+  real JFETdepletionCapCoeff = 0;
+  real JFETdrainConduct = 0;
+  real JFETsourceConduct = 0;
+  real JFETf2 = 0;
+  real JFETf3 = 0;
+  real JFETbFac = 0;
+  real JFETtnom = 0;
+  integer JFETtype = 0;
   integer JFETtnomGiven = 0;
 
   // States
-  real JFETvgs;
-  real JFETvgd;
-  real JFETcg;
-  real JFETcd;
-  real JFETcgd;
-  real JFETgm;
-  real JFETgds;
-  real JFETggs;
-  real JFETggd;
-  real JFETqgs;
-  real JFETcqgs;
-  real JFETqgd;
-  real JFETcqgd;
+  real JFETvgs = 0;
+  real JFETvgd = 0;
+  real JFETcg = 0;
+  real JFETcd = 0;
+  real JFETcgd = 0;
+  real JFETgm = 0;
+  real JFETgds = 0;
+  real JFETggs = 0;
+  real JFETggd = 0;
+  real JFETqgs = 0;
+  real JFETcqgs = 0;
+  real JFETqgd = 0;
+  real JFETcqgd = 0;
 
   // Model parameter access locals
 
@@ -183,77 +183,77 @@ module sp_jfet1(d, g, s);
   // Device setup locals
 
   // Device temperature dependence locals
-  real xfc;
-  real vt;
-  real vtn;
-  real vtnom;
-  real kt;
-  real kt1;
-  real arg;
-  real arg1;
-  real fact1;
-  real fact2;
-  real egfet;
-  real egfet1;
-  real pbfact;
-  real pbfact1;
-  real gmanew;
-  real gmaold;
-  real ratio1;
-  real pbo;
-  real cjfact;
-  real cjfact1;
+  real xfc = 0;
+  real vt = 0;
+  real vtn = 0;
+  real vtnom = 0;
+  real kt = 0;
+  real kt1 = 0;
+  real arg = 0;
+  real arg1 = 0;
+  real fact1 = 0;
+  real fact2 = 0;
+  real egfet = 0;
+  real egfet1 = 0;
+  real pbfact = 0;
+  real pbfact1 = 0;
+  real gmanew = 0;
+  real gmaold = 0;
+  real ratio1 = 0;
+  real pbo = 0;
+  real cjfact = 0;
+  real cjfact1 = 0;
 
   // Device load locals
-  integer limited;
-  real load_beta;
-  real betap;
-  real capgd;
-  real capgs;
-  real cd;
-  real cdrain;
-  real cdreq;
-  real ceq;
-  real ceqgd;
-  real ceqgs;
-  real cg;
-  real load_cgd;
-  real csat;
-  real czgd;
-  real czgdf2;
-  real czgs;
-  real czgsf2;
-  real evgd;
-  real evgs;
-  real fcpb2;
-  real gdpr;
-  real load_gds;
-  real geq;
-  real load_ggd;
-  real load_ggs;
-  real load_gm;
-  real gspr;
-  real sarg;
-  real twop;
-  real vds;
-  real load_vgd;
-  real vgdt;
-  real load_vgs;
-  real vgst;
-  real load_vto;
-  real apart;
-  real cpart;
-  real Bfac;
-  real load_arg;
-  real vt_temp;
+  integer limited = 0;
+  real load_beta = 0;
+  real betap = 0;
+  real capgd = 0;
+  real capgs = 0;
+  real cd = 0;
+  real cdrain = 0;
+  real cdreq = 0;
+  real ceq = 0;
+  real ceqgd = 0;
+  real ceqgs = 0;
+  real cg = 0;
+  real load_cgd = 0;
+  real csat = 0;
+  real czgd = 0;
+  real czgdf2 = 0;
+  real czgs = 0;
+  real czgsf2 = 0;
+  real evgd = 0;
+  real evgs = 0;
+  real fcpb2 = 0;
+  real gdpr = 0;
+  real load_gds = 0;
+  real geq = 0;
+  real load_ggd = 0;
+  real load_ggs = 0;
+  real load_gm = 0;
+  real gspr = 0;
+  real sarg = 0;
+  real twop = 0;
+  real vds = 0;
+  real load_vgd = 0;
+  real vgdt = 0;
+  real load_vgs = 0;
+  real vgst = 0;
+  real load_vto = 0;
+  real apart = 0;
+  real cpart = 0;
+  real Bfac = 0;
+  real load_arg = 0;
+  real vt_temp = 0;
 
   // Device noise locals
-  real noise_vgs;
-  real noise_vds;
-  real noise_vgst;
-  real alpha;
-  real noise_beta;
-  real noise_dtemp;
+  real noise_vgs = 0;
+  real noise_vds = 0;
+  real noise_vgst = 0;
+  real alpha = 0;
+  real noise_beta = 0;
+  real noise_dtemp = 0;
   real id_psd = 0;
 
   // Global constants

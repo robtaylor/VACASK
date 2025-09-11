@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-05 07:01:58 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:17:04 UTC
 // Module name  : sp_inductor
 // Model variant: default
 // 
@@ -88,22 +88,22 @@ module sp_inductor(pos, neg);
   // Model opvars
 
   // Instance fields
-  real INDinduct;
-  real INDinductinst;
-  real INDtemp;
-  real INDdtemp;
+  real INDinduct = 0;
+  real INDinductinst = 0;
+  real INDtemp = 0;
+  real INDdtemp = 0;
   integer INDtempGiven = 0;
 
   // Model fields
-  real INDmInd;
-  real INDtnom;
-  real INDcsect;
-  real INDspecInd;
+  real INDmInd = 0;
+  real INDtnom = 0;
+  real INDcsect = 0;
+  real INDspecInd = 0;
   integer INDtnomGiven = 0;
 
   // States
-  real INDflux;
-  real INDvolt;
+  real INDflux = 0;
+  real INDvolt = 0;
 
   // Model parameter access locals
 
@@ -112,16 +112,16 @@ module sp_inductor(pos, neg);
   // Device setup locals
 
   // Device temperature dependence locals
-  real difference;
-  real factor;
-  real temp_tc1;
-  real temp_tc2;
+  real difference = 0;
+  real factor = 0;
+  real temp_tc1 = 0;
+  real temp_tc2 = 0;
 
   // Device load locals
-  integer limited;
-  real veq;
-  real req;
-  real newmind;
+  integer limited = 0;
+  real veq = 0;
+  real req = 0;
+  real newmind = 0;
 
   // Device noise locals
 

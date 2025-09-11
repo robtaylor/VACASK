@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-05 07:01:55 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:17:01 UTC
 // Module name  : sp_capacitor
 // Model variant: default
 // 
@@ -94,27 +94,27 @@ module sp_capacitor(pos, neg);
   // Model opvars
 
   // Instance fields
-  real CAPtemp;
-  real CAPdtemp;
-  real CAPcapac;
-  real CAPcapacinst;
-  real CAPwidth;
-  real CAPlength;
-  real i_CAPbv_max;
+  real CAPtemp = 0;
+  real CAPdtemp = 0;
+  real CAPcapac = 0;
+  real CAPcapacinst = 0;
+  real CAPwidth = 0;
+  real CAPlength = 0;
+  real i_CAPbv_max = 0;
   integer CAPtempGiven = 0;
   integer CAPwidthGiven = 0;
   integer CAPlengthGiven = 0;
 
   // Model fields
-  real CAPtnom;
-  real CAPcj;
-  real CAPnarrow;
-  real CAPshort;
+  real CAPtnom = 0;
+  real CAPcj = 0;
+  real CAPnarrow = 0;
+  real CAPshort = 0;
   integer CAPtnomGiven = 0;
 
   // States
-  real CAPqcap;
-  real CAPccap;
+  real CAPqcap = 0;
+  real CAPccap = 0;
 
   // Model parameter access locals
 
@@ -123,16 +123,16 @@ module sp_capacitor(pos, neg);
   // Device setup locals
 
   // Device temperature dependence locals
-  real difference;
-  real factor;
-  real temp_tc1;
-  real temp_tc2;
+  real difference = 0;
+  real factor = 0;
+  real temp_tc1 = 0;
+  real temp_tc2 = 0;
 
   // Device load locals
-  integer limited;
-  real vcap;
-  real geq;
-  real ceq;
+  integer limited = 0;
+  real vcap = 0;
+  real geq = 0;
+  real ceq = 0;
 
   // Device noise locals
 

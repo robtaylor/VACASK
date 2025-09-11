@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-44-68-g89e7c6708
-// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-45/tree/
-// Date         : 2025-09-05 07:02:23 UTC
+// Version      : ngspice-45-19-gc6a6bd9ed
+// Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
+// Date         : 2025-09-15 11:17:29 UTC
 // Module name  : sp_mes1
 // Model variant: default
 // 
@@ -109,34 +109,34 @@ module sp_mes1(d, g, s);
   (* desc = "Critical voltage" *) real vcrit;
 
   // Instance fields
-  integer MESmode;
-  real MESdcCurrent;
+  integer MESmode = 0;
+  real MESdcCurrent = 0;
 
   // Model fields
-  real MESthreshold;
-  real MESdrainConduct;
-  real MESsourceConduct;
-  real MESdepletionCap;
-  real MESf1;
-  real MESf2;
-  real MESf3;
-  real MESvcrit;
-  integer MEStype;
+  real MESthreshold = 0;
+  real MESdrainConduct = 0;
+  real MESsourceConduct = 0;
+  real MESdepletionCap = 0;
+  real MESf1 = 0;
+  real MESf2 = 0;
+  real MESf3 = 0;
+  real MESvcrit = 0;
+  integer MEStype = 0;
 
   // States
-  real MESvgs;
-  real MESvgd;
-  real MEScg;
-  real MEScd;
-  real MEScgd;
-  real MESgm;
-  real MESgds;
-  real MESggs;
-  real MESggd;
-  real MESqgs;
-  real MEScqgs;
-  real MESqgd;
-  real MEScqgd;
+  real MESvgs = 0;
+  real MESvgd = 0;
+  real MEScg = 0;
+  real MEScd = 0;
+  real MEScgd = 0;
+  real MESgm = 0;
+  real MESgds = 0;
+  real MESggs = 0;
+  real MESggd = 0;
+  real MESqgs = 0;
+  real MEScqgs = 0;
+  real MESqgd = 0;
+  real MEScqgd = 0;
 
   // Model parameter access locals
 
@@ -145,54 +145,54 @@ module sp_mes1(d, g, s);
   // Device setup locals
 
   // Device temperature dependence locals
-  real xfc;
-  real temp;
+  real xfc = 0;
+  real temp = 0;
 
   // Device load locals
-  integer limited;
-  real afact;
-  real load_beta;
-  real betap;
-  real capgd;
-  real capgs;
-  real cd;
-  real cdrain;
-  real cdreq;
-  real ceq;
-  real ceqgd;
-  real ceqgs;
-  real cg;
-  real load_cgd;
-  real cgdna;
-  real cgsna;
-  real csat;
-  real czgd;
-  real czgs;
-  real denom;
-  real evgd;
-  real evgs;
-  real gdpr;
-  real load_gds;
-  real geq;
-  real load_ggd;
-  real load_ggs;
-  real load_gm;
-  real gspr;
-  real invdenom;
-  real lfact;
-  real phib;
-  real prod;
-  real qgga;
-  real vcap;
-  real load_vcrit;
-  real vds;
-  real load_vgd;
-  real vgdt;
-  real load_vgs;
-  real vgst;
-  real load_vto;
-  real arg;
-  real vcnorm;
+  integer limited = 0;
+  real afact = 0;
+  real load_beta = 0;
+  real betap = 0;
+  real capgd = 0;
+  real capgs = 0;
+  real cd = 0;
+  real cdrain = 0;
+  real cdreq = 0;
+  real ceq = 0;
+  real ceqgd = 0;
+  real ceqgs = 0;
+  real cg = 0;
+  real load_cgd = 0;
+  real cgdna = 0;
+  real cgsna = 0;
+  real csat = 0;
+  real czgd = 0;
+  real czgs = 0;
+  real denom = 0;
+  real evgd = 0;
+  real evgs = 0;
+  real gdpr = 0;
+  real load_gds = 0;
+  real geq = 0;
+  real load_ggd = 0;
+  real load_ggs = 0;
+  real load_gm = 0;
+  real gspr = 0;
+  real invdenom = 0;
+  real lfact = 0;
+  real phib = 0;
+  real prod = 0;
+  real qgga = 0;
+  real vcap = 0;
+  real load_vcrit = 0;
+  real vds = 0;
+  real load_vgd = 0;
+  real vgdt = 0;
+  real load_vgs = 0;
+  real vgst = 0;
+  real load_vto = 0;
+  real arg = 0;
+  real vcnorm = 0;
 
   // Device noise locals
 

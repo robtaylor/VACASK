@@ -89,9 +89,9 @@ The following device models are supplied with VACASK.
 |PSP103.4 MOSFET           |psp103v4/psp103.va |psp103.osdi     |psp103va |
 |BSIMBULK MOSFET 106.2.0   |bsimbulk.va        |bsimbulk.osdi   |bsimbulk |
 
-All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). 
+All Verilog-A models supplied with VACASK are located in [devices](devices). You can find several models at [www.mos-ak.org](https://www.mos-ak.org/open_dir/). All recent models developed by the [BSIM group at UC Berkeley](https://bsim.berkeley.edu/) are released in Verilog-A. Also take a look at [The Designer's Guide community](https://designers-guide.org/index.html) where various models are available in the [Verilog AMS section](https://designers-guide.org/verilog-ams/index.html). The VBIC model was taken from [Dietmar Warning's repository](https://github.com/dwarning/VA-Models). This repository is an excellent collection of public Verilog-A models. Many of these models have bugfixes and extensions not found elsewhere. When compiling these models, define the `__NGSPICE__` macro (add `-D__NGSPICE__` to your OpenVAF command line). 
 
-Recently a project ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) whose aim is to create a converter from SPICE3 C model format to Verilog-A took off. At this point the following converted models are available in VACASK. 
+The ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) project's aim is to create a converter from SPICE3 C model format to Verilog-A. At this point the following converted models are available in VACASK (converted with Verilog-A Distiller). 
 
 |Verilog-A device (SPICE)  |File        |OSDI file      |Module       |
 |--------------------------|------------|---------------|-------------|
