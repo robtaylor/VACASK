@@ -109,7 +109,7 @@ The ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) proje
 |MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |mos6.osdi     |sp_mos6      |
 |MOSFET level 9 (modified level 3) * |mos9.va     |mos9.osdi     |sp_mos9      |
 |BSIM3 3.3.0                         |bsim3v3.va  |bsim3v3.osdi  |sp_bsim3v3   |
-|BSIM4 4.8, 4.8.1, 4.8.2             |bsim4v8.va  |bsim4v8.osdi  |sp_bsim4v8   |
+|BSIM4 4.8.0, 4.8.1, 4.8.2, 4.8.3    |bsim4v8.va  |bsim4v8.osdi  |sp_bsim4v8   |
 
 Devices marked with an asterisk (*) do not conserve charge because of the modeling approach chosen by their respective authors. 
 
@@ -281,4 +281,5 @@ In Windows select the MinGW64 toolchain. In Linux select GCC. Configure the proj
 * Á. Bűrmen, ["OpenVAF - status update, ecosystem, and a roadmap"](https://zenodo.org/records/14622027), 17th International MOS-AK Workshop, Silicon Valley, December 2024."
 * Á. Bűrmen, et. al. ["Free software support for compact modelling with Verilog-A"](https://doi.org/10.33180/InfMIDEM2024.404), Informacije MIDEM - Journal of Microelectronics, Electronic Components and Materials, 54 (2024), no. 4: 271-281.
 * Á. Bűrmen, ["VACASK and Verilog-A Distiller - building a device library for an analog circuit simulator"](https://fosdem.org/2025/schedule/event/fosdem-2025-4681-vacask-and-verilog-a-distiller-building-a-device-library-for-an-analog-circuit-simulator/), FOSDEM 2025, Brussels, February 2025.
-* Á. Bűrmen, ["Recent developments in the Verilog-A circuit analysis kernel"](https://wiki.f-si.org/index.php?title=Recent_developments_in_the_Verilog-A_circuit_analysis_kernel), Free Silicon Conference 2025, Frankfurt (Oder), July 2025.
+* Á. Bűrmen, ["Recent developments in the Verilog-A circuit analysis kernel"](https://wiki.f-si.org/index.php?title=Recent_developments_in_the_Verilog-A_circuit_analysis_kernel), Free Silicon Conference 2025, Frankfurt (Oder), July 2025. 
+* Á. Bűrmen, ["The OpenVAF Verilog-A Compiler for the OpenPDK Ecosystem"](https://doi.org/10.5281/zenodo.17113774), MOS-AK Workshop/ESSERC 2025, Munich, September 2025. 
