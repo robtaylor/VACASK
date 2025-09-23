@@ -510,7 +510,7 @@ after INCEND we have
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
             }
-<BODY>(\.[0-9]*)|((0|([1-9][0-9]*))(\.([0-9]*)?)?)([munpfakKMGT][a-zA-Z_]*) { 
+<BODY>(\.[0-9]*)|((0|([1-9][0-9]*))(\.([0-9]*)?)?)(([munpfakKMGTxX]|meg|mil)[a-zA-Z_]*) { 
                 // .xxx
                 // xxx[.[xxx]]
                 // xxx
@@ -524,7 +524,16 @@ after INCEND we have
                 }
                 // i is the index of SI unit prefix
                 switch (yytext[i]) {
-                    case 'm': s=1e-3; break;
+                    case 'm': {
+                        if (yytext[i+1]=='e' && yytext[i+2]=='g') {
+                            s=1e6; 
+                        } else if (yytext[i+1]=='i' && yytext[i+2]=='l') {
+                            s=25.4e-6; 
+                        } else {
+                            s=1e-3; 
+                        }
+                        break; 
+                    }
                     case 'u': s=1e-6; break;
                     case 'n': s=1e-9; break;
                     case 'p': s=1e-12; break;
@@ -533,6 +542,8 @@ after INCEND we have
                     case 'k': s=1e3; break;
                     case 'K': s=1e3; break;
                     case 'M': s=1e6; break;
+                    case 'x': s=1e6; break;
+                    case 'X': s=1e6; break;
                     case 'G': s=1e9; break;
                     case 'T': s=1e12; break;
                     default: 

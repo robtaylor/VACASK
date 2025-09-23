@@ -1,0 +1,15 @@
+Demonstrate SI prefixes
+
+model vsrc vsource
+
+v1 (1 0) vsrc dc=0
+
+control
+  abort always
+  print ("m: ", 1m)
+  print ("M: ", 1M)
+  print ("x: ", 1x)
+  print ("X: ", 1X)
+  print ("meg: ", 1meg)
+  print ("mil: ", 1mil)
+endc
