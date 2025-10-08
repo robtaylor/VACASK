@@ -64,6 +64,43 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         }
     }
 
+#ifdef SIMDEBUG
+    // Process natures and disciplines
+    auto natures = ((OsdiNature*)dynamicLibrarySymbol(handle, "OSDI_NATURES"));
+    auto naturesLen = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_NATURES_LEN"));
+    if (natures && naturesLen) {
+        for(uint32_t i=0; i<*naturesLen; i++) {
+            auto nat = natures+i;
+            std::cout << "Nature " << i << ": " << nat->name << "\n";
+            if (nat->parent!=UINT32_MAX) {
+                std::cout << "  parent: "  << nat->parent << "\n";
+            }
+            if (nat->ddt!=UINT32_MAX) {
+                std::cout << "  ddt nature: "  << nat->ddt << "\n";
+            }
+            if (nat->idt!=UINT32_MAX) {
+                std::cout << "  idt nature: "  << nat->idt << "\n";
+            }
+            std::cout << "  attributes ("  << nat->num_attr << ")\n";
+        }
+    }
+    auto disciplines = ((OsdiDiscipline*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES"));
+    auto disciplinesLen = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES_LEN"));
+    if (disciplines && disciplinesLen) {
+        for(uint32_t i=0; i<*disciplinesLen; i++) {
+            auto disc = disciplines+i;
+            std::cout << "Discipline " << i << ": " << disc->name << "\n";
+            if (disc->flow!=UINT32_MAX) {
+                std::cout << "  flow nature: "  << disc->flow << "\n";
+            }
+            if (disc->potential!=UINT32_MAX) {
+                std::cout << "  potential nature: "  << disc->potential << "\n";
+            }
+            std::cout << "  attributes ("  << disc->num_attr << ")\n";
+        }
+    }
+#endif
+    
     // Size of descriptor
     auto ptrs = ((OsdiDescriptorSize*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTOR_SIZE"));
     if (!ptrs) {
