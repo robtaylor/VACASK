@@ -65,6 +65,23 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     }
 
 #ifdef SIMDEBUG
+    auto print_attribute = [](OsdiAttribute* a, const char* indent) {
+        std::cout << indent << a->name << " = ";
+        switch (a->value_type) {
+            case ATTR_TYPE_INT:
+                std::cout << a->value.integer; break;
+            case ATTR_TYPE_REAL:
+                std::cout << a->value.real; break;
+            case ATTR_TYPE_STR:
+                std::cout << "\"" << a->value.string << "\""; break;
+        }
+        std::cout << "\n";
+    };
+
+    // Attributes table
+    auto attributes = ((OsdiAttribute*)dynamicLibrarySymbol(handle, "OSDI_ATTRIBUTES"));
+    auto attributesLen = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_ATTRIBUTES_LEN"));
+    
     // Process natures and disciplines
     auto natures = ((OsdiNature*)dynamicLibrarySymbol(handle, "OSDI_NATURES"));
     auto naturesLen = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_NATURES_LEN"));
@@ -72,16 +89,26 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
         for(uint32_t i=0; i<*naturesLen; i++) {
             auto nat = natures+i;
             std::cout << "Nature " << i << ": " << nat->name << "\n";
-            if (nat->parent!=UINT32_MAX) {
-                std::cout << "  parent: "  << nat->parent << "\n";
+            switch (nat->parent_type) {
+                case PARENT_NATURE:
+                    std::cout << "  parent: nature("  << nat->parent << ")\n"; break;
+                case PARENT_DISCIPLINE_FLOW:
+                    std::cout << "  parent: discipline("  << nat->parent << ") flow\n"; break;
+                case PARENT_DISCIPLINE_POTENTIAL:
+                    std::cout << "  parent: discipline("  << nat->parent << ") potential\n"; break;
             }
             if (nat->ddt!=UINT32_MAX) {
-                std::cout << "  ddt nature: "  << nat->ddt << "\n";
+                std::cout << "  ddt nature: nature("  << nat->ddt << ")\n";
             }
             if (nat->idt!=UINT32_MAX) {
-                std::cout << "  idt nature: "  << nat->idt << "\n";
+                std::cout << "  idt nature: nature("  << nat->idt << ")\n";
             }
             std::cout << "  attributes ("  << nat->num_attr << ")\n";
+            if (attributes && attributesLen) {
+                for(uint32_t j=0; j<nat->num_attr; j++) {
+                    print_attribute(attributes+nat->attr_start+j, "    ");
+                }
+            }
         }
     }
     auto disciplines = ((OsdiDiscipline*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES"));
@@ -91,12 +118,37 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
             auto disc = disciplines+i;
             std::cout << "Discipline " << i << ": " << disc->name << "\n";
             if (disc->flow!=UINT32_MAX) {
-                std::cout << "  flow nature: "  << disc->flow << "\n";
+                std::cout << "  flow: nature("  << disc->flow << ")\n";
             }
             if (disc->potential!=UINT32_MAX) {
-                std::cout << "  potential nature: "  << disc->potential << "\n";
+                std::cout << "  potential: nature("  << disc->potential << ")\n";
             }
-            std::cout << "  attributes ("  << disc->num_attr << ")\n";
+            if (disc->domain!=DOMAIN_NOT_GIVEN) {
+                std::cout << "  domain: "  << (disc->domain==DOMAIN_CONTINUOUS ? "contiuous" : "discrete" );
+            }
+            if (attributes && attributesLen) {
+                auto at = disc->attr_start;
+                if (disc->num_flow_attr) {
+                    std::cout << "  flow attributes ("  << disc->num_flow_attr << ")\n";
+                    for(uint32_t i=0; i<disc->num_flow_attr; i++) {
+                        print_attribute(attributes+at+i, "    ");
+                    }
+                }
+                at += disc->num_flow_attr;
+                if (disc->num_potential_attr) {
+                    std::cout << "  potential attributes ("  << disc->num_potential_attr << ")\n";
+                    for(uint32_t i=0; i<disc->num_potential_attr; i++) {
+                        print_attribute(attributes+at+i, "    ");
+                    }
+                }
+                at += disc->num_potential_attr;
+                if (disc->num_user_attr) {
+                    std::cout << "  user attributes ("  << disc->num_user_attr << ")\n";
+                    for(uint32_t i=0; i<disc->num_user_attr; i++) {
+                        print_attribute(attributes+at+i, "    ");
+                    }
+                }   
+            }
         }
     }
 #endif

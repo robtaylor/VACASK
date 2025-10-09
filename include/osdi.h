@@ -63,10 +63,18 @@
 
 #define INIT_ERR_OUT_OF_BOUNDS 1
 
-#define ATTR_TYPE_REAL 0
+#define ATTR_TYPE_STR 0
 #define ATTR_TYPE_INT 1
-#define ATTR_TYPE_STR 2
+#define ATTR_TYPE_REAL 2
 
+#define PARENT_NONE 0
+#define PARENT_NATURE 1
+#define PARENT_DISCIPLINE_FLOW 2
+#define PARENT_DISCIPLINE_POTENTIAL 3
+
+#define DOMAIN_NOT_GIVEN 0 
+#define DOMAIN_DISCRETE 1
+#define DOMAIN_CONTINUOUS 2
 
 
 typedef struct OsdiLimFunction {
@@ -210,6 +218,7 @@ typedef struct OsdiDescriptor {
 
 typedef struct OsdiNature {
   char *name;
+  uint32_t parent_type;
   uint32_t parent;
   uint32_t ddt;
   uint32_t idt;
@@ -221,16 +230,24 @@ typedef struct OsdiDiscipline {
   char *name;
   uint32_t flow;
   uint32_t potential;
+  uint32_t domain;
   uint32_t attr_start;
-  uint32_t num_attr;
+  uint32_t num_flow_attr;
+  uint32_t num_potential_attr;
+  uint32_t num_user_attr;
+  
 } OsdiDiscipline;
+
+typedef union OsdiAttributeValue {
+  char* string;
+  int32_t integer;
+  double real;
+} OsdiAttributeValue;
 
 typedef struct OsdiAttribute {
   char *name;
-  uint32_t attr_type;
-  int32_t integer;
-  double real;
-  char *string;
+  uint32_t value_type;
+  OsdiAttributeValue value;
 } OsdiAttribute;
 
 
