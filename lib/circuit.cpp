@@ -182,6 +182,8 @@ API:
   Instance::buildHierarchy()      - build subhierarchy, implicitly also propagates parameters
 */
 
+static Id loadMapId = Id::createStatic("map"); 
+
 Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s) 
     : valid(false), tables_(tab), title_("Untitled"), 
       unknownCountExcludingGround(0), hdev(nullptr), 
@@ -239,11 +241,53 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
     // else
     //   set compiled file path to found file
     // load compiled file
+    // 
+    // Options
+    //   map (string vector) : [ <from1>, <to1>, <from2>, <to2>, ...]
+    //   <to> is a pattern where * is replaced with <from>
+    //   If <from> is "*" then all modules are matched and loaded. 
+    //   If not given, loads all modules without renaming. 
+    //   If [] loads nothing. 
+    //   [ "*", "*"] loads all modules without renaming. 
+    //   [ "*", "pfx_*" ] loads all modules and prefixes the names with "pfx_"
+    //   If there are multiple pairs with <from>="*" only the first one is used. 
+
     for(auto it=tables_.loads().cbegin(); it!=tables_.loads().cend(); ++it) {
         auto fileName = it->file();
-        auto module = it->module();
-        auto asModule = it->asModule();
         auto extension = std::filesystem::path(fileName).extension();
+        
+        const StringVector* map = nullptr;
+        
+        // Get parameters
+        for(auto &par : it->parameters().values()) {
+            Id nameId = par.name();
+            if (nameId==loadMapId) {
+                if (!par.val().isVector()) {
+                    s.set(Status::BadArguments, "Parameter must be a vector.");
+                    s.extend(it->location());
+                    return;
+                } else if (par.val().size()>0) {
+                    if (par.val().type()!=Value::Type::StringVec) {
+                        s.set(Status::BadArguments, "Parameter must be a string vector.");
+                        s.extend(it->location());
+                        return;
+                    } else {
+                        // Get map
+                        map = &par.val().val<const StringVector>();
+                        if (map->size() % 2 != 0) {
+                            s.set(Status::BadArguments, "Name map must have an even number of elements.");
+                            s.extend(it->location());
+                            return;
+                        }
+                    }
+                }
+            } else {
+                // Don't know this parameter
+                s.set(Status::BadArguments, "Parameter is not supported.");
+                s.extend(it->location());
+                return;
+            }
+        }
 
         // Get the canonical path of the file where the load directive is located
         auto [fs, pos, line, offset] = it->location().data();
@@ -292,7 +336,7 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
         if (compiler) {
             std::tie(ok, compiled) = compiler->compile(loadDirectiveCanonicalPath, fileName, canonicalPath, outputPath, s);
         } else {
-            s.set(Status::Unsupported, "Sozurce compiler not available.");
+            s.set(Status::Unsupported, "Source compiler not available.");
         }
         if (!ok) {
             s.extend(it->location());
@@ -310,31 +354,43 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
             return;
         }
 
-        if (!module) {
-            // Get all devices
-            auto devCount = osf->deviceCount();
-            for(decltype(devCount) i=0; i<devCount; i++) {
-                auto* dev = osf->createDevice(i, Id::none, it->location(), s);
+        // Go through devices, check in map if we want to load a device
+        auto devCount = osf->deviceCount();
+        for(decltype(devCount) i=0; i<devCount; i++) {
+            auto devName = std::string(osf->deviceIdentifier(i));
+            std::string asName;
+            // Check in map
+            bool accept = !map;
+            if (map) {
+                for(auto it=map->cbegin(); it!=map->cend(); ++it) {
+                    auto& pat = *it;
+                    ++it;
+                    auto& xform = *it;
+                    // Check pattern
+                    if (pat=="*" || pat==devName) {
+                        // Match, replace "*" with devName in xform
+                        asName = xform;
+                        do {
+                            auto pos = asName.find("*");
+                            if (pos != std::string::npos)
+                                asName.replace(pos, 1, devName);
+                        } while (pos!=std::string::npos);
+                        accept = true;
+                        break;
+                    }
+                }
+            } else {
+                // No map, accept, keep name
+                asName = devName;
+            }
+            if (accept) {
+                auto* dev = osf->createDevice(i, asName, it->location(), s);
                 if (!add(dev, s)) {
                     s.extend("Failed to add device.");
                     s.extend(it->location());
                     delete dev;
                     return;
                 }
-            }
-        } else {
-            // Get specific device
-            auto* dev = osf->createDevice(module, asModule, it->location(), s);
-            if (!dev) {
-                s.set(Status::NotFound, std::string("Module '")+std::string(module)+"' not found in OSDI file '"+std::string(fileName)+"'.");
-                s.extend(it->location());
-                return;
-            }
-            if (!add(dev, s)) {
-                s.extend("Failed to add device.");
-                s.extend(it->location());
-                delete dev;
-                return;
             }
         }
     }

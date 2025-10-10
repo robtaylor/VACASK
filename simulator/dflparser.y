@@ -924,14 +924,15 @@ load
   : LOAD STRING NEWLINE {
     $$ = std::move(PTLoad(@1.loc(), $2));
   }
-  | LOAD STRING IDENTIFIER NEWLINE {
-    $$ = std::move(PTLoad(@1.loc(), $2, $3));
+  | LOAD STRING opt_broken_parameter_list NEWLINE {
+    if ($3.params.expressionCount()>0) {
+      status.set(Status::BadArguments, "Only constant expressions are allowed here.");
+      status.extend($3.params.expressions()[0].location());
+      YYERROR;
+    }
+    $$ = std::move(PTLoad(@1.loc(), std::move($2), std::move($3.params)));
   }
-  | LOAD STRING IDENTIFIER COLON IDENTIFIER NEWLINE {
-    $$ = std::move(PTLoad(@1.loc(), $2, $3, $5));
-  }
-
-
+  
 sweeps
   : SWEEP IDENTIFIER opt_broken_parameter_list {
     Id id = $2;

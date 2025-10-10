@@ -263,20 +263,18 @@ void PTSubcircuitDefinition::dump(int indent, std::ostream& os) const {
 PTLoad::PTLoad() {
 }
 
-PTLoad::PTLoad(const Loc& l, const std::string& file, Id module, Id asModule)
-    : loc(l), file_(file), module_(module), asModule_(asModule) {
+PTLoad::PTLoad(const Loc& l, const std::string& file)
+    : loc(l), file_(file) {
+}
+
+PTLoad::PTLoad(const Loc& l, const std::string& file, PTParameters&& par)
+    : loc(l), file_(file), parameters_(std::move(par)) {
 }
 
 void PTLoad::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << "load \"" << file_ << "\"";
-    if (module_) {
-        os << " " << (module_);
-    }
-    if (asModule_) {
-        os << " : " << (asModule_);
-    }
-    
+    os << " " << (parameters_);
     os << "\n";
 }
 

@@ -293,8 +293,9 @@ private:
 class PTLoad {
 public:
     PTLoad();
-    PTLoad(const Loc& l, const std::string& file, Id module=Id::none, Id asModule=Id::none);
-
+    PTLoad(const Loc& l, const std::string& file);
+    PTLoad(const Loc& l, const std::string& file, PTParameters&& par);
+    
     PTLoad           (const PTLoad&)  = delete;
     PTLoad           (      PTLoad&&) = default;
     PTLoad& operator=(const PTLoad&)  = delete;
@@ -303,15 +304,13 @@ public:
 
     inline const Loc& location() const { return loc; };
     inline const std::string& file() const { return file_; };
-    inline Id module() const { return module_; };
-    inline Id asModule() const { return asModule_; };
-
+    inline const PTParameters& parameters() const { return parameters_; };
+    
     void dump(int indent, std::ostream& os) const;
 
 private:
+    PTParameters parameters_;
     std::string file_;
-    Id module_;
-    Id asModule_;
     Loc loc;
 };
 
