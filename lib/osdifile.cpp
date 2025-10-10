@@ -252,6 +252,20 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     for(int i=0; i<descriptorCount; i++) {
         OsdiDescriptor* desc = descriptors[i];
 
+#ifdef SIMDEBUG
+        std::cout << "Module: " << desc->name << "\n";
+        for(uint32_t ni=0; ni<desc->num_nodes; ni++) {
+            std::cout << "  node " << desc->nodes[ni].name << ": ";
+            auto di = desc->node_discipline[ni];
+            if (disciplines && disciplinesLen && di!=UINT32_MAX) {
+                std::cout << disciplines[di].name << " (" << di << ")";
+            } else {
+                std::cout << "<unknown>";
+            }
+            std::cout << "\n";
+        }
+#endif
+
         // Check if device allows bypass. Bypass is not allowed if
         // - device uses $bound_step
         // - device uses $abstime (TODO)
