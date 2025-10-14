@@ -1,5 +1,6 @@
 #include "cmd.h"
 #include "processutils.h"
+#include "osdifile.h"
 #include "simulator.h"
 #include "an.h"
 #include "platform.h"
@@ -621,7 +622,30 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
     if (cmd.keywords().size()>0) {
         auto what = cmd.keywords()[0].name();
-        if (what=="devices") {
+        if (what=="device_files") {
+            Simulator::out() << "Device files:\n";
+            for(auto f : OsdiFile::files()) {
+                Simulator::out() << "  " << f->fileName() << "\n";
+            }
+        } else if (what=="device_file") {
+            // Evaluate arguments list
+            std::vector<String> sVec;
+            if (!evaluateExpressions(interpreter.variableEvaluator(), cmd, sVec, s)) {
+                return false;
+            }
+            // Go through strings
+            for(auto& pat : sVec) {
+                // Scan all device files, match substring in device file name
+                for(auto f : OsdiFile::files()) {
+                    if (f->fileName().find(pat)==std::string::npos) {
+                        // Skip
+                        continue;
+                    }
+                    Simulator::out() << "Device file: " << f->fileName() << "\n";
+                    f->dump(2, Simulator::out());
+                }
+            }
+        } else if (what=="devices") {
             Simulator::out() << "Devices:\n";
             circuit.dumpDevices(2, Simulator::out());
         } else if (what=="models") {

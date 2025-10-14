@@ -38,6 +38,8 @@ public:
     typedef uint32_t OsdiErrorIndex;
     typedef uint32_t OsdiStateIndex;
     typedef uint32_t OsdiStateCount;
+    typedef uint32_t OsdiNatureIndex;
+    typedef uint32_t OsdiDisciplineIndex;
 
     static const JacobianEntryIndex noJacobianEntry = std::numeric_limits<JacobianEntryIndex>::max();
 
@@ -66,6 +68,9 @@ public:
     // Factory function for creating a device object from parsed netlist (API level 1)
     OsdiDevice *createDevice(OsdiDeviceIndex index, Id asName, Loc location=Loc::bad, Status& s=Status::ignore);
     OsdiDevice *createDevice(Id name, Id asName, Loc location=Loc::bad, Status& s=Status::ignore);
+
+    // Get the vector of loaded files
+    static const std::vector<OsdiFile*>& files() { return fileOrder; };
 
     // Translators
     // Id (name) -> simulator id of parameter/opvar
@@ -245,6 +250,13 @@ public:
     auto& nonzeroResistiveJacobianEntries(OsdiDeviceIndex deviceIndex) { return nonzeroResistiveJacNdx[deviceIndex]; };
     auto& nonzeroReactiveJacobianEntries(OsdiDeviceIndex deviceIndex) { return nonzeroReactiveJacNdx[deviceIndex]; };
 
+    // Access to disciplines and natures
+    const OsdiNature* nature(OsdiNatureIndex index) const { if (natures && index!=UINT32_MAX && index<naturesCount) return natures+index; else return nullptr; };
+    const OsdiDiscipline* discipline(OsdiDisciplineIndex index) const { if (disciplines && index!=UINT32_MAX && index<disciplinesCount) return disciplines+index; else return nullptr; };
+
+    // Dump
+    virtual void dump(int indent, std::ostream& os) const;
+
 private:
     void* handle;
     std::string file;
@@ -254,12 +266,24 @@ private:
     std::vector<OsdiDescriptor*> descriptors;
     OsdiDeviceIndex descriptorCount;
     size_t descriptorSize;
+    OsdiNature* natures;
+    OsdiDiscipline* disciplines;
+    OsdiAttribute* attributes;
+    OsdiNatureIndex naturesCount;
+    OsdiDisciplineIndex disciplinesCount;
     
     // Map from device name to device index
     std::unordered_map<Id,OsdiDeviceIndex> deviceNameToIndex;
 
     // Map from dynamic library handle to OsdiFile structure
+    // This structure owns the OsdiFile object via its pointer
     static std::unordered_map<void*,std::unique_ptr<OsdiFile>> registry;
+
+    // Map from path to OsdiFile structure
+    static std::unordered_map<std::string,OsdiFile*> nameToFile;
+
+    // Order in which files were opened
+    static std::vector<OsdiFile*> fileOrder;
 
     // Vector of vectors of Osdi parameter names
     std::vector<std::vector<Id>> osdiIdPrimaryParamName;

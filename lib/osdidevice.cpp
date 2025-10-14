@@ -602,6 +602,28 @@ bool OsdiDevice::processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const
 }
 
 void OsdiDevice::dump(int indent, std::ostream& os) const {
+    // Nature formatter
+    auto natref = [this](OsdiNatureRef ref) -> const std::string {
+        switch (ref.ref_type) {
+            case NATREF_NATURE: 
+                if (auto nat = file()->nature(ref.index)) {
+                    return nat->name;
+                }
+                break;
+            case NATREF_DISCIPLINE_FLOW: 
+            case NATREF_DISCIPLINE_POTENTIAL: 
+                if (auto disc = file()->discipline(ref.index)) {
+                    auto dname = disc->name;
+                    if (ref.ref_type==NATREF_DISCIPLINE_FLOW) {
+                        return std::string(dname)+".flow"; 
+                    } else {
+                        return std::string(dname)+".potential";
+                    }
+                }
+                break;
+        }
+        return "<none>";
+    };
     std::string pfx = std::string(indent, ' ');
     os << pfx << "OSDI device " << std::string(name()) << " : " << file()->fileName() << " : " << index_ << "\n";
     if (descriptor_->num_nodes>0) {
@@ -612,9 +634,10 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
             if (descriptor_->nodes[i].is_flow) {
                 os << " (flow)";
             }
-            os << ", units \"" << descriptor_->nodes[i].units << "\"";
-            os << ", residual units \"" << descriptor_->nodes[i].residual_units << "\"";
-            
+            auto un = descriptor_->unknown_nature[i];
+            auto rn = descriptor_->residual_nature[i];
+            os << ", " << natref(un) << " [" << descriptor_->nodes[i].units << "]";
+            os << ", residual " << natref(rn) << " [" << descriptor_->nodes[i].residual_units << "]";
             if (descriptor_->nodes[i].resist_residual_off != UINT32_MAX) {
                 os << ", resistive";
             }
