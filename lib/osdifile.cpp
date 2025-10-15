@@ -78,7 +78,10 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     disciplines = ((OsdiDiscipline*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES"));
     auto dptr = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES_LEN"));
     disciplinesCount = dptr ? *dptr : 0;
-    
+
+    // Process natures and disciplines to collect abstol values
+    processNaturesAndDisciplines();
+
     // Size of descriptor
     auto ptrs = ((OsdiDescriptorSize*)dynamicLibrarySymbol(handle, "OSDI_DESCRIPTOR_SIZE"));
     if (!ptrs) {

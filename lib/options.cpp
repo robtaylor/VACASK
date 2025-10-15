@@ -7,6 +7,17 @@
 
 namespace NAMESPACE {
 
+Id SimulatorOptions::tolmodeSpice = Id::createStatic("spice"); // SPICE tolerance handling
+    // Use
+    // - vntol and fluxtol for non-flow unknowns
+    // - abstol and chgtol for flow unknowns
+    // - abstol and chgtol for residuals of equations corresponding to non-flow unknowns
+    // - vntol and fluxtol for residuals of equations corresponding to flow unknwns
+Id SimulatorOptions::tolmodeVa = Id::createStatic("va"); // Verilog-A tolerance handling
+    // Where available, use natures and disciplines, otherwise do not enforce tolerances
+Id SimulatorOptions::tolmodeMixed = Id::createStatic("mixed"); // Mixed tolerance handling
+    // Where available, use natures and disciplines, otherwise use SPICE tolerances
+
 Id SimulatorOptions::relrefPointLocal = Id::createStatic("pointlocal"); // at given time for each unknown separately
 Id SimulatorOptions::relrefLocal = Id::createStatic("local"); // maximum over past time for each unknown separately
 Id SimulatorOptions::relrefPointGlobal = Id::createStatic("pointglobal"); // at given time, maximum over all unknowns
@@ -29,6 +40,7 @@ SimulatorOptions::SimulatorOptions() {
     gshunt = 0.0; // >=0, 0 = off, >0 shunt conductance from potential nodes to ground
     minr = 0.0; // >=0
     scale = 1.0; // >0
+    tolmode = tolmodeSpice;
     reltol = 1e-3; // 0<x<1, Relative tolerance 
     abstol = 1e-12; // >0, absolute current tolerance in A
     vntol = 1e-6; // >0, absolute voltage tolerance in V
@@ -226,6 +238,8 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(minr);
     
     registerMember(scale);
+
+    registerMember(tolmode);
     
     registerMember(reltol);
     registerMember(abstol);

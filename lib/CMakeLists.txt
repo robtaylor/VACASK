@@ -90,6 +90,7 @@ add_library(simlib STATIC
     hierdevice.cpp
     osdicallback.cpp
     osdifile.cpp
+    osdifilenature.cpp
     osdidevice.cpp
     osdimodel.cpp
     osdiinstance.cpp 

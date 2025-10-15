@@ -624,6 +624,19 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
         }
         return "<none>";
     };
+    
+    auto tolToStr = [](double tol, int width) -> std::string {
+        std::stringstream ss;
+        ss << std::left << std::setw(width);
+        ss.str(""); 
+        if (std::isinf(tol)) {
+            ss << "<none>";
+        } else {
+            ss << std::defaultfloat << tol;
+        }
+        return ss.str(); 
+    };
+
     std::string pfx = std::string(indent, ' ');
     os << pfx << "OSDI device " << std::string(name()) << " : " << file()->fileName() << " : " << index_ << "\n";
     if (descriptor_->num_nodes>0) {
@@ -651,6 +664,15 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
                 os << "+limiting";
             }
             
+            os << "\n";
+        }
+        os << "  Absolute tolerances in Verilog-A mode:\n";
+        for(OsdiFile::OsdiNodeIndex i=0; i<descriptor_->num_nodes; i++) {
+            os << pfx << "    ";
+            os << nodeName(i) << ":";
+            auto [u, idtu, r, idtr] = file()->tolerances(index_, i);
+            os << " abstol=" << tolToStr(u, 8) << " idt_abstol=" << tolToStr(idtu, 8);
+            os << " res_abstol=" << tolToStr(r, 8) << " res_idt_abstol=" << tolToStr(idtr, 8);
             os << "\n";
         }
     }

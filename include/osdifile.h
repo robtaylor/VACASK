@@ -254,6 +254,27 @@ public:
     const OsdiNature* nature(OsdiNatureIndex index) const { if (natures && index!=UINT32_MAX && index<naturesCount) return natures+index; else return nullptr; };
     const OsdiDiscipline* discipline(OsdiDisciplineIndex index) const { if (disciplines && index!=UINT32_MAX && index<disciplinesCount) return disciplines+index; else return nullptr; };
 
+    // OsdiNatureRef to value and idt absolute tolerances
+    std::tuple<double, double> natrefTolerances(OsdiNatureRef& natref) const {
+        switch (natref.ref_type) {
+            case NATREF_NATURE:
+                return std::make_tuple(natureAbstol[natref.index], natureIdtAbstol[natref.index]);
+            case NATREF_DISCIPLINE_FLOW:
+                return std::make_tuple(disciplineFlowAbstol[natref.index], disciplineFlowIdtAbstol[natref.index]);
+            case NATREF_DISCIPLINE_POTENTIAL:
+                return std::make_tuple(disciplinePotentialAbstol[natref.index], disciplinePotentialIdtAbstol[natref.index]);
+        }
+        return std::make_tuple(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+    }
+
+    // Absolute tolerances (unknown, unknown idt, residual, residual idt)
+    std::tuple<double, double, double, double> tolerances(OsdiDeviceIndex deviceIndex, TerminalIndex node) const {
+        auto desc = descriptors[deviceIndex];
+        auto& un = desc->unknown_nature[node];
+        auto& rn = desc->residual_nature[node];
+        return std::tuple_cat(natrefTolerances(un), natrefTolerances(rn));
+    }
+    
     // Dump
     virtual void dump(int indent, std::ostream& os) const;
 
@@ -345,6 +366,18 @@ private:
 
     // Limit functions
     static const OsdiLimitFunction limitFunctionTable[];
+
+    // Process natures and disciplines 
+    // - collect abstol values for each nature and its idt nature
+    void processNaturesAndDisciplines();
+
+    std::vector<double> natureAbstol;
+    std::vector<double> natureIdtAbstol;
+
+    std::vector<double> disciplineFlowAbstol;
+    std::vector<double> disciplineFlowIdtAbstol;
+    std::vector<double> disciplinePotentialAbstol;
+    std::vector<double> disciplinePotentialIdtAbstol;
 };
 
 }

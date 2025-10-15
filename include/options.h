@@ -16,6 +16,7 @@ typedef struct SimulatorOptions  {
     Real gshunt; 
     Real minr;
     Real scale;
+    Id tolmode;
     Real reltol; 
     Real abstol;
     Real vntol;
@@ -95,6 +96,10 @@ typedef struct SimulatorOptions  {
     // Isn't C++20 great?
     bool operator==(const SimulatorOptions& other) const = default;
     bool operator!=(const SimulatorOptions& other) const = default; 
+
+    static Id tolmodeSpice;
+    static Id tolmodeVa;
+    static Id tolmodeMixed;
 
     static Id relrefPointLocal;
     static Id relrefLocal;
