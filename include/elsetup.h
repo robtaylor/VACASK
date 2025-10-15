@@ -119,7 +119,7 @@ typedef struct EvalSetup {
     size_t bypassOpportunuties;
     size_t bypassedInstances;
 
-    // Former members of SimulatorInternals
+    // Former members of CommonData
     double time {0};
 
     // Convergence check
@@ -189,7 +189,7 @@ typedef struct EvalSetup {
     };
     void setBoundStep(double bound) { if (bound<boundStep) boundStep=bound; };
     void setDiscontinuity(Int i) { if (i<0) return; if (discontinuity<0 || i<discontinuity) discontinuity=i; };
-    bool setBreakPoint(double t, SimulatorInternals& internals) {
+    bool setBreakPoint(double t, CommonData& commons) {
         if (std::abs(t-time) <= timeRelativeTolerance*time) {
             // Breakpoint now or close to now, it is too late to take it into account. 
             // It should have been set earlier. 

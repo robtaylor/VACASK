@@ -120,6 +120,8 @@ typedef struct SimulatorOptions  {
     static std::unordered_map<Id, ParameterIndex> parametrizationAffectingOptions;
     // Options that affect topology
     static std::unordered_map<Id, ParameterIndex> hierarchyAffectingOptions;
+    // Options that affect tolerances
+    static std::unordered_map<Id, ParameterIndex> tolerancesAffectingOptions;
 
     static bool staticInitialize();
 
@@ -127,13 +129,8 @@ typedef struct SimulatorOptions  {
 } SimulatorOptions;
 
 
-// Simulator internals
-// TODO: make this a local temporary structure that is created in analysis, 
-//       passed on to the core, and filled out by analysis and core.
-//       Problem is in setup() that needs this structure. Higher up 
-//       setup is called by elaborate() and elaborateChanges(), which in 
-//       turn are also called from the command interpreter. 
-typedef struct SimulatorInternals {
+// Common data used during analysis and elaboration
+typedef struct CommonData {
     Real sourcescalefactor;
     Real gmin;     // gmin applied in parallel to nonlinear branches
     Real gdev;     // extra gmin applied during homotopy, 
@@ -149,9 +146,9 @@ typedef struct SimulatorInternals {
     bool allowContinueStateBypass;
     bool requestForcedBypass; 
     
-    SimulatorInternals();
+    CommonData();
     void fromOptions(const SimulatorOptions& options);
-} SimulatorInternals;
+} CommonData;
 
 }
 

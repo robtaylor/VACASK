@@ -46,7 +46,7 @@ public:
 
     virtual bool operator==(const Device& other) const; 
     Id name() const { return name_; };
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual bool collapseNodes(Circuit& circuit, Status& s=Status::ignore);
     virtual bool populateStructures(Circuit& circuit, Status& s=Status::ignore);
     virtual bool bind(
@@ -55,7 +55,7 @@ public:
         KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
-    virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup);
+    virtual bool evalAndLoad(Circuit& circuit, CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup);
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& parsedModel, Status& s=Status::ignore);
     virtual void dump(int indent, std::ostream& os) const;
 
@@ -188,7 +188,7 @@ public:
     std::tuple<bool, bool> parameterGiven(OsdiFile::OsdiParameterId osdiId, void* coreMod, void* coreInst, Status& s=Status::ignore) const;
 
     static std::tuple<size_t, size_t> simParasSizes();
-    static void populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray);
+    static void populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const CommonData& internals, double* dblArray, char** chrPtrArray);
     static void updateSimInfo(OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     
     bool processInitInfo(Circuit& circuit, OsdiInitInfo& initInfo, const char* typeString, Id name, DeviceRequests* devReq, Status& s=Status::ignore) const;

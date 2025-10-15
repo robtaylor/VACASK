@@ -160,17 +160,16 @@ std::tuple<bool,bool> OsdiModel::parameterGiven(ParameterIndex ndx, Status& s) c
 }
 
 // Set up this model (virtual method)
-std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
+std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s) {
     OsdiSimParas sp;
     auto& opt = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals(); 
-
+    
     // Allocate tables on stack
     auto [ndbl, nchrptr ] = device()->simParasSizes();
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
     
-    OsdiDevice::populateSimParas(sp, opt, internals, dblArray, chrPtrArray);
+    OsdiDevice::populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
     auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;

@@ -61,7 +61,7 @@ public:
     };
     DCIncrementalCore(
         OutputDescriptorResolver& parentResolver, DCIncrementalParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
-        KluRealMatrix& jacobian, Vector<double>& incrementalSolution
+        CommonData& commons, KluRealMatrix& jacobian, Vector<double>& incrementalSolution
     ); 
     ~DCIncrementalCore();
     

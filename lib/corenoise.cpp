@@ -37,11 +37,11 @@ instantiateIntrospection(NoiseParameters);
 NoiseCore::NoiseCore(
     OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
     std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
-    Circuit& circuit, 
+    Circuit& circuit, CommonData& commons, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
     Vector<double>& results, double& powerGain, double& outputNoise
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), opCore_(opCore), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution), 
     contributionOffset(contributionOffset), 
@@ -316,7 +316,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(&esReactNoise, nullptr, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &esReactNoise, nullptr, nullptr)) {
         // Load error
         setError(NoiseError::EvalAndLoad);
         if (debug>0) {
@@ -390,7 +390,7 @@ CoreCoroutine NoiseCore::coroutine(bool continuePrevious) {
         // Load AC matrix, we must update the imaginary part only
         acMatrix.zero(Component::Imaginary);
         lsReacNoise.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(nullptr, &lsReacNoise, nullptr)) {
+        if (!circuit.evalAndLoad(commons, nullptr, &lsReacNoise, nullptr)) {
             // Load error
             setError(NoiseError::EvalAndLoad);
             if (debug>0) {

@@ -65,12 +65,15 @@ public:
         Descriptor, 
     };
 
-    AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit);
+    AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit, CommonData& commons);
     
     AnalysisCore           (const AnalysisCore&)  = delete;
     AnalysisCore           (      AnalysisCore&&) = delete;
     AnalysisCore& operator=(const AnalysisCore&)  = delete;
     AnalysisCore& operator=(      AnalysisCore&&) = delete;
+
+    // Common data
+    CommonData& commonData() { return commons; };
 
     // Format error, return false on error - this function is not cheap (works with strings)
     bool formatError(Status& s=Status::ignore) const; 
@@ -180,6 +183,8 @@ protected:
     Int errorExpectedArgCount;
     Id errorId;
     Id errorId2;
+
+    CommonData& commons;
 
     std::tuple<bool, UnknownIndex, UnknownIndex> getOutput(Value& v);
     std::tuple<bool, Instance*> getInput(Id name);

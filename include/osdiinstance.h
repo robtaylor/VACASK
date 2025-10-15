@@ -54,7 +54,7 @@ public:
     virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const;
     virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const; 
     virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const;
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
 
     // Model access (as OsdiModel)
@@ -85,8 +85,8 @@ public:
     );
     bool inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
     bool outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
-    bool evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
-    bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
+    bool evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
+    bool loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };

@@ -59,6 +59,7 @@ public:
     
     OperatingPointCore(
         OutputDescriptorResolver& parentResolver, OperatingPointParameters& params, Circuit& circuit, 
+        CommonData& commons, 
         KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
     ); 
     ~OperatingPointCore();

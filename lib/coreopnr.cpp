@@ -158,10 +158,10 @@ std::tuple<bool, bool> PreprocessedUserForces::set(Circuit& circuit, ValueVector
 
     
 OpNRSolver::OpNRSolver(
-    Circuit& circuit, KluRealMatrix& jac, 
+    Circuit& circuit, CommonData& commons, KluRealMatrix& jac, 
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings, Int forcesSize
-) : circuit(circuit), states(states), 
+) : circuit(circuit), commons(commons), states(states), 
     NRSolver(circuit.tables().accounting(), jac, solution, settings) {
     // Slot 0 is for sweep continuation and homotopy (set via CoreStateStorage object)
     // Slot 1 is 
@@ -553,7 +553,7 @@ bool OpNRSolver::preIteration(bool continuePrevious) {
     // Clear maximal residual contribution
     zero(maxResidualContribution_);
     // Pass iteration number to Verilog-A models
-    circuit.simulatorInternals().iteration = iteration;
+    commons.iteration = iteration;
     return true;    
 }
 
@@ -620,7 +620,7 @@ void OpNRSolver::loadShunts(double gshunt, bool loadJacobian) {
 bool OpNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     lastError = Error::OK;
     evalSetup.requestHighPrecision = highPrecision;
-    if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &evalSetup, &loadSetup, nullptr)) {
         // Load error
         lastError = Error::EvalAndLoad;
         if (settings.debug>2) {
@@ -713,10 +713,10 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     }
 
     // Force instance evaluation bypass if requested
-    evalSetup_.forceBypass = circuit.simulatorInternals().requestForcedBypass;
+    evalSetup_.forceBypass = commons.requestForcedBypass;
     
     // Clear bypass forcing request
-    circuit.simulatorInternals().requestForcedBypass = false;
+    commons.requestForcedBypass = false;
 
     // Evaluate and load
     auto evalSt = evalAndLoadWrapper(evalSetup_, loadSetup_);
@@ -728,7 +728,7 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
     delta[0] = 0.0;
 
     // Now load gshunt if it is greater than 0.0
-    auto gshunt = circuit.simulatorInternals().gshunt;
+    auto gshunt = commons.gshunt;
     if (gshunt>0) {
         loadShunts(gshunt);
     }

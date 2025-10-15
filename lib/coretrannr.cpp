@@ -6,10 +6,10 @@
 namespace NAMESPACE {
 
 TranNRSolver::TranNRSolver(
-    Circuit& circuit, KluRealMatrix& jac, 
+    Circuit& circuit, CommonData& commons, KluRealMatrix& jac, 
     VectorRepository<double>& states, VectorRepository<double>& solution, 
     NRSettings& settings, IntegratorCoeffs& integCoeffs
-) : OpNRSolver(circuit, jac, states, solution, settings, 3), integCoeffs(&integCoeffs) {
+) : OpNRSolver(circuit, commons, jac, states, solution, settings, 3), integCoeffs(&integCoeffs) {
     // TranNRSolver has 2 force slots
     // 0 .. continuation nodesets for sweep and homotopy
     //      cannot contain branch forces

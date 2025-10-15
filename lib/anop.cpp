@@ -11,7 +11,7 @@ namespace NAMESPACE {
 
 OperatingPoint::OperatingPoint(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      core(*this, params.core(), circuit, jac, solution, states) {
+      core(*this, params.core(), circuit, commons, jac, solution, states) {
 };
 
 OperatingPoint::~OperatingPoint() {

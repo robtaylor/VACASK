@@ -90,7 +90,7 @@ public:
 
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
-    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
     
     // Collapses nodes
     // Return value: ok, changed
@@ -119,7 +119,7 @@ public:
     virtual bool load(Circuit& circuit, LoadSetup& loadSetup) { return true; };
 
     // Evaluate instances and load results
-    virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup) { return true; };
+    virtual bool evalAndLoad(Circuit& circuit, CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup) { return true; };
     
     // A model created with this method is owned by the circuit. 
     // No need to delete it manually, it will get deleted when the circuit is deleted. 
@@ -235,7 +235,7 @@ public:
     
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
-    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
 
     // An instance created with this method is owned by the circuit. 
     // No need to delete it manually, it will get deleted when the circuit is deleted. 
@@ -531,7 +531,7 @@ public:
 
     // Sets parameter defaults, computes node collapsing
     // Return value: ok, unknowns changed, sparsity changed
-    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, const SimulatorOptions& opt, SimulatorInternals& internals, bool force, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+    virtual std::tuple<bool, bool, bool> setup(Circuit& cir, CommonData& commons, const SimulatorOptions& opt, CommonData& internals, bool force, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
     
     // Dumps the instance
     virtual void dump(int indent, const Circuit& cir, std::ostream& os) const {};

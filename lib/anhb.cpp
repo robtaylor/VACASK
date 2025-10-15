@@ -13,7 +13,7 @@ HB::HB(Id name, Circuit& circuit, PTAnalysis& ptAnalysis)
     : Analysis(name, circuit, ptAnalysis), 
       jacColoc(true), // need a large bucket for loading with offsets
       jac(false), // a small bucket will do 
-      core(*this, params.core(), circuit, jacColoc, jac, solution) {
+      core(*this, params.core(), circuit, commons, jacColoc, jac, solution) {
 };
 
 HB::~HB() {

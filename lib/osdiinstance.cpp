@@ -254,17 +254,16 @@ bool OsdiInstance::loadNoise(Circuit& circuit, double freq, double* noiseDensity
     return true;
 }
 
-std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
+std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s) {
     OsdiSimParas sp;
     const auto& opt = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals();
-
+    
     // Allocate tables on stack
     auto [ndbl, nchrptr ] = model()->device()->simParasSizes();
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
     
-    OsdiDevice::populateSimParas(sp, opt, internals, dblArray, chrPtrArray);
+    OsdiDevice::populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
     auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
@@ -1065,7 +1064,7 @@ bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup)
     return converged;
 }
 
-bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
+bool OsdiInstance::evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& simInfo, EvalSetup& evalSetup) {
     // Get descriptor 
     auto model_ = model();
     auto device = model_->device();
@@ -1305,7 +1304,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, OsdiSimInfo& simInfo, EvalSetup& e
     return true;
 }
 
-bool OsdiInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+bool OsdiInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     // Get descriptor
     auto model_ = model();
     auto device = model_->device();

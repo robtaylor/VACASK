@@ -8,11 +8,13 @@
 namespace NAMESPACE {
 
 Id SimulatorOptions::tolmodeSpice = Id::createStatic("spice"); // SPICE tolerance handling
-    // Use
-    // - vntol and fluxtol for non-flow unknowns
-    // - abstol and chgtol for flow unknowns
-    // - abstol and chgtol for residuals of equations corresponding to non-flow unknowns
-    // - vntol and fluxtol for residuals of equations corresponding to flow unknwns
+    // For 
+    // - vntol for non-flow unknowns
+    // - abstol for flow unknowns
+    // - abstol for resistive residual of non-flow unknowns
+    // - chgtol for reactive residual of non-flow unknowns
+    // - vntol for resistive residual of flow unknowns
+    // - fluxtol for reactive residual of flow unknowns
 Id SimulatorOptions::tolmodeVa = Id::createStatic("va"); // Verilog-A tolerance handling
     // Where available, use natures and disciplines, otherwise do not enforce tolerances
 Id SimulatorOptions::tolmodeMixed = Id::createStatic("mixed"); // Mixed tolerance handling
@@ -199,7 +201,7 @@ SimulatorOptions::SimulatorOptions() {
                     
 }
 
-SimulatorInternals::SimulatorInternals() {
+CommonData::CommonData() {
     // Default obtained from SimulatorOptions, also set by homotopy
     gmin = 0.0;
     gshunt = 0.0;
@@ -222,7 +224,7 @@ SimulatorInternals::SimulatorInternals() {
                                       // regardless of their converged state. 
 }
 
-void SimulatorInternals::fromOptions(const SimulatorOptions& options) {
+void CommonData::fromOptions(const SimulatorOptions& options) {
     gmin = options.gmin;
     gshunt = options.gshunt;
 }
@@ -331,7 +333,11 @@ instantiateIntrospection(SimulatorOptions);
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::mappingAffectingOptions;
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::parametrizationAffectingOptions;
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::hierarchyAffectingOptions;
+std::unordered_map<Id, ParameterIndex> SimulatorOptions::tolerancesAffectingOptions;
 
+// TODO: this needs to be revamped
+//       any option can affect mapping (i.e. node collapsing)
+//       restol and vnrestol should be removed
 bool SimulatorOptions::staticInitialize() {
     for(auto it : std::initializer_list<Id>{
         Id::createStatic("tnom"),
@@ -353,6 +359,19 @@ bool SimulatorOptions::staticInitialize() {
     for(auto it : std::initializer_list<Id>{}) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         hierarchyAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
+    }
+
+    for(auto it : std::initializer_list<Id>{
+        Id::createStatic("tolmode"),
+        Id::createStatic("abstol"),
+        Id::createStatic("chgtol"),
+        Id::createStatic("vntol"),
+        Id::createStatic("fluxtol"),
+        Id::createStatic("restol"),
+        Id::createStatic("vnrestol"),
+    }) {
+        auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
+        tolerancesAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
     }
 
     return true;

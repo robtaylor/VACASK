@@ -60,7 +60,7 @@ public:
     };
 
     HBCore(
-        OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
+        OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, CommonData& commons, 
         KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
     );
     ~HBCore();

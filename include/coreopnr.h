@@ -57,7 +57,7 @@ public:
     // They need to be set before rebuild() is called. 
     // By default we have 2 slots. Transient analysis requests 3 slots. 
     OpNRSolver(
-        Circuit& circuit, KluRealMatrix& jac, 
+        Circuit& circuit, CommonData& commons, KluRealMatrix& jac, 
         VectorRepository<double>& states, VectorRepository<double>& solution, 
         NRSettings& settings, Int forcesSize=2
     ); 
@@ -131,6 +131,8 @@ protected:
     
     void setNodesetAndIcFlags(bool continuePrevious);
 
+    CommonData& commons;
+    
     Vector<double*> diagPtrs;
     std::vector<std::vector<std::tuple<double*, double*>>> extraDiags;
     

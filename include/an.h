@@ -113,6 +113,7 @@ public:
 protected:
     Id name_;
     Circuit& circuit;
+    CommonData commons;
     ParameterSweeper sweeper;
     IStruct<SimulatorOptions> originalSimOptions;
     IStruct<SimulatorOptions> simOptions;

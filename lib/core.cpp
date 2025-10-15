@@ -3,8 +3,8 @@
 
 namespace NAMESPACE {
 
-AnalysisCore::AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit) 
-    : parentResolver(parentResolver), circuit(circuit), savesCount(0) {
+AnalysisCore::AnalysisCore(OutputDescriptorResolver& parentResolver, Circuit& circuit, CommonData& commons) 
+    : parentResolver(parentResolver), circuit(circuit), commons(commons), savesCount(0) {
 }
 
 size_t AnalysisCore::stateStorageSize() const { 

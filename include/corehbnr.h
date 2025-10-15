@@ -13,6 +13,7 @@ public:
     // No forces. 
     HBNRSolver(
         Circuit& circuit, 
+        CommonData& commons, 
         KluBlockSparseRealMatrix& jacColoc, 
         KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
@@ -63,6 +64,8 @@ protected:
 
     bool evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup);
 
+    CommonData& commons;
+    
     Vector<double*> diagPtrs;
     
     EvalSetup evalSetup_;

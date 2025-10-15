@@ -57,7 +57,7 @@ std::tuple<bool, bool> SourceStepping::run() {
     auto stateNdx = core.allocateStateStorage(1);
 
     // Set source factor to 0
-    circuit.simulatorInternals().sourcescalefactor = goodFactor;
+    core.commonData().sourcescalefactor = goodFactor;
     itCount=0;
     
     // Try solving without gmin stepping at source scale factor = 0.0
@@ -103,11 +103,11 @@ std::tuple<bool, bool> SourceStepping::run() {
             if (srcfactor>1.0) {
                 srcfactor = 1.0;
             }
-            circuit.simulatorInternals().sourcescalefactor = srcfactor;
+            core.commonData().sourcescalefactor = srcfactor;
 
             // If previous runSolver() converged we can force bypass in first iteration
             // If not, we do not force it. 
-            circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
+            core.commonData().requestForcedBypass = converged && options.nr_contbypass;
             std::tie(converged, leave) = core.runSolver(continuation);
             itCount++;
             if (debug>0) {
@@ -173,7 +173,7 @@ std::tuple<bool, bool> SourceStepping::run() {
     }
 
     // Restore source scale factor (in case we exited the loop early)
-    circuit.simulatorInternals().sourcescalefactor = 1.0;
+    core.commonData().sourcescalefactor = 1.0;
 
     // Deallocate state storage
     core.deallocateStateStorage(1);
@@ -185,7 +185,7 @@ std::string SourceStepping::formatProgress() const {
     std::stringstream ss;
     ss << std::scientific << std::setprecision(2);
     std::string txt = std::string("Homotopy: srcfact=");
-    ss.str(""); ss << circuit.simulatorInternals().sourcescalefactor;
+    ss.str(""); ss << core.commonData().sourcescalefactor;
     txt += ss.str();
     return txt;
 }
@@ -217,15 +217,15 @@ std::tuple<bool, bool> Spice3SourceStepping::run() {
     for(i=0; i<=srcsteps; i++) {
         // Set source scale factor
         if (i<srcsteps) {
-            circuit.simulatorInternals().sourcescalefactor = (double)i/srcsteps;
+            core.commonData().sourcescalefactor = (double)i/srcsteps;
         } else {
             // In last step restore source scale factor to 1.0 to avoid roundoff errors
-            circuit.simulatorInternals().sourcescalefactor = 1.0; 
+            core.commonData().sourcescalefactor = 1.0; 
         }
 
         // If previous runSolver() converged we can force bypass in first iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
+        core.commonData().requestForcedBypass = converged && options.nr_contbypass;
         std::tie(converged, leave) = core.runSolver(continuation);
         itCount++;
         if (debug>0) {
@@ -249,7 +249,7 @@ std::tuple<bool, bool> Spice3SourceStepping::run() {
     }
 
     // Restore source scale factor (in case we exited the loop early)
-    circuit.simulatorInternals().sourcescalefactor = 1.0;
+    core.commonData().sourcescalefactor = 1.0;
 
     return std::make_tuple(converged, leave);
 }
@@ -258,7 +258,7 @@ std::string Spice3SourceStepping::formatProgress() const {
     std::stringstream ss;
     ss << std::scientific << std::setprecision(2);
     std::string txt = std::string("Homotopy: SPICE3 srcfact=");
-    ss.str(""); ss << circuit.simulatorInternals().sourcescalefactor;
+    ss.str(""); ss << core.commonData().sourcescalefactor;
     txt += ss.str();
     return txt;
 }

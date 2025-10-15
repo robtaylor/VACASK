@@ -235,11 +235,11 @@ instantiateIntrospection(TranParameters);
 
 TranCore::TranCore(
     OutputDescriptorResolver& parentResolver, TranParameters& params, OperatingPointCore& opCore, 
-    Circuit& circuit, 
+    Circuit& circuit, CommonData& commons, 
     KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), solution(solution), states(states), 
-    nrSolver(circuit, jacobian, states, solution, nrSettings, integCoeffs) { 
+    nrSolver(circuit, commons, jacobian, states, solution, nrSettings, integCoeffs) { 
     // Slots 0 (current) and -1 (future) are used for the NR solver
     // Slots 1, 2, ... correspond to past values (at t_{k}, t_{k-1}, ...)
     // Therefore historyOffset needs to be set to 1 when calling 
@@ -510,7 +510,7 @@ bool TranCore::deleteOutputs(Id name, Status& s) {
 
 bool TranCore::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     clearError();
-    if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &evalSetup, &loadSetup, nullptr)) {
         // Load error
         setError(TranError::EvalAndLoad);
         if (circuit.simulatorOptions().core().tran_debug>0) {
@@ -544,7 +544,6 @@ Id TranCore::methodGear2 = Id::createStatic("gear2");
 CoreCoroutine TranCore::coroutine(bool continuePrevious) {
     clearError();
     auto& options = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals(); 
     auto debug = options.tran_debug;
 
     auto n = circuit.unknownCount();
@@ -1455,7 +1454,7 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         // request full bypass in next NR iteration because 
         // all instance cores are already evaluated at the inputs corresponding to the last NR iteration. 
         if (accept && options.nr_contbypass) {
-            internals.requestForcedBypass = true; 
+            commons.requestForcedBypass = true; 
         }
     } // while
 

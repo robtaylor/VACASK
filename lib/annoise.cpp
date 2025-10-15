@@ -6,8 +6,8 @@ namespace NAMESPACE {
 
 template<> SmallSignal<NoiseCore, NoiseData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      opCore(*this, params.core().opParams, circuit, jac, solution, states), 
-      smsigCore(*this, params.core(), opCore, contributionOffset, circuit, jac, 
+      opCore(*this, params.core().opParams, circuit, commons, jac, solution, states), 
+      smsigCore(*this, params.core(), opCore, contributionOffset, circuit, commons, jac, 
       solution, states, acMatrix, acSolution, results, powerGain, outputNoise) {
 }
 

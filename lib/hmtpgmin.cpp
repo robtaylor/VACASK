@@ -31,9 +31,9 @@ std::tuple<bool, bool> GminStepping::run() {
     // Store initial value of variable swept during homotopy
     double originalGmin;
     if (gdev) {
-        originalGmin = circuit.simulatorInternals().gdev;
+        originalGmin = core.commonData().gdev;
     } else {
-        originalGmin = circuit.simulatorInternals().gshunt;
+        originalGmin = core.commonData().gshunt;
     }
     
     auto factor = options.homotopy_gminfactor;
@@ -46,10 +46,10 @@ std::tuple<bool, bool> GminStepping::run() {
     if (gdev) {
         // Stepping gdev which is added to gmin option, step it down to gmin/10
         // We stop when effective gmin is 11/10 gmin option
-        targetGmin = circuit.simulatorInternals().gmin / 10;
+        targetGmin = core.commonData().gmin / 10;
     } else {
         // Stepping gshunt, go to original gshunt value
-        targetGmin = circuit.simulatorInternals().gshunt;
+        targetGmin = core.commonData().gshunt;
     }
     if (targetGmin==0.0) {
         targetGmin = circuit.simulatorOptions().core().homotopy_mingmin;
@@ -59,13 +59,13 @@ std::tuple<bool, bool> GminStepping::run() {
     itCount=0;
     while (true) {
         if (gdev) {
-            circuit.simulatorInternals().gdev = atGmin;
+            core.commonData().gdev = atGmin;
         } else {
-            circuit.simulatorInternals().gshunt = atGmin;
+            core.commonData().gshunt = atGmin;
         }
         // If previous runSolver() converged we can force bypass in first iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
+        core.commonData().requestForcedBypass = converged && options.nr_contbypass;
         std::tie(converged, leave) = core.runSolver(continuation);
         itCount++;
         if (debug>0) {
@@ -149,9 +149,9 @@ std::tuple<bool, bool> GminStepping::run() {
 
     // Restore original gmin
     if (gdev) {
-        circuit.simulatorInternals().gdev = originalGmin;
+        core.commonData().gdev = originalGmin;
     } else {
-        circuit.simulatorInternals().gshunt = originalGmin;
+        core.commonData().gshunt = originalGmin;
     }
 
     // One final 
@@ -159,7 +159,7 @@ std::tuple<bool, bool> GminStepping::run() {
         // Did not leave early
         if (converged) {
             // Converged, we can force bypass in first iteration
-            circuit.simulatorInternals().requestForcedBypass = true;
+            core.commonData().requestForcedBypass = true;
 
             // Try with original gmin, but this time with continuation
             std::tie(converged, leave) = core.runSolver(continuation);
@@ -187,9 +187,9 @@ std::string GminStepping::formatProgress() const {
     ss << std::scientific << std::setprecision(2);
     std::string txt = std::string("Homotopy: ") + (gdev ? "gdev=" : "gshunt=");
     if (gdev) {
-        ss.str(""); ss << circuit.simulatorInternals().gmin + circuit.simulatorInternals().gdev;
+        ss.str(""); ss << core.commonData().gmin + core.commonData().gdev;
     } else {
-        ss.str(""); ss << circuit.simulatorInternals().gshunt;
+        ss.str(""); ss << core.commonData().gshunt;
     }
     txt += ss.str();
     return txt;
@@ -211,7 +211,7 @@ std::tuple<bool, bool> Spice3GminStepping::run() {
     }
 
     // End value
-    auto gshuntMin = circuit.simulatorInternals().gshunt;
+    auto gshuntMin = core.commonData().gshunt;
     if (gshuntMin==0) {
         gshuntMin = options.homotopy_mingmin;
     }
@@ -232,18 +232,18 @@ std::tuple<bool, bool> Spice3GminStepping::run() {
     bool continuation = false;
 
     // Store gshunt
-    auto originalGshunt = circuit.simulatorInternals().gshunt;
+    auto originalGshunt = core.commonData().gshunt;
 
     bool leave = false;
 
     itCount = 0;
     for(decltype(gminsteps) i=0; i<=gminsteps; i++) {
         // Set gshunt
-        circuit.simulatorInternals().gshunt = gshuntMax / std::exp(logFactor*i);
+        core.commonData().gshunt = gshuntMax / std::exp(logFactor*i);
 
         // If previous runSolver() converged we can force bypass in first iteration
         // If not, we do not force it. 
-        circuit.simulatorInternals().requestForcedBypass = converged && options.nr_contbypass;
+        core.commonData().requestForcedBypass = converged && options.nr_contbypass;
         std::tie(converged, leave) = core.runSolver(continuation);
         itCount++;
         if (debug>0) {
@@ -261,13 +261,13 @@ std::tuple<bool, bool> Spice3GminStepping::run() {
     }
 
     // Restore gshunt
-    circuit.simulatorInternals().gshunt = originalGshunt;
+    core.commonData().gshunt = originalGshunt;
 
     // One final try with original gshunt, but this time with continuation
     if (!leave) {
         if (converged) {
             // Converged, we can force bypass in first iteration
-            circuit.simulatorInternals().requestForcedBypass = true;
+            core.commonData().requestForcedBypass = true;
 
             // Try with original gmin, but this time with continuation
             std::tie(converged, leave) = core.runSolver(continuation);
@@ -291,7 +291,7 @@ std::string Spice3GminStepping::formatProgress() const {
     std::stringstream ss;
     ss << std::scientific << std::setprecision(2);
     std::string txt = std::string("Homotopy: SPICE3 gshunt=");
-    ss.str(""); ss << circuit.simulatorInternals().gshunt;
+    ss.str(""); ss << core.commonData().gshunt;
     txt += ss.str();
     return txt;
 }

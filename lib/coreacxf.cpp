@@ -35,11 +35,11 @@ instantiateIntrospection(ACXFParameters);
 
 ACXFCore::ACXFCore(
     OutputDescriptorResolver& parentResolver, ACXFParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
-    Circuit& circuit, 
+    Circuit& circuit, CommonData& commons, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
     std::vector<Instance*>& sources, Vector<Complex>& tf, Vector<Complex>& yin, Vector<Complex>& zin
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), opCore_(opCore), sourceIndex(sourceIndex), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution), sources(sources), tf(tf), yin(yin), zin(zin) {
     
@@ -275,7 +275,7 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(&esReactive, nullptr, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &esReactive, nullptr, nullptr)) {
         // Load error
         setError(ACXFError::EvalAndLoad);
         if (debug>0) {
@@ -349,7 +349,7 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
         // Load AC matrix, we must update the imaginary part only
         acMatrix.zero(Component::Imaginary);
         lsReactive.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(nullptr, &lsReactive, nullptr)) {
+        if (!circuit.evalAndLoad(commons, nullptr, &lsReactive, nullptr)) {
             // Load error
             setError(ACXFError::EvalAndLoad);
             if (debug>0) {

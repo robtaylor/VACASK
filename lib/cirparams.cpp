@@ -250,6 +250,7 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
 // Make circuit consistent. 
 
 std::tuple<bool, bool, bool> Circuit::elaborateChanges(
+    CommonData& commons, 
     ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
     Analysis* an, IStruct<SimulatorOptions>* options, 
     PTParameterMap* optionsMap, 
@@ -396,7 +397,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         parametrizationAffectingOptionsChanged || mappingAffectingOptionsChanged
     ) {
         bool ok;
-        std::tie(ok, unknownsChanged, sparsityChanged) = setup(mappingAffectingOptionsChanged, devReq, s);
+        std::tie(ok, unknownsChanged, sparsityChanged) = setup(commons, mappingAffectingOptionsChanged, devReq, s);
         if (!ok) {
             s.extend("Circuit setup failed.");
             tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);

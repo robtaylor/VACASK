@@ -34,9 +34,10 @@ instantiateIntrospection(AcParameters);
 
 AcCore::AcCore(
     OutputDescriptorResolver& parentResolver, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+    CommonData& commons, 
     KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
     KluComplexMatrix& acMatrix, Vector<Complex>& acSolution
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), opCore_(opCore), 
     dcSolution(dcSolution), dcStates(dcStates), dcJacobian(dcJacobian), 
     acMatrix(acMatrix), acSolution(acSolution) {
     
@@ -220,7 +221,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
     // Actually we only need to evaluate the reactive Jacobian 
     // because the resistive part was evaluated by OP analysis
     // We do both here in case OpenVAF has bugs with this corner case :)
-    if (!circuit.evalAndLoad(&esReactive, nullptr, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &esReactive, nullptr, nullptr)) {
         // Load error
         setError(AcError::EvalAndLoad);
         if (debug>0) {
@@ -301,7 +302,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
         acMatrix.zero(Component::Imaginary);
         zero(acSolution);
         lsReactive.reactiveJacobianFactor = omega;
-        if (!circuit.evalAndLoad(nullptr, &lsReactive, nullptr)) {
+        if (!circuit.evalAndLoad(commons, nullptr, &lsReactive, nullptr)) {
             // Load error
             setError(AcError::EvalAndLoad);
             if (debug>0) {

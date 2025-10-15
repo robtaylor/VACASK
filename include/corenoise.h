@@ -88,7 +88,7 @@ public:
     NoiseCore(
         OutputDescriptorResolver& parentResolver, NoiseParameters& params, OperatingPointCore& opCore, 
         std::unordered_map<std::pair<Id, Id>, size_t>& contributionOffset, 
-        Circuit& circuit, 
+        Circuit& circuit, CommonData& commons, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
         

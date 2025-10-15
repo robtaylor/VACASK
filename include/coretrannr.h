@@ -13,7 +13,7 @@ namespace NAMESPACE {
 class TranNRSolver : public OpNRSolver {
 public:
     TranNRSolver(
-        Circuit& circuit, KluRealMatrix& jac, 
+        Circuit& circuit, CommonData& commons, KluRealMatrix& jac, 
         VectorRepository<double>& states, VectorRepository<double>& solution, 
         NRSettings& settings, IntegratorCoeffs& integCoeffs
     ); 

@@ -25,8 +25,8 @@ instantiateIntrospection(DCIncrementalParameters);
 
 DCIncrementalCore::DCIncrementalCore(
     OutputDescriptorResolver& parentResolver, DCIncrementalParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
-    KluRealMatrix& jacobian, Vector<double>& incrementalSolution
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), opCore_(opCore), 
+    CommonData& commons, KluRealMatrix& jacobian, Vector<double>& incrementalSolution
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), opCore_(opCore), 
     jacobian(jacobian), incrementalSolution(incrementalSolution) {
 
     // Set analysis type for the initial operating point analysis
@@ -154,7 +154,7 @@ CoreCoroutine DCIncrementalCore::coroutine(bool continuePrevious) {
     // Prepare RHS (add excitations given by delta parameter)
     zero(incrementalSolution);
     auto filter = [](Device* device) { return device->checkFlags(Device::Flags::GeneratesDCIncremental); };
-    if (!circuit.evalAndLoad(nullptr, &lsRhs, filter)) {
+    if (!circuit.evalAndLoad(commons, nullptr, &lsRhs, filter)) {
         // Load error
         setError(DCIncrementalError::EvalAndLoad);
         if (debug>0) {

@@ -80,7 +80,7 @@ public:
     
     TranCore(
         OutputDescriptorResolver& parentResolver, TranParameters& params, OperatingPointCore& opCore, 
-        Circuit& circuit, 
+        Circuit& circuit, CommonData& commons, 
         KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
     ); 
     ~TranCore();

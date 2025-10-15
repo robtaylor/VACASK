@@ -82,7 +82,7 @@ public:
     
     ACXFCore(
         OutputDescriptorResolver& parentResolver, ACXFParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
-        Circuit& circuit, 
+        Circuit& circuit, CommonData& commons, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution, 
         std::vector<Instance*>& sources, Vector<Complex>& tf, Vector<Complex>& yin, Vector<Complex>& zin

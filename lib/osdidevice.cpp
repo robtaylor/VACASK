@@ -285,11 +285,10 @@ std::tuple<bool, bool> OsdiDevice::parameterGiven(OsdiFile::OsdiParameterId osdi
     return std::make_tuple(true, flag);
 }
 
-std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
+std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s) {
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     const auto& opt = circuit.simulatorOptions().core();
-    const auto& internals = circuit.simulatorInternals();
     OsdiSimParas sp;
     
     // Allocate tables on stack
@@ -297,7 +296,7 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, bool force, Dev
     double dblArray[ndbl];
     char* chrPtrArray[nchrptr];
     
-    populateSimParas(sp, opt, internals, dblArray, chrPtrArray);
+    populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     for(auto model : models()) {
         // Verilog-A $temperature is in K, convert the value given by options (in C)
         auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
@@ -357,9 +356,8 @@ bool OsdiDevice::bind(
     return true;
 }
 
-bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup) {
+bool OsdiDevice::evalAndLoad(Circuit& circuit, CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup) {
     auto& opt = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals();
     OsdiSimInfo simInfo;
 
     // Allocate tables on stack
@@ -370,7 +368,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
     char* chrPtrArray[nchrptr];
     
     if (evalSetup) {
-        populateSimParas(simInfo.paras, opt, internals, dblArray, chrPtrArray);
+        populateSimParas(simInfo.paras, opt, commons, dblArray, chrPtrArray);
         simInfo.abstime = evalSetup->time;
         simInfo.prev_solve = evalSetup->oldSolution;
 
@@ -439,11 +437,11 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* 
             continue;
         }
         for(auto instance : model->instances()) {
-            if (evalSetup && !static_cast<OsdiInstance*>(instance)->evalCore(circuit, simInfo, *evalSetup)) {
+            if (evalSetup && !static_cast<OsdiInstance*>(instance)->evalCore(circuit, commons, simInfo, *evalSetup)) {
                 return false;
             }
             if (loadSetup) {
-                auto lst = static_cast<OsdiInstance*>(instance)->loadCore(circuit, *loadSetup);
+                auto lst = static_cast<OsdiInstance*>(instance)->loadCore(circuit, commons, *loadSetup);
                 if (!lst) {
                     return false;
                 }
@@ -499,7 +497,7 @@ std::tuple<size_t, size_t> OsdiDevice::simParasSizes() {
     );
 }
 
-void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const SimulatorInternals& internals, double* dblArray, char** chrPtrArray) {
+void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const CommonData& internals, double* dblArray, char** chrPtrArray) {
     // dblArray and chrPtrArray should be allocated on stack to save time
     // simParasSizes() reports the reuired size of these two arrays
     double* simParamValues = dblArray; 

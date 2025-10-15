@@ -38,10 +38,10 @@ instantiateIntrospection(HBParameters);
 
 
 HBCore::HBCore(
-    OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, 
+    OutputDescriptorResolver& parentResolver, HBParameters& params, Circuit& circuit, CommonData& commons, 
     KluBlockSparseRealMatrix& jacColoc, KluBlockSparseRealMatrix& jacobian, VectorRepository<double>& solution
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), jacColoc(jacColoc), 
-    nrSolver(circuit, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, IAPFT, nrSettings), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), jacColoc(jacColoc), 
+    nrSolver(circuit, commons, jacColoc, jacobian, solution, solutionFD, frequencies, timepoints, DDT, DDTcolMajor, APFT, IAPFT, nrSettings), 
     bsjac(jacobian), solution(solution), firstBuild(true), continueState(nullptr) {
 };
 
@@ -327,7 +327,7 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "HB using ordinary continue mode with stored analysis state.\n";
             }
             // Forced bypass is not allowed
-            circuit.simulatorInternals().requestForcedBypass = false;
+            commons.requestForcedBypass = false;
         } else if (continueState && continueState->valid) {
             // Continue a state
             // Stored analysis state is valid, but not coherent with current circuit, 
@@ -343,7 +343,7 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "HB using forced continue mode with stored analysis state.\n";
             }
             // Forced bypass is not allowed
-            circuit.simulatorInternals().requestForcedBypass = false;
+            commons.requestForcedBypass = false;
         } else {
             // Do not continue a state (either not provided or not valid)
             // Continue with whatever is in solution and states vector
@@ -355,7 +355,7 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "HB using ordinary continue mode with previous solution.\n";
             }
             // Forced bypass is not allowed
-            circuit.simulatorInternals().requestForcedBypass = false;
+            commons.requestForcedBypass = false;
         }
         // Continue state is spent after first use
         continueState = nullptr;
@@ -368,7 +368,7 @@ std::tuple<bool, bool> HBCore::runSolver(bool continuePrevious) {
         nrSolver.enableForces(1, true); 
 
         // Forced bypass is not allowed
-        circuit.simulatorInternals().requestForcedBypass = false;
+        commons.requestForcedBypass = false;
         
         if (options.hb_debug>1) {
             Simulator::dbg() << "HB using standard initial solution with forced nodesets.\n";
@@ -398,7 +398,6 @@ CoreCoroutine HBCore::coroutine(bool continuePrevious) {
     clearError();
     
     auto& options = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals();
     converged_ = false;
     bool leave = false;
     bool tried = false;
@@ -613,8 +612,9 @@ bool HBCore::test() {
     VectorRepository<double> sol;
     ParserTables tab;
     Circuit dummyCircuit(tab);
+    CommonData dummyCommons;
 
-    HBCore hb(dummyResolver, p, dummyCircuit, jacColoc, bsjac, sol);
+    HBCore hb(dummyResolver, p, dummyCircuit, dummyCommons, jacColoc, bsjac, sol);
 
     if (ok && !hb.buildGrid(s)) {
         ok = false;

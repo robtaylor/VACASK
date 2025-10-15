@@ -6,8 +6,8 @@ namespace NAMESPACE {
 
 template<> SmallSignal<DCIncrementalCore, DCIncrementalData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      opCore(*this, params.core().opParams, circuit, jac, solution, states), 
-      smsigCore(*this, params.core(), opCore, circuit, jac, incrementalSolution) {
+      opCore(*this, params.core().opParams, circuit, commons, jac, solution, states), 
+      smsigCore(*this, params.core(), opCore, circuit, commons, jac, incrementalSolution) {
 }
 
 template<> bool SmallSignal<DCIncrementalCore, DCIncrementalData>::resolveSave(const PTSave& save, bool verify, Status& s) {

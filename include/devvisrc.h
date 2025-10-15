@@ -133,8 +133,8 @@ template<> bool BuiltinVSourceInstance::getOpvar(ParameterIndex ndx, Value& v, S
 template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx) const;
-template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s);
-template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
 template<> bool BuiltinVSourceInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinISourceInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVSourceInstance::bindCore(
@@ -150,10 +150,10 @@ template<> bool BuiltinISourceInstance::bindCore(
     Status& s
 );
 
-template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);    
-template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);    
-template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
-template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);    
+template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);    
+template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);    
+template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);    
+template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);    
 
 }
 

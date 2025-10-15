@@ -546,12 +546,12 @@ template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSou
     }
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
     clearFlags(Flags::NeedsSetup); 
     return sourceSetup(params, data, location(), circuit, s);
 }; 
 
-template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) { 
+template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) { 
     clearFlags(Flags::NeedsSetup);
     return sourceSetup(params, data, location(), circuit, s);
 }; 
@@ -623,12 +623,11 @@ template<> bool BuiltinISourceInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     auto& options = circuit.simulatorOptions().core();
-    auto sourceFactor = internals.sourcescalefactor*options.homotopy_sourcefactor;
+    auto sourceFactor = commons.sourcescalefactor*options.homotopy_sourcefactor;
     
     // Evaluate, placeholder for bypass implementation
     auto [val, nextBreakpoint] = sourceCompute(p, d, evalSetup.time);
@@ -646,7 +645,7 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
 
     // Next breakpoint
     if (evalSetup.computeNextBreakpoint) {
-        evalSetup.setBreakPoint(nextBreakpoint, internals); 
+        evalSetup.setBreakPoint(nextBreakpoint, commons); 
     }
 
     // Set maximal frequency
@@ -659,12 +658,10 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     return true;
 }
 
-template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     auto& options = circuit.simulatorOptions().core();
-    auto sourceFactor = internals.sourcescalefactor*options.homotopy_sourcefactor;
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
@@ -717,11 +714,10 @@ template<> bool BuiltinVSourceInstance::loadCore(Circuit& circuit, LoadSetup& lo
     return true;
 }
 
-template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    auto sourceFactor = internals.sourcescalefactor;
+    auto sourceFactor = commons.sourcescalefactor;
     
     // Evaluate, placeholder for bypass implementation
     auto [val, nextBreakpoint] = sourceCompute(p, d, evalSetup.time);
@@ -738,7 +734,7 @@ template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
 
     // Next breakjpoint
     if (evalSetup.computeNextBreakpoint) {
-        evalSetup.setBreakPoint(nextBreakpoint, internals); 
+        evalSetup.setBreakPoint(nextBreakpoint, commons); 
     }
 
     // Set maximal frequency
@@ -751,11 +747,9 @@ template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, EvalSetup& ev
     return true;
 }
 
-template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinISourceInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-    auto sourceFactor = internals.sourcescalefactor;
     
     // Load resistive residual
     if (loadSetup.resistiveResidual) {

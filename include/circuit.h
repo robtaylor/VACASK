@@ -320,7 +320,7 @@ public:
     
     // Drivers
     // Return value: ok, unknowns changed, sparsity changed
-    std::tuple<bool, bool, bool> setup(bool forceFull, DeviceRequests* devReq, Status& s=Status::ignore);
+    std::tuple<bool, bool, bool> setup(CommonData& commons, bool forceFull, DeviceRequests* devReq, Status& s=Status::ignore);
     bool preAnalysis(Status& s=Status::ignore);
     bool nodeOrdering(Status& s=Status::ignore);
     bool bind(
@@ -332,15 +332,12 @@ public:
     std::tuple<bool, bool> propagateDownHierarchy(Status& s=Status::ignore);
     
     bool applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet);
-    bool evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
+    bool evalAndLoad(CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*));
     
     // Simulator options (Parameterized class with simulator options core)
     // IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
     const IStruct<SimulatorOptions>& simulatorOptions() const { return simOptions; };
 
-    // Simulator internals
-    SimulatorInternals& simulatorInternals() { return simInternals; };
-    
     // Dumpers for debugging
     void dumpDevices(int indent, std::ostream& os) const;
     void dumpModels(int indent, std::ostream& os) const;
@@ -407,6 +404,7 @@ public:
     // Return value: ok, hierarchy changed, analysis binding needed
     // devReq can be nullptr
     std::tuple<bool, bool, bool> elaborateChanges(
+        CommonData& commons, 
         ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
         Analysis* an, IStruct<SimulatorOptions>* opt, 
         PTParameterMap* optionsMap, 
@@ -522,9 +520,6 @@ private:
     // Simulator options corresponding to the current circuit state
     IStruct<SimulatorOptions> simOptions;
 
-    // Simulator internals
-    SimulatorInternals simInternals;
-    
     // Annotated solutions (for nodesets, ics, and hb-assisted hb)
     std::unordered_map<std::pair<Id, Id>, AnnotatedSolution> solutionRepository;
 };

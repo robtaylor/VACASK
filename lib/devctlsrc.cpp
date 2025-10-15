@@ -226,10 +226,9 @@ template<> bool BuiltinVccsInstance::bindCore(
 }
 
 
-template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Evaluate, placeholder for bypass implementation
     if (true) {
@@ -245,10 +244,9 @@ template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     return true;
 }
 
-template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
@@ -384,10 +382,9 @@ template<> bool BuiltinVcvsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Evaluate, placeholder for bypass implementation
     if (true) {
@@ -405,10 +402,9 @@ template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     return true;
 }
 
-template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
@@ -526,10 +522,9 @@ template<> bool BuiltinCccsInstance::bindCore(
     return true;
 }
 
-template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Evaluate, placeholder for bypass implementation
     if (true) {
@@ -545,10 +540,9 @@ template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     return true;
 }
 
-template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
@@ -684,10 +678,9 @@ template<> bool BuiltinCcvsInstance::bindCore(
 }
 
 
-template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Evaluate, placeholder for bypass implementation
     if (true) {
@@ -705,10 +698,9 @@ template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& evalS
     return true;
 }
 
-template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
     
     // Load resistive Jacobian, transient load is identical because there is no reactive component
     if (loadSetup.loadResistiveJacobian || loadSetup.loadTransientJacobian) {
@@ -786,7 +778,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalPara
     return std::make_tuple(principalMutual, true); // gain
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
     auto& p = params.core();
     auto& d = data.core();
 
@@ -972,11 +964,10 @@ template<> bool BuiltinMutualInstance::bindCore(
 
 
 
-template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup) {
+template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-
+    
     // Evaluate, placeholder for bypass implementation
     if (true) {
         if (evalSetup.evaluateReactiveResidual) {
@@ -1006,11 +997,10 @@ template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& eva
     return true;
 }
 
-template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup) {
+template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {
     auto& p = params.core();
     auto& d = data.core();
-    auto& internals = circuit.simulatorInternals();
-
+    
     // Load reactive Jacobian, transient load is identical because there is no resistive component
     if (loadSetup.loadReactiveJacobian) {
         auto factor = loadSetup.reactiveJacobianFactor;

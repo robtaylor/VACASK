@@ -6,8 +6,8 @@ namespace NAMESPACE {
 
 template<> SmallSignal<ACXFCore, ACXFData>::SmallSignal(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : Analysis(name, circuit, ptAnalysis), 
-      opCore(*this, params.core().opParams, circuit, jac, solution, states), 
-      smsigCore(*this, params.core(), opCore, sourceIndex, circuit, jac, solution, states, acMatrix, acSolution, sources, tf, yin, zin) {
+      opCore(*this, params.core().opParams, circuit, commons, jac, solution, states), 
+      smsigCore(*this, params.core(), opCore, sourceIndex, circuit, commons, jac, solution, states, acMatrix, acSolution, sources, tf, yin, zin) {
 }
 
 template<> bool SmallSignal<ACXFCore, ACXFData>::resolveSave(const PTSave& save, bool verify, Status& s) {

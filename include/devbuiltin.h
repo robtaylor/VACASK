@@ -19,7 +19,7 @@ public:
 
     virtual bool operator==(const Device& other) const { return dynamic_cast<const BuiltinDevice<ModelParams, InstanceParams, InstanceData>*>(&other)!=nullptr; };
     virtual bool isHierarchical() const { return false; };
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual bool collapseNodes(Circuit& circuit, Status& s=Status::ignore);
     virtual bool populateStructures(Circuit& circuit, Status& s=Status::ignore);
     virtual bool preAnalysis(Circuit& circuit, Status& s=Status::ignore);
@@ -29,7 +29,7 @@ public:
         KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
-    virtual bool evalAndLoad(Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup);
+    virtual bool evalAndLoad(Circuit& circuit, CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup);
     virtual Model* createModel(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, const PTModel& ptModel, Status& s=Status::ignore);
     virtual bool isSource() const { return false; };
     virtual bool isVoltageSource() const { return false; };
@@ -77,7 +77,7 @@ public:
         }
         return std::make_tuple(ok, changed);
     };
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual Instance* createInstance(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, Context* externalContext, const PTInstance& parsedInstance, InstantiationData& idata, Status& s=Status::ignore);
     virtual void dump(int indent, std::ostream& os) const;
 
@@ -86,11 +86,11 @@ public:
     const DeviceType* device() const { return reinterpret_cast<const DeviceType*>(device_); };
     
     // Wrapper for inlining setup functions
-    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
 
     // Sets up this particular model
     // Define specialization in cpp file for each builtin device type
-    bool setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s=Status::ignore) { return true; }
+    bool setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s=Status::ignore) { return true; }
 
     // Sets up this particular model
     // Define specialization in cpp file for each builtin device type
@@ -162,7 +162,7 @@ public:
     virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return data.parameterType(ndx, s); };
     virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return data.getParameter(ndx, v, s); };
     virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
 
     // Model access (as ModelType)
@@ -170,11 +170,11 @@ public:
     const ModelType* model() const { return reinterpret_cast<const ModelType*>(model_); };
 
     // Wrapper for inlining setup functions
-    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
 
     // Sets up this particular instance
     // Define specialization in cpp file for each builtin device type
-    std::tuple<bool, bool, bool> setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); }; 
+    std::tuple<bool, bool, bool> setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); }; 
 
     // Sets up this particular model
     // Define specialization in cpp file for each builtin device type
@@ -188,8 +188,8 @@ public:
         KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
-    bool evalCore(Circuit& circuit, EvalSetup& evalSetup);
-    bool loadCore(Circuit& circuit, LoadSetup& loadSetup);
+    bool evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);
+    bool loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);
         
 protected:
     // Get Jacobian entry pointer
@@ -230,14 +230,14 @@ BuiltinDevice<ModelParams, InstanceParams, InstanceData>::~BuiltinDevice() {
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 std::tuple<bool, bool, bool> BuiltinDevice<ModelParams, InstanceParams, InstanceData>::setup(
-    Circuit& circuit, bool force, DeviceRequests* devReq, Status& s
+    Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s
 ) {
     using ModelType = BuiltinModel<ModelParams, InstanceParams, InstanceData>;
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     for(auto model : models()) {
         // This will set up model and all its instances
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<ModelType*>(model)->setupCore(circuit, force, devReq, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<ModelType*>(model)->setupCore(circuit, commons, force, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -324,7 +324,7 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::bind(
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::evalAndLoad(
-    Circuit& circuit, EvalSetup* evalSetup, LoadSetup* loadSetup
+    Circuit& circuit, CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup
 ) {
     using InstanceType = BuiltinInstance<ModelParams, InstanceParams, InstanceData>;
     for(auto model : models()) {
@@ -332,10 +332,10 @@ bool BuiltinDevice<ModelParams, InstanceParams, InstanceData>::evalAndLoad(
             continue;
         }
         for(auto instance : model->instances()) {
-            if (evalSetup && !static_cast<InstanceType*>(instance)->evalCore(circuit, *evalSetup)) {
+            if (evalSetup && !static_cast<InstanceType*>(instance)->evalCore(circuit, commons, *evalSetup)) {
                 return false;
             }
-            if (loadSetup && !static_cast<InstanceType*>(instance)->loadCore(circuit, *loadSetup)) {
+            if (loadSetup && !static_cast<InstanceType*>(instance)->loadCore(circuit, commons, *loadSetup)) {
                 return false;
             }
         }
@@ -395,14 +395,14 @@ BuiltinModel<ModelParams, InstanceParams, InstanceData>::~BuiltinModel() {
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 std::tuple<bool, bool, bool> BuiltinModel<ModelParams, InstanceParams, InstanceData>::setup(
-    Circuit& circuit, bool force, DeviceRequests* devReq, Status& s
+    Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s
 ) {
-    return setupCore(circuit, force, devReq, s);
+    return setupCore(circuit, commons, force, devReq, s);
 }
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
 std::tuple<bool, bool, bool> BuiltinModel<ModelParams, InstanceParams, InstanceData>::setupCore(
-    Circuit& circuit, bool force, DeviceRequests* devReq, Status& s
+    Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s
 ) {
     using InstanceType = BuiltinInstance<ModelParams, InstanceParams, InstanceData>;
 
@@ -411,7 +411,7 @@ std::tuple<bool, bool, bool> BuiltinModel<ModelParams, InstanceParams, InstanceD
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     if (force || checkFlags(Flags::NeedsSetup)) {
-        auto ok = setupWorker(circuit, devReq, s);
+        auto ok = setupWorker(circuit, commons, devReq, s);
         if (!ok) {
             // The problem is big enough to abort simulation
             return std::make_tuple(false, unknownsChanged, sparsityChanged);
@@ -424,7 +424,7 @@ std::tuple<bool, bool, bool> BuiltinModel<ModelParams, InstanceParams, InstanceD
     }
     
     for(auto it : instances()) {
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<InstanceType*>(it)->setupCore(circuit, forceAllInstances, devReq, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<InstanceType*>(it)->setupCore(circuit, commons, forceAllInstances, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -565,13 +565,13 @@ bool BuiltinInstance<ModelParams, InstanceParams, InstanceData>::unbindTerminals
 }
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
-std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, InstanceData>::setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
-    return setupCore(circuit, force, devReq, s);
+std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, InstanceData>::setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s) {
+    return setupCore(circuit, commons, force, devReq, s);
 }
 
 template<typename ModelParams, typename InstanceParams, typename InstanceData> 
-std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, InstanceData>::setupCore(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s) {
-    auto [ok, unknownsChanged, sparsityChanged] = setupWorker(circuit, devReq, s);
+std::tuple<bool, bool, bool> BuiltinInstance<ModelParams, InstanceParams, InstanceData>::setupCore(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s) {
+    auto [ok, unknownsChanged, sparsityChanged] = setupWorker(circuit, commons, devReq, s);
     if (ok) {
         clearFlags(Flags::NeedsSetup); 
     }

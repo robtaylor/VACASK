@@ -146,8 +146,8 @@ template<> bool BuiltinVccsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
-template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
-template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
+template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& els);
+template<> bool BuiltinVccsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& els);
 
 // VCVS
 template<> void BuiltinVcvs::defineInternals();
@@ -163,8 +163,8 @@ template<> bool BuiltinVcvsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
-template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
-template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
+template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& els);
+template<> bool BuiltinVcvsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& els);
 
 // CCCS
 template<> void BuiltinCccs::defineInternals();
@@ -180,8 +180,8 @@ template<> bool BuiltinCccsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
-template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, EvalSetup& els);
-template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, LoadSetup& els);
+template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& els);
+template<> bool BuiltinCccsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& els);
 
 // CCVS
 template<> void BuiltinCcvs::defineInternals();
@@ -197,8 +197,8 @@ template<> bool BuiltinCcvsInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
-template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, EvalSetup& els);
-template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, LoadSetup& els);
+template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& els);
+template<> bool BuiltinCcvsInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& els);
 
 
 struct DevMutualInstanceParams {
@@ -238,7 +238,7 @@ using BuiltinMutualInstance = BuiltinInstance<DevCtlSourceModelParams, DevMutual
 
 template<> void BuiltinMutual::defineInternals();
 template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalParameterIndex() const; 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, DeviceRequests* devReq, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
 template<> bool BuiltinMutualInstance::preAnalysisWorker(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::bindCore(
@@ -247,8 +247,8 @@ template<> bool BuiltinMutualInstance::bindCore(
     KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
     Status& s
 );
-template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, EvalSetup& evalSetup);
-template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, LoadSetup& loadSetup);
+template<> bool BuiltinMutualInstance::evalCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);
+template<> bool BuiltinMutualInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);
 
 }
 

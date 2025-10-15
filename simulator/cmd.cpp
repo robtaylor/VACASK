@@ -92,7 +92,12 @@ bool CommandInterpreter::elaborateChanges(Status& s) {
         return false;
     }
     PTParameterMap optionsExpressions; 
+    // Prepare common data
+    CommonData commons;
+    commons.fromOptions(circuit_.simulatorOptions().core());
+    // Elaborate changes
     auto [ok, hierarchyChanged, mappingChanged] = circuit_.elaborateChanges(
+        commons, 
         nullptr, ParameterSweeper::WriteValues::Sweep, 
         nullptr, &opt,  
         // No need to specify options expressions - they were processed when opt was built

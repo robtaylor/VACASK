@@ -25,9 +25,10 @@ instantiateIntrospection(OperatingPointParameters);
 
 OperatingPointCore::OperatingPointCore(
     OutputDescriptorResolver& parentResolver, OperatingPointParameters& params, Circuit& circuit, 
+    CommonData& commons, 
     KluRealMatrix& jacobian, VectorRepository<double>& solution, VectorRepository<double>& states
-) : AnalysisCore(parentResolver, circuit), params(params), outfile(nullptr), 
-      nrSolver(circuit, jacobian, states, solution, nrSettings), 
+) : AnalysisCore(parentResolver, circuit, commons), params(params), outfile(nullptr), 
+      nrSolver(circuit, commons, jacobian, states, solution, nrSettings), 
       jac(jacobian), solution(solution), states(states), 
       converged_(false), continueState(nullptr) {
 }
@@ -306,7 +307,7 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "OP using ordinary continue mode with stored analysis state.\n";
             }
             // Use forced bypass if allowed
-            circuit.simulatorInternals().requestForcedBypass = circuit.simulatorInternals().allowContinueStateBypass;
+            commons.requestForcedBypass = commons.allowContinueStateBypass;
         } else if (continueState && continueState->valid) {
             // Stored analysis state is valid, but not coherent with current circuit, 
             // its lengths may not match those of the solver vectors. 
@@ -327,7 +328,7 @@ std::tuple<bool, bool> OperatingPointCore::runSolver(bool continuePrevious) {
                 Simulator::dbg() << "OP using forced continue mode with stored analysis state.\n";
             }
             // Forced bypass is not allowed
-            circuit.simulatorInternals().requestForcedBypass = false;
+            commons.requestForcedBypass = false;
         } else {
             // No valid state, continue with whatever is in solution and states vector
             runInContinueMode = true;
@@ -409,7 +410,6 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
     clearError();
 
     auto& options = circuit.simulatorOptions().core();
-    auto& internals = circuit.simulatorInternals();
     converged_ = false;
     auto debug = options.op_debug;
     bool leave = false;

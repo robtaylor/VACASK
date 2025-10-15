@@ -907,7 +907,9 @@ bool Circuit::elaborate(
     }
 
     // We do a full setup
-    auto [ok, unknownsChanged, sparsityChanged] = setup(true, devReq, s);
+    CommonData commons;
+    commons.fromOptions(simOptions.core());
+    auto [ok, unknownsChanged, sparsityChanged] = setup(commons, true, devReq, s);
     if (!ok) {
         s.extend("Initial circuit setup failed.");
         tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
@@ -973,12 +975,12 @@ bool Circuit::elaborate(
     return true;
 }
 
-std::tuple<bool, bool, bool> Circuit::setup(bool forceFull, DeviceRequests* devReq, Status& s) {
+std::tuple<bool, bool, bool> Circuit::setup(CommonData& commons, bool forceFull, DeviceRequests* devReq, Status& s) {
     // Do setup
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     for(auto& dev : devices) {
-        auto [ok, tmpUnknowns, tmpSparsity] = dev->setup(*this, forceFull, devReq, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = dev->setup(*this, commons, forceFull, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -1294,7 +1296,7 @@ bool Circuit::applyInstanceFlags(Instance::Flags fClear, Instance::Flags fSet) {
     return true;
 }
 
-bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*)) {
+bool Circuit::evalAndLoad(CommonData& commons, EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*deviceSelector)(Device*)) {
     auto t0 = Accounting::wclk();
     tables_.accounting().acctNew.evalload++; 
     
@@ -1345,7 +1347,7 @@ bool Circuit::evalAndLoad(EvalSetup* evalSetup, LoadSetup* loadSetup, bool (*dev
             if constexpr(devacct) {
                 td0 = Accounting::wclk();
             }
-            if (!devPtr->evalAndLoad(*this, evalSetup, loadSetup)) {
+            if (!devPtr->evalAndLoad(*this, commons, evalSetup, loadSetup)) {
                 retval = false;
                 break;
             }

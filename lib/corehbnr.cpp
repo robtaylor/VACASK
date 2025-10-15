@@ -7,6 +7,7 @@ namespace NAMESPACE {
 
 HBNRSolver::HBNRSolver(
         Circuit& circuit, 
+        CommonData& commons, 
         KluBlockSparseRealMatrix& jacColoc, 
         KluBlockSparseRealMatrix& bsjac, 
         VectorRepository<double>& solution, 
@@ -18,7 +19,7 @@ HBNRSolver::HBNRSolver(
         DenseMatrix<double>& APFT, 
         DenseMatrix<double>& IAPFT, 
         NRSettings& settings
-) : circuit(circuit), jacColoc(jacColoc), bsjac(bsjac), solutionFD(solutionFD), 
+) : circuit(circuit), commons(commons), jacColoc(jacColoc), bsjac(bsjac), solutionFD(solutionFD), 
     frequencies(frequencies), timepoints(timepoints), DDT(DDT), DDTcolMajor(DDTcolMajor), 
     APFT(APFT), IAPFT(IAPFT), 
     NRSolver(circuit.tables().accounting(), bsjac, solution, settings) {
@@ -418,7 +419,7 @@ bool HBNRSolver::postRun(bool continuePrevious) {
 bool HBNRSolver::evalAndLoadWrapper(EvalSetup& evalSetup, LoadSetup& loadSetup) {
     lastError = Error::OK;
     evalSetup.requestHighPrecision = highPrecision;
-    if (!circuit.evalAndLoad(&evalSetup, &loadSetup, nullptr)) {
+    if (!circuit.evalAndLoad(commons, &evalSetup, &loadSetup, nullptr)) {
         // Load error
         lastError = Error::EvalAndLoad;
         if (settings.debug>2) {

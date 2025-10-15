@@ -40,7 +40,7 @@ public:
     virtual std::tuple<bool, bool> setParameter(ParameterIndex ndx, const Value& v, Status& s=Status::ignore);
     virtual std::tuple<bool,bool> parameterGiven(ParameterIndex ndx, Status& s=Status::ignore) const;
 
-    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual Instance* createInstance(Circuit& circuit, Instance* parentInstance, RpnEvaluator& evaluator, Context* externalContext, const PTInstance& parsedInstance, InstantiationData& idata, Status& s=Status::ignore);
     virtual void dump(int indent, std::ostream& os) const;
 

@@ -90,6 +90,7 @@ public:
        
     AcCore(
         OutputDescriptorResolver& parentResolver, AcParameters& params, OperatingPointCore& opCore, Circuit& circuit, 
+        CommonData& commons, 
         KluRealMatrix& dcJacobian, VectorRepository<double>& dcSolution, VectorRepository<double>& dcStates, 
         KluComplexMatrix& acMatrix, Vector<Complex>& acSolution
     ); 

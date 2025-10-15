@@ -155,14 +155,15 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         Instance::NoFlags
     );
 
-    // Set simulator internals
     auto& options = circuit.simulatorOptions().core(); 
-    SimulatorInternals internals;
-    internals.fromOptions(options);
-    internals.analysis_name = std::string(name_);
-    internals.analysis_type = std::string(ptAnalysis.typeName());
-    internals.requestForcedBypass = false;
-    circuit.simulatorInternals() = internals;
+
+    // Reset common data
+    CommonData cd;
+    cd.fromOptions(options);
+    cd.analysis_name = std::string(name_);
+    cd.analysis_type = std::string(ptAnalysis.typeName());
+    cd.requestForcedBypass = false;
+    commons = cd;
     
     // Are we in debug mode
     auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || 
@@ -239,6 +240,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
 
             // Set current sweep point
             auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
+                commons, 
                 &sweeper, ParameterSweeper::WriteValues::Sweep, 
                 this, &simOptions, 
                 &parameterizedOptions, 
@@ -267,7 +269,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             }
 
             // Do not allow analysis to use forced bypass by default
-            circuit.simulatorInternals().allowContinueStateBypass = false;
+            commons.allowContinueStateBypass = false;
 
             // If outputs not bound yet or core needs rebuilding, bind them to actual quantities
             bool systemChanged = false;
@@ -322,7 +324,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 // analysis and all small-signal analyses allow the bypass
                 // if ordinary continue mode is used. 
                 if (sweeper.innermostSweepPosition()>0 && sweeper.continuation(sweeper.count()-1)) {
-                    circuit.simulatorInternals().allowContinueStateBypass = (options.nr_contbypass!=0);
+                    commons.allowContinueStateBypass = (options.nr_contbypass!=0);
                 }
             }
             
@@ -436,6 +438,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         
         // Set analysis options
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
+            commons, 
             nullptr, ParameterSweeper::WriteValues::Sweep, 
             this, &simOptions, 
             &parameterizedOptions, 
@@ -449,7 +452,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
         }
 
         // Do not allow analysis to use forced bypass
-        circuit.simulatorInternals().allowContinueStateBypass = false;
+        commons.allowContinueStateBypass = false;
 
         // Create list of output descriptors
         ok = addOutputDescriptors(s);
@@ -593,6 +596,7 @@ bool Analysis::finish(Status& s) {
         Status tmps;
         auto sptr = ptAnalysis.sweeps().data().size()>0 ? &sweeper : nullptr;
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
+            commons, 
             sptr, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
             &parameterizedOptions, 

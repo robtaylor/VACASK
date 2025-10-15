@@ -70,7 +70,7 @@ public:
     };
     DCXFCore(
         OutputDescriptorResolver& parentResolver, DCXFParameters& params, OperatingPointCore& opCore, std::unordered_map<Id,size_t>& sourceIndex, 
-        Circuit& circuit, KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
+        Circuit& circuit, CommonData& commons, KluRealMatrix& jacobian, Vector<double>& incrementalSolution, 
         std::vector<Instance*>& sources, Vector<double>& tf, Vector<double>& yin, 
         Vector<double>& zin
     ); 
