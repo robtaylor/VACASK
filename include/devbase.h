@@ -12,6 +12,7 @@
 #include "klumatrix.h"
 #include "parseroutput.h"
 #include "options.h"
+#include "comdata.h"
 #include "flags.h"
 #include "coretrancoef.h"
 #include "elsetup.h"

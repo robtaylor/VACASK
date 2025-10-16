@@ -37,6 +37,7 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/rpnstack.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/rpneval.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/options.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/comdata.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/node.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/introspection.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/circuit.h 
@@ -108,6 +109,7 @@ add_library(simlib STATIC
     rpneval.cpp
     introspection.cpp
     options.cpp 
+    comdata.cpp
     node.cpp
     circuit.cpp
     ciroptions.cpp 

@@ -1,5 +1,6 @@
 #include <limits>
 #include <cstring>
+#include <functional>
 #include "osdifile.h"
 
 namespace NAMESPACE {
@@ -115,30 +116,9 @@ void OsdiFile::processNaturesAndDisciplines() {
         }
     };
 
-    // Abstol at position
-    auto posToAbstol = [this](Position pos) -> std::tuple<bool, double> {
-        switch (pos.kind) {
-            case Position::Nature: 
-                if (!std::isinf(natureAbstol[pos.pos])) {
-                    return std::make_tuple(true, natureAbstol[pos.pos]);
-                }
-                break;
-            case Position::DisciplineFlow: 
-                if (!std::isinf(disciplineFlowAbstol[pos.pos])) {
-                    return std::make_tuple(true, disciplineFlowAbstol[pos.pos]);
-                }
-                break;
-            case Position::DisciplinePotential: 
-                if (!std::isinf(disciplinePotentialAbstol[pos.pos])) {
-                    return std::make_tuple(true, disciplinePotentialAbstol[pos.pos]);
-                }
-                break;
-        }
-        return std::make_tuple(false, 0); 
-    };
-
     // Traverse parent chain, return abstol if found
-    auto chainTraverse = [this, &parentPos, &posToAbstol](Position start) -> std::tuple<bool, double> {
+    // Traversal includes the starting point
+    auto chainTraverse = [this, &parentPos](Position start, std::function<bool(struct Position)> checker) -> Position {
         // Prepare set of visited positions
         std::unordered_set<Position, PositionHasher, PositionEqual> visited;
         
@@ -146,6 +126,9 @@ void OsdiFile::processNaturesAndDisciplines() {
         Position pos = start;
         visited.insert(pos);
         while (true) {
+            if (checker(pos)) {
+                return pos;
+            }
             pos = parentPos(pos);
             if (pos.kind==Position::None) {
                 // End of chain, stop
@@ -156,22 +139,86 @@ void OsdiFile::processNaturesAndDisciplines() {
                 // In a loop, stop
                 break;
             }
-            auto [given, abstol] = posToAbstol(pos);
-            if (given) {
-                // Found abstol
-                return std::make_tuple(true, abstol);
-            }
         }
-        return std::make_tuple(false, 0);
+        return Position { kind: Position::None };
+    };
+
+    auto hasAbstol = [this](struct Position pos) -> bool {
+        switch (pos.kind) {
+            case Position::Nature: 
+                return !std::isinf(natureAbstol[pos.pos]);
+            case Position::DisciplineFlow: 
+                return !std::isinf(disciplineFlowAbstol[pos.pos]);
+            case Position::DisciplinePotential: 
+                return !std::isinf(disciplinePotentialAbstol[pos.pos]);
+        }
+        return false;
+    };
+
+    // Abstol at position
+    auto getAbstol = [this](Position pos) -> double {
+        switch (pos.kind) {
+            case Position::Nature: 
+                if (!std::isinf(natureAbstol[pos.pos])) {
+                    return natureAbstol[pos.pos];
+                }
+                break;
+            case Position::DisciplineFlow: 
+                if (!std::isinf(disciplineFlowAbstol[pos.pos])) {
+                    return disciplineFlowAbstol[pos.pos];
+                }
+                break;
+            case Position::DisciplinePotential: 
+                if (!std::isinf(disciplinePotentialAbstol[pos.pos])) {
+                    return disciplinePotentialAbstol[pos.pos];
+                }
+                break;
+        }
+        return std::numeric_limits<double>::infinity(); 
+    };
+
+    auto hasIdt = [this](Position pos) -> bool {
+        switch (pos.kind) {
+            case Position::Nature: 
+                return natures[pos.pos].idt!=UINT32_MAX;
+            case Position::DisciplineFlow: {
+                    if (auto ndx = disciplines[pos.pos].flow; ndx!=UINT32_MAX) {
+                        return natures[ndx].idt!=UINT32_MAX;
+                    } else {
+                        return false;
+                    }
+                }
+            case Position::DisciplinePotential: {
+                if (auto ndx = disciplines[pos.pos].potential; ndx!=UINT32_MAX) {
+                        return natures[ndx].idt!=UINT32_MAX;
+                    } else {
+                        return false;
+                    }
+                }
+        }
+        return false;
+    };
+
+    auto getIdt = [this](Position pos) -> uint32_t {
+        switch (pos.kind) {
+            case Position::Nature:
+                return natures[pos.pos].idt;
+            case Position::DisciplineFlow: 
+                return natures[disciplines[pos.pos].flow].idt;
+            case Position::DisciplinePotential: 
+                return natures[disciplines[pos.pos].potential].idt;
+            default:
+                return UINT32_MAX;
+        }
     };
 
     // Collect abstol for natures via parents
     for(i=0; i<naturesCount; i++) {
         if (std::isinf(natureAbstol[i])) {
             // Traverse parents chain
-            auto [found, abstol] = chainTraverse(Position {.kind=Position::Nature, .pos=i});
-            if (found) {
-                natureAbstol[i] = abstol;
+            auto pos = chainTraverse(Position {.kind=Position::Nature, .pos=i}, hasAbstol);
+            if (pos.kind!=Position::None) {
+                natureAbstol[i] = getAbstol(pos);
             }
         }
     }
@@ -180,16 +227,16 @@ void OsdiFile::processNaturesAndDisciplines() {
     for(i=0; i<disciplinesCount; i++) {
         if (std::isinf(disciplineFlowAbstol[i])) {
             // Traverse parents chain
-            auto [found, abstol] = chainTraverse(Position {.kind=Position::DisciplineFlow, .pos=i});
-            if (found) {
-                disciplineFlowAbstol[i] = abstol;
+            auto pos = chainTraverse(Position {.kind=Position::DisciplineFlow, .pos=i}, hasAbstol);
+            if (pos.kind!=Position::None) {
+                disciplineFlowAbstol[i] = getAbstol(pos);
             }
         }
         if (std::isinf(disciplinePotentialAbstol[i])) {
             // Traverse parents chain
-            auto [found, abstol] = chainTraverse(Position {.kind=Position::DisciplinePotential, .pos=i});
-            if (found) {
-                disciplinePotentialAbstol[i] = abstol;
+            auto pos = chainTraverse(Position {.kind=Position::DisciplinePotential, .pos=i}, hasAbstol);
+            if (pos.kind!=Position::None) {
+                disciplinePotentialAbstol[i] = getAbstol(pos);
             }
         }
     }
@@ -198,17 +245,20 @@ void OsdiFile::processNaturesAndDisciplines() {
     natureIdtAbstol.resize(naturesCount);
     std::fill(natureIdtAbstol.begin(), natureIdtAbstol.end(), std::numeric_limits<double>::infinity());
     for(i=0; i<naturesCount; i++) {
-        auto nat = natures + i;
-        // Get idt nature
-        if (nat->idt!=UINT32_MAX) {
-            natureIdtAbstol[i] = natureAbstol[nat->idt];
+        // Find idt nature
+        auto pos = chainTraverse(Position {.kind=Position::Nature, .pos=i}, hasIdt);
+        auto idt = getIdt(pos);
+        if (idt!=UINT32_MAX) {
+            // Idt nature's abstol
+            natureIdtAbstol[i] = natureAbstol[idt];
         } else {
             // If idt is not given, the nature itself is the idt nature
             natureIdtAbstol[i] = natureAbstol[i];
         }
     }
 
-    // Collect abstols for discipline flow and potential ddts
+    // At this point all nature idt abstols are determined, no need to traverse chain for idt nature
+    // Collect idt abstols for discipline flows and potentials
     disciplineFlowIdtAbstol.resize(naturesCount);
     std::fill(disciplineFlowIdtAbstol.begin(), disciplineFlowIdtAbstol.end(), std::numeric_limits<double>::infinity());
     disciplinePotentialIdtAbstol.resize(naturesCount);

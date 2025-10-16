@@ -128,28 +128,6 @@ typedef struct SimulatorOptions  {
     bool optionsDiffer(std::unordered_map<Id, ParameterIndex>& optionsList, SimulatorOptions& opt);
 } SimulatorOptions;
 
-
-// Common data used during analysis and elaboration
-typedef struct CommonData {
-    Real sourcescalefactor;
-    Real gmin;     // gmin applied in parallel to nonlinear branches
-    Real gdev;     // extra gmin applied during homotopy, 
-                   // Computed and passed by the simulator. 
-                   // Usually models don't use it
-                   // therefore our homotopy algorithms modify only gmin. 
-    Real gshunt;   // Conductance connected between potential nodes and the ground
-    Int iteration;
-    String analysis_name;
-    String analysis_type;
-    // String cwd;
-
-    bool allowContinueStateBypass;
-    bool requestForcedBypass; 
-    
-    CommonData();
-    void fromOptions(const SimulatorOptions& options);
-} CommonData;
-
 }
 
 #endif

@@ -11,6 +11,7 @@
 #include "ansolution.h"
 #include "value.h"
 #include "options.h"
+#include "comdata.h"
 #include "parameterized.h"
 #include "klumatrix.h"
 #include "hierdevice.h"
