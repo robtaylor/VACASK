@@ -19,14 +19,17 @@ std::tuple<bool, bool> Circuit::setOption(Id name, const Value& v, Status& s) {
         return std::make_tuple(false, false);
     }
     if (changed) {
-        if (SimulatorOptions::mappingAffectingOptions.contains(name)) {
-            setFlags(Flags::MappingAffectingOptionsChanged);
+        if (SimulatorOptions::hierarchyAffectingOptions.contains(name)) {
+            setFlags(Flags::HierarchyAffectingOptionsChanged);
         }
         if (SimulatorOptions::parametrizationAffectingOptions.contains(name)) {
             setFlags(Flags::ParametrizationAffectingOptionsChanged);
         }
-        if (SimulatorOptions::hierarchyAffectingOptions.contains(name)) {
-            setFlags(Flags::HierarchyAffectingOptionsChanged);
+        if (SimulatorOptions::mappingAffectingOptions.contains(name)) {
+            setFlags(Flags::MappingAffectingOptionsChanged);
+        }
+        if (SimulatorOptions::tolerancesAffectingOptions.contains(name)) {
+            setFlags(Flags::TolerancesAffectingOptionsChanged);
         }
     }
     return std::make_tuple(ok, changed);
@@ -38,6 +41,7 @@ bool Circuit::setOptions(IStruct<SimulatorOptions>& opt) {
     bool hierarchyOptChanged = hierarchyAffectingOptionsChanged(opt.core());
     bool parametrizationOptChanged = parametrizationAffectingOptionsChanged(opt.core());
     bool mappingOptChanged = mappingAffectingOptionsChanged(opt.core());
+    bool tolerancesOptChanged = tolerancesAffectingOptionsChanged(opt.core());
     if (hierarchyOptChanged) {
         setFlags(Flags::HierarchyAffectingOptionsChanged);
     }
@@ -46,6 +50,9 @@ bool Circuit::setOptions(IStruct<SimulatorOptions>& opt) {
     }
     if (mappingOptChanged) {
         setFlags(Flags::MappingAffectingOptionsChanged);
+    }
+    if (tolerancesOptChanged) {
+        setFlags(Flags::TolerancesAffectingOptionsChanged);
     }
     
     simOptions.core() = opt.core();
@@ -93,6 +100,11 @@ bool Circuit::parametrizationAffectingOptionsChanged(SimulatorOptions& opt) {
 // Check if mapping affecting options changed when setting all options
 bool Circuit::mappingAffectingOptionsChanged(SimulatorOptions& opt) {
     return simOptions.core().optionsDiffer(SimulatorOptions::mappingAffectingOptions, opt);
+}
+
+// Check if tolerances affecting options changed when setting all options
+bool Circuit::tolerancesAffectingOptionsChanged(SimulatorOptions& opt) {
+    return simOptions.core().optionsDiffer(SimulatorOptions::tolerancesAffectingOptions, opt);
 }
 
 

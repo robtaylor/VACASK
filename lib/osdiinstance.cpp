@@ -376,15 +376,15 @@ bool OsdiInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons
             // Spice mode
             if (nodes_[i]->checkFlags(Node::Flags::FlowNode)) {
                 // Flow node
-                commons.updateTolerances(i, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+                commons.updateTolerances(ui, options.abstol, options.chgtol, options.vntol, options.fluxtol);
             } else {
                 // Potential node
-                commons.updateTolerances(i, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+                commons.updateTolerances(ui, options.vntol, options.fluxtol, options.abstol, options.chgtol);
             }
         } else {
             // VA mode and mixed mode
-            auto [u, ui, r, ri] = dev->tolerances(i);
-            commons.updateTolerances(i, u, ui, r, ri);
+            auto [ua, uia, ra, ria] = dev->tolerances(i);
+            commons.updateTolerances(ui, ua, uia, ra, ria);
         }
     }
     return true;
@@ -638,6 +638,7 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
     }
 }
 
+/*
 void jacobianLoadWithOffsetSanityCheck(OsdiDescriptor* descriptor, void* model, void* instance, bool resist, bool react) {
     auto nnz = descriptor->num_jacobian_entries;
     
@@ -730,6 +731,7 @@ void jacobianLoadWithOffsetSanityCheck(OsdiDescriptor* descriptor, void* model, 
         }
     }
 }
+*/
 
 bool OsdiInstance::inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) {
     // Get descriptor 

@@ -679,6 +679,15 @@ bool cmd_print(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
         } else if (what=="unknowns") {
             Simulator::out() << "Unknowns:\n";
             circuit.dumpUnknowns(2, Simulator::out());
+        } else if (what=="tolerances") {
+            CommonData commons;
+            commons.fromOptions(circuit.simulatorOptions().core());
+            if (!circuit.setStaticTolerances(commons, s)) {
+                s.extend("Failed to retrieve tolerances.");
+                return false;
+            }
+            Simulator::out() << "Tolerances for unknowns/residuals:\n";
+            circuit.dumpTolerances(2, commons, Simulator::out());
         } else if (what=="sparsity") {
             Simulator::out() << "Sparsity:\n";
             circuit.dumpSparsity(2, Simulator::out());

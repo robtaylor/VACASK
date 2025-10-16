@@ -40,10 +40,12 @@ typedef struct CommonData {
 
     CommonData();
     void fromOptions(const SimulatorOptions& options);
-    void resetToleranceVectors(UnknownIndex n);
+    void resetTolerances(UnknownIndex n);
     void updateTolerances(UnknownIndex i, double abstol, double idt_abstol, double res_abstol, double res_idt_abstol);
     void defaultTolerances(UnknownIndex i, double abstol, double idt_abstol, double res_abstol, double res_idt_abstol);
     void setTolerances(UnknownIndex i, double abstol, double idt_abstol, double res_abstol, double res_idt_abstol);
+    void scaleTolerances(double scl);
+    std::tuple<double, double, double, double> getTolerances(UnknownIndex i);
 } CommonData;
 
 }

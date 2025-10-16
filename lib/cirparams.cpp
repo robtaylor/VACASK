@@ -332,6 +332,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     bool hierarchyAffectingOptionsChanged = checkFlags(Circuit::Flags::HierarchyAffectingOptionsChanged);
     bool parametrizationAffectingOptionsChanged = checkFlags(Circuit::Flags::ParametrizationAffectingOptionsChanged);
     bool mappingAffectingOptionsChanged = checkFlags(Circuit::Flags::MappingAffectingOptionsChanged);
+    bool tolerancesAffectingOptionsChanged = checkFlags(Circuit::Flags::TolerancesAffectingOptionsChanged);
 
     // Write instance and model parameters if we have a sweeper
     if (sweeper) {
@@ -454,6 +455,13 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
         return std::make_tuple(false, false, false);
     }
+    
+    // Rebuild static tolerances
+    if ((unknownsChanged || tolerancesAffectingOptionsChanged) && !setStaticTolerances(commons, s)) {
+        s.extend("Failed to build static tolerances."); 
+        tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
+        return std::make_tuple(false, false, false);
+    }
 
     // Do not check here if any core requests a rebuild
     // Because this check may be computationally intensive 
@@ -466,6 +474,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     clearFlags(Circuit::Flags::ParametrizationAffectingOptionsChanged);
     clearFlags(Circuit::Flags::MappingAffectingOptionsChanged);
     clearFlags(Circuit::Flags::HierarchyParametersChanged);
+    clearFlags(Circuit::Flags::TolerancesAffectingOptionsChanged);
 
     // Mark circuit as elaborated
     setFlags(Flags::Elaborated);

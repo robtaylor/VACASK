@@ -164,6 +164,12 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     cd.analysis_type = std::string(ptAnalysis.typeName());
     cd.requestForcedBypass = false;
     commons = cd;
+
+    // Build tolerances
+    if (!circuit.setStaticTolerances(commons, s)) {
+        s.extend("Failed build static tolerances.");
+        co_yield AnalysisState::Aborted;
+    }
     
     // Are we in debug mode
     auto debugMode = options.sweep_debug || options.op_debug || options.smsig_debug || 

@@ -17,6 +17,7 @@ typedef struct SimulatorOptions  {
     Real minr;
     Real scale;
     Id tolmode;
+    Real tolscale;
     Real reltol; 
     Real abstol;
     Real vntol;

@@ -170,12 +170,13 @@ enum class CircuitFlags : uint8_t {
     HierarchyAffectingOptionsChanged = 2, 
     ParametrizationAffectingOptionsChanged = 4, 
     MappingAffectingOptionsChanged = 8, 
+    TolerancesAffectingOptionsChanged = 16, 
     
     // This one should be set manually whenever an instance/model parameter is changed
     // so that elaborateChanges() will do its job correctly and propagate changes. 
-    HierarchyParametersChanged = 16,  
+    HierarchyParametersChanged = 32,  
 
-    Elaborated = 32,  
+    Elaborated = 64,  
 };
 DEFINE_FLAG_OPERATORS(CircuitFlags);
 
@@ -322,6 +323,7 @@ public:
     // Drivers
     // Return value: ok, unknowns changed, sparsity changed
     std::tuple<bool, bool, bool> setup(CommonData& commons, bool forceFull, DeviceRequests* devReq, Status& s=Status::ignore);
+    bool setStaticTolerances(CommonData& commons, Status& s=Status::ignore);
     bool preAnalysis(Status& s=Status::ignore);
     bool nodeOrdering(Status& s=Status::ignore);
     bool bind(
@@ -348,6 +350,7 @@ public:
     void dumpNodes(int indent, std::ostream& os) const;
     void dumpUnknowns(int indent, std::ostream& os) const;
     void dumpSparsity(int indent, std::ostream& os) const;
+    void dumpTolerances(int indent, CommonData& commons, std::ostream& os) const;
     
     // Tolerance computation 
     double solutionTolerance(Node* node, double ref)  {
@@ -419,15 +422,18 @@ private:
     // Remove node from map and delete it regardless of its ref count
     bool remove(Node* node, Status& s=Status::ignore);
 
-    // Check if new options values require us to check if node collapsing changed
-    bool mappingAffectingOptionsChanged(SimulatorOptions& opt);
+    // Check if new options values require us to check if hierarchy changed
+    bool hierarchyAffectingOptionsChanged(SimulatorOptions& opt);
 
     // Check if new options values require us to propagate options across whole hierarchy
     bool parametrizationAffectingOptionsChanged(SimulatorOptions& opt);
 
-    // Check if new options values require us to check if hierarchy changed
-    bool hierarchyAffectingOptionsChanged(SimulatorOptions& opt);
+    // Check if new options values require us to check if node collapsing changed
+    bool mappingAffectingOptionsChanged(SimulatorOptions& opt);
 
+    // Check if new options values require us to rebuild tolerances
+    bool tolerancesAffectingOptionsChanged(SimulatorOptions& opt);
+    
     // Create a subcircuit definitions and all its subdefinitions
     HierarchicalModel* processSubcircuitDefinition(
         const PTSubcircuitDefinition& def, 

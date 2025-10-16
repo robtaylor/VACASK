@@ -48,9 +48,12 @@ vdd (vdd 0) v dc=0.6
 vss (vss 0) v dc=-0.6
 
 control
+  options tolmode="mixed" tolscale=1
   print device("capacitor")
   // print device_files
   // print device_file("Debug")
+  print tolerances
+
   analysis tran1 tran step=0.1u stop=3m
 
   postprocess(PYTHON, "runme.py")

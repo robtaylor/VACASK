@@ -938,6 +938,8 @@ bool Circuit::elaborate(
         return false;
     }
 
+    // No need to build tolerances, analyses will do that
+
     // Sanity checks
 
     // Check if number of nodes is nonzero
@@ -988,6 +990,45 @@ std::tuple<bool, bool, bool> Circuit::setup(CommonData& commons, bool forceFull,
         }
     }
     return std::tuple(true, unknownsChanged, sparsityChanged);
+}
+
+// Set static tolerances
+bool Circuit::setStaticTolerances(CommonData& commons, Status& s) {
+    // Reset tolerances
+    commons.resetTolerances(unknownCountExcludingGround);
+    
+    // tolmode = spice, va are handled by setStaticTolerances()
+    for(auto& dev : devices) {
+        auto ok = dev->setStaticTolerances(*this, commons, s);
+        if (!ok) {
+            return false;
+        }
+    }
+
+    // Do defaulting for tolmode = mixed
+    auto& options = simOptions.core();
+    if (options.tolmode==SimulatorOptions::tolmodeMixed) {
+        for(UnknownIndex i=0; i<=unknownCountExcludingGround; i++) {
+            // Get representative node
+            auto rn = unknownToReprNode[i];
+            if (rn->checkFlags(Node::Flags::FlowNode)) {
+                // Flow node
+                // Unknown is spice voltage (vntol, fluxtol)
+                // Residual is spice current (abstol, chgtol)
+                commons.defaultTolerances(i, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+            } else {
+                // Potential node
+                // Unknown is spice current (abstol, chgtol)
+                // Residual is spice voltage (vntol, fluxtol)
+                commons.defaultTolerances(i, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+            }
+        }
+    }
+
+    // Scale with abstolscale
+    commons.scaleTolerances(options.tolscale);
+    
+    return true;
 }
 
 bool Circuit::preAnalysis(Status& s) {
@@ -1478,6 +1519,30 @@ void Circuit::dumpUnknowns(int indent, std::ostream& os) const {
 
 void Circuit::dumpSparsity(int indent, std::ostream& os) const {
     sparsityMap_.dump(indent, os);
+}
+
+void Circuit::dumpTolerances(int indent, CommonData& commons, std::ostream& os) const {
+    auto tolToStr = [](double tol, int width) -> std::string {
+        std::stringstream ss;
+        ss << std::left << std::setw(width);
+        ss.str(""); 
+        if (std::isinf(tol)) {
+            ss << "<none>";
+        } else {
+            ss << std::defaultfloat << tol;
+        }
+        return ss.str(); 
+    };
+
+    std::string pfx = std::string(indent, ' ');
+    auto n = unknownCountExcludingGround;
+    for(decltype(n) i=1; i<=n; i++) {
+        auto [u, ui, r, ri] = commons.getTolerances(i);
+        os << pfx << i << " : " << reprNode(i)->name() << " :";
+        os << " abstol=" << tolToStr(u, 8) << " idt_abstol=" << tolToStr(ui, 8);
+        os << " res_abstol=" << tolToStr(r, 8) << " res_idt_abstol=" << tolToStr(ri, 8);
+        os << "\n";
+    }
 }
 
 }

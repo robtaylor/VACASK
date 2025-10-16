@@ -43,6 +43,7 @@ SimulatorOptions::SimulatorOptions() {
     minr = 0.0; // >=0
     scale = 1.0; // >0
     tolmode = tolmodeSpice;
+    tolscale = 1.0; // global scaling factor for absolute tolerances
     reltol = 1e-3; // 0<x<1, Relative tolerance 
     abstol = 1e-12; // >0, absolute current tolerance in A
     vntol = 1e-6; // >0, absolute voltage tolerance in V
@@ -213,6 +214,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(scale);
 
     registerMember(tolmode);
+    registerMember(tolscale);
     
     registerMember(reltol);
     registerMember(abstol);
@@ -306,20 +308,29 @@ std::unordered_map<Id, ParameterIndex> SimulatorOptions::parametrizationAffectin
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::hierarchyAffectingOptions;
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::tolerancesAffectingOptions;
 
-// TODO: this needs to be revamped
-//       any option can affect mapping (i.e. node collapsing)
-//       restol and vnrestol should be removed
+// TODO: restol and vnrestol should be removed
 bool SimulatorOptions::staticInitialize() {
+    // Options that can change unknown mapping
+    // These are the options that are exposed via OSDI interface
     for(auto it : std::initializer_list<Id>{
         Id::createStatic("tnom"),
         Id::createStatic("temp"),
-        Id::createStatic("scale"),
+        Id::createStatic("gmin"), 
+        Id::createStatic("gdev"), 
         Id::createStatic("minr"), 
+        Id::createStatic("scale"),
+        Id::createStatic("reltol"), 
+        Id::createStatic("vntol"), 
+        Id::createStatic("abstol"), 
+        Id::createStatic("chgtol"), 
+        Id::createStatic("fluxtol"), 
     } ) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         mappingAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
     }
 
+    // Options that affect parameterized expressions 
+    // Currently only temp (mapped to $temp) 
     for(auto it : std::initializer_list<Id>{
         Id::createStatic("temp"),
     } ) {
@@ -327,19 +338,22 @@ bool SimulatorOptions::staticInitialize() {
         parametrizationAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
     }
 
+    // Options that can change the topology of the circuit
+    // Currently there are no such options
     for(auto it : std::initializer_list<Id>{}) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         hierarchyAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
     }
 
+    // Options that can change the tolerances
+    // These are options that change the tolerance assignment method 
+    // and the spice default tolerances
     for(auto it : std::initializer_list<Id>{
         Id::createStatic("tolmode"),
         Id::createStatic("abstol"),
         Id::createStatic("chgtol"),
         Id::createStatic("vntol"),
         Id::createStatic("fluxtol"),
-        Id::createStatic("restol"),
-        Id::createStatic("vnrestol"),
     }) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         tolerancesAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});

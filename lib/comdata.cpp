@@ -32,11 +32,11 @@ void CommonData::fromOptions(const SimulatorOptions& options) {
     gshunt = options.gshunt;
 }
 
-void CommonData::resetToleranceVectors(UnknownIndex n) {
+void CommonData::resetTolerances(UnknownIndex n) {
     unknown_abstol.resize(n+1);
     unknown_idt_abstol.resize(n+1);
-    unknown_abstol.resize(n+1);
-    unknown_idt_abstol.resize(n+1);
+    residual_abstol.resize(n+1);
+    residual_idt_abstol.resize(n+1);
     for(UnknownIndex i=0; i<=n; i++) {
         setTolerances(i, 
             std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), 
@@ -80,6 +80,24 @@ void CommonData::defaultTolerances(UnknownIndex i, double abstol, double idt_abs
     if (std::isinf(residual_idt_abstol[i])) {
         residual_idt_abstol[i] = res_idt_abstol;
     }
+}
+
+void CommonData::scaleTolerances(double scl) {
+    for(UnknownIndex i=0; i<unknown_abstol.size(); i++) {
+        unknown_abstol[i] *= scl;
+        unknown_idt_abstol[i] *= scl;
+        residual_abstol[i] *= scl;
+        residual_idt_abstol[i] *= scl;
+    }
+}
+
+std::tuple<double, double, double, double> CommonData::getTolerances(UnknownIndex i) {
+    return std::make_tuple(
+        unknown_abstol[i], 
+        unknown_idt_abstol[i], 
+        residual_abstol[i], 
+        residual_idt_abstol[i]
+    );
 }
 
 }
