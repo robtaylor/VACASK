@@ -171,12 +171,12 @@ std::tuple<bool, bool, bool> OsdiModel::setup(Circuit& circuit, CommonData& comm
     
     OsdiDevice::populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
-    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
+    auto retval = setupWrapper(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
 }
 
 // Set up this model (method used by friends for inlining)
-std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
+std::tuple<bool, bool, bool> OsdiModel::setupWrapper(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
     auto handle = OsdiCallbackHandle {
         .kind = 1, 
         .name = const_cast<char*>(name().c_str())
@@ -201,7 +201,7 @@ std::tuple<bool, bool, bool> OsdiModel::setupCore(Circuit& circuit, OsdiSimParas
     bool unknownsChanged = false;
     bool sparsityChanged = false;
     for(auto it : instances()) {
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiInstance*>(it)->setupCore(circuit, sp, temp, forceAllInstances, devReq, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiInstance*>(it)->setupWrapper(circuit, sp, temp, forceAllInstances, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {

@@ -180,6 +180,21 @@ template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource
     return ctlsrcOpvarOutputSource(data, ndx);
 }
 
+template<> bool BuiltinVccsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) { 
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // All nodes are electrical, unknowns are potentials, residuals are flows
+    for(NodeIndex i=0; i<4; i++) {
+        auto nn = nodes_[i]->unknownIndex();
+        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    }
+    
+    return true;
+}
+
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Create Jacobian entries
     if (auto [_, ok] = circuit.createJacobianEntry(nodes_[0], nodes_[2], EntryFlags::Resistive, s); !ok) {
@@ -352,6 +367,25 @@ template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, St
     return true;
 }
 
+template<> bool BuiltinVcvsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) { 
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // First 4 nodes are electrical, unknowns are potentials, residuals are flows
+    for(NodeIndex i=0; i<4; i++) {
+        auto nn = nodes_[i]->unknownIndex();
+        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    }
+
+    // Last node: unknown is flow, residual is potential
+    auto in = nodes_[4]->unknownIndex();
+    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+    
+    return true;
+}
+
 template<> bool BuiltinVcvsInstance::bindCore(
     Circuit& circuit, 
     KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
@@ -496,6 +530,23 @@ template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, St
         return false;
     }
     // No states to reserve
+    return true;
+}
+
+template<> bool BuiltinCccsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) { 
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // The two nodes are electrical, unknowns are potentials, residuals are flows
+    for(NodeIndex i=0; i<2; i++) {
+        auto nn = nodes_[i]->unknownIndex();
+        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    }
+
+    // Control unknown is left untouched, others should set its tolerances
+    
     return true;
 }
 
@@ -650,6 +701,27 @@ template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, St
     return true;
 }
 
+template<> bool BuiltinCcvsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) { 
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // The two nodes are electrical, unknowns are potentials, residuals are flows
+    for(NodeIndex i=0; i<2; i++) {
+        auto nn = nodes_[i]->unknownIndex();
+        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    }
+
+    // Last node: unknown is flow, residual is potential
+    auto in = nodes_[2]->unknownIndex();
+    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+    
+    // Control unknown is left untouched, others should set its tolerances
+    
+    return true;
+}
+
 template<> bool BuiltinCcvsInstance::bindCore(
     Circuit& circuit, 
     KluMatrixAccess* matResist, Component compResist, const std::optional<MatrixEntryPosition>& mepResist, 
@@ -778,7 +850,7 @@ template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalPara
     return std::make_tuple(principalMutual, true); // gain
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
     auto& p = params.core();
     auto& d = data.core();
 
@@ -848,7 +920,12 @@ template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circu
     return std::make_tuple(true, false, sparsityChanged);
 }
 
-template<> bool BuiltinMutualInstance::preAnalysisWorker(Circuit& circuit, Status& s) {
+template<> bool BuiltinMutualInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) {
+    // No nodes connected, no tolerances to set
+    return true;
+}
+
+template<> bool BuiltinMutualInstance::preAnalysisCore(Circuit& circuit, Status& s) {
     // Compute mutual inductance
     auto& p = params.core();
     auto& d = data.core();

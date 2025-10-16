@@ -133,8 +133,10 @@ template<> bool BuiltinVSourceInstance::getOpvar(ParameterIndex ndx, Value& v, S
 template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx) const;
 template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx) const;
-template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
-template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
+template<> bool BuiltinVSourceInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
+template<> bool BuiltinISourceInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
 template<> bool BuiltinVSourceInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinISourceInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVSourceInstance::bindCore(

@@ -53,8 +53,8 @@ public:
     const void* core() const { return core_; };
     
     // Helpers for inlining in model and instance virtual functions
-    std::tuple<bool, bool, bool> setupCore(Circuit& circuit, OsdiSimParas& sp, double temp,  bool force, DeviceRequests* devReq, Status& s=Status::ignore);
-
+    std::tuple<bool, bool, bool> setupWrapper(Circuit& circuit, OsdiSimParas& sp, double temp,  bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    
 private:
     void* core_;
 };

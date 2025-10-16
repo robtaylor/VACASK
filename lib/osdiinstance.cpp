@@ -265,11 +265,15 @@ std::tuple<bool, bool, bool> OsdiInstance::setup(Circuit& circuit, CommonData& c
     
     OsdiDevice::populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     // Verilog-A $temperature is in K, convert the value given by options (in C)
-    auto retval = setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
+    auto retval = setupWrapper(circuit, sp, opt.temp+273.15, force, devReq, s);
     return retval;
 }
 
-std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
+bool OsdiInstance::setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s) {
+    return setStaticTolerancesCore(circuit, commons, s);
+}
+
+std::tuple<bool, bool, bool> OsdiInstance::setupWrapper(Circuit& circuit, OsdiSimParas& sp, double temp, bool force, DeviceRequests* devReq, Status& s) {
     auto handle = OsdiCallbackHandle {
         .kind = 1, 
         .name = const_cast<char*>(name().c_str())
@@ -352,6 +356,38 @@ std::tuple<bool, bool, bool> OsdiInstance::setupCore(Circuit& circuit, OsdiSimPa
 
     // OSDI instances cannot change sparsity pattern
     return std::make_tuple(true, unknownsChanged, false);
+}
+
+bool OsdiInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) {
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+    
+    // Are we in spice tolerance mode
+    bool spiceMode = options.tolmode==SimulatorOptions::tolmodeSpice;
+    
+    // Device
+    auto dev = model()->device();
+
+    // Go through nodes
+    for(NodeIndex i=0; i<nodes_.size(); i++) {
+        // Get unknown index
+        auto ui = nodes_[i]->unknownIndex();
+        if (spiceMode) {
+            // Spice mode
+            if (nodes_[i]->checkFlags(Node::Flags::FlowNode)) {
+                // Flow node
+                commons.updateTolerances(i, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+            } else {
+                // Potential node
+                commons.updateTolerances(i, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+            }
+        } else {
+            // VA mode and mixed mode
+            auto [u, ui, r, ri] = dev->tolerances(i);
+            commons.updateTolerances(i, u, ui, r, ri);
+        }
+    }
+    return true;
 }
 
 bool OsdiInstance::propagateParameters(Circuit& circuit, RpnEvaluator& evaluator, Status& s) { 

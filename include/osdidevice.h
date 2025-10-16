@@ -47,6 +47,7 @@ public:
     virtual bool operator==(const Device& other) const; 
     Id name() const { return name_; };
     virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
+    virtual bool setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s=Status::ignore);
     virtual bool collapseNodes(Circuit& circuit, Status& s=Status::ignore);
     virtual bool populateStructures(Circuit& circuit, Status& s=Status::ignore);
     virtual bool bind(
@@ -199,6 +200,7 @@ public:
         return descriptor_->jacobian_entries[ndx];
     };
     OsdiFile::OsdiStateCount internalStateCount() const { return descriptor_->num_states; };
+    std::tuple<double, double, double, double> tolerances(NodeIndex i) { return osdiFile->tolerances(index_, i); }; 
     
 private:
     static const char* simParamNames[];

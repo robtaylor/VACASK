@@ -299,7 +299,7 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, CommonData& com
     populateSimParas(sp, opt, commons, dblArray, chrPtrArray);
     for(auto model : models()) {
         // Verilog-A $temperature is in K, convert the value given by options (in C)
-        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupCore(circuit, sp, opt.temp+273.15, force, devReq, s);
+        auto [ok, tmpUnknowns, tmpSparsity] = static_cast<OsdiModel*>(model)->setupWrapper(circuit, sp, opt.temp+273.15, force, devReq, s);
         unknownsChanged |= tmpUnknowns;
         sparsityChanged |= tmpSparsity;
         if (!ok) {
@@ -308,6 +308,20 @@ std::tuple<bool, bool, bool> OsdiDevice::setup(Circuit& circuit, CommonData& com
         
     }
     return std::tuple(true, unknownsChanged, sparsityChanged);
+}
+
+bool OsdiDevice::setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s) {
+    for(auto model : models()) {
+        if (model->instanceCount()==0) {
+            continue;
+        }
+        for(auto instance : model->instances()) {
+            if (!static_cast<OsdiInstance*>(instance)->setStaticTolerancesCore(circuit, commons, s)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool OsdiDevice::collapseNodes(Circuit& circuit, Status& s) {

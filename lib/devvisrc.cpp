@@ -546,15 +546,51 @@ template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSou
     }
 }
 
-template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
+template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) {
     clearFlags(Flags::NeedsSetup); 
     return sourceSetup(params, data, location(), circuit, s);
 }; 
 
-template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) { 
+template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s) { 
     clearFlags(Flags::NeedsSetup);
     return sourceSetup(params, data, location(), circuit, s);
 }; 
+
+template<> bool BuiltinVSourceInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) {
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // Unknowns
+    auto pn = nodes_[0]->unknownIndex();
+    auto nn = nodes_[1]->unknownIndex();
+    auto in = nodes_[2]->unknownIndex();
+
+    // Tolerances
+    commons.updateTolerances(pn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+
+    return true;
+}
+
+template<> bool BuiltinISourceInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) {
+    // Always use spice tolerance mode
+    
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
+    // Unknowns
+    auto pn = nodes_[0]->unknownIndex();
+    auto nn = nodes_[1]->unknownIndex();
+    
+    // Tolerances
+    commons.updateTolerances(pn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+    commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+
+    return true;
+}
 
 template<> bool BuiltinVSourceInstance::populateStructuresCore(Circuit& circuit, Status& s) {
     // Create Jacobian entries

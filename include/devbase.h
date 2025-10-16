@@ -92,6 +92,11 @@ public:
     // Sets parameter defaults (model, instance), computes node collapsing (instance)
     // Return value: ok, unknowns changed, sparsity changed
     virtual std::tuple<bool, bool, bool> setup(Circuit& cir, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore) { return std::make_tuple(true, false, false); };
+
+    // Sets static toleranes (all, but those of switch branch equations)
+    // By default does nothing
+    // Return value: ok
+    virtual bool setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s=Status::ignore) { return true; };
     
     // Collapses nodes
     // Return value: ok, changed

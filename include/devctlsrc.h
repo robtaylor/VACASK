@@ -139,6 +139,7 @@ template<> bool BuiltinVccsInstance::deleteHierarchy(Circuit& circuit, Status& s
 template<> bool BuiltinVccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinVccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx) const;
+template<> bool BuiltinVccsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
 template<> bool BuiltinVccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVccsInstance::bindCore(
     Circuit& circuit, 
@@ -156,6 +157,7 @@ template<> bool BuiltinVcvsInstance::deleteHierarchy(Circuit& circuit, Status& s
 template<> bool BuiltinVcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinVcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx) const;
+template<> bool BuiltinVcvsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinVcvsInstance::bindCore(
     Circuit& circuit, 
@@ -173,6 +175,7 @@ template<> bool BuiltinCccsInstance::deleteHierarchy(Circuit& circuit, Status& s
 template<> bool BuiltinCccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinCccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx) const;
+template<> bool BuiltinCccsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
 template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCccsInstance::bindCore(
     Circuit& circuit, 
@@ -190,6 +193,7 @@ template<> bool BuiltinCcvsInstance::deleteHierarchy(Circuit& circuit, Status& s
 template<> bool BuiltinCcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, Status& s);
 template<> bool BuiltinCcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
 template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx) const;
+template<> bool BuiltinCcvsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
 template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinCcvsInstance::bindCore(
     Circuit& circuit, 
@@ -238,8 +242,9 @@ using BuiltinMutualInstance = BuiltinInstance<DevCtlSourceModelParams, DevMutual
 
 template<> void BuiltinMutual::defineInternals();
 template<> std::tuple<ParameterIndex, bool> BuiltinMutualInstance::principalParameterIndex() const; 
-template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupWorker(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
-template<> bool BuiltinMutualInstance::preAnalysisWorker(Circuit& circuit, Status& s);
+template<> std::tuple<bool, bool, bool> BuiltinMutualInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
+template<> bool BuiltinMutualInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);
+template<> bool BuiltinMutualInstance::preAnalysisCore(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::populateStructuresCore(Circuit& circuit, Status& s);
 template<> bool BuiltinMutualInstance::bindCore(
     Circuit& circuit, 
