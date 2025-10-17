@@ -832,6 +832,9 @@ bool OpNRSolver::loadForces(bool loadJacobian) {
 }
 
 std::tuple<bool, bool> OpNRSolver::checkResidual() {
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
     // Compute norms only in debug mode
     bool computeNorms = settings.debug;
 
@@ -893,7 +896,7 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
         }
 
         // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-        auto tol = circuit.residualTolerance(rn, tolref);
+        auto tol = std::max(std::fabs(tolref*options.reltol), commons.residual_abstol[i]);
 
         // TODO: internal nodes when NR converges have a very low residual contribution
         //       because a single OSDI instance provides all the residual contribution to them 
@@ -932,6 +935,9 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
 }
 
 std::tuple<bool, bool> OpNRSolver::checkDelta() {
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
     // Compute norms only in debug mode
     bool computeNorms = settings.debug;
 
@@ -997,7 +1003,7 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
         }
         
         // Compute tolerance
-        double tol = circuit.solutionTolerance(rn, tolref);
+        double tol = std::max(std::fabs(tolref*options.reltol), commons.unknown_abstol[i]);
 
         // Absolute solution change 
         double deltaAbs = fabs(delta[i]);
@@ -1007,7 +1013,7 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
             if (i==1 || normDelta>maxNormDelta) {
                 maxDelta = deltaAbs;
                 maxNormDelta = normDelta;
-                maxDeltaNode = rn;
+                maxDeltaNode = circuit.reprNode(i);
             }
         }
 

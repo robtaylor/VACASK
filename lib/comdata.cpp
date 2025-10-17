@@ -100,5 +100,25 @@ std::tuple<double, double, double, double> CommonData::getTolerances(UnknownInde
     );
 }
 
+// Nature registry, one per circuit
+// Issues ids for nature information (currently nature name)
+// Discipline nature name is <discipline>.potential, <discipline>.flow
+// Registry maps nature (id) -> number
+// Each device registers its natures at load, receives nature id
+// When asked for tolerances, it returns tolerance and nature id
+// At tolerance setup id is stored in the corresponding vector
+// If a tolerance is updated, the node's nature changes to the latest nature 
+// After tolerances are collected ids are converted to numbers via registry
+//
+// Spice natures are always registered before natures from devices
+// name              number  tol     idt nature
+// ::spice_voltage   0       vntol   ::spice_flux
+// ::spice_current   1       abstol  ::spice_charge
+// ::spice_flux      2       fluxtol -
+// ::spice_charge    3       chgtol  -
+//
+// Nature numbers are stored in CommonData vectors
+// They are used for setting up global maxima (point and historic)
+
 }
 

@@ -1129,32 +1129,34 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                 // Greater lteratio results in greater LTE tolerance and greater timestep
 
                 double tol;
+                double tolref;
                 if (options.relreflte == SimulatorOptions::relrefGlobal) {
                     // Maximum over all unknowns, maximum over past timepoints
-                    tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
+                    tolref = nrSolver.globalMaxSolution()[ndx];
                 } else if (options.relreflte == SimulatorOptions::relrefPointGlobal) {
                     // Maximum over all unknowns, for each timepoint
-                    tol = circuit.solutionTolerance(rn, nrSolver.pointMaxSolution()[ndx]);
+                    tolref = nrSolver.pointMaxSolution()[ndx];
                 } else if (options.relreflte == SimulatorOptions::relrefLocal) {
                     // For each unknown, maximum over past timepoints
-                    tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);
+                    tolref = nrSolver.historicMaxSolution()[i];
                 } else if (options.relreflte == SimulatorOptions::relrefPointLocal) {
                     // For each unknown, for each timepoint
-                    tol = circuit.solutionTolerance(rn, solution.vector()[i]);
+                    tolref = solution.vector()[i];
                 } else if (options.relreflte == SimulatorOptions::relrefRelref) {
                     if (options.relref == SimulatorOptions::relrefAlllocal) {
                         // For each unknown, maximum over past timepoints
-                        tol = circuit.solutionTolerance(rn, nrSolver.historicMaxSolution()[i]);
+                        tolref = nrSolver.historicMaxSolution()[i];
                     } else if (options.relref == SimulatorOptions::relrefSigglobal) {
                         // Maximum over all unknowns, maximum over past timepoints
-                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
+                        tolref = nrSolver.globalMaxSolution()[ndx];
                     } else if (options.relref == SimulatorOptions::relrefAllglobal) {
                         // Maximum over all unknowns, maximum over past timepoints
-                        tol = circuit.solutionTolerance(rn, nrSolver.globalMaxSolution()[ndx]);
+                        tolref = nrSolver.globalMaxSolution()[ndx];
                     } else {
                         setError(TranError::BadLteReference);
                         co_yield CoreState::Aborted;
                     }
+                    tol = std::max(std::fabs(tolref*options.reltol), commons.unknown_abstol[i]);
                 } else {
                     setError(TranError::BadLteReference);
                     co_yield CoreState::Aborted;

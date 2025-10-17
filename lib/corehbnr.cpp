@@ -680,6 +680,9 @@ bool HBNRSolver::loadForces(bool loadJacobian) {
 }
 
 std::tuple<bool, bool> HBNRSolver::checkResidual() {
+    // Options 
+    auto& options = circuit.simulatorOptions().core();
+    
     // Compute norms only in debug mode
     bool computeNorms = settings.debug;
 
@@ -746,7 +749,7 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
             }
 
             // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-            auto tol = circuit.residualTolerance(rn, tolref);
+            auto tol = std::max(std::fabs(tolref*options.reltol), commons.residual_abstol[i]);
 
             // Residual component
             double rescomp = fabs(delta[1+(i-1)*nt+k]);
@@ -780,6 +783,9 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
 }
 
 std::tuple<bool, bool> HBNRSolver::checkDelta() {
+    // Options
+    auto& options = circuit.simulatorOptions().core();
+
     // Compute norms only in debug mode
     bool computeNorms = settings.debug;
 
@@ -839,7 +845,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
             }
             
             // Compute tolerance
-            double tol = circuit.solutionTolerance(rn, tolref);
+            double tol = std::max(std::fabs(tolref*options.reltol), commons.unknown_abstol[i]);
 
             // Absolute solution change 
             double deltaAbs = std::fabs(xdelta[1+(i-1)*nt+j]);;

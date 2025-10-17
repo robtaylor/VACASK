@@ -352,54 +352,12 @@ public:
     void dumpSparsity(int indent, std::ostream& os) const;
     void dumpTolerances(int indent, CommonData& commons, std::ostream& os) const;
     
-    // Tolerance computation 
-    double solutionTolerance(Node* node, double ref)  {
-        auto& options = simOptions.core();
-        auto i = node->unknownIndex();
-        // Solution tolerance
-        double tol = std::fabs(ref)*options.reltol;
-        // Absolute solution tolerance differs for potential and flow nodes
-        if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
-            // Potential
-            if (tol<options.vntol) {
-                tol = options.vntol;
-            }
-        } else {
-            // Flow
-            if (tol<options.abstol) {
-                tol = options.abstol;
-            }
-        }
-        return tol;
-    };
-    
-    double residualTolerance(Node* node, double ref)  {
-        auto& options = simOptions.core();
-        auto i = node->unknownIndex();
-        // Residual tolerance (Designer's Guide to Spice and Spectre, chapter 2.2.2)
-        double tol = std::fabs(ref)*options.reltol;
-        // Absolute residual tolerance differs for potential and flow nodes
-        if (node->maskedFlags(Node::Flags::NodeTypeMask)==Node::Flags::PotentialNode) {
-            // Potential node residual is current
-            if (tol<options.restol) {
-                tol = options.restol;
-            }
-        } else {
-            // Flow node residual is voltage
-            if (tol<options.vnrestol) {
-                tol = options.vnrestol;
-            }
-        }
-        return tol;
-    };
-
     // Create a new stored solution, if exists, return existing solution
     AnnotatedSolution* newStoredSolution(Id typeCode, Id name);
 
     // Return existing solution, if not found return nullptr
     AnnotatedSolution* storedSolution(Id typeCode, Id name);
     
-
     // Sets swept values, 
     // Applies common options expressions, analysis parameter expressions, and analysis options expressions
     // Propagates changes down hierarchy, applies changes to the hierarchy (if needed)
