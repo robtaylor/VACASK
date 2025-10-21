@@ -376,10 +376,10 @@ bool OsdiInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons
             // Spice mode
             if (nodes_[i]->checkFlags(Node::Flags::FlowNode)) {
                 // Flow node
-                commons.updateTolerances(ui, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+                updateFlowNodeSpiceTolerances(options, commons, ui);
             } else {
                 // Potential node
-                commons.updateTolerances(ui, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+                updatePotentialNodeSpiceTolerances(options, commons, ui);
             }
         } else {
             // VA mode and mixed mode

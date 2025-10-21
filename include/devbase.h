@@ -545,6 +545,28 @@ public:
 protected:
     // Create/get internal node, increase its reference count
     Node* getInternalNode(Circuit& circuit, const std::string& name, Node::Flags flags, Status& s=Status::ignore);
+
+    // Update SPICE tolerances for potential node
+    void updatePotentialNodeSpiceTolerances(const SimulatorOptions& options, CommonData& commons, UnknownIndex u) {
+        commons.updateTolerances(u, 
+            NatureTolerance(NatureRegistry::spiceVoltage, options.vntol), 
+            NatureTolerance(NatureRegistry::spiceFlux, options.fluxtol), 
+            NatureTolerance(NatureRegistry::spiceCurrent, options.abstol), 
+            NatureTolerance(NatureRegistry::spiceCharge, options.chgtol)
+        );
+    };
+
+    // Update SPICE tolerances for flow node
+    void updateFlowNodeSpiceTolerances(const SimulatorOptions& options, CommonData& commons, UnknownIndex u) {
+        commons.updateTolerances(u, 
+            NatureTolerance(NatureRegistry::spiceCurrent, options.abstol), 
+            NatureTolerance(NatureRegistry::spiceCharge, options.chgtol), 
+            NatureTolerance(NatureRegistry::spiceVoltage, options.vntol), 
+            NatureTolerance(NatureRegistry::spiceFlux, options.fluxtol)
+        );
+    }
+
+    
     
     Id name_; // Hierarchical name of instance
     Model* model_;

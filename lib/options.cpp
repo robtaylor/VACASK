@@ -7,29 +7,33 @@
 
 namespace NAMESPACE {
 
+// Values for tolmode
 Id SimulatorOptions::tolmodeSpice = Id::createStatic("spice"); // SPICE tolerance handling
-    // For 
-    // - vntol for non-flow unknowns
-    // - abstol for flow unknowns
-    // - abstol for resistive residual of non-flow unknowns
-    // - chgtol for reactive residual of non-flow unknowns
-    // - vntol for resistive residual of flow unknowns
-    // - fluxtol for reactive residual of flow unknowns
+// SPICE tolerances 
+// - vntol for non-flow unknowns
+// - abstol for flow unknowns
+// - abstol for resistive residual of non-flow unknowns
+// - chgtol for reactive residual of non-flow unknowns
+// - vntol for resistive residual of flow unknowns
+// - fluxtol for reactive residual of flow unknowns
 Id SimulatorOptions::tolmodeVa = Id::createStatic("va"); // Verilog-A tolerance handling
-    // Where available, use natures and disciplines, otherwise do not enforce tolerances
+// Where available, use VA natures and disciplines, otherwise do not enforce tolerances
 Id SimulatorOptions::tolmodeMixed = Id::createStatic("mixed"); // Mixed tolerance handling
-    // Where available, use natures and disciplines, otherwise use SPICE tolerances
+// Where available, use VA natures and disciplines, otherwise use SPICE tolerances
 
+// Values for relref[sol|res|lte]
 Id SimulatorOptions::relrefPointLocal = Id::createStatic("pointlocal"); // at given time for each unknown separately
 Id SimulatorOptions::relrefLocal = Id::createStatic("local"); // maximum over past time for each unknown separately
 Id SimulatorOptions::relrefPointGlobal = Id::createStatic("pointglobal"); // at given time, maximum over all unknowns
 Id SimulatorOptions::relrefGlobal = Id::createStatic("global"); // maximum over past time, maximum over all unknowns
 Id SimulatorOptions::relrefRelref = Id::createStatic("relref"); // let relref option decide on tolerance reference
 
+// Values for relref
 Id SimulatorOptions::relrefAlllocal = Id::createStatic("alllocal"); // relref value alllocal
 Id SimulatorOptions::relrefSigglobal = Id::createStatic("sigglobal"); // relref value sigglobal
 Id SimulatorOptions::relrefAllglobal = Id::createStatic("allglobal"); // relref value allglobal
 
+// Values for rawfile
 Id SimulatorOptions::rawfileAscii = Id::createStatic("ascii");
 Id SimulatorOptions::rawfileBinary = Id::createStatic("binary");
 
@@ -43,12 +47,12 @@ SimulatorOptions::SimulatorOptions() {
     minr = 0.0; // >=0
     scale = 1.0; // >0
     tolmode = tolmodeSpice;
-    tolscale = 1.0; // global scaling factor for absolute tolerances
+    tolscale = 1.0; // >0, global scaling factor for absolute tolerances
     reltol = 1e-3; // 0<x<1, Relative tolerance 
     abstol = 1e-12; // >0, absolute current tolerance in A
     vntol = 1e-6; // >0, absolute voltage tolerance in V
     chgtol = 1e-15; // >0, charge tolerance in As, default is 1mV across 1pF
-    fluxtol = 1e-15; // >0, flux tolerance in Vs, default is 1uA across 1nH
+    fluxtol = 1e-14; // >0, flux tolerance in Vs, default is 1uA across 10nH
     relrefsol = relrefRelref; // reference value for solution delta reltol
                              // pointlocal = separate for each unknown, each timepoint
                              // local = separate for each unknown, maximum over past timepoints

@@ -61,6 +61,7 @@ Instance* OsdiModel::createInstance(Circuit& circuit, Instance* parentInstance, 
         // Translate, if needed
         auto nodeName = it->name();
         nodeName = parentInstance->translateNode(circuit, nodeName);
+        // Terminals are potential nodes
         auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
         if (node == nullptr) {
             s.extend(std::string("Failed to obtain node '"+std::string(nodeName)+"' from simulator."));

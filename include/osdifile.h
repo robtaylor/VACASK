@@ -14,6 +14,7 @@
 #include "status.h"
 #include "identifier.h"
 #include "parseroutput.h"
+#include "natures.h"
 #include "common.h"
 
 
@@ -254,21 +255,57 @@ public:
     const OsdiNature* nature(OsdiNatureIndex index) const { if (natures && index!=UINT32_MAX && index<naturesCount) return natures+index; else return nullptr; };
     const OsdiDiscipline* discipline(OsdiDisciplineIndex index) const { if (disciplines && index!=UINT32_MAX && index<disciplinesCount) return disciplines+index; else return nullptr; };
 
-    // OsdiNatureRef to value and idt absolute tolerances
-    std::tuple<double, double> natrefTolerances(OsdiNatureRef& natref) const {
+    // OsdiNatureRef to NatureTolerance and idt NatureTolerance
+    std::tuple<NatureTolerance, NatureTolerance> natrefTolerances(OsdiNatureRef& natref) const {
         switch (natref.ref_type) {
             case NATREF_NATURE:
-                return std::make_tuple(natureAbstol[natref.index], natureIdtAbstol[natref.index]);
+                return std::make_tuple(
+                    NatureTolerance(
+                        natureId[natref.index], 
+                        natureAbstol[natref.index]
+                    ), 
+                    NatureTolerance(
+                        natureIdtId[natref.index], 
+                        natureIdtAbstol[natref.index]
+                    )
+                );
             case NATREF_DISCIPLINE_FLOW:
-                return std::make_tuple(disciplineFlowAbstol[natref.index], disciplineFlowIdtAbstol[natref.index]);
+                return std::make_tuple(
+                    NatureTolerance(
+                        disciplineFlowId[natref.index], 
+                        disciplineFlowAbstol[natref.index]
+                    ), 
+                    NatureTolerance(
+                        disciplineFlowIdtId[natref.index], 
+                        disciplineFlowIdtAbstol[natref.index]
+                    )
+                );
             case NATREF_DISCIPLINE_POTENTIAL:
-                return std::make_tuple(disciplinePotentialAbstol[natref.index], disciplinePotentialIdtAbstol[natref.index]);
+                return std::make_tuple(
+                    NatureTolerance(
+                        disciplinePotentialId[natref.index], 
+                        disciplinePotentialAbstol[natref.index]
+                    ), 
+                    NatureTolerance(
+                        disciplinePotentialIdtId[natref.index], 
+                        disciplinePotentialIdtAbstol[natref.index]
+                    )
+                );
         }
-        return std::make_tuple(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+        return std::make_tuple(
+            NatureTolerance(
+                NatureRegistry::noNature, 
+                std::numeric_limits<double>::infinity()
+            ),
+            NatureTolerance(
+                NatureRegistry::noNature, 
+                std::numeric_limits<double>::infinity()
+            )
+        );
     }
 
-    // Absolute tolerances (unknown, unknown idt, residual, residual idt)
-    std::tuple<double, double, double, double> tolerances(OsdiDeviceIndex deviceIndex, TerminalIndex node) const {
+    // Absolute tolerances as NatureTolerance (unknown, unknown idt, residual, residual idt)
+    std::tuple<NatureTolerance, NatureTolerance, NatureTolerance, NatureTolerance> tolerances(OsdiDeviceIndex deviceIndex, TerminalIndex node) const {
         auto desc = descriptors[deviceIndex];
         auto& un = desc->unknown_nature[node];
         auto& rn = desc->residual_nature[node];
@@ -290,9 +327,12 @@ private:
     OsdiNature* natures;
     OsdiDiscipline* disciplines;
     OsdiAttribute* attributes;
+    std::vector<NatureId> natureId;
+    std::vector<NatureId> disciplineFlowId;
+    std::vector<NatureId> disciplinePotentialId;
     OsdiNatureIndex naturesCount;
     OsdiDisciplineIndex disciplinesCount;
-    
+
     // Map from device name to device index
     std::unordered_map<Id,OsdiDeviceIndex> deviceNameToIndex;
 
@@ -372,11 +412,14 @@ private:
     void processNaturesAndDisciplines();
 
     std::vector<double> natureAbstol;
+    std::vector<NatureId> natureIdtId;
     std::vector<double> natureIdtAbstol;
 
     std::vector<double> disciplineFlowAbstol;
+    std::vector<NatureId> disciplineFlowIdtId;
     std::vector<double> disciplineFlowIdtAbstol;
     std::vector<double> disciplinePotentialAbstol;
+    std::vector<NatureId> disciplinePotentialIdtId;
     std::vector<double> disciplinePotentialIdtAbstol;
 };
 

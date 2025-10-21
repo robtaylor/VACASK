@@ -637,14 +637,14 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
         return "<none>";
     };
     
-    auto tolToStr = [](double tol, int width) -> std::string {
+    auto tolToStr = [](NatureTolerance tol, int width) -> std::string {
         std::stringstream ss;
         ss << std::left << std::setw(width);
         ss.str(""); 
-        if (std::isinf(tol)) {
+        if (std::isinf(tol.abstol)) {
             ss << "<none>";
         } else {
-            ss << std::defaultfloat << tol;
+            ss << std::defaultfloat << tol.abstol;
         }
         return ss.str(); 
     };

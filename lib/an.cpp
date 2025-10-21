@@ -158,16 +158,20 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     auto& options = circuit.simulatorOptions().core(); 
 
     // Reset common data
-    CommonData cd;
-    cd.fromOptions(options);
-    cd.analysis_name = std::string(name_);
-    cd.analysis_type = std::string(ptAnalysis.typeName());
-    cd.requestForcedBypass = false;
-    commons = cd;
-
+    commons.fromOptions(options); 
+    commons.analysis_name = std::string(name_);
+    commons.analysis_type = std::string(ptAnalysis.typeName());
+    commons.requestForcedBypass = false;
+    
     // Build tolerances
     if (!circuit.setStaticTolerances(commons, s)) {
-        s.extend("Failed build static tolerances.");
+        s.extend("Failed to build static tolerances.");
+        co_yield AnalysisState::Aborted;
+    }
+
+    // Enumerate natures
+    if (!commons.enumerateNatures(s)) {
+        s.extend("Failed to enumerate natures.");
         co_yield AnalysisState::Aborted;
     }
     

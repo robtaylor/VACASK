@@ -242,7 +242,9 @@ void OsdiFile::processNaturesAndDisciplines() {
     }
 
     // Collect abstol for nature idts
+    natureIdtId.resize(naturesCount);
     natureIdtAbstol.resize(naturesCount);
+    std::fill(natureIdtId.begin(), natureIdtId.end(), NatureRegistry::noNature);
     std::fill(natureIdtAbstol.begin(), natureIdtAbstol.end(), std::numeric_limits<double>::infinity());
     for(i=0; i<naturesCount; i++) {
         // Find idt nature
@@ -250,27 +252,35 @@ void OsdiFile::processNaturesAndDisciplines() {
         auto idt = getIdt(pos);
         if (idt!=UINT32_MAX) {
             // Idt nature's abstol
+            natureIdtId[i] = natureId[idt];
             natureIdtAbstol[i] = natureAbstol[idt];
         } else {
             // If idt is not given, the nature itself is the idt nature
+            natureIdtId[i] = natureId[i];
             natureIdtAbstol[i] = natureAbstol[i];
         }
     }
 
     // At this point all nature idt abstols are determined, no need to traverse chain for idt nature
     // Collect idt abstols for discipline flows and potentials
+    disciplineFlowIdtId.resize(naturesCount);
     disciplineFlowIdtAbstol.resize(naturesCount);
+    std::fill(disciplineFlowIdtId.begin(), disciplineFlowIdtId.end(), NatureRegistry::noNature);
     std::fill(disciplineFlowIdtAbstol.begin(), disciplineFlowIdtAbstol.end(), std::numeric_limits<double>::infinity());
+    disciplinePotentialIdtId.resize(naturesCount);
     disciplinePotentialIdtAbstol.resize(naturesCount);
+    std::fill(disciplinePotentialIdtId.begin(), disciplinePotentialIdtId.end(), NatureRegistry::noNature);
     std::fill(disciplinePotentialIdtAbstol.begin(), disciplinePotentialIdtAbstol.end(), std::numeric_limits<double>::infinity());
     for(i=0; i<disciplinesCount; i++) {
         auto disc = disciplines + i;
         if (disc->flow!=UINT32_MAX) {
             // Have flow nature, get its idt abstol
+            disciplineFlowIdtId[i] = natureIdtId[disc->flow];
             disciplineFlowIdtAbstol[i] = natureIdtAbstol[disc->flow];
         }
         if (disc->potential!=UINT32_MAX) {
             // Have potential nature, get its idt abstol
+            disciplinePotentialIdtId[i] = natureIdtId[disc->potential];
             disciplinePotentialIdtAbstol[i] = natureIdtAbstol[disc->potential];
         }
     }

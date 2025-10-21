@@ -406,8 +406,8 @@ bool OpNRSolver::rebuild() {
     globalMaxSolution_.resize(2); // Number of solution natures
     pointMaxSolution_.resize(2);  // Number of solution natures
     historicMaxResidualContribution_.resize(n+1);
-    globalMaxResidualContribution_.resize(2); // Number of residual natures
-    pointMaxResidualContribution_.resize(2);  // Number of residual natures
+    globalMaxResidualContribution_.resize(commons.natures.count()); // Number of residual natures
+    pointMaxResidualContribution_.resize(commons.natures.count());  // Number of residual natures
     resetMaxima();
 
     // Get diagonal and extradiagonal pointers for forces
@@ -441,6 +441,7 @@ bool OpNRSolver::rebuild() {
     }
 
     // Build flow node flags
+    // TODO: do something with this... use natures instead of PotentialNode flag of a Node
     isFlow.resize(n+1);
     for(decltype(n) i=1; i<=n; i++) {
         auto* node = circuit.reprNode(i);
@@ -857,9 +858,8 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
     zero(pointMaxResidualContribution_); 
     for(decltype(n) i=1; i<=n; i++) {
         double c = std::fabs(maxResidualContribution_[i]);
-        auto rn = circuit.reprNode(i);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 1 : 0;
+        // Get residual nature index
+        auto ndx = commons.residual_natureIndex[i];
         if (c>pointMaxResidualContribution_[ndx]) {
             pointMaxResidualContribution_[ndx] = c;
         }
@@ -873,9 +873,9 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
         if (rn->checkFlags(Node::Flags::InternalDeviceNode)) {
             continue;
         }
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 1 : 0;
-
+        // Get residual nature index
+        auto ndx = commons.residual_natureIndex[i];
+        
         // Compute tolerance reference
         // Point local reference by default
         // Compute tolerance reference, start with previous value of the i-th unknown
@@ -901,8 +901,7 @@ std::tuple<bool, bool> OpNRSolver::checkResidual() {
         // TODO: internal nodes when NR converges have a very low residual contribution
         //       because a single OSDI instance provides all the residual contribution to them 
         //       and the contribution is close to 0. 
-        //       This means that restol/vnrestol absolute tolerances are used 
-        //       which in turn may be too low and prevent convergence forever. 
+        //       This means that absolute tolerances may be too low and prevent convergence forever. 
         //       This is somehow remedied if relrefres is set to pointglobal or global. 
 
         // Residual component
@@ -968,9 +967,8 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
     auto xold = solution.data();
     for(decltype(n) i=1; i<=n; i++) {
         double c = std::fabs(xold[i]);
-        auto rn = circuit.reprNode(i);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 0 : 1;
+        // Get unknown nature index
+        auto ndx = commons.unknown_natureIndex[i];
         if (c>pointMaxSolution_[ndx]) {
             pointMaxSolution_[ndx] = c;
         }
@@ -978,10 +976,8 @@ std::tuple<bool, bool> OpNRSolver::checkDelta() {
 
     // Use 1-based index (with bucket) because same indexing is used for variables
     for(decltype(n) i=1; i<=n; i++) {
-        // Representative node, associated potential nature index
-        auto rn = circuit.reprNode(i);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 0 : 1;
+        // Get unknown nature index
+        auto ndx = commons.unknown_natureIndex[i];
 
         // Compute tolerance reference
         // Point local reference by default
@@ -1053,16 +1049,14 @@ void OpNRSolver::updateMaxima() {
     auto* x = solution.data();
     auto* mrc = maxResidualContribution_.data();
     for(decltype(n) i=1; i<=n; i++) {
-        bool isPotential = ((circuit.reprNode(i)->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        
         double c;
-        size_t ndx;
+        UnknownIndex ndx;
         
         // Historic local and historic global maximal solution
         // Voltage nodes -> potential nature is voltage (0) 
         // Flow nodes -> potential nature is current (1) 
-        // Unknown nature
-        ndx = isPotential ? 0 : 1;
+        // Unknown nature index
+        ndx = commons.unknown_natureIndex[i];
         c = std::fabs(x[i]);
         if (c>historicMaxSolution_[i]) {
             historicMaxSolution_[i] = c;
@@ -1074,8 +1068,8 @@ void OpNRSolver::updateMaxima() {
         // Historic local and historic global maximal residual contribution
         // Voltage nodes -> flow nature is current (1) 
         // Flow nodes -> flow nature is voltage (0) 
-        // Residual nature
-        ndx = isPotential ? 1 : 0;
+        // Residual nature index
+        ndx = commons.residual_natureIndex[i];
         c = std::fabs(mrc[i]);
         if (c>historicMaxResidualContribution_[i]) {
             historicMaxResidualContribution_[i] = c;

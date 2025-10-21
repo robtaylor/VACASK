@@ -568,10 +568,10 @@ template<> bool BuiltinVSourceInstance::setStaticTolerancesCore(Circuit& circuit
     auto in = nodes_[2]->unknownIndex();
 
     // Tolerances
-    commons.updateTolerances(pn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
-    commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
-    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
-
+    updatePotentialNodeSpiceTolerances(options, commons, pn);
+    updatePotentialNodeSpiceTolerances(options, commons, nn);
+    updateFlowNodeSpiceTolerances(options, commons, in);
+    
     return true;
 }
 
@@ -586,9 +586,9 @@ template<> bool BuiltinISourceInstance::setStaticTolerancesCore(Circuit& circuit
     auto nn = nodes_[1]->unknownIndex();
     
     // Tolerances
-    commons.updateTolerances(pn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
-    commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
-
+    updatePotentialNodeSpiceTolerances(options, commons, pn);
+    updatePotentialNodeSpiceTolerances(options, commons, nn);
+    
     return true;
 }
 

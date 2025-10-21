@@ -274,11 +274,11 @@ bool HBNRSolver::initialize(bool continuePrevious) {
 
     // Maximum across all equations at given timepoint for each nature
     // Computed in checkResidual()
-    pointMaxResidualContribution_.resize(2, nb);
+    pointMaxResidualContribution_.resize(commons.natures.count(), nb);
 
     // Maximum across all timepoints for each nature
     // Computed in checkDelta()
-    pointMaxSolution_.resize(2, nb);
+    pointMaxSolution_.resize(commons.natures.count(), nb);
 
     // Set up loading
     // Resistive residual
@@ -709,11 +709,9 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
     pointMaxResidualContribution_.zero(); 
     // Loop through all nodes
     auto compPtr = maxResidualContribution_.data();
-    for(decltype(n) i=0; i<n; i++) {
-        // Get representative node (1-based index) and nature index
-        auto rn = circuit.reprNode(i+1);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 1 : 0;
+    for(decltype(n) i=1; i<=n; i++) {
+        // Get residual nature index
+        auto ndx = commons.residual_natureIndex[i];
         // Loop through all timepoints
         for(decltype(nt) k=0; k<nt; k++) {
             double c = std::fabs(*compPtr);
@@ -732,8 +730,8 @@ std::tuple<bool, bool> HBNRSolver::checkResidual() {
         if (rn->checkFlags(Node::Flags::InternalDeviceNode)) {
             continue;
         }
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 1 : 0;
+        // Get residual nature index
+        auto ndx = commons.residual_natureIndex[i];
         
         // Go through all timepoints
         for(decltype(nt) k=0; k<nt; k++) {
@@ -812,10 +810,8 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
     auto xold = solution.data();
     // Skip bucket
     for(decltype(n) i=1; i<=n; i++) {
-        // Representative node, associated potential nature index
-        auto rn = circuit.reprNode(i);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 0 : 1;
+        // Get unknown nature index -- here
+        auto ndx = commons.unknown_natureIndex[i];
         for(decltype(nt) k=0; k<nt; k++) {
             double c = std::fabs(xold[i]);
             // Rows are natures, columns are frequency components (DC, f1, f2, ...)
@@ -828,10 +824,8 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
     // Use 1-based index (with bucket) because same indexing is used for variables
     auto xdelta = delta.data();
     for(decltype(n) i=1; i<=n; i++) {
-        // Representative node, associated potential nature index
-        auto rn = circuit.reprNode(i);
-        bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-        size_t ndx = isPotential ? 0 : 1;
+        // Get unknown nature index
+        auto ndx = commons.unknown_natureIndex[i]; 
         for(decltype(nt) j=0; j<nt; j++) {
             // Compute tolerance reference
             // Point local reference by default
@@ -855,7 +849,7 @@ std::tuple<bool, bool> HBNRSolver::checkDelta() {
                 if ((i==1 && j==0) || normDelta>maxNormDelta) {
                     maxDelta = deltaAbs;
                     maxNormDelta = normDelta;
-                    maxDeltaNode = rn;
+                    maxDeltaNode = circuit.reprNode(i);
                     maxDeltaTimepointIndex = j;
                 }
             }

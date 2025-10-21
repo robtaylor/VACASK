@@ -217,6 +217,7 @@ Instance* HierarchicalModel::createInstance(Circuit& circuit, Instance* parentIn
         // Translate, if needed
         auto nodeName = it->name();
         nodeName = parentInstance->translateNode(circuit, nodeName);
+        // Terminals are potential nodes
         auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
         if (node == nullptr) {
             s.extend(std::string("Failed to obtain node '"+std::string(nodeName)+"'. from simulator"));
@@ -662,6 +663,7 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     for(auto it=defTerms.begin()+connectedTerminalCount; it!=defTerms.end(); ++it, i++) {
         auto nodeName = it->name();
         nodeName = parent()->translateNode(circuit, nodeName);
+        // Terminals are potential nodes
         auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
         if (node == nullptr) {
             s.extend(std::string("Failed to obtain internal node '"+std::string(nodeName)+"'. from simulator"));

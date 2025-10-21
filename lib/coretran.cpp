@@ -1107,10 +1107,8 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             bool haveRatio = false;
             double maxRatio = 0.0;
             for(decltype(n) i=1; i<=n; i++) {
-                // Representative node, associated potential nature index
-                auto rn = circuit.reprNode(i);
-                bool isPotential = ((rn->flags() & Node::Flags::PotentialNode) == Node::Flags::PotentialNode); 
-                size_t ndx = isPotential ? 0 : 1;
+                // Get unknown nature index
+                auto ndx = commons.unknown_natureIndex[i];
 
                 double lte;
                 if (

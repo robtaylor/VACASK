@@ -189,7 +189,7 @@ template<> bool BuiltinVccsInstance::setStaticTolerancesCore(Circuit& circuit, C
     // All nodes are electrical, unknowns are potentials, residuals are flows
     for(NodeIndex i=0; i<4; i++) {
         auto nn = nodes_[i]->unknownIndex();
-        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+        updatePotentialNodeSpiceTolerances(options, commons, nn);
     }
     
     return true;
@@ -376,12 +376,12 @@ template<> bool BuiltinVcvsInstance::setStaticTolerancesCore(Circuit& circuit, C
     // First 4 nodes are electrical, unknowns are potentials, residuals are flows
     for(NodeIndex i=0; i<4; i++) {
         auto nn = nodes_[i]->unknownIndex();
-        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+        updatePotentialNodeSpiceTolerances(options, commons, nn);
     }
 
     // Last node: unknown is flow, residual is potential
     auto in = nodes_[4]->unknownIndex();
-    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+    updateFlowNodeSpiceTolerances(options, commons, in);
     
     return true;
 }
@@ -542,7 +542,7 @@ template<> bool BuiltinCccsInstance::setStaticTolerancesCore(Circuit& circuit, C
     // The two nodes are electrical, unknowns are potentials, residuals are flows
     for(NodeIndex i=0; i<2; i++) {
         auto nn = nodes_[i]->unknownIndex();
-        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+        updatePotentialNodeSpiceTolerances(options, commons, nn);
     }
 
     // Control unknown is left untouched, others should set its tolerances
@@ -710,12 +710,12 @@ template<> bool BuiltinCcvsInstance::setStaticTolerancesCore(Circuit& circuit, C
     // The two nodes are electrical, unknowns are potentials, residuals are flows
     for(NodeIndex i=0; i<2; i++) {
         auto nn = nodes_[i]->unknownIndex();
-        commons.updateTolerances(nn, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+        updatePotentialNodeSpiceTolerances(options, commons, nn);
     }
 
     // Last node: unknown is flow, residual is potential
     auto in = nodes_[2]->unknownIndex();
-    commons.updateTolerances(in, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+    updateFlowNodeSpiceTolerances(options, commons, in);
     
     // Control unknown is left untouched, others should set its tolerances
     

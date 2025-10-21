@@ -1015,12 +1015,22 @@ bool Circuit::setStaticTolerances(CommonData& commons, Status& s) {
                 // Flow node
                 // Unknown is spice voltage (vntol, fluxtol)
                 // Residual is spice current (abstol, chgtol)
-                commons.defaultTolerances(i, options.vntol, options.fluxtol, options.abstol, options.chgtol);
+                commons.defaultTolerances(i, 
+                    NatureTolerance(NatureRegistry::spiceVoltage, options.vntol), 
+                    NatureTolerance(NatureRegistry::spiceFlux, options.fluxtol), 
+                    NatureTolerance(NatureRegistry::spiceCurrent, options.abstol), 
+                    NatureTolerance(NatureRegistry::spiceCharge, options.chgtol)
+                );
             } else {
                 // Potential node
                 // Unknown is spice current (abstol, chgtol)
                 // Residual is spice voltage (vntol, fluxtol)
-                commons.defaultTolerances(i, options.abstol, options.chgtol, options.vntol, options.fluxtol);
+                commons.defaultTolerances(i, 
+                    NatureTolerance(NatureRegistry::spiceCurrent, options.abstol), 
+                    NatureTolerance(NatureRegistry::spiceCharge, options.chgtol), 
+                    NatureTolerance(NatureRegistry::spiceVoltage, options.vntol), 
+                    NatureTolerance(NatureRegistry::spiceFlux, options.fluxtol)
+                );
             }
         }
     }
@@ -1522,14 +1532,14 @@ void Circuit::dumpSparsity(int indent, std::ostream& os) const {
 }
 
 void Circuit::dumpTolerances(int indent, CommonData& commons, std::ostream& os) const {
-    auto tolToStr = [](double tol, int width) -> std::string {
+    auto tolToStr = [](NatureTolerance tol, int width) -> std::string {
         std::stringstream ss;
         ss << std::left << std::setw(width);
         ss.str(""); 
-        if (std::isinf(tol)) {
+        if (std::isinf(tol.abstol)) {
             ss << "<none>";
         } else {
-            ss << std::defaultfloat << tol;
+            ss << std::defaultfloat << tol.abstol;
         }
         return ss.str(); 
     };
@@ -1539,7 +1549,10 @@ void Circuit::dumpTolerances(int indent, CommonData& commons, std::ostream& os) 
     for(decltype(n) i=1; i<=n; i++) {
         auto [u, ui, r, ri] = commons.getTolerances(i);
         os << pfx << i << " : " << reprNode(i)->name() << " :";
-        os << " abstol=" << tolToStr(u, 8) << " idt_abstol=" << tolToStr(ui, 8);
+        os << " unknown " << std::string(u.id) << "/" << std::string(ui.id);
+        os << ", residual " << std::string(r.id) << "/" << std::string(ri.id) << "\n";
+        os << pfx << i << " :";
+        os << "   abstol=" << tolToStr(u, 8) << " idt_abstol=" << tolToStr(ui, 8);
         os << " res_abstol=" << tolToStr(r, 8) << " res_idt_abstol=" << tolToStr(ri, 8);
         os << "\n";
     }

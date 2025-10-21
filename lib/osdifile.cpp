@@ -73,11 +73,18 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     natures = ((OsdiNature*)dynamicLibrarySymbol(handle, "OSDI_NATURES"));
     auto nptr = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_NATURES_LEN"));
     naturesCount = nptr ? *nptr : 0;
+    for(OsdiNatureIndex i=0; i<naturesCount; i++) {
+        natureId.push_back(NatureRegistry::natureId(file, natures[i].name));
+    }
 
     // Disciplines table
     disciplines = ((OsdiDiscipline*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES"));
     auto dptr = ((uint32_t*)dynamicLibrarySymbol(handle, "OSDI_DISCIPLINES_LEN"));
     disciplinesCount = dptr ? *dptr : 0;
+    for(OsdiNatureIndex i=0; i<disciplinesCount; i++) {
+        disciplineFlowId.push_back(NatureRegistry::natureId(file, std::string(disciplines[i].name)+".flow"));
+        disciplinePotentialId.push_back(NatureRegistry::natureId(file, std::string(disciplines[i].name)+".potential"));
+    }
 
     // Process natures and disciplines to collect abstol values
     processNaturesAndDisciplines();

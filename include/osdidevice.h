@@ -200,7 +200,7 @@ public:
         return descriptor_->jacobian_entries[ndx];
     };
     OsdiFile::OsdiStateCount internalStateCount() const { return descriptor_->num_states; };
-    std::tuple<double, double, double, double> tolerances(NodeIndex i) { return osdiFile->tolerances(index_, i); }; 
+    std::tuple<NatureTolerance, NatureTolerance, NatureTolerance, NatureTolerance> tolerances(NodeIndex i) { return osdiFile->tolerances(index_, i); }; 
     
 private:
     static const char* simParamNames[];

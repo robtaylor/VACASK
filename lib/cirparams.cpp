@@ -463,6 +463,13 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         return std::make_tuple(false, false, false);
     }
 
+    // Enumerate natures
+    if ((unknownsChanged || tolerancesAffectingOptionsChanged) && !commons.enumerateNatures(s)) {
+        s.extend("Failed to enumerate natures."); 
+        tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
+        return std::make_tuple(false, false, false);
+    }
+
     // Do not check here if any core requests a rebuild
     // Because this check may be computationally intensive 
     // (i.e. HB recomputes the set of frequencies and the transforms). 
