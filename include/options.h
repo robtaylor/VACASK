@@ -27,8 +27,6 @@ typedef struct SimulatorOptions  {
     Id relrefres;
     Id relreflte;
     Id relref;
-    Real restol;
-    Real vnrestol;
     Int matrixcheck;
     Int rhscheck;
     Int solutioncheck;

@@ -733,7 +733,7 @@ void jacobianLoadWithOffsetSanityCheck(OsdiDescriptor* descriptor, void* model, 
 }
 */
 
-bool OsdiInstance::inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) {
+bool OsdiInstance::inputBypassCheckCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     // Get descriptor 
     auto model_ = model();
     auto device = model_->device();
@@ -775,12 +775,15 @@ bool OsdiInstance::inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) 
         if (node1) {
             auto u1 = node1->unknownIndex();
             v1 = evalSetup.oldSolution[u1];
-            abstol = std::min(abstol, node1->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol);
+            // Update absolute tolerance with unknown abstol of node1
+            abstol = std::min(abstol, commons.unknown_abstol[u1]);
+            
         }
         if (node2) {
             auto u2 = node2->unknownIndex();
             v1 -= evalSetup.oldSolution[u2];
-            abstol = std::min(abstol, node2->checkFlags(Node::Flags::FlowNode) ? options.abstol : options.vntol);
+            // Update absolute tolerance with unknown abstol of node2
+            abstol = std::min(abstol, commons.unknown_abstol[u2]);
         }
         
         // Get stored input
@@ -805,7 +808,7 @@ bool OsdiInstance::inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) 
     return bypass;
 }
 
-bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup) {
+bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup) {
     // If deviceStates is nullptr, we are done
     if (!evalSetup.deviceStates) {
         return false;
@@ -894,9 +897,7 @@ bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup)
         // Skip if this residual contributes to ground node
         if (converged && u!=0) {
             // Get absolute tolerance (residual tolerance)
-            // flow nodes -> voltage
-            // potential nodes -> current
-            auto abstol = node->checkFlags(Node::Flags::FlowNode) ? options.vntol : options.abstol;
+            auto abstol = commons.residual_abstol[u];
             // Compute tolerance
             auto tol = std::max(std::abs(f1[i])*options.reltol, abstol);
             // Compare
@@ -943,7 +944,7 @@ bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup)
             // Skip check if row or column correspond to ground node
             if (eq!=0 && u!=0) {
                 // Get absolute tolerance (resistive residual tolerance of equation)
-                auto abstol = rowNode->checkFlags(Node::Flags::FlowNode) ? options.vntol : options.abstol;
+                auto abstol = commons.residual_abstol[u];
 
                 // Reference value is the residual, we already computed it
                 auto res = rres[row];
@@ -991,9 +992,7 @@ bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup)
             // Skip if this residual contributes to ground node
             if (converged && u!=0) {
                 // Get absolute tolerance (idt residual tolerance)
-                // potential nodes -> charge
-                // flow nodes -> flux
-                auto abstol = node->checkFlags(Node::Flags::FlowNode) ? options.fluxtol : options.chgtol;
+                auto abstol = commons.residual_idt_abstol[u];
                 // Compute tolerance
                 auto tol = std::max(std::abs(q1[i])*options.reltol, abstol);
                 // Compare
@@ -1035,7 +1034,7 @@ bool OsdiInstance::outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup)
                 // Skip check if row or column correspond to ground node
                 if (eq!=0 && u!=0) {
                     // Get absolute tolerance (resistive residual idt tolerance of equation)
-                    auto abstol = rowNode->checkFlags(Node::Flags::FlowNode) ? options.fluxtol : options.chgtol;
+                    auto abstol = commons.residual_idt_abstol[u]; 
 
                     // Reference value is the residual, we already computed it
                     auto res = rreac[row];
@@ -1173,7 +1172,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& 
             // Device output is converged, this is a bypass opportunity
             evalSetup.bypassOpportunuties++;
             // Converged, check if we can bypass
-            if (inputBypassCheckCore(circuit, evalSetup)) {
+            if (inputBypassCheckCore(circuit, commons, evalSetup)) {
                 // Bypassing
                 bypass = true;
                 setFlags(Flags::Bypassed);
@@ -1329,7 +1328,7 @@ bool OsdiInstance::evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& 
     //   - evalSetup.forceBypass is disabled and
     //   - device is not bypassed due to inactive element bypass (Flag::Bypassed)
     if (nr_bypass && device->checkFlags(Device::Flags::Bypassable) && !evalSetup.forceBypass && !checkFlags(Flags::Bypassed)) {
-        auto converged = outputBypassCheckCore(circuit, evalSetup);
+        auto converged = outputBypassCheckCore(circuit, commons, evalSetup);
         if (converged) {
             // Mark outputs as converged
             setFlags(Flags::OutputConverged);

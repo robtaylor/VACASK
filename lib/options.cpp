@@ -62,9 +62,7 @@ SimulatorOptions::SimulatorOptions() {
     relrefres = relrefRelref; // reference value for residual reltol
     relreflte = relrefRelref; // reference value for lte reltol
     relref = relrefAlllocal;
-    restol = 1e-12; // >0, residual tolerance (A, applied to potential nodes)
-    vnrestol = 1e-6; // >0, residual tolerance (V, applied to flow nodes)
-
+    
     matrixcheck = 0; // check matrix for inf and nan
     rhscheck = 1; // check rhs vector for inf and nan
     solutioncheck = 1; // check solution vector for inf and nan
@@ -229,9 +227,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(relrefres);
     registerMember(relreflte);
     registerMember(relref);
-    registerMember(restol);
-    registerMember(vnrestol);
-
+    
     registerMember(matrixcheck);
     registerMember(rhscheck);
     registerMember(solutioncheck);
@@ -312,7 +308,6 @@ std::unordered_map<Id, ParameterIndex> SimulatorOptions::parametrizationAffectin
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::hierarchyAffectingOptions;
 std::unordered_map<Id, ParameterIndex> SimulatorOptions::tolerancesAffectingOptions;
 
-// TODO: restol and vnrestol should be removed
 bool SimulatorOptions::staticInitialize() {
     // Options that can change unknown mapping
     // These are the options that are exposed via OSDI interface

@@ -85,8 +85,8 @@ public:
         KluMatrixAccess* matReact, Component compReact, const std::optional<MatrixEntryPosition>& mepReact, 
         Status& s=Status::ignore
     );
-    bool inputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
-    bool outputBypassCheckCore(Circuit& circuit, EvalSetup& evalSetup);
+    bool inputBypassCheckCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);
+    bool outputBypassCheckCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);
     bool evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);
     
