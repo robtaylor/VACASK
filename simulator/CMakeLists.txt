@@ -50,6 +50,7 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
         sim 
         simlib
         Boost::filesystem
+        Boost::process
         ${SuiteSparse_DIR}/lib/libklu.a
         ${SuiteSparse_DIR}/lib/libamd.a
         ${SuiteSparse_DIR}/lib/libcamd.a

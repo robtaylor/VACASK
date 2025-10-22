@@ -157,7 +157,7 @@ VACASK can compile Verilog-A files on the fly. For that purpose VACASK looks for
 VACASK can also be configured with a TOML configuration file. Take a look at [config/vacaskrc-sample.toml](config/vacaskrc-sample.toml). 
 
 # Building VACASK
-VACASK has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library (use version 1.84, versions up to and including 1.87 reportedly work, 1.88 does not), the toml++ library (version 3.4), and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). You will also need a working Python3 installation (for the system tests). 
+VACASK has only a few dependencies. You will need a C++20 compiler with an implementation of the standard C++ library, the Boost library (use version 1.88), the toml++ library (version 3.4), and the KLU library (SuiteSparse). All these components come as pre-built packages for [Debian](https://www.debian.org) (and other Linux distributions). You will also need a working Python3 installation (for the system tests). 
 
 First, install the OpenVAF-reloaded compiler. The latest development version of OpenVAF-reloaded can be found at [https://fides.fe.uni-lj.si/openvaf/download](https://fides.fe.uni-lj.si/openvaf/download/). Make sure you download the OSDI 0.4 version. Of course, you can also take the OpenVAF-reloaded binary from the VACASK binary packages (.deb and .tar.gz for Linux, .zip for Windows). If the OpenVAF binary you pick up is named `openvaf-r` you have the right one (it produces models with the OSDI 0.4 interface). If you decide to build the compiler yourself, git-clone the [OpenVAF-reloaded repository](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found in the [README.md](https://github.com/arpadbuermen/OpenVAF/blob/master/README.md) file. 
 
@@ -206,12 +206,12 @@ mkdir build
 
 Download the toml++ library from [https://github.com/marzer/tomlplusplus/releases/tag/v3.4.0](https://github.com/marzer/tomlplusplus/releases/tag/v3.4.0). Unpack it in `e:\build`. 
 
-Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Use Boost version 1.84.0. Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
+Next, download the Boost library from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Use Boost version 1.88.0. Get the Windows version and unpack it in `e:\build`. In the Boost sources directory type
 ```
 cd tools\build
 bootstrap mingw
 cd ..\..
-tools\build\b2 --with-filesystem link=static toolset=gcc
+tools\build\b2 --with-filesystem --with-process --with-asio link=static toolset=gcc
 ```
 After a short time the required part of Boost is built and placed in the `stage` subdirectory.
 
@@ -257,7 +257,7 @@ Replace the `e:\...` paths with your own, if needed. In the end OpenBLAS will be
 ### Building the simulator
 Unpack the sources, create a build directory, and type. 
 ```
-cmake -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_84_0/stage -DTOMLPP_DIR=e:/build/tomlplusplus-3.4.0 -DSuiteSparse_DIR=e:/build/installation -DTOMLPP_DIR=e:/build/tomlpusplus-3.4.0
+cmake -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=e:\build\mingw.cmake -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=e:/build/boost_1_88_0/stage -DTOMLPP_DIR=e:/build/tomlplusplus-3.4.0 -DSuiteSparse_DIR=e:/build/installation -DTOMLPP_DIR=e:/build/tomlpusplus-3.4.0
 cmake --build <build directory>
 ```
 Replace the `e:\...` paths with your own, if needed. All paths must be absolute and therefore include the drive letter. In the end the simulator can be found in `<build directory>/simulator`. To create a package (.zip), go to the `<build directory>` and type. 

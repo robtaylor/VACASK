@@ -94,7 +94,7 @@ while(i LESS ${list_len})
         # Create directory where the built device will be staged
         file(MAKE_DIRECTORY "${STAGED_OSDI_DIRECTORY}/${tmpdirectory}")
     endif()
-    message(STATUS ${builddir})
+    # message(STATUS ${builddir})
     # Full path to built file
     set(built_file "${CMAKE_CURRENT_BINARY_DIR}/${output}")
     # Full path to staged file
@@ -104,7 +104,7 @@ while(i LESS ${list_len})
     # Create build directory
     file(MAKE_DIRECTORY "${builddir}")
     # Build command - invoke openvaf, move to destination
-    message(STATUS "${OPENVAF_COMPILER} ${options} --allow variant_const_simparam -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source} -o ${outputfile}")
+    # message(STATUS "${OPENVAF_COMPILER} ${options} --allow variant_const_simparam -I${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${source} -o ${outputfile}")
     add_custom_command(
         OUTPUT "${built_file}"
         DEPENDS "${inputfile}"
