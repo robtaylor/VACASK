@@ -162,11 +162,23 @@ VACASK has only a few dependencies. You will need a C++20 compiler with an imple
 First, install the OpenVAF-reloaded compiler. The latest development version of OpenVAF-reloaded can be found at [https://fides.fe.uni-lj.si/openvaf/download](https://fides.fe.uni-lj.si/openvaf/download/). Make sure you download the OSDI 0.4 version. Of course, you can also take the OpenVAF-reloaded binary from the VACASK binary packages (.deb and .tar.gz for Linux, .zip for Windows). If the OpenVAF binary you pick up is named `openvaf-r` you have the right one (it produces models with the OSDI 0.4 interface). If you decide to build the compiler yourself, git-clone the [OpenVAF-reloaded repository](https://github.com/arpadbuermen/OpenVAF). Instructions for building can be found in the [README.md](https://github.com/arpadbuermen/OpenVAF/blob/master/README.md) file. 
 
 ## Linux
-Install gcc, Boost, toml++, and KLU. You will also need CMake and GNU make or Ninja for building. 
 
-First, create a `build` directory and create the build system
+### Prerequisites
+Install gcc, toml++, and KLU. You will also need CMake and GNU make or Ninja for building. 
+
+Unfortunately you will have to build your own Boost. We had problems with system-installed Boost 1.88 under Debian 13 (process library is not built). In Debian 14 this issue seems to be fixed. Download the linux version of Boost 1.88 sources from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Unpack it. Enter the directory created by unpacking (`boost_1_88_0`) and type
 ```
-cmake -G Ninja  -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler>
+cd tools/build
+./bootstrap.sh gcc
+cd ../..
+tools/build/b2 --with-filesystem --with-process --with-asio link=static toolset=gcc
+```
+Now Boost libraries are installed under `boost_1_88_0/stage` while the include files are in `boost_1_88_0`. 
+
+### Building the simulator
+Create a `build` directory and create the build system
+```
+cmake -G Ninja  -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release -DOPENVAF_DIR=<path to the OpenVAF-reloaded compiler> -DBoost_ROOT=<directory_where_you_unpacked_boost_sources>/stage
 ```
 
 To build with GNU make, replace `-G Ninja` with `-G "Unix Makefiles"`. The build process is started by typing

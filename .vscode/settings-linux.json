@@ -8,7 +8,8 @@
     
     "cmake.generator": "Unix Makefiles", 
     "cmake.configureSettings": { 
-        "OPENVAF_DIR": "/home/arpadb/OpenVAF/OpenVAF/target/release"
+        "OPENVAF_DIR": "/home/arpadb/OpenVAF/OpenVAF/target/release", 
+        "Boost_ROOT": "/home/arpadb/sim/boost_1_88_0/stage"
     }, 
     
     "files.associations": {

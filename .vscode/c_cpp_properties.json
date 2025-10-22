@@ -4,10 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/../build.source/Debug", 
+                "${workspaceFolder}/../build.VACASK/Debug", 
                 "/usr/include", 
                 "/usr/include/linux", 
-                "/usr/include/x86_64-linux-gnu/c++/10"
+                "/usr/include/x86_64-linux-gnu/c++/14"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

@@ -105,8 +105,24 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
     include_directories("${TOMLPP_DIR}/include")
     message(STATUS "TOMLPP include: ${TOMLPP_DIR}/include")
 else()
-    set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Boost-1.83.0")
-    find_package(Boost CONFIG REQUIRED)
+    # For 1.83
+    # set(CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Boost-1.88.0")
+    # find_package(Boost CONFIG REQUIRED filesystem)
+
+    # For 1.88 installed manually by user
+    set(Boost_NO_SYSTEM_PATHS TRUE)
+    find_package(Boost 1.88 REQUIRED COMPONENTS filesystem process system)
+    include_directories("${Boost_INCLUDE_DIRS}")
+    set(Boost_EXTRA_LINK_DIR "${Boost_INCLUDE_DIRS}/stage/lib")
+    link_directories(${Boost_EXTRA_LINK_DIR})
+    message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
+    message(STATUS "Boost extra link directory: ${Boost_EXTRA_LINK_DIR}")
+
+    # For 1.88 system-installed boost
+    # find_package(Boost 1.88 REQUIRED COMPONENTS filesystem process)
+    # include_directories("${Boost_INCLUDE_DIRS}")
+    # link_directories("${Boost_LIBRARY_DIRS}")
+    # message(STATUS "Boost include: ${Boost_INCLUDE_DIRS} lib ${Boost_EXTRA_LINK_DIR}")
 endif()
 
 #find_package(SuiteSparse CONFIG REQUIRED)

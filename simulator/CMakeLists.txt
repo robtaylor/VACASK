@@ -51,6 +51,7 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
         simlib
         Boost::filesystem
         Boost::process
+        Boost::system
         ${SuiteSparse_DIR}/lib/libklu.a
         ${SuiteSparse_DIR}/lib/libamd.a
         ${SuiteSparse_DIR}/lib/libcamd.a
@@ -71,7 +72,7 @@ else()
         dl 
         # -Wl,-Bstatic 
         m klu amd camd colamd ccolamd btf cholmod suitesparseconfig 
-        boost_system boost_filesystem
+        boost_system boost_filesystem boost_process
         
     )
 endif()
