@@ -55,7 +55,7 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - Ngspice netlist converter (under development)
 - [Xschem](https://xschem.sourceforge.io/stefan/index.html) can be used for schematic entry (use the latest development release). See [demo/xschem](demo/xschem) for more information. 
 - [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK) support. See [demo/ihp-sg13g2](demo/ihp-sg13g2) for more information. 
-
+- Verilog-A natures and disciplines can be used for setting absolute tolerances on unknowns and residuals (see [demo/natures](demo/natures)). 
  
 Certain devices (independent voltage and current sources, linear controlled sources, and inductive coupling) are implemented as builtin devices because certain features needed by these devices are not available in OpenVAF-reloaded or even Verilog-A. 
 
