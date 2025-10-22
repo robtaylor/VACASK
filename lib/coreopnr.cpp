@@ -403,8 +403,8 @@ bool OpNRSolver::rebuild() {
     dummyStates.resize(circuit.statesCount());
     maxResidualContribution_.resize(n+1);       
     historicMaxSolution_.resize(n+1);
-    globalMaxSolution_.resize(2); // Number of solution natures
-    pointMaxSolution_.resize(2);  // Number of solution natures
+    globalMaxSolution_.resize(commons.natures.count()); // Number of solution natures
+    pointMaxSolution_.resize(commons.natures.count());  // Number of solution natures
     historicMaxResidualContribution_.resize(n+1);
     globalMaxResidualContribution_.resize(commons.natures.count()); // Number of residual natures
     pointMaxResidualContribution_.resize(commons.natures.count());  // Number of residual natures
