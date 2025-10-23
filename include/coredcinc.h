@@ -94,7 +94,6 @@ protected:
 
     void setError(DCIncrementalError e) { lastDcIncrError = e; lastError = Error::OK; };
     DCIncrementalError lastDcIncrError;
-    double errorFreq;
     Status errorStatus;
 
     KluRealMatrix& jacobian;

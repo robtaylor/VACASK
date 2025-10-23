@@ -174,6 +174,7 @@ CoreCoroutine AcCore::coroutine(bool continuePrevious) {
     acSolution.resize(n+1);
     
     // Compute operating point
+    errorFreq = 0;
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(AcError::OperatingPointError);

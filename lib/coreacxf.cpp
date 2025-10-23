@@ -227,6 +227,7 @@ CoreCoroutine ACXFCore::coroutine(bool continuePrevious) {
     }
     
     // Compute operating point
+    errorFreq = 0;
     auto opOk = opCore_.run(continuePrevious);
     if (!opOk) {
         setError(ACXFError::OperatingPointError);
