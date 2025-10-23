@@ -1,0 +1,54 @@
+// Derivative operator (ddt())
+
+// ddt(f(x)) creates an implicit equation if the ddt(.) term 
+// is used in a nonlinear expression or in an opvar. 
+// The unknown is y, its value is ddt(.). 
+// The implicit equation is
+//   -y + ddt(f(x)) = 0
+// Natures of y and the residual are not defined. 
+// They should both be the same. 
+// TODO: they can be deduced or taken from the nature argument of ddt(). 
+
+ground 0 
+
+load "resistor.osdi"
+load "ddtbr.va"
+
+model tb ddtbr
+model isrc isource
+model resistor resistor
+
+x1 (a) tb
+r1 (a 0) resistor r=1.0/7
+
+
+control
+  print device("ddtbr")
+  print unknowns
+  options smsig_debug=100
+  // options op_debug=100 nr_debug=10 op_homotopy=[]
+  // At f=1/(2 pi) omega is 1. 
+  analysis ac1 ac values=[1/(2*M_PI)] 
+endc
+
+embed "ddtbr.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module ddtbr(A);
+    // Terminals and internal nodes
+    inout A;
+    electrical A;
+    
+    // Branches
+    branch (A) br_a;
+    
+    (*desc= "ddt", units ="A" *)  real x;
+    
+    analog begin
+        x = 5*ddt(3*V(br_a));
+        I(br_a) <+ x;
+    end
+endmodule
+
+>>>FILE

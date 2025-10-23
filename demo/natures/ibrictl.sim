@@ -1,0 +1,43 @@
+// Current contribution branch, the current controls another branch
+
+// A branch br defined with current f(x) creates an implicit equation. 
+// The corresponding unknown is the branch current I(br). 
+// The implicit equation is
+//   f(x) - I(br) = 0
+// Nature of I(br) and the residual are both electrical.flow. 
+ground 0 
+
+load "ibrictl.va"
+
+model tb ibrictl
+
+x1 (a b) tb
+
+control
+  print device("ibrictl")
+  print unknowns
+  options smsig_debug=100
+  // At f=1/(2 pi) omega is 1. 
+  analysis ac1 ac values=[1/(2*M_PI)] 
+endc
+
+embed "ibrictl.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module ibrictl(A,B);
+    // Terminals and internal nodes
+    inout A, B;
+    electrical A, B;
+    
+    // Branches
+    branch (A) br_a;
+    branch (B) br_b;
+    
+    analog begin
+        I(br_a) <+  3*V(br_a) - 5;
+        I(br_b) <+ -7*I(br_a) + 11*V(br_b);
+    end
+endmodule
+
+>>>FILE

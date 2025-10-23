@@ -1,0 +1,51 @@
+// Integral operator (idt())
+
+// idt(f(x)) creates an implicit equation.
+// The unknown is y, its value is idt(.). 
+// The implicit equation is
+//   -f(x) + ddt(y) = 0
+// Natures of y and the residual are not defined. 
+// TODO: The nature of the residual can be deduced or taken 
+//       from the nature argument of idt(). 
+//       The nature of y is the idt nature of the residual. 
+
+ground 0 
+
+load "resistor.osdi"
+load "idtbr.va"
+
+model tb idtbr
+model isrc isource
+model resistor resistor
+
+x1 (a) tb
+r1 (a 0) resistor r=1.0/11
+
+
+control
+  print device("idtbr")
+  print unknowns
+  options smsig_debug=100
+  // options op_debug=100 nr_debug=10 op_homotopy=[]
+  // At f=1/(2 pi) omega is 1. 
+  analysis ac1 ac values=[1/(2*M_PI)] 
+endc
+
+embed "idtbr.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module idtbr(A);
+    // Terminals and internal nodes
+    inout A;
+    electrical A;
+    
+    // Branches
+    branch (A) br_a;
+    
+    analog begin
+        I(br_a) <+ 3*idt(7*V(br_a)-1);
+    end
+endmodule
+
+>>>FILE

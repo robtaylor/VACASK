@@ -1,0 +1,49 @@
+// Voltage contribution branch
+
+// A branch br defined with voltage f(x) creates an implicit equation. 
+// The corresponding unknown is the branch current I(br). 
+// The implicit equation is
+//   f(x) - V(br) = 0
+// Nature of I(br) is electrical.flow
+// Nature of the residual is electrical.potential. 
+
+ground 0 
+
+load "resistor.osdi"
+load "vbr.va"
+
+model tb vbr
+model isrc isource
+model resistor resistor
+
+x1 (a b) tb
+i1 (0 b) isrc dc=1
+r1 (b 0) resistor r=1
+
+control
+  print device("vbr")
+  print unknowns
+  options smsig_debug=100
+  // At f=1/(2 pi) omega is 1. 
+  analysis ac1 ac values=[1/(2*M_PI)] 
+endc
+
+embed "vbr.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module vbr(A, B);
+    // Terminals and internal nodes
+    inout A, B;
+    electrical A, B;
+    
+    // Branches
+    branch (A) br_a;
+    branch (B) br_b;
+    
+    analog begin
+        V(br_a) <+ 3*V(br_b);
+    end
+endmodule
+
+>>>FILE

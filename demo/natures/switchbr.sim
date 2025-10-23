@@ -1,0 +1,62 @@
+// Switch branch
+
+// A branch br whose contribution switches between voltage and current. 
+// depending on some expression that is based on unknowns or time. 
+// Let the voltage and the current contribution be f(x) and g(x), respectively. 
+// An implicit equation is created. 
+// The corresponding unknown is the branch current I(br). 
+// 
+// The implicit equation in case of a voltage contribution is
+//   f(x) - V(br) = 0
+//
+// The implicit equation in case of a current contribution is
+//   g(x) - I(br) = 0
+// 
+// Nature of I(br) is electrical.flow. Nature of the residual is not known. 
+// TODO: Residual nature should be electrical.potential for voltage contribution 
+//       and electrical.flow for current contribution. 
+
+ground 0 
+
+load "switchbr.va"
+load "resistor.osdi"
+
+model isrc isource
+model resistor resistor
+model tb switchbr
+
+x1 (a b) tb
+i1 (0 b) isrc dc=-1
+r1 (b 0) resistor r=1
+
+control
+  print device("switchbr")
+  print unknowns
+  options smsig_debug=100
+  // At f=1/(2 pi) omega is 1. 
+  analysis ac1 ac values=[1/(2*M_PI)] 
+endc
+
+embed "switchbr.va" <<<FILE
+`include "constants.vams"
+`include "disciplines.vams"
+
+module switchbr(A,B);
+    // Terminals and internal nodes
+    inout A, B;
+    electrical A, B;
+    
+    // Branches
+    branch (A) br_a;
+    branch (B) br_b;
+    
+    analog begin
+        if (V(br_b)>=0) begin
+            I(br_a) <+ 3*V(br_a);
+        end else begin
+            V(br_a) <+ I(br_a)*5;
+        end
+    end
+endmodule
+
+>>>FILE
