@@ -4,7 +4,7 @@
 // The corresponding unknown is the branch current I(br). 
 // The implicit equation is
 //   f(x) - I(br) = 0
-// Nature of I(br) and the residual are both electrical.flow. 
+// The nature of I(br) and the nature of the residual are electrical.flow. 
 ground 0 
 
 load "ibrictl.va"

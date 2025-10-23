@@ -1,3 +1,11 @@
 set netlist_dir $env(HOME)/.xschem/simulations
 set netlist_type spectre
 set editor {kwrite}
+
+append postinit_commands {
+  foreach i $pathlist {
+    if {![catch {source $i/lib_init.tcl} retval]} {
+      puts "Sourced library init file $i/lib_init.tcl"
+    } 
+  }
+}

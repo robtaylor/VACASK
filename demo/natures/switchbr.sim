@@ -12,7 +12,7 @@
 // The implicit equation in case of a current contribution is
 //   g(x) - I(br) = 0
 // 
-// Nature of I(br) is electrical.flow. Nature of the residual is not known. 
+// The nature of I(br) is electrical.flow. The nature of the residual is not known. 
 // TODO: Residual nature should be electrical.potential for voltage contribution 
 //       and electrical.flow for current contribution. 
 
@@ -26,7 +26,7 @@ model resistor resistor
 model tb switchbr
 
 x1 (a b) tb
-i1 (0 b) isrc dc=-1
+i1 (0 b) isrc dc=1
 r1 (b 0) resistor r=1
 
 control
@@ -34,7 +34,11 @@ control
   print unknowns
   options smsig_debug=100
   // At f=1/(2 pi) omega is 1. 
+  print ("\nCurrent branch")
   analysis ac1 ac values=[1/(2*M_PI)] 
+  print ("\nVoltage branch")
+  alter instance("i1") dc=-1
+  analysis ac2 ac values=[1/(2*M_PI)] 
 endc
 
 embed "switchbr.va" <<<FILE

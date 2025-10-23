@@ -5,7 +5,7 @@
 // The unknown is y, its value is ddt(.). 
 // The implicit equation is
 //   -y + ddt(f(x)) = 0
-// Natures of y and the residual are not defined. 
+// The nature of y and the nature of the residual are not defined. 
 // They should both be the same. 
 // TODO: they can be deduced or taken from the nature argument of ddt(). 
 

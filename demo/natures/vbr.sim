@@ -4,8 +4,8 @@
 // The corresponding unknown is the branch current I(br). 
 // The implicit equation is
 //   f(x) - V(br) = 0
-// Nature of I(br) is electrical.flow
-// Nature of the residual is electrical.potential. 
+// The nature of I(br) is electrical.flow
+// The nature of the residual is electrical.potential. 
 
 ground 0 
 

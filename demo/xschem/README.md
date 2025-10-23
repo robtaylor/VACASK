@@ -48,18 +48,32 @@ A simple example is provided ([rfosc.sch](rfosc.sch)). After you open it, select
 
 ![Xschem showing a demo of available analyses blocks.](analyses.png)
 
-The analyses library in Xschem provides a set of blocks that can be used to visually set up the analyses and other control block commands. If you want to use this feature place a `command_block.sym` component in your schematic. To invoke an operating point analysis place the `op.sym` component. For an ac analysis one has to place the `ac.sym` component. Analysis parameters are set via the symbol's attributes. The `order` attribute is a number which specifies the order in which the compinents will be netlisted as commands in the control block. Components with a lower `order` attribute value are netlisted before components with a higher attribute value. Note that attributes which will be netlisted as VACASK strings must be quoted, i.e. given as `\"<string>\"`. 
+The analyses library in Xschem provides a set of blocks that can be used to visually set up the analyses and other control block commands. To use this library you have to source its initialization script by adding the following lines to your `xschemrc` file. 
+```
+append postinit_commands {
+  foreach i $pathlist {
+    if {![catch {source $i/lib_init.tcl} retval]} {
+      puts "Sourced library init file $i/lib_init.tcl"
+    } 
+  }
+}
+```
+This will find all `lib_init.tcl` files in Xschem library directories and source them. 
 
-Sweeping is performed by placing a `sweep.sym` component. This component specifies one level of sweeping. Its `name` attribute value must be specified as the `sweep` attribute value of the analysis you want to sweep. The `sweep.sym` component has a `sweep` attribute itself which makes it possible to chain sweeps and create multidimensional sweeps. The `tag` attribute is used as the name of the sweep variable and gets netlisted as 
+If you want to use the components from the analyses library place a `command_block.sym` component in your schematic. This component triggers the netlisting of the control block. To invoke an operating point analysis place the `op.sym` component. For an ac analysis place the `ac.sym` component. The library supports all VACASK analyses. Analysis parameters are set via the symbol's attributes. The `order` attribute is a number that specifies the order in which the components will be netlisted into the control block. Components with a lower `order` attribute value are netlisted before components with a higher attribute value. Note that attributes that are supposed to be netlisted as VACASK strings must be quoted (i.e. `\"<string>\"`). If you fail to do so, the attribute will be netlisted as a VACASK identifier. 
+
+Sweeping is performed by placing a `sweep.sym` component. This component specifies a 1-dimensional sweep. Its `tag` attribute is used as the name of the sweep variable and gets netlisted as 
 ```
 sweep <tag> ...
 ```
 
-The `dc1d.sym` component adds a 1-dimensional operating point sweep to the control block. It exposes all attributes of `op.sym` and `sweep.sym` and is useful for quickly setting up 1-dimensional DC sweeps. You can apply a sweep chain to it by setting its `sweep` attribute which results in higher-dimensional sweeps. 
+The value of sweep's `name` attribute must be specified as the value of the `sweep` attribute value of the analysis you want to sweep. The `sweep.sym` component also exposes a `sweep` attribute. This attribute makes it possible to chain sweeps and create multidimensional sweeps. 
+
+The `dc1d.sym` component adds a 1-dimensional operating point sweep to the control block. It exposes all attributes of the `op.sym` and `sweep.sym` components. It can be used for setting up 1-dimensional DC sweep without having to place two components (operating point analysis and sweep). You can apply a sweep chain to it by setting its `sweep` attribute to produce a higher-dimensional operating point sweep. 
 
 The `verbatim.sym` component adds a verbatim text to the control block. The `postproc.sym` component adds a `postprocess` command to the control block. 
 
-An example of how to use these components can be found in file `analyses.sch`. 
+An example of how to use the components in the analyses library can be found in file `analyses.sch`. 
 
 
 
