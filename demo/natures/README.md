@@ -1,5 +1,9 @@
 # Tolerance handling in VACASK
 
+Tolerances on unknowns are always enforced. Tolerances on residuals are enforced only for Kirchoff current law equations of non-internal device nodes. This is due to the fact the internal nodes have only a single contribution and therefore establishing a reference value for relative tolerance (specified by the `reltol` simulator option) is not possible because the contribution approaches zero as the nonlinear solver converges. Nevertheless the solver can still report failed convergence due to a small reference value as the it approaches the solution, particularly for nodes to which only a single element is connected. This can be alleviated by setting the `relrefres` parameter to `"pointglobal"` (reference value is maximum contribution across all residuals with the same nature at the current timepoint) or `"global"` (reference value is maximum contribution across all residuals with the same nature over the whole past). Another possibility is to set the `relref` option to `"allglobal"` which is equivalent to setting the unknown (`relrefsol`), residual (`relrefres`), and LTE (`relreflte`) reference value to `"pointglobal"` (assuming that they are currently set to `relref` meaning that the `relref` option decides on their value). If you still experience convergence problems try turning off residual tolerance checks by setting `nr_residualcheck` to 0. 
+
+All absolute tolerances can be scaled simulatenously with the `tolscale` simulator option. Its default value is 1. 
+
 # Nature and discipline import from .osdi files
 Each .osdi file has its own set of natures and disciplines. They apply only to the moduels defined in that particular file. When computing global maxima (across the same nature) in the nonlinear solver the name of the nature is the one that is used to identify the same natures across .osdi files. You can list the natures and disciplined along with all their attributes by issuing the following command in the control block.  
 ```
@@ -67,3 +71,4 @@ print tolerances
 ```
 
 If a tolerance comes from the flow nature of a `<discipline>` its name is `<discipline>.flow`. If it comes from the potential nature of a discipline, its name if `<discipline>.potential`. The nature name is not resolved all the way to the actual nature name because disciplines can override nature attributes (and along with that the value of abstol). The natures of integral quantities (idt natures) are resolved to their actual nature names because Verilog-A does not allow the idt nature of a potential or a flow to be overridden in discipline declaration. 
+
