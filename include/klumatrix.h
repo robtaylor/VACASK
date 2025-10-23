@@ -311,7 +311,7 @@ public:
     void dumpEntries(std::ostream& os);
 
     // Dump matrix and optional rhs with given column width and precision
-    void dump(std::ostream& os, ValueType* rhs=nullptr, int colw=12, int prec=2);
+    void dump(std::ostream& os, ValueType* rhs=nullptr, int colw=12, int prec=2, bool zeroindex=false);
     
     // Dump vector
     void dumpVector(std::ostream& os, ValueType* v, int colw=12, int prec=2);

@@ -620,7 +620,7 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
     }
 }
 
-template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, ValueType>::dump(std::ostream& os, ValueType* rhs, int colw, int prec) {
+template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, ValueType>::dump(std::ostream& os, ValueType* rhs, int colw, int prec, bool zeroindex) {
     std::ios oldState(nullptr);
     oldState.copyfmt(std::cout);
     os << std::scientific << std::setprecision(prec);
@@ -628,9 +628,9 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
     os << "     ";
     for(IndexType col=0; col<AN; col++) {
         if constexpr(std::is_same<ValueType, Complex>::value) {
-            os << std::setw(colw*2+1) << col;
+            os << std::setw(colw*2+1) << (zeroindex ? col : col+1);
         } else {
-            os << std::setw(colw) << col;
+            os << std::setw(colw) << (zeroindex ? col : col+1);
         }
     }
     if (rhs) {
@@ -645,7 +645,7 @@ template<typename IndexType, typename ValueType> void KluMatrixCore<IndexType, V
         if (row>0) {
             os << "\n";
         }
-        os << std::setw(4) << row << ":";
+        os << std::setw(4) << (zeroindex ? row : row+1) << ":";
         for(IndexType col=0; col<AN; col++) {
             double* ptr;
             auto [offs, found] = nonzeroOffset(row, col);
