@@ -90,7 +90,7 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& loadDirective
 
         return std::make_tuple(true, true);
     }
-    // Unsupported extension, do nothing, return the original file path
+    // Unsupported extension, do nothing
     return std::make_tuple(true, false);
 }
 

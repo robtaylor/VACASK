@@ -53,8 +53,10 @@ public:
     static const NatureId spiceCharge;
 
 private:
+    // A map from NatureId to a set of canonical paths of files where natures with this id are found
     static std::unordered_map<NatureId,std::unordered_set<std::string>> natureFilesMap;
 
+    // Internal function for creating a nature identifier. Can create static identifiers. 
     static NatureId natureIdInternal(std::string file, std::string name, bool staticId=false);
 };
 

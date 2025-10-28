@@ -80,6 +80,7 @@ public:
     inline Value(const Int &other) : iVal(other), type_(Type::Int) {};
     inline Value(const Real &other) : rVal(other), type_(Type::Real) {};
     inline Value(const String &other) : sVal(new String(other)), type_(Type::String) {};
+    inline Value(const char* other) noexcept : type_(Type::String) { sVal = new String(other); };
     inline Value(const IntVector &other) : iVec(new IntVector(other)), type_(Type::IntVec) {};
     inline Value(const RealVector &other) : rVec(new RealVector(other)), type_(Type::RealVec) {};
     inline Value(const StringVector &other) : sVec(new StringVector(other)), type_(Type::StringVec) {};
@@ -163,6 +164,7 @@ public:
     inline Value &operator=(Int other) { this->~Value(); iVal = other; type_ = Type::Int; return *this; };
     inline Value &operator=(Real other) { this->~Value(); rVal = other; type_ = Type::Real; return *this; };
     inline Value &operator=(const String& other) { this->~Value(); sVal = new String(other); type_ = Type::String; return *this; };
+    inline Value &operator=(const char* other) { this->~Value(); sVal = new String(other); type_ = Type::String; return *this; };
     inline Value &operator=(const IntVector& other) { this->~Value(); iVec = new IntVector(other); type_ = Type::IntVec; return *this; };
     inline Value &operator=(const RealVector& other) { this->~Value(); rVec = new RealVector(other); type_ = Type::RealVec; return *this; };
     inline Value &operator=(const StringVector& other) { this->~Value(); sVec = new StringVector(other); type_ = Type::StringVec; return *this; };

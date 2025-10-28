@@ -17,6 +17,7 @@ namespace NAMESPACE {
 class Simulator {
 public:
     static void setStreams(std::ostream& output, std::ostream& error, std::ostream& debug);
+    static bool setup(Status& s=Status::ignore);
     static bool setup(        
         const std::string& moduleFilePath, 
         const std::string& includeFilePath, 

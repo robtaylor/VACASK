@@ -224,4 +224,6 @@ add_subdirectory(inc)
 add_subdirectory(python)
 add_subdirectory(test)
 
+add_subdirectory(demo/api)
+
 include("packaging.cmake")

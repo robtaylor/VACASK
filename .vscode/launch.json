@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
             
-            // "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
+             "args": [ "-df", "-dp", "${workspaceFolder}/test/test_op.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnl.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opnodeset.sim" ],
             // "args": [ "-df", "${workspaceFolder}/test/test_opstore.sim" ],
@@ -127,7 +127,7 @@
             // "args": [ "-df", "${workspaceFolder}/benchmark/vadistiller/jfetring/vacask/runme.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/ibrictl.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/vbr.sim" ], 
-             "args": [ "-df", "${workspaceFolder}/demo/natures/switchbr.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/natures/switchbr.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/idt.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/ddt.sim" ], 
             // "args": [ "-df", "-dp" ],
@@ -191,6 +191,25 @@
                 { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
                 { "name": "PYTHONPATH", "value": "${workspaceFolder}/python" }
             ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }, 
+
+        {
+            "name": "Run API demo (Debug)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/demo/api/apidemo",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/test/manual_run",
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

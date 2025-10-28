@@ -221,9 +221,9 @@ public:
     inline std::vector<PTInstance>& instances() { return instances_; };
     inline std::vector<PTBlockSequence>& blockSequences() { return *blockSequences_; };
 
-    void add(PTModel&& mod);
-    void add(PTInstance&& inst);
-    void add(PTBlockSequence&& seq);
+    PTBlock& add(PTModel&& mod);
+    PTBlock& add(PTInstance&& inst);
+    PTBlock& add(PTBlockSequence&& seq);
 
     void dump(int indent, std::ostream& os) const;
 
@@ -416,8 +416,8 @@ public:
     PTAnalysis& operator=(const PTAnalysis&)  = delete;
     PTAnalysis& operator=(      PTAnalysis&&) = default;
 
-    void add(PTParameters&& par);
-    void add(PTSweeps&& sw);
+    PTAnalysis& add(PTParameters&& par);
+    PTAnalysis& add(PTSweeps&& sw);
     
     inline const Loc& location() const { return loc; };
     inline Id name() const { return name_; };
@@ -440,6 +440,7 @@ private:
 class ParserTables {
 public:
     ParserTables();
+    ParserTables(const std::string& title);
     ~ParserTables();
 
     ParserTables           (const ParserTables&)  = delete;
@@ -447,22 +448,22 @@ public:
     ParserTables& operator=(const ParserTables&)  = delete;
     ParserTables& operator=(      ParserTables&&) = default;
 
-    void setTitle(const std::string t);
+    ParserTables& setTitle(const std::string t);
 
     const std::string& title() const;
     FileStack& fileStack() { return fileStack_; };
     const std::vector<PTLoad>& loads() const { return loads_; };
     const PTSubcircuitDefinition& defaultSubDef() const { return defaultSubDef_; };
     PTSubcircuitDefinition& defaultSubDef() { return defaultSubDef_; };
-    void addDefaultSubDef(PTSubcircuitDefinition&& def);
-    void addLoad(PTLoad&& o);
-    void addGround(PTParsedIdentifier parsedId);
-    void addGlobal(PTParsedIdentifier parsedId); 
+    ParserTables& addDefaultSubDef(PTSubcircuitDefinition&& def);
+    ParserTables& addLoad(PTLoad&& o);
+    ParserTables& addGround(PTParsedIdentifier parsedId);
+    ParserTables& addGlobal(PTParsedIdentifier parsedId); 
     
     const PTIdentifierList& groundNodes() const { return groundNodes_; };
     const PTIdentifierList& globalNodes() const { return globalNodes_; };
     
-    void defaultGround();
+    ParserTables& defaultGround();
 
     // Post-parse checks
     bool verify(Status& s=Status::ignore) const;
@@ -481,6 +482,24 @@ private:
     PTIdentifierList groundNodes_; // Order matters, first ground node is the name of the ground node, rest are just aliases
     std::vector<PTLoad> loads_;  
 };
+
+// Helpers for API users
+
+// Generic vector constructor
+template<class T, class... Args>
+std::vector<T> make_vector(Args&&... args) {
+    std::vector<T> v;
+    v.reserve(sizeof...(Args));
+    (v.emplace_back(std::forward<Args>(args)), ...);
+    return v;
+}
+
+// Constant parameter value vector constructor
+using PV = PTParameterValue;
+template<class... Args>
+std::vector<PV> PVv(Args&&... args) {
+    return make_vector<PV>(std::forward<Args>(args)...);
+}
 
 }
 

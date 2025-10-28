@@ -291,11 +291,11 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
 
         // Get the canonical path of the file where the load directive is located
         auto [fs, pos, line, offset] = it->location().data();
-        auto loadDirectiveCanonicalPath = fs->canonicalName(pos);
+        auto loadDirectiveCanonicalPath = pos!=FileStack::badFileId ? fs->canonicalName(pos) : "";
             
         // Canonical path to osdi file
         std::string canonicalPath;
-        bool found;
+        bool found = false;
         
         if (std::filesystem::path(fileName).is_absolute()) {
             // Absolute path given
@@ -334,9 +334,11 @@ Circuit::Circuit(ParserTables& tab, SourceCompiler* compiler, Status& s)
         bool ok = false;
         bool compiled = false;
         if (compiler) {
+            // Try compiling of needed
             std::tie(ok, compiled) = compiler->compile(loadDirectiveCanonicalPath, fileName, canonicalPath, outputPath, s);
         } else {
-            s.set(Status::Unsupported, "Source compiler not available.");
+            // No compilation, just assume ok, file was not compiled
+            ok = true;
         }
         if (!ok) {
             s.extend(it->location());

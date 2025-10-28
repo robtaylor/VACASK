@@ -166,19 +166,22 @@ void PTBlockSequence::dump(int indent, std::ostream& os) const {
 PTBlock::PTBlock() {
 }
 
-void PTBlock::add(PTModel&& mod) {
+PTBlock& PTBlock::add(PTModel&& mod) {
     models_.push_back(std::move(mod));
+    return *this;
 }
 
-void PTBlock::add(PTInstance&& inst) {
+PTBlock& PTBlock::add(PTInstance&& inst) {
     instances_.push_back(std::move(inst));
+    return *this;
 }
 
-void PTBlock::add(PTBlockSequence&& seq) {
+PTBlock& PTBlock::add(PTBlockSequence&& seq) {
     if (blockSequences_==nullptr) {
         blockSequences_ = std::make_unique<std::vector<PTBlockSequence>>();
     }
     blockSequences_->push_back(std::move(seq));
+    return *this;
 }
 
 void PTBlock::dump(int indent, std::ostream& os) const {
@@ -349,12 +352,14 @@ PTAnalysis::PTAnalysis(const Loc& l, Id name, Id typeName)
     : loc(l), name_(name), typeName_(typeName) {
 }
 
-void PTAnalysis::add(PTParameters&& par) {
+PTAnalysis& PTAnalysis::add(PTParameters&& par) {
     parameters_.add(std::move(par));
+    return *this;
 }
 
-void PTAnalysis::add(PTSweeps&& sw) {
+PTAnalysis& PTAnalysis::add(PTSweeps&& sw) {
     sweeps_ = std::move(sw);
+    return *this;
 }
 
 
@@ -372,37 +377,46 @@ void PTAnalysis::dump(int indent, std::ostream& os) const {
 ParserTables::ParserTables() {
 }
 
+ParserTables::ParserTables(const std::string& title) : title_(title) {
+}
+
 ParserTables::~ParserTables() {
 }
 
-void ParserTables::setTitle(const std::string t) {
+ParserTables& ParserTables::setTitle(const std::string t) {
     title_ = t;
+    return *this;
 }
 
 const std::string& ParserTables::title() const {
     return title_;
 }
 
-void ParserTables::addDefaultSubDef(PTSubcircuitDefinition&& def) {
+ParserTables& ParserTables::addDefaultSubDef(PTSubcircuitDefinition&& def) {
     defaultSubDef_ = std::move(def);
+    return *this;
 }
 
-void ParserTables::addLoad(PTLoad&& o) {
+ParserTables& ParserTables::addLoad(PTLoad&& o) {
     loads_.push_back(std::move(o));
+    return *this;
 }
 
-void ParserTables::addGround(PTParsedIdentifier parsedId) {
+ParserTables& ParserTables::addGround(PTParsedIdentifier parsedId) {
     groundNodes_.push_back(parsedId);
+    return *this;
 }
 
-void ParserTables::addGlobal(PTParsedIdentifier parsedId) {
+ParserTables& ParserTables::addGlobal(PTParsedIdentifier parsedId) {
     globalNodes_.push_back(parsedId);
+    return *this;
 }
 
-void ParserTables::defaultGround() {
+ParserTables& ParserTables::defaultGround() {
     if (groundNodes_.size()==0) {
         groundNodes_.push_back(PTParsedIdentifier(Id("0"), Loc::bad));
     }
+    return *this;
 }
 
 bool ParserTables::verify(Status& s) const {

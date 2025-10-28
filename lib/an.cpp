@@ -20,9 +20,11 @@ void Analysis::setSaves(PTSavesVector* saves) {
 void Analysis::setParametrization(const PTParameterMap* optionsMap) {
     // Store only options that are defined with expressions
     parameterizedOptions.clear();
-    for(auto& it : *optionsMap) {
-        if (std::holds_alternative<const PTParameterExpression*>(it.second)) {
-            parameterizedOptions.insert(it);
+    if (optionsMap) {
+        for(auto& it : *optionsMap) {
+            if (std::holds_alternative<const PTParameterExpression*>(it.second)) {
+                parameterizedOptions.insert(it);
+            }
         }
     }
 }

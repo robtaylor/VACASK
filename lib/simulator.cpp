@@ -45,6 +45,10 @@ void Simulator::setStreams(std::ostream& output, std::ostream& error, std::ostre
     Simulator::dbg_ = &debug;
 }
 
+bool Simulator::setup(Status& s) {
+    return setup("", "", s);
+}
+
 bool Simulator::setup(
     const std::string& moduleFilePathString, 
     const std::string& includeFilePathString, 
