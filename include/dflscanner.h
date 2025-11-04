@@ -15,7 +15,7 @@
 #include "common.h"
 
 
-namespace dflparse {
+namespace NAMESPACE::dflparse {
 
 class Scanner : public yyFlexLexer{
 public:   
@@ -37,7 +37,7 @@ public:
     // Get rid of override virtual function warning
     using FlexLexer::yylex;
 
-    virtual int yylex(dflparse::Parser::semantic_type * const lval, dflparse::Parser::location_type *location );
+    virtual int yylex(NAMESPACE::dflparse::Parser::semantic_type * const lval, NAMESPACE::dflparse::Parser::location_type *location );
     
     // YY_DECL defined in dfllexer.l
     // Method body created by flex in dfllexer.cpp
@@ -67,7 +67,7 @@ public:
 
     Location popStream() { streamStack.pop_back(); Location l=locationStack.back(); locationStack.pop_back(); return l; };
     
-    void error( const dflparse::Parser::location_type &l, const std::string &err_message ) {
+    void error( const Parser::location_type &l, const std::string &err_message ) {
         status_.set(Status::Syntax, err_message);
         status_.extend(l.loc());
     };

@@ -1,31 +1,9 @@
-FLEX_TARGET(dfllexer 
-    dfllexer.l "${CMAKE_CURRENT_BINARY_DIR}/dfllexer.cpp" 
-    COMPILE_FLAGS "-d"
-)
-
-BISON_TARGET(dflparser 
-    dflparser.y "${CMAKE_CURRENT_BINARY_DIR}/dflparser.cpp" 
-    DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/dflparser.h"
-    COMPILE_FLAGS "-Wcounterexamples" 
-)
-
-ADD_FLEX_BISON_DEPENDENCY(dfllexer dflparser)
-
 add_executable(sim 
     platform.h 
     platform.cpp 
     config.cpp
-    location.h
-    location.cpp
     main.cpp
-    "${BISON_dflparser_OUTPUTS}"
-    "${FLEX_dfllexer_OUTPUTS}"
-    dflscanner.h
-    parser.h
-    parser.cpp
-    parserextras.h
     progressbar.h
-    parserextras.cpp 
     progressbar.cpp 
     cmd.h 
     cmd.cpp 

@@ -1,3 +1,16 @@
+FLEX_TARGET(dfllexer 
+    dfllexer.l "${CMAKE_CURRENT_BINARY_DIR}/dfllexer.cpp" 
+    COMPILE_FLAGS "-d"
+)
+
+BISON_TARGET(dflparser 
+    dflparser.y "${CMAKE_CURRENT_BINARY_DIR}/dflparser.cpp" 
+    DEFINES_FILE "${CMAKE_CURRENT_BINARY_DIR}/dflparser.h"
+    COMPILE_FLAGS "-Wcounterexamples" 
+)
+
+ADD_FLEX_BISON_DEPENDENCY(dfllexer dflparser)
+
 add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/common.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/generator.h 
@@ -24,6 +37,10 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/osdimodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/osdiinstance.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/parseroutput.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/parserextras.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/location.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/dflscanner.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/parser.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/processutils.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/filesystem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/filestack.h 
@@ -159,6 +176,12 @@ add_library(simlib STATIC
     annoise.cpp 
     antran.cpp 
     anhb.cpp
+    location.cpp
+    "${BISON_dflparser_OUTPUTS}"
+    "${FLEX_dfllexer_OUTPUTS}"
+    parser.cpp
+    parserextras.cpp 
+    
 )
 target_include_directories(simlib PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}

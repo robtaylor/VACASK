@@ -16,7 +16,7 @@
 %defines
 
 // Namespace to use for the parser
-%define api.namespace {dflparse}
+%define api.namespace {NAMESPACE::dflparse}
 
 // Name of the parser class
 %define api.parser.class {Parser}
@@ -38,7 +38,7 @@
 
 using namespace NAMESPACE;
 
-namespace dflparse {
+namespace NAMESPACE::dflparse {
     class Scanner;
 }
 
@@ -83,7 +83,7 @@ typedef struct subckt {
 }
 
 // Additional arguments to parser class constructor
-%parse-param {dflparse::Scanner& scanner}
+%parse-param {NAMESPACE::dflparse::Scanner& scanner}
 // %parse-param {ParserDriver& driver}
 %parse-param {ParserTables& tables}
 %parse-param {ParserExtras& extras}
@@ -1055,8 +1055,12 @@ control_block
 
 %%
 
+namespace NAMESPACE::dflparse {
+  
 // Error reporting
-void dflparse::Parser::error( const dflparse::Parser::location_type &l, const std::string &err_message ) {
+void Parser::error( const Parser::location_type &l, const std::string &err_message ) {
    status.set(Status::Syntax, ("Parser "+err_message));
    status.extend(l.loc());
 } 
+
+}

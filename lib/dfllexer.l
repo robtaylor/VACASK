@@ -16,10 +16,10 @@
 /* Implementation of yyFlexScanner. Specify the prototype of lexer call. */ 
 #include "dflscanner.h"
 #undef  YY_DECL
-#define YY_DECL int dflparse::Scanner::yylex(dflparse::Parser::semantic_type * const lval, dflparse::Parser::location_type *loc )
+#define YY_DECL int NAMESPACE::dflparse::Scanner::yylex(NAMESPACE::dflparse::Parser::semantic_type * const lval, NAMESPACE::dflparse::Parser::location_type *loc )
 
 /* typedef to make the returns for the tokens shorter */
-using token = dflparse::Parser::token;
+using token = NAMESPACE::dflparse::Parser::token;
 
 /* define yyterminate as this instead of NULL */
 #define yyterminate() return( token::END )

@@ -36,6 +36,10 @@ public:
     bool parseExpression(const std::string& input, Status& s=Status::ignore);
     bool parseExpression(const std::string&& input, Status& s=Status::ignore);
 
+    bool parseParameters(const std::string& input, Status& s=Status::ignore);
+    bool parseParameters(const std::string&& input, Status& s=Status::ignore);
+
+
 private:
     bool netlistParseHelper(std::istream& stream, ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
 };
