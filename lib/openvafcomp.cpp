@@ -1,8 +1,7 @@
 #include <filesystem>
 #include "processutils.h"
 #include "simulator.h"
-#include "srccompiler.h"
-#include "platform.h"
+#include "openvafcomp.h"
 #include "common.h"
 
 namespace NAMESPACE {
@@ -68,11 +67,14 @@ std::tuple<bool, bool> OpenvafCompiler::compile(const std::string& loadDirective
             if (Simulator::fileDebug()) {
                 Simulator::dbg() << "Compiling file '" << pVa.string() << "'.\n";
             }
-            auto args = Platform::openVafArgs();
+            std::vector<std::string> args;
+            if (compilerArgs.has_value()) {
+                args = *compilerArgs;
+            }
             args.push_back("-o");
             args.push_back(std::move(outputPath.string()));
             args.push_back(std::move(vaFile.string()));
-            auto [ok, out, err] = runProcess(Platform::openVaf(), args, nullptr, true, Simulator::fileDebug(), s);
+            auto [ok, out, err] = runProcess(compiler.has_value() ? *compiler : defaultOpenVafBinaryName(), args, nullptr, true, Simulator::fileDebug(), s);
             if (!ok) {
                 // Failure, error
                 s.extend("Failed to compile file '"+vaFile.string()+"'.");

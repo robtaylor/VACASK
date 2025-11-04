@@ -21,7 +21,7 @@ std::string Platform::pythonExecutable_;
 
 void Platform::setup() {
     // Default OpenVAF
-    openVaf_ = Platform::defaultOpenVafBinaryName();
+    openVaf_ = defaultOpenVafBinaryName();
     
     // Default Python executable
     pythonExecutable_ = findPythonExecutable();
@@ -37,15 +37,6 @@ void Platform::setOpenVafArgs(std::vector<std::string>&& openVafArgs) {
 
 void Platform::setPythonExecutable(std::string pythonExecutable) {
     pythonExecutable_ = pythonExecutable;
-}
-
-const char* Platform::defaultOpenVafBinaryName() {
-#ifdef SIMWINDOWS
-    static const char binary[] = "openvaf-r.exe"; 
-#else
-    static const char binary[] = "openvaf-r"; 
-#endif
-    return binary;
 }
 
 static std::string initPythonPath() {

@@ -26,8 +26,6 @@ add_executable(sim
     parserextras.h
     progressbar.h
     parserextras.cpp 
-    srccompiler.h 
-    srccompiler.cpp 
     progressbar.cpp 
     cmd.h 
     cmd.cpp 

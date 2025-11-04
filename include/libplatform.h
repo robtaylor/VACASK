@@ -49,6 +49,7 @@ template<typename T> bool isFinite(T x) {
 }
 
 std::string findPythonExecutable();
+const char* defaultOpenVafBinaryName();
 
 }
 

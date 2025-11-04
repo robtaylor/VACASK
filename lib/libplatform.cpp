@@ -106,4 +106,15 @@ std::string findPythonExecutable() {
 #endif
 }
 
+const char* defaultOpenVafBinaryName() {
+#ifdef SIMWINDOWS
+    static const char binary[] = "openvaf-r.exe"; 
+#else
+    static const char binary[] = "openvaf-r"; 
+#endif
+    return binary;
+}
+
+
+
 }

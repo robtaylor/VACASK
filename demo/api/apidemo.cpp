@@ -2,6 +2,7 @@
 #include "parseroutput.h"
 #include "simulator.h"
 #include "circuit.h"
+#include "openvafcomp.h"
 #include "an.h"
 #include "processutils.h"
 #include "libplatform.h"
@@ -71,8 +72,10 @@ int main() {
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Create circuit, no SourceCompiler
-    Circuit cir(tab, nullptr, s);
+    // Create circuit, OpenVAF compiler with no options
+    OpenvafCompiler comp;
+    // Circuit object
+    Circuit cir(tab, &comp, s);
     if (!cir.isValid()) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -81,7 +84,9 @@ int main() {
     // Elaborate it, just the default toplevel subcircuit. 
     // Use __topdef__ and __topinst__ as prefixes for toplevel subcircuit definition and instance names. 
     // No options, do not collect device requests. 
-    if (!cir.elaborate({}, "__topdef__", "__topinst__", nullptr, nullptr, s)) {
+    SimulatorOptions opt;
+    opt.reltol = 1e-4;
+    if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);

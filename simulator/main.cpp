@@ -1,6 +1,6 @@
 #include "parser.h"
 #include "status.h"
-#include "srccompiler.h"
+#include "openvafcomp.h"
 #include "circuit.h"
 #include "simulator.h"
 #include "processutils.h"
@@ -306,7 +306,7 @@ int main(int argc, char**argv) {
     }
     
     // Create circuit
-    OpenvafCompiler comp;
+    OpenvafCompiler comp(Platform::openVaf(), Platform::openVafArgs());
     Circuit cirObj(tab, &comp, status);
     if (!cirObj.isValid()) {
         Simulator::err() << status.message() << "\n";

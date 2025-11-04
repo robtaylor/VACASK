@@ -38,7 +38,6 @@ public:
     static const std::string programHomepage; 
 
 private:
-    static const char* defaultOpenVafBinaryName();
     static std::string openVaf_;
     static std::vector<std::string> openVafArgs_;
     static std::string pythonExecutable_;
