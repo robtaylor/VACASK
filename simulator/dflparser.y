@@ -258,17 +258,17 @@ subckt_build
     // Toplevel netlist start
     tables.setTitle(std::move($1));
     $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
         Id(), // By default the name (Id) of the toplevel definition is not valid (empty)
-        std::move(PTIdentifierList())
+        std::move(PTIdentifierList()), 
+        @1.loc()
     ));
   }
   | SUBCKT IDENTIFIER LPAREN RPAREN NEWLINE {
     // Subcircuit definition start, no terminals
     $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
         $2, 
-        PTIdentifierList()
+        PTIdentifierList(), 
+        @1.loc()
     ));
     // This is not the toplevel definition
     $$.isToplevel = false;
@@ -276,9 +276,9 @@ subckt_build
   | SUBCKT IDENTIFIER LPAREN terminal_list RPAREN NEWLINE {
     // Subcircuit definition start, with terminals
     $$.def = std::move(PTSubcircuitDefinition(
-        @1.loc(), 
         $2, 
-        std::move($4)
+        std::move($4), 
+        @1.loc()
     ));
     // This is not the toplevel definition
     $$.isToplevel = false;
@@ -397,7 +397,7 @@ subckt
 condblock_build 
   : BLKIF expr NEWLINE {
     PTBlock blk;
-    $$.add(@1.loc(), std::move($2), std::move(blk));
+    $$.add(std::move($2), std::move(blk), @1.loc());
   }
   | condblock_build instance {
     $$ = std::move($1);
@@ -414,12 +414,12 @@ condblock_build
   | condblock_build BLKELSEIF expr NEWLINE {
     $$ = std::move($1);
     PTBlock blk;
-    $$.add(@2.loc(), std::move($3), std::move(blk));
+    $$.add(std::move($3), std::move(blk), @2.loc());
   }
   | condblock_build BLKELSE NEWLINE {
     $$ = std::move($1);
     PTBlock blk;
-    $$.add(@2.loc(), std::move(Rpn()), std::move(blk));
+    $$.add(std::move(Rpn()), std::move(blk), @2.loc());
   }
   | condblock_build NEWLINE {
     $$ = std::move($1);
@@ -745,10 +745,10 @@ parameter_list
         if (!evaluator.evaluate($1.expr, v, status)) {
             YYERROR;
         }
-        $$.params.add(PTParameterValue(@1.loc(), $1.id, std::move(v)));
+        $$.params.add(PTParameterValue($1.id, std::move(v), @1.loc()));
         auto dump = std::move($1.expr);
     } else {
-        $$.params.add(PTParameterExpression(@1.loc(), $1.id, std::move($1.expr)));
+        $$.params.add(PTParameterExpression($1.id, std::move($1.expr), @1.loc()));
     }
   }
   | parameter_list parameter_expression {
@@ -767,10 +767,10 @@ parameter_list
         if (!evaluator.evaluate($2.expr, v, status)) {
             YYERROR;
         }
-        $$.params.add(PTParameterValue(@2.loc(), $2.id, std::move(v)));
+        $$.params.add(PTParameterValue($2.id, std::move(v), @2.loc()));
         auto dump = std::move($2.expr);
     } else {
-        $$.params.add(PTParameterExpression(@2.loc(), $2.id, std::move($2.expr)));
+        $$.params.add(PTParameterExpression($2.id, std::move($2.expr), @2.loc()));
     }
   }
 
@@ -786,59 +786,59 @@ instance
   : IDENTIFIER LPAREN RPAREN IDENTIFIER NEWLINE {
     // No terminals, no parameters
     $$ = std::move(PTInstance(
-        @1.loc(), 
         $1, 
         $4, 
         PTIdentifierList(), 
-        PTParameters()
+        PTParameters(), 
+        @1.loc()
     ));
   }
   | IDENTIFIER LPAREN terminal_list RPAREN IDENTIFIER NEWLINE {
     // Terminals, no parameters
     $$ = std::move(PTInstance(
-        @1.loc(), 
         $1, 
         $5, 
         std::move($3), 
-        PTParameters()
+        PTParameters(), 
+        @1.loc()
     ));
   }
   | IDENTIFIER LPAREN RPAREN IDENTIFIER opt_broken_parameter_list NEWLINE {
     // No terminals, parameters
     $$ = std::move(PTInstance(
-        @1.loc(), 
         $1, 
         $4, 
         PTIdentifierList(), 
-        std::move($5.params)
+        std::move($5.params), 
+        @1.loc()
     ));
   }
   | IDENTIFIER LPAREN terminal_list RPAREN IDENTIFIER opt_broken_parameter_list NEWLINE {
     // Terminals, parameters
     $$ = std::move(PTInstance(
-        @1.loc(), 
         $1, 
         $5, 
         std::move($3), 
-        std::move($6.params)
+        std::move($6.params), 
+        @1.loc()
     ));
   }
   
 model
   : MODEL IDENTIFIER IDENTIFIER NEWLINE {
     $$ = std::move(PTModel(
-        @1.loc(), 
         $2, 
-        $3
+        $3, 
+        @1.loc()
     ));
     $$.add(std::move(PTParameters()));
     // std::make_tuple(std::move($2), std::move($3), ParameterValues());
   }
   | MODEL IDENTIFIER IDENTIFIER opt_broken_parameter_list NEWLINE {
     $$ = std::move(PTModel(
-        @1.loc(), 
         $2, 
-        $3
+        $3, 
+        @1.loc()
     ));
     $$.add(std::move($4.params));
     // std::make_tuple(std::move($2), std::move($3), std::move($4));
@@ -873,7 +873,7 @@ savestrlist
 
 savecmd
   : IDENTIFIER { // LPAREN RPAREN {
-    $$ = std::move(PTSave(@1.loc(), $1));
+    $$ = std::move(PTSave($1, @1.loc()));
   }
   | IDENTIFIER LPAREN savestrlist RPAREN {
     if ($3.size()>2) {
@@ -881,9 +881,9 @@ savecmd
         status.extend(@1.loc());
         YYERROR;
     } else if ($3.size()==2) {
-        $$ = std::move(PTSave(@1.loc(), $1, $3[0], $3[1]));
+        $$ = std::move(PTSave($1, $3[0], $3[1], @1.loc()));
     } else {
-        $$ = std::move(PTSave(@1.loc(), $1, $3[0]));
+        $$ = std::move(PTSave($1, $3[0], @1.loc()));
     }
   }
 
@@ -922,7 +922,7 @@ ground
 
 load
   : LOAD STRING NEWLINE {
-    $$ = std::move(PTLoad(@1.loc(), $2));
+    $$ = std::move(PTLoad($2, @1.loc()));
   }
   | LOAD STRING opt_broken_parameter_list NEWLINE {
     if ($3.params.expressionCount()>0) {
@@ -930,13 +930,13 @@ load
       status.extend($3.params.expressions()[0].location());
       YYERROR;
     }
-    $$ = std::move(PTLoad(@1.loc(), std::move($2), std::move($3.params)));
+    $$ = std::move(PTLoad(std::move($2), std::move($3.params), @1.loc()));
   }
   
 sweeps
   : SWEEP IDENTIFIER opt_broken_parameter_list {
     Id id = $2;
-    $$.ptSweeps.add(PTSweep(@1.loc(), id, std::move($3.params)));
+    $$.ptSweeps.add(PTSweep(id, std::move($3.params), @1.loc()));
     $$.locations.insert({id, @1});
   }
   | sweeps NEWLINE {
@@ -953,15 +953,15 @@ sweeps
         status.extend(it->second.loc());
         YYERROR;
     }
-    $$.ptSweeps.add(PTSweep(@2.loc(), id, std::move($4.params)));
+    $$.ptSweeps.add(PTSweep(id, std::move($4.params), @2.loc()));
   }
 
 pre_analysis
   : ANALYSIS IDENTIFIER IDENTIFIER {
-    $$ = std::move(PTAnalysis(@1.loc(), $2, $3));
+    $$ = std::move(PTAnalysis($2, $3, @1.loc()));
   }
   | sweeps ANALYSIS IDENTIFIER IDENTIFIER {
-    $$ = std::move(PTAnalysis(@2.loc(), $3, $4));
+    $$ = std::move(PTAnalysis($3, $4, @2.loc()));
     $$.add(std::move($1.ptSweeps));
   }
 

@@ -755,8 +755,8 @@ bool Circuit::buildTopInstance(HierarchicalModel* model, Id name, Context& conte
     toplevelInstancesPT_.push_back(
         std::move(
             PTInstance(
-                Loc::bad, name, model->name(), 
-                PTIdentifierList({}), PTParameters()
+                name, model->name(), 
+                PTIdentifierList({}), PTParameters(), Loc::bad
             )
         )
     );

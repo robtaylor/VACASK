@@ -265,7 +265,7 @@ bool TranCore::addDefaultOutputDescriptors() {
         return true;
     }
     if (savesCount==0) {
-        return addAllUnknowns(PTSave(Loc::bad, "default", Id(), Id()));
+        return addAllUnknowns(PTSave("default", Id(), Id()));
     }
     return true;
 }

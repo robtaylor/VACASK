@@ -81,4 +81,29 @@ void alignedFree(void* ptr) {
 }
 #endif
 
+std::string findPythonExecutable() {
+#ifdef SIMWINDOWS
+    auto [found, pythonExecutable_] =  findFileInSystemPath("python.exe");
+    if (found) {
+        return pythonExecutable_;
+    } else {
+        return "";
+    }
+#else
+    // Try python3
+    auto [found, pythonExecutable_] =  findFileInSystemPath("python3");
+    if (found) {
+        return pythonExecutable_;
+    } else {
+        // Try python
+        auto [found, pythonExecutable_] =  findFileInSystemPath("python");
+        if (found) {
+            return pythonExecutable_;
+        } else {
+            return "";
+        }
+    } 
+#endif
+}
+
 }

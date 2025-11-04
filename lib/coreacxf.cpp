@@ -145,7 +145,7 @@ bool ACXFCore::addDefaultOutputDescriptors() {
         return true;
     }
     if (savesCount==0) {
-        return addAllTfZin(PTSave(Loc::bad, "default", Id(), Id()), sourceIndex);
+        return addAllTfZin(PTSave("default", Id(), Id()), sourceIndex);
     }
     return true;
 }

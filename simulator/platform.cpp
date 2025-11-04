@@ -15,32 +15,6 @@
 
 namespace NAMESPACE {
 
-static std::string initPythonExecutable() {
-#ifdef SIMWINDOWS
-    auto [found, pythonExecutable_] =  findFileInSystemPath("python.exe");
-    if (found) {
-        return pythonExecutable_;
-    } else {
-        return "";
-    }
-#else
-    // Try python3
-    auto [found, pythonExecutable_] =  findFileInSystemPath("python3");
-    if (found) {
-        return pythonExecutable_;
-    } else {
-        // Try python
-        auto [found, pythonExecutable_] =  findFileInSystemPath("python");
-        if (found) {
-            return pythonExecutable_;
-        } else {
-            return "";
-        }
-    } 
-#endif
-}
-
-
 std::string Platform::openVaf_;
 std::vector<std::string> Platform::openVafArgs_;
 std::string Platform::pythonExecutable_;
@@ -50,7 +24,7 @@ void Platform::setup() {
     openVaf_ = Platform::defaultOpenVafBinaryName();
     
     // Default Python executable
-    pythonExecutable_ = initPythonExecutable();
+    pythonExecutable_ = findPythonExecutable();
 }
 
 void Platform::setOpenVaf(std::string openVaf) {

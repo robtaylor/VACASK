@@ -181,7 +181,7 @@ bool NoiseCore::addDefaultOutputDescriptors() {
     }
     if (savesCount==0) {
         // Add total noise contributions of all instances (details=false)
-        return addAllNoiseContribInst(PTSave(Loc::bad, "default", Id(), Id()), false);
+        return addAllNoiseContribInst(PTSave("default", Id(), Id()), false);
     }
     return true;
 }

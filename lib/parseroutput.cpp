@@ -35,13 +35,6 @@ void PTParameterExpression::dump(int indent, std::ostream& os) const {
 }
 
 
-PTParameters::PTParameters() {
-}
-
-PTParameters::PTParameters(std::vector<PTParameterValue>&& pv, std::vector<PTParameterExpression>&& pe) 
-    : values_(std::move(pv)), expressions_(std::move(pe)) {
-}
-
 void PTParameters::add(PTParameterValue&& v) {
     values_.push_back(std::move(v));
 }
@@ -103,13 +96,6 @@ std::ostream& operator<<(std::ostream& os, const PTParameters& obj) {
     return os;
 }
 
-PTModel::PTModel() {
-}
-
-PTModel::PTModel(const Loc& l, Id name, Id device) 
-    : loc(l), modelName(name), deviceName(device) {
-}
-
 void PTModel::add(PTParameters&& par) {
     parameters_.add(std::move(par));
 }
@@ -121,13 +107,6 @@ void PTModel::dump(int indent, std::ostream& os) const {
 }
 
 
-PTInstance::PTInstance() {
-}
-
-PTInstance::PTInstance(const Loc& l, Id name, Id master, PTIdentifierList&& conns, PTParameters&& params) 
-    : loc(l), instanceName_(name), masterName_(master), connections_(std::move(conns)), parameters_(std::move(params)) {
-}
-
 void PTInstance::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << (instanceName_) << " (" << connections_ << ") ";
@@ -135,10 +114,7 @@ void PTInstance::dump(int indent, std::ostream& os) const {
 }
 
 
-PTBlockSequence::PTBlockSequence() {
-}
-
-void PTBlockSequence::add(const Loc& l, Rpn&& cond, PTBlock&& block) {
+void PTBlockSequence::add(Rpn&& cond, PTBlock&& block, const Loc& l) {
     entries_.push_back(std::move(std::make_tuple(l, std::move(cond), std::move(block))));
 }
 
@@ -162,9 +138,6 @@ void PTBlockSequence::dump(int indent, std::ostream& os) const {
     os << pfx << "@end\n";
 }
 
-
-PTBlock::PTBlock() {
-}
 
 PTBlock& PTBlock::add(PTModel&& mod) {
     models_.push_back(std::move(mod));
@@ -198,13 +171,6 @@ void PTBlock::dump(int indent, std::ostream& os) const {
     }
 }
 
-
-PTSubcircuitDefinition::PTSubcircuitDefinition() {
-}
-
-PTSubcircuitDefinition::PTSubcircuitDefinition(const Loc& l, Id name, PTIdentifierList&& terms) 
-    : PTModel(l, name, "__hierarchical__"), terminals_(std::move(terms)) {
-}
 
 void PTSubcircuitDefinition::add(PTIdentifierList&& terms) {
     terminals_ = std::move(terms);
@@ -263,17 +229,6 @@ void PTSubcircuitDefinition::dump(int indent, std::ostream& os) const {
     os << "\n";
 }
 
-PTLoad::PTLoad() {
-}
-
-PTLoad::PTLoad(const Loc& l, const std::string& file)
-    : loc(l), file_(file) {
-}
-
-PTLoad::PTLoad(const Loc& l, const std::string& file, PTParameters&& par)
-    : loc(l), file_(file), parameters_(std::move(par)) {
-}
-
 void PTLoad::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << "load \"" << file_ << "\"";
@@ -296,9 +251,6 @@ std::ostream& operator<<(std::ostream& os, const PTSave& s) {
 }
 
 
-PTSaves::PTSaves() {
-}
-
 void PTSaves::add(PTSave&& s) {
     saves_.push_back(std::move(s));
 }
@@ -320,18 +272,12 @@ std::ostream& operator<<(std::ostream& os, const PTSaves& s) {
 }
 
 
-PTSweep::PTSweep(const Loc& l, Id name, PTParameters&& par) : loc(l), name_(name), parameters_(std::move(par)) {
-}
-
 std::ostream& operator<<(std::ostream& os, const PTSweep& s) {
     os << "sweep " << std::string(s.name_) << " " << s.parameters_;
     
     return os;
 }
 
-
-PTSweeps::PTSweeps() {
-}
 
 void PTSweeps::add(PTSweep&& s) {
     sweeps_.push_back(std::move(s));
@@ -344,13 +290,6 @@ void PTSweeps::dump(int indent, std::ostream& os) const {
     }
 }
 
-
-PTAnalysis::PTAnalysis() {
-}
-
-PTAnalysis::PTAnalysis(const Loc& l, Id name, Id typeName) 
-    : loc(l), name_(name), typeName_(typeName) {
-}
 
 PTAnalysis& PTAnalysis::add(PTParameters&& par) {
     parameters_.add(std::move(par));
@@ -373,15 +312,6 @@ void PTAnalysis::dump(int indent, std::ostream& os) const {
     os << parameters_ << "\n";
 }
 
-
-ParserTables::ParserTables() {
-}
-
-ParserTables::ParserTables(const std::string& title) : title_(title) {
-}
-
-ParserTables::~ParserTables() {
-}
 
 ParserTables& ParserTables::setTitle(const std::string t) {
     title_ = t;

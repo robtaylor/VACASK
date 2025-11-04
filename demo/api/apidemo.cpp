@@ -4,13 +4,13 @@
 #include "circuit.h"
 #include "an.h"
 #include "processutils.h"
+#include "libplatform.h"
 
 
 using namespace sim;
 
 // TODO: 
 //   Common linking into executable for all binaries
-//   API functions without Loc
 //   API functions for chaining, i.e. add()
 //   Move parser in lib
 //   String parsing into 
@@ -22,7 +22,7 @@ int main() {
     // Path to staged Python libraries
     std::string pythonLibraryPath = "../../lib/vacask/python";
     // Python binary name
-    std::string pythonBinary = "python3";
+    std::string pythonBinary = findPythonExecutable();
 
     // Status variable
     Status s;
@@ -36,36 +36,33 @@ int main() {
     // Parser tables
     ParserTables tab("RC transient");
 
-    // No location, we are not parsing an input file or a string
-    auto nl = Loc::bad;
-
     // Title, loads, default ground (0)
     tab
-        .addLoad(PTLoad(nl, "resistor.osdi"))
-        .addLoad(PTLoad(nl, "capacitor.osdi"))
+        .addLoad(PTLoad("resistor.osdi"))
+        .addLoad(PTLoad("capacitor.osdi"))
         .defaultGround();
 
     // Toplevel subcircuit definition named __topdef__, no terminals
-    auto toplevel = PTSubcircuitDefinition(nl, "__topdef__", {});
+    auto toplevel = PTSubcircuitDefinition("__topdef__", {});
     // Get root block, add models and instances
     toplevel.root()
         // Resistor model res, capacitor model cap, voltage source model vsrc
-        .add(PTModel(nl, "res", "resistor"))
-        .add(PTModel(nl, "cap", "capacitor"))
-        .add(PTModel(nl, "vsrc", "vsource"))
+        .add(PTModel("res", "resistor"))
+        .add(PTModel("cap", "capacitor"))
+        .add(PTModel("vsrc", "vsource"))
         // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
-        .add(PTInstance(nl, "r1", "res", {"1", "2"}, PTParameters(PVv( PV{nl, "r", 1000} ), {})))
+        .add(PTInstance("r1", "res", {"1", "2"}, PTParameters(PVv( PV{"r", 1000} ), {})))
         // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
-        .add(PTInstance(nl, "c1", "cap", {"2", "0"}, PTParameters(PVv( PV{nl, "c", 1e-6} ), {})))
+        .add(PTInstance("c1", "cap", {"2", "0"}, PTParameters(PVv( PV{"c", 1e-6} ), {})))
         // Pulse source
-        .add(PTInstance(nl, "v1", "vsrc", {"1", "0"}, PTParameters(PVv( 
-            PV{nl, "type", "pulse"}, 
-            PV{nl, "val0", 0}, 
-            PV{nl, "val1", 5}, 
-            PV{nl, "delay", 1e-3}, 
-            PV{nl, "rise", 1e-6}, 
-            PV{nl, "fall", 1e-6}, 
-            PV{nl, "width", 4e-3} 
+        .add(PTInstance("v1", "vsrc", {"1", "0"}, PTParameters(PVv( 
+            PV{"type", "pulse"}, 
+            PV{"val0", 0}, 
+            PV{"val1", 5}, 
+            PV{"delay", 1e-3}, 
+            PV{"rise", 1e-6}, 
+            PV{"fall", 1e-6}, 
+            PV{"width", 4e-3} 
         ), {})));
 
     // Move toplevel subcircuit definition into ParserTables as default subdef
@@ -93,10 +90,10 @@ int main() {
     cir.dumpHierarchy(0, Simulator::out());
 
     // Analysis description
-    auto tranDesc = PTAnalysis(nl, "tran1", "tran");
+    auto tranDesc = PTAnalysis("tran1", "tran");
     tranDesc.add(PTParameters(PVv(
-        PV{nl, "step", 1e-6}, 
-        PV(nl, "stop", 10e-3)
+        PV{"step", 1e-6}, 
+        PV("stop", 10e-3)
     ), {}));
 
     // Analysis object, no saves, no options map (options that are given as parameterized expressions)

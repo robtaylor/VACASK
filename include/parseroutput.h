@@ -48,7 +48,7 @@ std::ostream& operator<<(std::ostream& os, const PTIdentifierList& obj);
 // A single parameter with name identifier and given Value
 class PTParameterValue {
 public:
-    PTParameterValue(const Loc& l, const Id ident, Value&& value) : loc_(l), id_(ident), val_(std::move(value)) {};
+    PTParameterValue(const Id ident, Value&& value, const Loc& l=Loc::bad) : loc_(l), id_(ident), val_(std::move(value)) {};
 
     PTParameterValue           (const PTParameterValue&)  = delete;
     PTParameterValue           (      PTParameterValue&&) = default;
@@ -70,7 +70,7 @@ private:
 // A single parameter with name identifier and given Expression
 class PTParameterExpression {
 public:
-    PTParameterExpression(const Loc& l, const Id ident, Rpn&& expr) : loc_(l), id_(ident), rpn_(std::move(expr)) {};
+    PTParameterExpression(const Id ident, Rpn&& expr, const Loc& l=Loc::bad) : loc_(l), id_(ident), rpn_(std::move(expr)) {};
 
     PTParameterExpression           (const PTParameterExpression&)  = delete;
     PTParameterExpression           (      PTParameterExpression&&) = default;
@@ -93,8 +93,9 @@ private:
 // Parameters (constants and expressions) for instances, models, and subcircuit definitions
 class PTParameters {
 public:
-    PTParameters();
-    PTParameters(std::vector<PTParameterValue>&& pv, std::vector<PTParameterExpression>&& pe);
+    PTParameters() {};
+    PTParameters(std::vector<PTParameterValue>&& pv, std::vector<PTParameterExpression>&& pe)
+        : values_(std::move(pv)), expressions_(std::move(pe)) {};
 
     PTParameters           (const PTParameters&)  = delete;
     PTParameters           (      PTParameters&&) = default;
@@ -143,8 +144,9 @@ using PTParameterMap = std::unordered_map<Id, PTValueOrExpression>;
 
 class PTModel {
 public:
-    PTModel();
-    PTModel(const Loc& l, Id name, Id device);
+    PTModel() {};
+    PTModel(Id name, Id device, const Loc& l=Loc::bad)
+        : loc(l), modelName(name), deviceName(device) {};
 
     PTModel           (const PTModel&)  = delete;
     PTModel           (      PTModel&&) = default;
@@ -171,8 +173,9 @@ protected:
 
 class PTInstance {
 public:
-    PTInstance();
-    PTInstance(const Loc& l, Id name, Id master, PTIdentifierList&& terms, PTParameters&& params); 
+    PTInstance() {};
+    PTInstance(Id name, Id master, PTIdentifierList&& terms, PTParameters&& params, const Loc& l=Loc::bad)
+        : loc(l), instanceName_(name), masterName_(master), connections_(std::move(terms)), parameters_(std::move(params)) {};
 
     PTInstance           (const PTInstance&)  = delete;
     PTInstance           (      PTInstance&&) = default;
@@ -206,7 +209,7 @@ class PTBlockSequence;
 // A single netlist block comprising models, instances, and block sequences
 class PTBlock {
 public:
-    PTBlock();
+    PTBlock() {};
     
     PTBlock           (const PTBlock&)  = delete;
     PTBlock           (      PTBlock&&) = default;
@@ -239,7 +242,7 @@ typedef std::tuple<Loc, Rpn, PTBlock> PTBlockSequenceEntry;
 
 class PTBlockSequence {
 public:
-    PTBlockSequence();
+    PTBlockSequence() {};
     
     PTBlockSequence           (const PTBlockSequence&)  = delete;
     PTBlockSequence           (      PTBlockSequence&&) = default;
@@ -248,7 +251,7 @@ public:
 
     const std::vector<PTBlockSequenceEntry>& entries() const { return entries_; };
 
-    void add(const Loc& l, Rpn&& cond, PTBlock&& block);
+    void add(Rpn&& cond, PTBlock&& block, const Loc& l=Loc::bad);
 
     PTBlock& back() { return std::get<2>(entries_.back()); }; 
 
@@ -261,8 +264,9 @@ private:
 
 class PTSubcircuitDefinition : public PTModel {
 public:
-    PTSubcircuitDefinition();
-    PTSubcircuitDefinition(const Loc& l, Id name, PTIdentifierList&& terms);
+    PTSubcircuitDefinition() {};
+    PTSubcircuitDefinition(Id name, PTIdentifierList&& terms, const Loc& l=Loc::bad)
+        : PTModel(name, "__hierarchical__", l), terminals_(std::move(terms)) {};
 
     PTSubcircuitDefinition           (const PTSubcircuitDefinition&)  = delete;
     PTSubcircuitDefinition           (      PTSubcircuitDefinition&&) = default;
@@ -292,9 +296,11 @@ private:
 
 class PTLoad {
 public:
-    PTLoad();
-    PTLoad(const Loc& l, const std::string& file);
-    PTLoad(const Loc& l, const std::string& file, PTParameters&& par);
+    PTLoad() {};
+    PTLoad(const std::string& file, const Loc& l=Loc::bad)
+        : loc(l), file_(file) {};
+    PTLoad(const std::string& file, PTParameters&& par, const Loc& l=Loc::bad)
+        : loc(l), file_(file), parameters_(std::move(par)) {};
     
     PTLoad           (const PTLoad&)  = delete;
     PTLoad           (      PTLoad&&) = default;
@@ -318,7 +324,9 @@ private:
 class PTSave {
 public:
     PTSave() {};
-    PTSave(const Loc& l, const Id tname, const Id id1=Id(), const Id id2=Id()) : loc(l), typeName_(tname) { id[0] = id1; id[1] = id2; };
+    PTSave(const Id tname, const Loc& l=Loc::bad) : loc(l), typeName_(tname) { id[0] = Id(); id[1] = Id(); };
+    PTSave(const Id tname, const Id id1=Id(), const Loc& l=Loc::bad) : loc(l), typeName_(tname) { id[0] = id1; id[1] = Id(); };
+    PTSave(const Id tname, const Id id1=Id(), const Id id2=Id(), const Loc& l=Loc::bad) : loc(l), typeName_(tname) { id[0] = id1; id[1] = id2; };
 
     PTSave           (const PTSave&)  = delete;
     PTSave           (      PTSave&&) = default;
@@ -342,7 +350,7 @@ private:
 
 class PTSaves {
 public:
-    PTSaves();
+    PTSaves() {};
     
     PTSaves           (const PTSaves&)  = delete;
     PTSaves           (      PTSaves&&) = default;
@@ -366,7 +374,8 @@ using PTSavesVector = std::vector<PTSaves*>;
 
 class PTSweep {
 public:
-    PTSweep(const Loc& l, Id name, PTParameters&& par);
+    PTSweep(Id name, PTParameters&& par, const Loc& l=Loc::bad)
+         : loc(l), name_(name), parameters_(std::move(par)) {};
 
     PTSweep           (const PTSweep&)  = delete;
     PTSweep           (      PTSweep&&) = default;
@@ -389,7 +398,7 @@ private:
 
 class PTSweeps {
 public:
-    PTSweeps();
+    PTSweeps() {};
 
     PTSweeps           (const PTSweeps&)  = delete;
     PTSweeps           (      PTSweeps&&) = default;
@@ -408,8 +417,9 @@ private:
 
 class PTAnalysis {
 public:
-    PTAnalysis();
-    PTAnalysis(const Loc& l, Id name, Id typeName);
+    PTAnalysis() {};
+    PTAnalysis(Id name, Id typeName, const Loc& l=Loc::bad)
+        : loc(l), name_(name), typeName_(typeName) {};
 
     PTAnalysis           (const PTAnalysis&)  = delete;
     PTAnalysis           (      PTAnalysis&&) = default;
@@ -439,10 +449,9 @@ private:
 // Top level parser tables structure
 class ParserTables {
 public:
-    ParserTables();
-    ParserTables(const std::string& title);
-    ~ParserTables();
-
+    ParserTables() {};
+    ParserTables(const std::string& title) : title_(title) {};
+    
     ParserTables           (const ParserTables&)  = delete;
     ParserTables           (      ParserTables&&) = default;
     ParserTables& operator=(const ParserTables&)  = delete;
