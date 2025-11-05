@@ -446,6 +446,69 @@ private:
     Loc loc;
 };
 
+// Embedded files
+class PTEmbed {
+public:
+    PTEmbed() {};
+    PTEmbed(const Loc& l, std::string&& filename, std::string&& contents)
+        : loc_(l), filename_(std::move(filename)), contents_(std::move(contents)) {};
+    
+    PTEmbed           (const PTEmbed&)  = delete;
+    PTEmbed           (      PTEmbed&&) = default;
+    PTEmbed& operator=(const PTEmbed&)  = delete;
+    PTEmbed& operator=(      PTEmbed&&) = default;
+
+    Loc location() const { return loc_; };
+    const std::string& filename() const { return filename_; }; 
+    const std::string& contents() const { return contents_; }; 
+
+    friend std::ostream& operator<<(std::ostream& os, const PTEmbed& e);
+
+private:
+    Loc loc_;
+    std::string filename_;
+    std::string contents_;
+};
+
+// Control block commands
+class PTCommand {
+public: 
+    PTCommand() {};
+    PTCommand(const Loc& l, Id name) : loc_(l), name_(name) {};
+    
+    PTCommand           (const PTCommand&)  = delete;
+    PTCommand           (      PTCommand&&) = default;
+    PTCommand& operator=(const PTCommand&)  = delete;
+    PTCommand& operator=(      PTCommand&&) = default;
+
+    void add(PTIdentifierList&& kw);
+    void add(PTParameters&& args);
+    void add(std::vector<Rpn>&& exprs);
+    void add(PTSaves&& s);
+
+    Loc location() const { return loc_; };
+    Id name() const { return name_; };
+    const PTIdentifierList& keywords() const { return keywords_; }; 
+    const std::vector<Rpn>& expressions() const { return expressions_; }; 
+    const PTParameters& args() const { return args_; }; 
+    const PTSaves& saves() const { return saves_; };
+    PTSaves& saves() { return saves_; };
+    
+    friend std::ostream& operator<<(std::ostream& os, const PTCommand& c);
+
+private:
+    Loc loc_;
+    Id name_;
+    std::vector<Rpn> expressions_;
+    PTIdentifierList keywords_;
+    PTParameters args_;
+    PTSaves saves_;
+};
+
+typedef std::variant<PTAnalysis, PTCommand> ControlEntry;
+typedef std::vector<ControlEntry> PTControl;
+
+
 // Top level parser tables structure
 class ParserTables {
 public:
@@ -474,6 +537,18 @@ public:
     
     ParserTables& defaultGround();
 
+    // Embedded files
+    void addEmbed(PTEmbed&& e);
+    
+    // Control block
+    void addCommand(PTCommand&& c);
+    void addCommand(PTAnalysis&& a);
+    
+    // Embedded files and control block retrieval
+    const PTControl& control() const { return control_; }; 
+    PTControl& control() { return control_; }; 
+    const std::vector<PTEmbed>& embed() const { return embed_; };
+    
     // Post-parse checks
     bool verify(Status& s=Status::ignore) const;
 
@@ -490,6 +565,8 @@ private:
     PTIdentifierList globalNodes_; // Order is not important
     PTIdentifierList groundNodes_; // Order matters, first ground node is the name of the ground node, rest are just aliases
     std::vector<PTLoad> loads_;  
+    std::vector<PTEmbed> embed_;
+    PTControl control_;
 };
 
 // Helpers for API users
@@ -508,6 +585,13 @@ using PV = PTParameterValue;
 template<class... Args>
 std::vector<PV> PVv(Args&&... args) {
     return make_vector<PV>(std::forward<Args>(args)...);
+}
+
+// Parameter expression vector constructor
+using PE = PTParameterExpression;
+template<class... Args>
+std::vector<PE> PEv(Args&&... args) {
+    return make_vector<PE>(std::forward<Args>(args)...);
 }
 
 }

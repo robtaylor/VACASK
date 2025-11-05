@@ -37,7 +37,6 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/osdimodel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/osdiinstance.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/parseroutput.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include/parserextras.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/location.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/dflscanner.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/parser.h
@@ -180,7 +179,6 @@ add_library(simlib STATIC
     "${BISON_dflparser_OUTPUTS}"
     "${FLEX_dfllexer_OUTPUTS}"
     parser.cpp
-    parserextras.cpp 
     
 )
 target_include_directories(simlib PUBLIC 

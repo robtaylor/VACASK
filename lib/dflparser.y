@@ -27,7 +27,6 @@
 // #define YYDEBUG 1
 #include "value.h"
 #include "parseroutput.h"
-#include "parserextras.h"
 #include "rpneval.h"
 #include "rpnexpr.h"
 #include "location.h"
@@ -86,7 +85,8 @@ typedef struct subckt {
 %parse-param {NAMESPACE::dflparse::Scanner& scanner}
 // %parse-param {ParserDriver& driver}
 %parse-param {ParserTables& tables}
-%parse-param {ParserExtras& extras}
+%parse-param {Rpn* expressionPtr}
+%parse-param {PTParameters* parametersPtr}
 %parse-param {RpnEvaluator& evaluator}
 %parse-param {Status &status}
 
@@ -180,6 +180,7 @@ typedef struct subckt {
 
 %token               INNETLIST    "input netlist"
 %token               INEXPR       "input expression"
+%token               INPARAMS     "input parameters"
 
 %token               BLKIF        "@if"
 %token               BLKELSEIF    "@elseif"
@@ -244,12 +245,17 @@ output
     tables.addDefaultSubDef(std::move($2.def));
     tables.defaultGround();
     // Verify tables
-    if (!(tables.verify(status) && extras.verify(status))) {
+    if (!(tables.verify(status))) {
         YYERROR;
     }
   }
   | INEXPR expr END {
-    extras.setExpr(std::move($2));
+    // Parse an expression
+    *expressionPtr = std::move($2);
+  }
+  | INPARAMS opt_broken_parameter_list END {
+    // Parse a parameters list
+    *parametersPtr = std::move($2.params);
   }
 
 // Toplevel netlist and subcircuit definition
@@ -367,7 +373,7 @@ subckt_build
         YYERROR;
     }
     $$ = std::move($1);
-    extras.addEmbed(std::move($2));
+    tables.addEmbed(std::move($2));
   }
   | subckt_build control_block {
     // control block, allow this for toplevel definition only
@@ -1039,14 +1045,14 @@ control_block_build
     PTSaves s;
     s.add(std::move($3));
     cmd.add(std::move(s));
-    extras.addCommand(std::move(cmd));
+    tables.addCommand(std::move(cmd));
   }
   | control_block_build analysis NEWLINE {
     // Analysis also has a special syntax. 
-    extras.addCommand(std::move($2));
+    tables.addCommand(std::move($2));
   } 
   | control_block_build command NEWLINE {
-    extras.addCommand(std::move($2));
+    tables.addCommand(std::move($2));
   }
   
 control_block
@@ -1056,7 +1062,7 @@ control_block
 %%
 
 namespace NAMESPACE::dflparse {
-  
+
 // Error reporting
 void Parser::error( const Parser::location_type &l, const std::string &err_message ) {
    status.set(Status::Syntax, ("Parser "+err_message));

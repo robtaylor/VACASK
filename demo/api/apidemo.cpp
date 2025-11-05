@@ -6,6 +6,7 @@
 #include "an.h"
 #include "processutils.h"
 #include "libplatform.h"
+#include "parser.h"
 
 
 using namespace sim;
@@ -13,10 +14,10 @@ using namespace sim;
 // TODO: 
 //   Common linking into executable for all binaries
 //   API functions for chaining, i.e. add()
-//   Move parser in lib
 //   String parsing into 
 //     RPN
 //     PTParameters
+//   PTParameters with only one argument (no expressions)
 int main() {
     // Path to staged models (osdi files)
     std::string modulePath = "../../lib/vacask/mod";
@@ -37,12 +38,15 @@ int main() {
     // Parser tables
     ParserTables tab("RC transient");
 
+    // Parser
+    Parser p(tab);
+
     // Title, loads, default ground (0)
     tab
         .addLoad(PTLoad("resistor.osdi"))
         .addLoad(PTLoad("capacitor.osdi"))
         .defaultGround();
-
+    
     // Toplevel subcircuit definition named __topdef__, no terminals
     auto toplevel = PTSubcircuitDefinition("__topdef__", {});
     // Get root block, add models and instances
@@ -52,7 +56,11 @@ int main() {
         .add(PTModel("cap", "capacitor"))
         .add(PTModel("vsrc", "vsource"))
         // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
-        .add(PTInstance("r1", "res", {"1", "2"}, PTParameters(PVv( PV{"r", 1000} ), {})))
+        .add(PTInstance("r1", "res", {"1", "2"}, PTParameters(PVv( PV{"r", 1000} ), 
+            PEv( 
+                PE{"m", p.parseExpression("a*b")} 
+            ) 
+        )))
         // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
         .add(PTInstance("c1", "cap", {"2", "0"}, PTParameters(PVv( PV{"c", 1e-6} ), {})))
         // Pulse source

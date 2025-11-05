@@ -28,9 +28,9 @@ static Id idChanges = Id::createStatic("changes");
 static const std::string defaultTopDefName = "__topdef__";
 static const std::string defaultTopInstName = "__topinst__";
 
-CommandInterpreter::CommandInterpreter(ParserTables& tables, ParserExtras& extras, Circuit& circuit) 
+CommandInterpreter::CommandInterpreter(ParserTables& tables, PTControl& control, Circuit& circuit) 
     : printProgress_(true), runPostprocess_(true), 
-      abortOnMatch(false), tables_(tables), extras_(extras), circuit_(circuit) {
+      abortOnMatch(false), tables_(tables), control_(control), circuit_(circuit) {
     abortCommands.insert(idAnalysis);
     clearVariables();
 }
@@ -129,8 +129,8 @@ bool CommandInterpreter::elaborate(const std::vector<Id>& names, const std::stri
     return circuit_.elaborate(names, topDefName, topInstName, &opt.core(), nullptr, s); 
 }
 
-bool CommandInterpreter::run(ParserTables& tab, ParserExtras& extras, Status& s) {
-    for(auto& entry : extras.control()) {
+bool CommandInterpreter::run(Status& s) {
+    for(auto& entry : control_) {
         if (std::holds_alternative<PTAnalysis>(entry)) {
             if (!minimalElaboration(s)) {
                 return false;

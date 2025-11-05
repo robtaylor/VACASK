@@ -144,7 +144,11 @@ after INCEND we have
                 if (inputType == InputNetlist) {
                     return(token::INNETLIST);
                 } else if (inputType == InputExpression) {
+                    BEGIN(BODY);
                     return(token::INEXPR);
+                } else if (inputType == InputParameters) {
+                    BEGIN(BODY);
+                    return(token::INPARAMS);
                 }
             }
 %}

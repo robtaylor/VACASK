@@ -144,8 +144,7 @@ int main(int argc, char**argv) {
 
     // Load file passed as argument
     ParserTables tab;
-    ParserExtras extras;
-
+    
     // Candidate config files
     std::vector<std::string> configFiles = {
         Platform::systemConfig(), 
@@ -238,14 +237,14 @@ int main(int argc, char**argv) {
     }
 
     // Parser 
-    Parser parser;
+    Parser parser(tab);
 
-    if (!parser.parseNetlistFile(stackPosition, tab, extras, status)) {
+    if (!parser.parseNetlistFile(stackPosition, status)) {
         Simulator::err() << status.message() << "\n";
         return 1;
     }
 
-    if (!tab.verify(status) || !extras.verify(status)) {
+    if (!tab.verify(status)) {
         Simulator::err() << status.message() << "\n";
         return 1;
     }
@@ -257,13 +256,12 @@ int main(int argc, char**argv) {
     if (dumpTables) {
         Simulator::dbg() << "---- Parser tables ----\n";
         tab.dump(0, Simulator::dbg());
-        extras.dump(0, Simulator::dbg()); 
         Simulator::dbg() << "---- Parser tables end ----\n\n";
     }
 
     // Dump embedded files
     if (dumpEmbed) {
-        for(auto& e : extras.embed()) {
+        for(auto& e : tab.embed()) {
             // Get canonical path of file with the embed directive
             auto [fs, pos, line, offset] = e.location().data();
             auto timeRefCanonicalPath = fs->canonicalName(pos);
@@ -314,12 +312,12 @@ int main(int argc, char**argv) {
     }
     
     // Command interpreter
-    CommandInterpreter interp(tab, extras, cirObj);
+    CommandInterpreter interp(tab, tab.control(), cirObj);
     interp.setPrintProgress(progress),
     interp.setRunPostprocess(runPostprocess);
     
     // Run iterpreter
-    if (!interp.run(tab, extras, status)) {
+    if (!interp.run(status)) {
         Simulator::err() << status.message() << "\n";
         return 1;
     }

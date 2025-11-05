@@ -6,7 +6,6 @@
 #include <variant>
 #include <unordered_map>
 #include "parseroutput.h"
-#include "parserextras.h"
 #include "circuit.h"
 #include "status.h"
 #include "common.h"
@@ -33,7 +32,7 @@ public:
         CommandFuncPtr func;
     } CmdDesc;
 
-    CommandInterpreter(ParserTables& tables, ParserExtras& extras, Circuit& circuit);
+    CommandInterpreter(ParserTables& tables, PTControl& control, Circuit& circuit);
     ~CommandInterpreter();
 
     CommandInterpreter           (const CommandInterpreter&)  = delete;
@@ -65,7 +64,7 @@ public:
     // Elaborate circuit from given toplevel definitions
     bool elaborate(const std::vector<Id>& names, const std::string& topDefName, const std::string& topInstName, Status& s=Status::ignore);
     
-    bool run(ParserTables& tab, ParserExtras& extras, Status& s=Status::ignore);
+    bool run(Status& s=Status::ignore);
 
     bool clearVariables(Status& s=Status::ignore);
     Circuit& circuit() { return circuit_; }; 
@@ -92,7 +91,7 @@ private:
     static std::unordered_map<Id, CmdDesc> commandDescriptors;
 
     ParserTables& tables_;
-    ParserExtras& extras_;
+    PTControl& control_;
     Circuit& circuit_;
 };
 

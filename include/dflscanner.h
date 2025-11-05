@@ -19,7 +19,7 @@ namespace NAMESPACE::dflparse {
 
 class Scanner : public yyFlexLexer{
 public:   
-    typedef enum InputType { InputNetlist, InputExpression } InputType; 
+    typedef enum InputType { InputNetlist, InputExpression, InputParameters } InputType; 
 
     Scanner(std::istream* in, ParserTables& tab, InputType inputType, Status& s=Status::ignore) 
         : yyFlexLexer(in), tables(tab), inputType(inputType), atBeginning(true), fileStackPosition (0), status_(s), 
