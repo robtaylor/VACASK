@@ -674,6 +674,9 @@ public:
     // Post-parse checks
     bool verify(Status& s=Status::ignore) const;
 
+    // Write embedded files
+    bool writeEmbedded(int debug=0, Status& s=Status::ignore);
+
     void dump(int indent, std::ostream& os) const;
 
 private:
