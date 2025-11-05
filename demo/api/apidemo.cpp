@@ -9,13 +9,12 @@ using namespace sim;
 
 // TODO: 
 //   Validation
-//   embed dumping in parseroutput.cpp, track source file
-//   Common linking into executable for all binaries
+//   track source file
+//   Sweep demo
 //   Subcircuit demo
 //   Conditional block demo
 //   Circuit variables demo
 //   Options expressions demo
-//   Sweep demo
 
 // Circuit building and analysis demo (with constant options and saves)
 int main() {
@@ -47,29 +46,29 @@ int main() {
         .add(PTLoad("capacitor.osdi"))
         .defaultGround()
         .setDefaultSubDef(
-        // Toplevel subcircuit definition named __topdef__, no terminals
-        PTSubcircuitDefinition("__topdef__", {})
-        .add(PTParameters(PVv( PV{"c0", 1e-6}, PV{"v0", 5} ), {}))
-        // Resistor model res, capacitor model cap, voltage source model vsrc
-        .add(PTModel("res", "resistor"))
-        .add(PTModel("cap", "capacitor"))
-        .add(PTModel("vsrc", "vsource"))
-        // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
-        .add(PTInstance("r1", "res", {"1", "2"})
-            // Add constant parameter
-            .add(PV{"r", 1000})
-        )
-        // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
-        .add(PTInstance("c1", "cap", {"2", "0"})
-            // Add parameter defined with an expression
-            .add(PE{"c", p.parseExpression("2*c0")})
-        )
-        // Pulse source
-        .add(PTInstance("v1", "vsrc", {"1", "0"})
-            // Add parsed parameters
-            .add(p.parseParameters("type=\"pulse\" val0=0 val1=v0 delay=1m rise=1u fall=1u width=4m"))
-        )
-    );
+            // Toplevel subcircuit definition named __topdef__, no terminals
+            PTSubcircuitDefinition("__topdef__", {})
+            .add(PTParameters(PVv( PV{"c0", 1e-6}, PV{"v0", 5} ), {}))
+            // Resistor model res, capacitor model cap, voltage source model vsrc
+            .add(PTModel("res", "resistor"))
+            .add(PTModel("cap", "capacitor"))
+            .add(PTModel("vsrc", "vsource"))
+            // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
+            .add(PTInstance("r1", "res", {"1", "2"})
+                // Add constant parameter
+                .add(PV{"r", 1000})
+            )
+            // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
+            .add(PTInstance("c1", "cap", {"2", "0"})
+                // Add parameter defined with an expression
+                .add(PE{"c", p.parseExpression("2*c0")})
+            )
+            // Pulse source
+            .add(PTInstance("v1", "vsrc", {"1", "0"})
+                // Add parsed parameters
+                .add(p.parseParameters("type=\"pulse\" val0=0 val1=v0 delay=1m rise=1u fall=1u width=4m"))
+            )
+        );
 
     // Dump tables for debugging
     tab.dump(0, Simulator::out());

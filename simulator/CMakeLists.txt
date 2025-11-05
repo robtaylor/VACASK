@@ -20,38 +20,14 @@ target_compile_definitions(sim PUBLIC PROGRAM_HOMEPAGE="${PROGRAM_HOMEPAGE}")
 add_dependencies(sim simlib)
 
 if (${SIM_PLATFORM} STREQUAL "Windows")
-    link_directories(${SuiteSparse_DIR}/lib)
     target_link_options(sim PUBLIC -static)
-    target_link_libraries(
-        sim 
-        simlib
-        Boost::filesystem
-        Boost::process
-        Boost::system
-        ${SuiteSparse_DIR}/lib/libklu.a
-        ${SuiteSparse_DIR}/lib/libamd.a
-        ${SuiteSparse_DIR}/lib/libcamd.a
-        ${SuiteSparse_DIR}/lib/libcolamd.a
-        ${SuiteSparse_DIR}/lib/libccolamd.a
-        ${SuiteSparse_DIR}/lib/libbtf.a
-        ${SuiteSparse_DIR}/lib/libcholmod.a
-        ${SuiteSparse_DIR}/lib/libklu_cholmod.a
-        ${SuiteSparse_DIR}/lib/libsuitesparseconfig.a
-        ${SuiteSparse_DIR}/lib/libopenblas.a
-        m dl gomp wsock32
-    )
-else()
-    # target_link_options(sim PUBLIC -static-libgcc -static-libstdc++)
-    target_link_libraries(
-        sim 
-        simlib 
-        dl 
-        # -Wl,-Bstatic 
-        m klu amd camd colamd ccolamd btf cholmod suitesparseconfig 
-        boost_system boost_filesystem boost_process
-        
-    )
 endif()
+
+target_link_libraries(
+    sim 
+    simlib 
+    ${SIM_EXE_LIBRARIES}
+)
 
 # Stage openvaf compiler
 get_filename_component(openvaf_executable_name "${OPENVAF_COMPILER}" NAME)

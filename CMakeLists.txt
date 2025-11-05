@@ -215,7 +215,40 @@ add_compile_definitions("$<$<CONFIG:ReleaseProfile>:SIMPROFILE>")
 add_compile_definitions("$<$<CONFIG:DebugProfile>:SIMPROFILE>")
 add_compile_definitions("$<$<CONFIG:AsanDebug>:SIMDEBUG>")
 
+# Location of include files
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+# What to link with the object files to produce an executable
+if (${SIM_PLATFORM} STREQUAL "Windows")
+    link_directories(${SuiteSparse_DIR}/lib)
+    set(SIM_EXE_LIBRARIES
+            Boost::filesystem
+            Boost::process
+            Boost::system
+            ${SuiteSparse_DIR}/lib/libklu.a
+            ${SuiteSparse_DIR}/lib/libamd.a
+            ${SuiteSparse_DIR}/lib/libcamd.a
+            ${SuiteSparse_DIR}/lib/libcolamd.a
+            ${SuiteSparse_DIR}/lib/libccolamd.a
+            ${SuiteSparse_DIR}/lib/libbtf.a
+            ${SuiteSparse_DIR}/lib/libcholmod.a
+            ${SuiteSparse_DIR}/lib/libklu_cholmod.a
+            ${SuiteSparse_DIR}/lib/libsuitesparseconfig.a
+            ${SuiteSparse_DIR}/lib/libopenblas.a
+            m dl gomp wsock32
+        CACHE STRING "External libraries for creating an executable."
+        FORCE
+    )
+else()
+    set(SIM_EXE_LIBRARIES 
+            dl m klu amd camd colamd ccolamd btf cholmod suitesparseconfig 
+            boost_system boost_filesystem boost_process
+        CACHE STRING "External libraries for creating an executable."
+        FORCE
+    )
+    # -Wl,-Bstatic 
+endif()
+
 
 add_subdirectory(lib)
 add_subdirectory(simulator)
