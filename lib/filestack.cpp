@@ -67,6 +67,9 @@ FileStackFileIndex FileStack::addFile(
     }
     
     // If parent is not given and we have at least one file on the stack, signal an error
+    // This means that parsing a file must be done first
+    // Later one can only parse strings
+    // Maybe remove this limitation in the future
     if (parentId==badFileId && stack.size()>0)
         return badFileId;
 
@@ -141,9 +144,6 @@ FileStackFileIndex FileStack::addStringFile(const char* str, size_t n) {
         throw std::length_error("Too many files in a file stack.");
     }
     
-    if (stack.size()>0) {
-        return badFileId;
-    }
     stack.emplace_back(
         "<string input>", 
         "", 

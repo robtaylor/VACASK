@@ -36,13 +36,15 @@ public:
     Rpn parseExpression(const std::string& input, Status& s=Status::ignore);
     Rpn parseExpression(const std::string&& input, Status& s=Status::ignore);
 
-    bool parseParameters(const std::string& input, Status& s=Status::ignore);
-    bool parseParameters(const std::string&& input, Status& s=Status::ignore);
+    PTParameters parseParameters(const std::string& input, Status& s=Status::ignore);
+    PTParameters parseParameters(const std::string&& input, Status& s=Status::ignore);
 
 private:
-    bool netlistParseHelper(std::istream& stream, Status& s=Status::ignore);
+    bool netlistParseHelper(std::istream& stream, FileStackFileIndex pos, Status& s=Status::ignore);
 
-    bool exprParseHelper(std::istream& stream, Status& s=Status::ignore);
+    bool exprParseHelper(std::istream& stream, FileStackFileIndex pos, Status& s=Status::ignore);
+
+    bool parametersParseHelper(std::istream& stream, FileStackFileIndex pos, Status& s=Status::ignore);
 
     ParserTables& tab_;
     Rpn parsedExpression;

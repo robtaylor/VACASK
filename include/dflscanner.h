@@ -21,8 +21,8 @@ class Scanner : public yyFlexLexer{
 public:   
     typedef enum InputType { InputNetlist, InputExpression, InputParameters } InputType; 
 
-    Scanner(std::istream* in, ParserTables& tab, InputType inputType, Status& s=Status::ignore) 
-        : yyFlexLexer(in), tables(tab), inputType(inputType), atBeginning(true), fileStackPosition (0), status_(s), 
+    Scanner(std::istream* in, ParserTables& tab, InputType inputType, FileStackFileIndex fileIndex, Status& s=Status::ignore) 
+        : yyFlexLexer(in), tables(tab), inputType(inputType), atBeginning(true), fileStackPosition (fileIndex), status_(s), 
           inParen(0), inBracket(0), inControl(false) {};
     virtual ~Scanner() { cleanup(); };
 
@@ -76,7 +76,7 @@ private:
     // yyval ptr
     Parser::semantic_type *yylval = nullptr;
     ParserTables& tables;
-    int fileStackPosition;
+    FileStackFileIndex fileStackPosition;
     std::string sbuf;
     std::string marker;
     Position stringStart;

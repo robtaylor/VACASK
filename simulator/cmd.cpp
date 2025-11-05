@@ -304,11 +304,19 @@ template<typename T> bool evaluateExpressions(RpnEvaluator& e, const PTCommand& 
 
 void CommandInterpreter::dumpSaves(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');    
-    for(auto& it : commonSaves_) {
-        os << pfx;
-        for(auto& s : it->saves()) {
-            os << s << " ";
+    int cnt = 0;
+    for(auto&s : commonSaves_) {
+        if (cnt==0) {
+            os << pfx;
         }
+        os << s << " ";
+        cnt++;
+        if (cnt==10) {
+            os << "\n"; 
+            cnt = 0;
+        }
+    }
+    if (cnt==0 && commonSaves_.size()>0) {
         os << "\n"; 
     }
 }

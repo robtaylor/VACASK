@@ -43,7 +43,7 @@ public:
     virtual bool resolveOutputDescriptor(const OutputDescriptor& descr, Output::SourcesList& srcs, bool strict);
 
     // Sweep API
-    size_t sweepCount() const { return ptAnalysis.sweeps().data().size(); };
+    size_t sweepCount() const { return ptAnalysis.sweeps().size(); };
     bool updateSweeper(Status& s=Status::ignore);
     
     // Setup api

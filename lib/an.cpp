@@ -87,8 +87,8 @@ bool Analysis::addOutputDescriptors(Status& s) {
     // Add sweep variables
     auto nSweeps = sweepCount();
     for(decltype(nSweeps) i=0; i<nSweeps; i++) {
-        if (!addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, ptAnalysis.sweeps().data()[i].name(), i))) {
-            s.set(Status::Analysis, "Failed to add output descriptor for sweep variable '"+std::string(ptAnalysis.sweeps().data()[i].name())+"'.");
+        if (!addCommonOutputDescriptor(OutputDescriptor(OutdSweepvar, ptAnalysis.sweeps()[i].name(), i))) {
+            s.set(Status::Analysis, "Failed to add output descriptor for sweep variable '"+std::string(ptAnalysis.sweeps()[i].name())+"'.");
             return false;
         }
     }
@@ -101,22 +101,20 @@ bool Analysis::addOutputDescriptors(Status& s) {
     // Add saves
     bool strict;
     
-    // Add common saves from circuit, unknown saves are ignored, known ones are checked for syntax
+    // Add saves, unknown saves are ignored, known ones are checked for syntax
     strict = false;
     if (commonSaves) {
-        for(auto saves : *commonSaves) {
-            for (auto it = saves->saves().cbegin(); it != saves->saves().cend(); ++it) {
-                // Ignore failures, unless strict is true
-                Status saveSt;
-                auto ok = resolveSave(*it, strict, saveSt);
-                // Semantic error in save directive results in ok=false, it is always an error
-                // Failure to add a descriptor in strict mode results in ok=false and thus an error
-                // Unsupported descriptor type in strict mode results in ok=false and thus error
-                // Unsupported save directive is not an error unless in strict mode
-                if (strict && !ok) {
-                    s.set(saveSt);
-                    return false;
-                }
+        for(auto& save : *commonSaves) {
+            // Ignore failures, unless strict is true
+            Status saveSt;
+            auto ok = resolveSave(save, strict, saveSt);
+            // Semantic error in save directive results in ok=false, it is always an error
+            // Failure to add a descriptor in strict mode results in ok=false and thus an error
+            // Unsupported descriptor type in strict mode results in ok=false and thus error
+            // Unsupported save directive is not an error unless in strict mode
+            if (strict && !ok) {
+                s.set(saveSt);
+                return false;
             }
         }
     }
@@ -196,7 +194,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     // co_yield AnalysisState::Ready;
 
     // Do we have sweep(s)
-    if (ptAnalysis.sweeps().data().size()>0) {
+    if (ptAnalysis.sweeps().size()>0) {
         // Sweep required
 
         if (progressReporter && !debugMode) {
@@ -606,7 +604,7 @@ bool Analysis::finish(Status& s) {
     // Restore original parameter values (if stored), ignore Abort, Finish, Stop requests
     if (preSweepValuesStored) {
         Status tmps;
-        auto sptr = ptAnalysis.sweeps().data().size()>0 ? &sweeper : nullptr;
+        auto sptr = ptAnalysis.sweeps().size()>0 ? &sweeper : nullptr;
         auto [ok, hierarchyChanged, needsCoreRebuild] = circuit.elaborateChanges(
             commons, 
             sptr, ParameterSweeper::WriteValues::StoredState, 

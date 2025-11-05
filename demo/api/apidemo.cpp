@@ -1,23 +1,23 @@
-#include "sourceloc.h"
-#include "parseroutput.h"
-#include "simulator.h"
-#include "circuit.h"
-#include "openvafcomp.h"
-#include "an.h"
-#include "processutils.h"
 #include "libplatform.h"
+#include "simulator.h"
 #include "parser.h"
-
+#include "openvafcomp.h"
+#include "circuit.h"
+#include "processutils.h"
 
 using namespace sim;
 
 // TODO: 
+//   Validation
+//   embed dumping in parseroutput.cpp, track source file
 //   Common linking into executable for all binaries
-//   API functions for chaining, i.e. add()
-//   String parsing into 
-//     RPN
-//     PTParameters
-//   PTParameters with only one argument (no expressions)
+//   Subcircuit demo
+//   Conditional block demo
+//   Circuit variables demo
+//   Options expressions demo
+//   Sweep demo
+
+// Circuit building and analysis demo (with constant options and saves)
 int main() {
     // Path to staged models (osdi files)
     std::string modulePath = "../../lib/vacask/mod";
@@ -38,44 +38,38 @@ int main() {
     // Parser tables
     ParserTables tab("RC transient");
 
-    // Parser
+    // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
     // Title, loads, default ground (0)
     tab
-        .addLoad(PTLoad("resistor.osdi"))
-        .addLoad(PTLoad("capacitor.osdi"))
-        .defaultGround();
-    
-    // Toplevel subcircuit definition named __topdef__, no terminals
-    auto toplevel = PTSubcircuitDefinition("__topdef__", {});
-    // Get root block, add models and instances
-    toplevel.root()
+        .add(PTLoad("resistor.osdi"))
+        .add(PTLoad("capacitor.osdi"))
+        .defaultGround()
+        .setDefaultSubDef(
+        // Toplevel subcircuit definition named __topdef__, no terminals
+        PTSubcircuitDefinition("__topdef__", {})
+        .add(PTParameters(PVv( PV{"c0", 1e-6}, PV{"v0", 5} ), {}))
         // Resistor model res, capacitor model cap, voltage source model vsrc
         .add(PTModel("res", "resistor"))
         .add(PTModel("cap", "capacitor"))
         .add(PTModel("vsrc", "vsource"))
         // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
-        .add(PTInstance("r1", "res", {"1", "2"}, PTParameters(PVv( PV{"r", 1000} ), 
-            PEv( 
-                PE{"m", p.parseExpression("a*b")} 
-            ) 
-        )))
+        .add(PTInstance("r1", "res", {"1", "2"})
+            // Add constant parameter
+            .add(PV{"r", 1000})
+        )
         // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
-        .add(PTInstance("c1", "cap", {"2", "0"}, PTParameters(PVv( PV{"c", 1e-6} ), {})))
+        .add(PTInstance("c1", "cap", {"2", "0"})
+            // Add parameter defined with an expression
+            .add(PE{"c", p.parseExpression("2*c0")})
+        )
         // Pulse source
-        .add(PTInstance("v1", "vsrc", {"1", "0"}, PTParameters(PVv( 
-            PV{"type", "pulse"}, 
-            PV{"val0", 0}, 
-            PV{"val1", 5}, 
-            PV{"delay", 1e-3}, 
-            PV{"rise", 1e-6}, 
-            PV{"fall", 1e-6}, 
-            PV{"width", 4e-3} 
-        ), {})));
-
-    // Move toplevel subcircuit definition into ParserTables as default subdef
-    tab.addDefaultSubDef(std::move(toplevel));
+        .add(PTInstance("v1", "vsrc", {"1", "0"})
+            // Add parsed parameters
+            .add(p.parseParameters("type=\"pulse\" val0=0 val1=v0 delay=1m rise=1u fall=1u width=4m"))
+        )
+    );
 
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
@@ -91,7 +85,7 @@ int main() {
 
     // Elaborate it, just the default toplevel subcircuit. 
     // Use __topdef__ and __topinst__ as prefixes for toplevel subcircuit definition and instance names. 
-    // No options, do not collect device requests. 
+    // Do not collect device requests. 
     SimulatorOptions opt;
     opt.reltol = 1e-4;
     if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
@@ -109,13 +103,21 @@ int main() {
         PV("stop", 10e-3)
     ), {}));
 
-    // Analysis object, no saves, no options map (options that are given as parameterized expressions)
-    auto tran = Analysis::create(tranDesc, nullptr, nullptr, cir, s);
+    // Save directives
+    auto saves = PTSavesVector({
+        PTSave("default"),
+        PTSave("p", "r1", "i")
+    });
+
+    // Analysis object, no options map (options that are given as parameterized expressions)
+    auto tran = Analysis::create(tranDesc, &saves, nullptr, cir, s);
     if (!tran) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
+
+    // Run analysis
     auto [ok, canResume] = tran->run(s);
     if (!ok) {
         Simulator::err() << "Analysis failed.\n";
@@ -136,13 +138,17 @@ import matplotlib.pyplot as plt
 import sys
 
 tran1 = rawread('tran1.raw').get()
+print(tran1.names)
 fig1, ax1 = plt.subplots(1, 1, figsize=(6,4), dpi=100, constrained_layout=True)
 fig1.axes[0].plot(tran1["time"], tran1["2"], "r", marker=".")
 fig1.axes[0].plot(tran1["time"], tran1["1"], "b")
+fig1.axes[0].plot(tran1["time"], tran1["r1.i"]*1000, "--")
 
 plt.show()
 )script";
     file.close();
+
+    // Run postprocessing
     runProcess(pythonBinary, {"runme.py"}, &pythonLibraryPath, false, false);
 
     return 0;

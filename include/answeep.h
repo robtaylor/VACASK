@@ -162,7 +162,7 @@ public:
     enum class WriteValues { StoredState, Sweep };
     enum class ParameterFamily { Instance=1<<0, Model=1<<1, Option=1<<2, Variable=1<<3 };
     
-    ParameterSweeper(Circuit& circuit, const PTSweeps& ptSweeps);
+    ParameterSweeper(Circuit& circuit, const std::vector<PTSweep>& ptSweeps);
 
     // Setup sweeper (evaluate expressions, fill settings structures)
     bool setup(Status& s=Status::ignore);
@@ -210,7 +210,7 @@ public:
 
 private:
     Circuit& circuit;
-    const PTSweeps& ptSweeps;
+    const std::vector<PTSweep>& ptSweeps;
     std::vector<SweepSettings> settings;
     std::vector<ScalarSweep> scalarSweeps;
     std::vector<ParameterFamily> parameterFamily;

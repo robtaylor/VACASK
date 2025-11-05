@@ -49,7 +49,7 @@ public:
     bool runPostprocess() const { return runPostprocess_; }; 
 
     void clearSaves() { commonSaves_.clear(); };
-    void addSaves(PTSaves& s) { commonSaves_.push_back(&s); }; 
+    void addSaves(PTSaves& s) { commonSaves_.insert(commonSaves_.end(), s.saves().begin(), s.saves().end()); }; 
 
     void clearUserOptions() { userOptions_.clear(); };
     void addUserOption(const PTParameterValue& pv);

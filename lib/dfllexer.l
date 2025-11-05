@@ -759,7 +759,8 @@ after INCEND we have
             }
 
 <LINESTART,BODY><<EOF>> {
-                if (fileStackPosition>0) {
+                // If this file stack entry has a parent, then something is wrong
+                if (tables.fileStack().parentId(fileStackPosition)!=FileStack::badFileId) {
                     const std::string& tmp = tables.fileStack().sectionName(fileStackPosition);
                     if (tmp.size()>0) {
                         // Error, EOF within a section

@@ -201,13 +201,13 @@ template<> int Introspection<SweepSettings>::setup() {
 }
 instantiateIntrospection(SweepSettings);
 
-ParameterSweeper::ParameterSweeper(Circuit& circuit, const PTSweeps& ptSweeps) 
+ParameterSweeper::ParameterSweeper(Circuit& circuit, const std::vector<PTSweep>& ptSweeps) 
     : circuit(circuit), ptSweeps(ptSweeps), sweepPos(0) {
 }
 
 bool ParameterSweeper::setup(Status& s) {
     // Number of sweeps
-    auto n = ptSweeps.data().size();
+    auto n = ptSweeps.size();
 
     // Clear sweep settings
     settings.clear();
@@ -227,14 +227,14 @@ bool ParameterSweeper::setup(Status& s) {
     // relative to the sweep causing the variable change. 
     double extent = 1;
     for(decltype(n) i=0; i<n; i++) {
-        auto& ptcomp = ptSweeps.data()[i];
+        auto& ptcomp = ptSweeps[i];
         auto& comp = settings[i];
         
         // Evaluate settings
         IStruct<SweepSettings> sw;
         sw.core().name = ptcomp.name();
         sw.core().location = ptcomp.location();
-        auto [ok, changed] = sw.setParameters(ptSweeps.data()[i].parameters(), circuit.variableEvaluator(), s);
+        auto [ok, changed] = sw.setParameters(ptSweeps[i].parameters(), circuit.variableEvaluator(), s);
         if (!ok) {
             s.extend("Error in settings evaluation for sweep '"+std::string(ptcomp.name())+"'.");
             s.extend(ptcomp.location());
@@ -301,7 +301,7 @@ bool ParameterSweeper::update(int advancedSweepIndex, Status& s) {
         // Recompute expressions, update settings structure
         IStruct<SweepSettings> sw;
         sw.core() = settings[i];
-        auto [ok, changed] = sw.setParameters(ptSweeps.data()[i].parameters().expressions(), circuit.variableEvaluator(), s);
+        auto [ok, changed] = sw.setParameters(ptSweeps[i].parameters().expressions(), circuit.variableEvaluator(), s);
         if (!ok) {
             return false;
         }

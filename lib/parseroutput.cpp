@@ -9,6 +9,7 @@ std::ostream& operator<<(std::ostream& os, const PTParsedIdentifier& obj) {
     return os;
 }
 
+
 std::ostream& operator<<(std::ostream& os, const PTIdentifierList& obj) {
     for(auto it=obj.cbegin(); it!=obj.cend(); ++it) {
         if (it!=obj.cbegin()) 
@@ -34,27 +35,6 @@ void PTParameterExpression::dump(int indent, std::ostream& os) const {
     os << pfx << std::string(id_) << "=" << rpn_.str();
 }
 
-
-void PTParameters::add(PTParameterValue&& v) {
-    values_.push_back(std::move(v));
-}
-
-void PTParameters::set(std::vector<PTParameterValue>&& v) {
-    values_ = std::move(v);
-}
-
-void PTParameters::add(PTParameterExpression&& e) {
-    expressions_.push_back(std::move(e));
-}
-
-void PTParameters::add(PTParameters&& p) {
-    for(auto it=p.values_.begin(); it!=p.values_.end(); ++it) {
-        values_.push_back(std::move(*it));
-    }
-    for(auto it=p.expressions_.begin(); it!=p.expressions_.end(); ++it) {
-        expressions_.push_back(std::move(*it));
-    }
-}
 
 bool PTParameters::verify(Status& s) const {
     std::unordered_map<Id,Loc> puniq;
@@ -96,9 +76,6 @@ std::ostream& operator<<(std::ostream& os, const PTParameters& obj) {
     return os;
 }
 
-void PTModel::add(PTParameters&& par) {
-    parameters_.add(std::move(par));
-}
 
 void PTModel::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
@@ -113,10 +90,6 @@ void PTInstance::dump(int indent, std::ostream& os) const {
     os << masterName_ << " " << parameters_ << "\n";
 }
 
-
-void PTBlockSequence::add(Rpn&& cond, PTBlock&& block, const Loc& l) {
-    entries_.push_back(std::move(std::make_tuple(l, std::move(cond), std::move(block))));
-}
 
 void PTBlockSequence::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
@@ -139,24 +112,6 @@ void PTBlockSequence::dump(int indent, std::ostream& os) const {
 }
 
 
-PTBlock& PTBlock::add(PTModel&& mod) {
-    models_.push_back(std::move(mod));
-    return *this;
-}
-
-PTBlock& PTBlock::add(PTInstance&& inst) {
-    instances_.push_back(std::move(inst));
-    return *this;
-}
-
-PTBlock& PTBlock::add(PTBlockSequence&& seq) {
-    if (blockSequences_==nullptr) {
-        blockSequences_ = std::make_unique<std::vector<PTBlockSequence>>();
-    }
-    blockSequences_->push_back(std::move(seq));
-    return *this;
-}
-
 void PTBlock::dump(int indent, std::ostream& os) const {
     for(auto& mod : models_) {
         mod.dump(indent, os);
@@ -171,16 +126,6 @@ void PTBlock::dump(int indent, std::ostream& os) const {
     }
 }
 
-
-void PTSubcircuitDefinition::add(PTIdentifierList&& terms) {
-    terminals_ = std::move(terms);
-}
-
-void PTSubcircuitDefinition::add(PTSubcircuitDefinition&& subDef) {
-    auto* ptr = new PTSubcircuitDefinition;
-    *ptr = std::move(subDef);
-    subDefs_.push_back(std::unique_ptr<PTSubcircuitDefinition>(ptr));
-}
 
 // Subcircuit terminal can have the same name as a global node. 
 // In that case it is simply a local node name. It does not 
@@ -229,6 +174,7 @@ void PTSubcircuitDefinition::dump(int indent, std::ostream& os) const {
     os << "\n";
 }
 
+
 void PTLoad::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     os << pfx << "load \"" << file_ << "\"";
@@ -251,16 +197,6 @@ std::ostream& operator<<(std::ostream& os, const PTSave& s) {
 }
 
 
-void PTSaves::add(PTSave&& s) {
-    saves_.push_back(std::move(s));
-}
-
-void PTSaves::add(std::vector<PTSave>&& s) {
-    for(size_t i=0; i<s.size(); i++) {
-        saves_.push_back(std::move(s[i]));
-    }
-}
-
 std::ostream& operator<<(std::ostream& os, const PTSaves& s) {
     if (s.saves_.size()>0) {
         for(auto it=s.saves_.cbegin(); it!=s.saves_.cend(); ++it) {
@@ -279,35 +215,22 @@ std::ostream& operator<<(std::ostream& os, const PTSweep& s) {
 }
 
 
-void PTSweeps::add(PTSweep&& s) {
-    sweeps_.push_back(std::move(s));
-}
-
 void PTSweeps::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    for(auto it=data().cbegin(); it!=data().cend(); ++it) {
+    for(auto it=sweeps().cbegin(); it!=sweeps().cend(); ++it) {
         os << pfx << *it << "\n";
     }
 }
 
 
-PTAnalysis& PTAnalysis::add(PTParameters&& par) {
-    parameters_.add(std::move(par));
-    return *this;
-}
-
-PTAnalysis& PTAnalysis::add(PTSweeps&& sw) {
-    sweeps_ = std::move(sw);
-    return *this;
-}
-
-
 void PTAnalysis::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    if (sweeps_.data().size()>0) {
-        sweeps_.dump(indent, os);
+    if (sweeps_.size()>0) {
+        for(auto it=sweeps_.cbegin(); it!=sweeps_.cend(); ++it) {
+            os << pfx << *it << "\n";
+        }
     }
-    os << pfx << (sweeps_.data().size()>0 ? "  " : "");
+    os << pfx << (sweeps_.size()>0 ? "  " : "");
     os << "analysis " << std::string(name_) << " " << std::string(typeName_) << " ";
     os << parameters_ << "\n";
 }
@@ -318,22 +241,6 @@ std::ostream& operator<<(std::ostream& os, const PTEmbed& e) {
     return os;
 }
 
-
-void PTCommand::add(PTIdentifierList&& kw) {
-    keywords_ = std::move(kw);
-}
-
-void PTCommand::add(PTParameters&& args) {
-    args_ = std::move(args);
-}
-
-void PTCommand::add(std::vector<Rpn>&& exprs) {
-    expressions_ = std::move(exprs);
-}
-
-void PTCommand::add(PTSaves&& s) {
-    saves_ = std::move(s);
-}
 
 std::ostream& operator<<(std::ostream& os, const PTCommand& c) {
     os << c.name_;
@@ -360,54 +267,6 @@ std::ostream& operator<<(std::ostream& os, const PTCommand& c) {
     return os;
 }
 
-
-ParserTables& ParserTables::setTitle(const std::string t) {
-    title_ = t;
-    return *this;
-}
-
-const std::string& ParserTables::title() const {
-    return title_;
-}
-
-ParserTables& ParserTables::addDefaultSubDef(PTSubcircuitDefinition&& def) {
-    defaultSubDef_ = std::move(def);
-    return *this;
-}
-
-ParserTables& ParserTables::addLoad(PTLoad&& o) {
-    loads_.push_back(std::move(o));
-    return *this;
-}
-
-ParserTables& ParserTables::addGround(PTParsedIdentifier parsedId) {
-    groundNodes_.push_back(parsedId);
-    return *this;
-}
-
-ParserTables& ParserTables::addGlobal(PTParsedIdentifier parsedId) {
-    globalNodes_.push_back(parsedId);
-    return *this;
-}
-
-ParserTables& ParserTables::defaultGround() {
-    if (groundNodes_.size()==0) {
-        groundNodes_.push_back(PTParsedIdentifier(Id("0"), Loc::bad));
-    }
-    return *this;
-}
-
-void ParserTables::addCommand(PTAnalysis&& a) {
-    control_.push_back(std::move(a));
-}
-
-void ParserTables::addCommand(PTCommand&& c) {
-    control_.push_back(std::move(c));
-}
-
-void ParserTables::addEmbed(PTEmbed&& e) {
-    embed_.push_back(std::move(e));
-}
 
 bool ParserTables::verify(Status& s) const {
     // Check duplicate analyses

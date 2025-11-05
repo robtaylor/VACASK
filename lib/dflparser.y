@@ -242,7 +242,7 @@ output
   : INNETLIST subckt_build END {
     // Toplevel circuit definition
     $2.def.add(std::move($2.parameters));
-    tables.addDefaultSubDef(std::move($2.def));
+    tables.setDefaultSubDef(std::move($2.def));
     tables.defaultGround();
     // Verify tables
     if (!(tables.verify(status))) {
@@ -311,15 +311,15 @@ subckt_build
   }
   | subckt_build model {
     $$ = std::move($1);
-    $$.def.root().add(std::move($2));
+    $$.def.add(std::move($2));
   }
   | subckt_build instance {
     $$ = std::move($1);
-    $$.def.root().add(std::move($2));
+    $$.def.add(std::move($2));
   }
   | subckt_build condblock {
     $$ = std::move($1);
-    $$.def.root().add(std::move($2));
+    $$.def.add(std::move($2));
   }
   | subckt_build subckt {
     // subcircuit definition, not allowed inside other subcircuit definitions
@@ -363,7 +363,7 @@ subckt_build
         YYERROR;
     }
     $$ = std::move($1);
-    tables.addLoad(std::move($2));
+    tables.add(std::move($2));
   }
   | subckt_build embed {
     // embed, not allowed in subcircuit definition
@@ -373,7 +373,7 @@ subckt_build
         YYERROR;
     }
     $$ = std::move($1);
-    tables.addEmbed(std::move($2));
+    tables.add(std::move($2));
   }
   | subckt_build control_block {
     // control block, allow this for toplevel definition only
@@ -795,7 +795,6 @@ instance
         $1, 
         $4, 
         PTIdentifierList(), 
-        PTParameters(), 
         @1.loc()
     ));
   }
@@ -805,7 +804,6 @@ instance
         $1, 
         $5, 
         std::move($3), 
-        PTParameters(), 
         @1.loc()
     ));
   }
@@ -838,16 +836,14 @@ model
         @1.loc()
     ));
     $$.add(std::move(PTParameters()));
-    // std::make_tuple(std::move($2), std::move($3), ParameterValues());
   }
   | MODEL IDENTIFIER IDENTIFIER opt_broken_parameter_list NEWLINE {
     $$ = std::move(PTModel(
         $2, 
         $3, 
+        std::move($4.params), 
         @1.loc()
     ));
-    $$.add(std::move($4.params));
-    // std::make_tuple(std::move($2), std::move($3), std::move($4));
   }
 
 subcktparameters
@@ -1000,36 +996,36 @@ command
   }
   | IDENTIFIER keywords {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($2));
+    $$.set(std::move($2));
   }
   | IDENTIFIER LPAREN exprlist RPAREN {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($3));
+    $$.set(std::move($3));
   }
   | IDENTIFIER keywords LPAREN exprlist RPAREN {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($2));
-    $$.add(std::move($4));
+    $$.set(std::move($2));
+    $$.set(std::move($4));
   }
   | IDENTIFIER opt_broken_parameter_list {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($2.params));
+    $$.set(std::move($2.params));
   }
   | IDENTIFIER keywords opt_broken_parameter_list {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($2));
-    $$.add(std::move($3.params));
+    $$.set(std::move($2));
+    $$.set(std::move($3.params));
   }
   | IDENTIFIER LPAREN exprlist RPAREN opt_broken_parameter_list {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($3));
-    $$.add(std::move($5.params));
+    $$.set(std::move($3));
+    $$.set(std::move($5.params));
   }
   | IDENTIFIER keywords LPAREN exprlist RPAREN opt_broken_parameter_list {
     $$ = std::move(PTCommand(@1.loc(), $1));
-    $$.add(std::move($2));
-    $$.add(std::move($4));
-    $$.add(std::move($6.params));
+    $$.set(std::move($2));
+    $$.set(std::move($4));
+    $$.set(std::move($6.params));
   }
 
 control_block_build
@@ -1044,7 +1040,7 @@ control_block_build
     auto cmd = PTCommand(@2.loc(), saveCmd);
     PTSaves s;
     s.add(std::move($3));
-    cmd.add(std::move(s));
+    cmd.set(std::move(s));
     tables.addCommand(std::move(cmd));
   }
   | control_block_build analysis NEWLINE {
