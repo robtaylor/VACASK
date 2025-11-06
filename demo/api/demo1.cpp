@@ -7,10 +7,6 @@
 
 using namespace sim;
 
-// TODO: 
-//   Circuit variables demo
-//   Options expressions demo
-
 // Circuit building and analysis demo (with constant options and saves)
 int main() {
     // Path to staged models (osdi files)

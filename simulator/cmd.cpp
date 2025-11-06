@@ -91,7 +91,6 @@ bool CommandInterpreter::elaborateChanges(Status& s) {
     if (auto [ok, changed] = opt.setParameters(userOptions_, variableEvaluator(), s); !ok) {
         return false;
     }
-    PTParameterMap optionsExpressions; 
     // Prepare common data
     CommonData commons;
     commons.fromOptions(circuit_.simulatorOptions().core());

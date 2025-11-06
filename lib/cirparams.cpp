@@ -262,7 +262,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     
     // Mark circuit as unelaborated
     clearFlags(Flags::Elaborated);
-
+    
     // First, write variables if we have a sweeper
     if (sweeper) {
         auto [ok, changed] = sweeper->write(ParameterSweeper::ParameterFamily::Variable, what, s);

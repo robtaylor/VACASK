@@ -145,8 +145,66 @@ private:
 };
 
 
-using PTValueOrExpression = std::variant<const PTParameterValue*, const PTParameterExpression*>;
-using PTParameterMap = std::unordered_map<Id, PTValueOrExpression>;
+// A parameter map for preventing parameter duplicates in the command intepreter
+// when options are set via commands. This map holds pointrs to values and expresssions. 
+class PTParameterMap {
+public:
+    using PTValueOrExpression = std::variant<const PTParameterValue*, const PTParameterExpression*>;
+
+    // Emnpty map
+    PTParameterMap() {}; 
+    // Construct from PTParameters, user must make sure 
+    // the PTParameters object lives as long as PTParameterMap does. 
+    PTParameterMap(const PTParameters& p) {
+        for(auto& pv : p.values()) {
+            map_.insert_or_assign(pv.name(), &pv);
+        }
+        for(auto& pe : p.expressions()) {
+            map_.insert_or_assign(pe.name(), &pe);
+        }
+    };
+    // Construct from PTParameters rvalue, take ownership of PTParameters
+    PTParameterMap(PTParameters&& p) {
+        owned = std::move(p);
+        for(auto& pv : owned.values()) {
+            map_.insert_or_assign(pv.name(), &pv);
+        }
+        for(auto& pe : owned.expressions()) {
+            map_.insert_or_assign(pe.name(), &pe);
+        }
+    };
+
+    PTParameterMap           (const PTParameterMap&)  = delete;
+    PTParameterMap           (      PTParameterMap&&) = default;
+    PTParameterMap& operator=(const PTParameterMap&)  = delete;
+    PTParameterMap& operator=(      PTParameterMap&&) = default;
+
+    // Forward methods of map_
+    auto size() { return map_.size(); };
+    auto size() const { return map_.size(); };
+
+    auto begin() { return map_.begin(); };
+    auto end() { return map_.end(); };
+
+    auto begin() const { return map_.begin(); };
+    auto end() const { return map_.end(); };
+
+    auto clear() { return map_.clear(); };
+
+    template <typename... Args>
+    decltype(auto) insert(Args&&... args) & {
+        return map_.insert(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    decltype(auto) insert_or_assign(Args&&... args) & {
+        return map_.insert_or_assign(std::forward<Args>(args)...);
+    }
+
+private:
+    std::unordered_map<Id, PTValueOrExpression> map_;
+    PTParameters owned;
+};
 
 
 class PTModel {
