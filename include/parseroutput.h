@@ -317,6 +317,8 @@ private:
 class PTSubcircuitDefinition : public PTModel {
 public:
     PTSubcircuitDefinition() {};
+    PTSubcircuitDefinition(Id name, const Loc& l=Loc::bad)
+        : PTModel(name, "__hierarchical__", l) {};
     PTSubcircuitDefinition(Id name, PTIdentifierList&& terms, const Loc& l=Loc::bad)
         : PTModel(name, "__hierarchical__", l), terminals_(std::move(terms)) {};
 

@@ -470,17 +470,18 @@ bool ParserTables::writeEmbedded(int debug, Status& s) {
     for(auto& e : embed_) {
         // Do we have a valid location of the embed directive
         bool dump = false;
-        std::string originatorFile;
+        std::string originFilePath;
+        std::string directiveLocationCanonicalPath;
         if (!e.location()) {
             // Location not available, always dump
             dump = true;
         } else {
             // Get canonical path of file with the embed directive
             auto [fs, pos, line, offset] = e.location().data();
-            auto directiveLocationCanonicalPath = fs->canonicalName(pos);
+            directiveLocationCanonicalPath = fs->canonicalName(pos);
 
             // Build name of origin file - add .origin to dumped file name
-            auto originFilePath = e.filename() + ".origin";
+            originFilePath = e.filename() + ".origin";
             
             // Does origin file exist, does dumped file exist
             if (
@@ -498,7 +499,7 @@ bool ParserTables::writeEmbedded(int debug, Status& s) {
                     dump = true;
                 } else {
                     // Read origin file to get actual origin
-                    originatorFile = std::string(
+                    auto originatorFile = std::string(
                         std::istreambuf_iterator<char>(file),
                         std::istreambuf_iterator<char>()
                     );
@@ -519,34 +520,35 @@ bool ParserTables::writeEmbedded(int debug, Status& s) {
                     }
                 }
             }
-
-            // No need to dump
-            if (!dump) {
-                continue;
-            }
-            
-            // Create origin file
-            std::ofstream originFile(originFilePath, std::ios::out);
-            if (!originFile) {
-                // Failure to write origin file is silently inored
-            } else {
-                // Dump and close
-                originFile << directiveLocationCanonicalPath; 
-                originFile.close();
-            }
-
-            std::ofstream file(e.filename(), std::ios::out);
-            if (!file) {
-                // Failure to dump is an error
-                s.set(Status::CreationFailed, "Failed to write file '"+e.filename()+"'.");
-                s.extend(e.location());
-                return false;
-            } else {
-                // Dump
-                file << e.contents();
-                file.close();
-            }
         }
+
+        // No need to dump
+        if (!dump) {
+            continue;
+        }
+        
+        // Create origin file
+        std::ofstream originFile(originFilePath, std::ios::out);
+        if (!originFile) {
+            // Failure to write origin file is silently inored
+        } else {
+            // Dump and close
+            originFile << directiveLocationCanonicalPath; 
+            originFile.close();
+        }
+
+        std::ofstream file(e.filename(), std::ios::out);
+        if (!file) {
+            // Failure to dump is an error
+            s.set(Status::CreationFailed, "Failed to write file '"+e.filename()+"'.");
+            s.extend(e.location());
+            return false;
+        } else {
+            // Dump
+            file << e.contents();
+            file.close();
+        }
+
     }
     return true;
 }

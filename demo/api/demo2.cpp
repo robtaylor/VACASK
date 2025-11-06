@@ -7,11 +7,7 @@
 
 using namespace sim;
 
-// TODO: 
-//   Circuit variables demo
-//   Options expressions demo
-
-// Circuit building and analysis demo (with constant options and saves)
+// Parameterized subcircuit with conditional blocks and a DC sweep
 int main() {
     // Path to staged models (osdi files)
     std::string modulePath = "../../lib/vacask/mod";
@@ -30,7 +26,7 @@ int main() {
     Simulator::prependModulePath({modulePath});
 
     // Parser tables
-    ParserTables tab("RC transient");
+    ParserTables tab("Conditional blocks");
 
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
@@ -38,30 +34,46 @@ int main() {
     // Title, loads, default ground (0)
     tab
         .add(PTLoad("resistor.osdi"))
-        .add(PTLoad("capacitor.osdi"))
         .defaultGround()
         .setDefaultSubDef(
             // Toplevel subcircuit definition, no name, no terminals
             PTSubcircuitDefinition()
-            .add(PTParameters(PVv( PV{"c0", 1e-6}, PV{"v0", 5} ), {}))
             // Resistor model res, capacitor model cap, voltage source model vsrc
             .add(PTModel("res", "resistor"))
-            .add(PTModel("cap", "capacitor"))
             .add(PTModel("vsrc", "vsource"))
-            // Element r1, master is res, terminals 1 and 2, constant parameter r=1000, no parameter expressions
-            .add(PTInstance("r1", "res", {"1", "2"})
-                // Add constant parameter
+            // Add mysub subcircuit
+            .add(PTSubcircuitDefinition("mysub", { "p", "out", "n" })
+                .add(PV("r", 1000))
+                .add(PV("fact", 0.5))
+                .add(PV("mode", 0))
+                .add(PTBlockSequence()
+                    .add(p.parseExpression("mode==0"), PTBlock()
+                        .add(PTInstance("r1", "res", {"p", "out"})
+                            .add(PE("r", p.parseExpression("r*(1-fact)")))
+                        )
+                        .add(PTInstance("r2", "res", {"out", "n"})
+                            .add(PE("r", p.parseExpression("r*fact")))
+                        )
+                    )
+                    // Else block has an empty Rpn object as condition
+                    .add(Rpn(), PTBlock()
+                        .add(PTInstance("r1", "res", {"p", "out"})
+                            .add(PE("r", p.parseExpression("r*fact")))
+                        )
+                        .add(PTInstance("r2", "res", {"out", "n"})
+                            .add(PE("r", p.parseExpression("r*(1-fact)")))
+                        )
+                    )
+                )
+            )
+            // Instance of mysub
+            .add(PTInstance("x1", "mysub", {"1", "2", "0"})
                 .add(PV{"r", 1000})
+                .add(PV{"fact", 0.2})
             )
-            // Element c1, master cap, terminals 1 and 0, constant parameter c=1e-6, no parameter expressions
-            .add(PTInstance("c1", "cap", {"2", "0"})
-                // Add parameter defined with an expression
-                .add(PE{"c", p.parseExpression("2*c0")})
-            )
-            // Pulse source
+            // Voltage source
             .add(PTInstance("v1", "vsrc", {"1", "0"})
-                // Add parsed parameters
-                .add(p.parseParameters("type=\"pulse\" val0=0 val1=v0 delay=1m rise=1u fall=1u width=4m"))
+                .add(PV{"dc", 10})
             )
         )
         // Embedded Python postprocessing script
@@ -71,14 +83,12 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import sys
 
-tran1 = rawread('tran1.raw').get()
-print("Vectors:", tran1.names)
+dc1 = rawread('dc1.raw').get()
+print("Vectors:", dc1.names)
 fig1, ax1 = plt.subplots(1, 1, figsize=(6,4), dpi=100, constrained_layout=True)
-fig1.axes[0].plot(tran1["time"], tran1["2"], "r", marker=".")
-fig1.axes[0].plot(tran1["time"], tran1["1"], "b")
-fig1.axes[0].plot(tran1["time"], tran1["r1.i"]*1000, "--")
-
-plt.show()
+print("Mode:", dc1["mode"])
+print("Output:", dc1["2"])
+print("Expected: [2, 8]")
 )script"));
 
     // Verify tables
@@ -119,27 +129,25 @@ plt.show()
     cir.dumpHierarchy(0, Simulator::out());
 
     // Analysis description
-    auto tranDesc = PTAnalysis("tran1", "tran");
-    tranDesc
-        .add(PV{"step", 1e-6})
-        .add(PV("stop", 10e-3));
-
-    // Save directives
-    auto saves = PTSavesVector({
-        PTSave("default"),
-        PTSave("p", "r1", "i")
-    });
+    auto dcDesc = PTAnalysis("dc1", "op");
+    dcDesc
+        // Outermost sweep first
+        .add(PTSweep("mode")
+            .add(PV("instance", "x1"))
+            .add(PV("parameter", "mode"))
+            .add(PV("values", IntVector{0, 1}))
+        );
 
     // Analysis object, no options map (options that are given as parameterized expressions)
-    auto tran = Analysis::create(tranDesc, &saves, nullptr, cir, s);
-    if (!tran) {
+    auto dc = Analysis::create(dcDesc, nullptr, nullptr, cir, s);
+    if (!dc) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
 
     // Run analysis
-    auto [ok, canResume] = tran->run(s);
+    auto [ok, canResume] = dc->run(s);
     if (!ok) {
         Simulator::err() << "Analysis failed.\n";
         Simulator::err() << s.message() << "\n";
@@ -148,7 +156,7 @@ plt.show()
     Simulator::out() << "Analysis OK. Can resume: " << (canResume ? "true" : "false") << "\n";
 
     // Cleanup
-    delete tran;
+    delete dc;
 
     // Run postprocessing
     runProcess(pythonBinary, {"runme.py"}, &pythonLibraryPath, false, false);
