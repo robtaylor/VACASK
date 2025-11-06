@@ -25,9 +25,24 @@ InstantiationData::InstantiationData() {
 }
 
 InstantiationData::InstantiationData(Instance* inst) {
+    // For building ancestorPathStack we need the sequence of instances from toplevel to inst
+    std::vector<Instance*> instPath;
+    
     // Start at given instance, collect all ancestor models up to top level instance
     for(;inst; inst=inst->parent()) {
         ancestorModels_.insert(inst->model());
+        instPath.push_back(inst);
+    }
+
+    // Build ancestor path stack (master names) from toplevel down to inst
+    std::string ancestorPath;
+    // Reverse iterator over instPath vector because toplevel instance is last
+    for (auto it = instPath.rbegin(); it != instPath.rend(); ++it) {
+        if (ancestorPath.size()>0) {
+            ancestorPath += ":";
+        }
+        ancestorPath += std::string((*it)->model()->name());
+        ancestorPathStack_.push_back(ancestorPath);
     }
 }
 
