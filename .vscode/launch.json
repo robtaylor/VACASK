@@ -206,7 +206,7 @@
             "name": "Run API demo (Debug)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/demo/api/apidemo",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/demo/api/demo1",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/test/manual_run",

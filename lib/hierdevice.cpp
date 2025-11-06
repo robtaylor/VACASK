@@ -77,7 +77,7 @@ bool HierarchicalModel::buildTerminalMap(Status& s) {
 bool HierarchicalModel::buildParameterMap(Status& s) {
     // Check uniqueness 
     auto& parsedSubcircuit = static_cast<const PTSubcircuitDefinition&>(parsedModel_);
-    if (!parsedSubcircuit.parameters().verify(s)) {
+    if (!parsedSubcircuit.parameters().verify(1, s)) {
         return false;
     }
 

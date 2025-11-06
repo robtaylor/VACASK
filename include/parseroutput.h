@@ -134,7 +134,7 @@ public:
     PTParameters&& add(PTParameterExpression&& e) && { return std::move(this->add(std::move(e))); };
     PTParameters&& add(PTParameters&& p) && { return std::move(this->add(std::move(p))); };
 
-    bool verify(Status& s=Status::ignore) const;
+    bool verify(int level, Status& s=Status::ignore) const;
 
     // Operator that prints parameters
     friend std::ostream& operator<<(std::ostream& os, const PTParameters& obj);
@@ -153,9 +153,9 @@ class PTModel {
 public:
     PTModel() {};
     PTModel(Id name, Id device, const Loc& l=Loc::bad)
-        : loc(l), modelName(name), deviceName(device) {};
+        : loc(l), modelName_(name), deviceName_(device) {};
     PTModel(Id name, Id device, PTParameters&& params, const Loc& l=Loc::bad)
-        : loc(l), modelName(name), deviceName(device), parameters_(std::move(params)) {};
+        : loc(l), modelName_(name), deviceName_(device), parameters_(std::move(params)) {};
 
     PTModel           (const PTModel&)  = delete;
     PTModel           (      PTModel&&) = default;
@@ -164,8 +164,8 @@ public:
 
     // Getters
     inline const Loc& location() const { return loc; };
-    inline Id name() const { return modelName; };
-    inline Id device() const { return deviceName; };
+    inline Id name() const { return modelName_; };
+    inline Id device() const { return deviceName_; };
     inline bool isParameterized() const { return parameters_.expressionCount()>0; };
     inline const PTParameters& parameters() const { return parameters_; };
 
@@ -179,9 +179,11 @@ public:
     
     void dump(int indent, std::ostream& os) const;
 
+    bool verify(int level, Status& s=Status::ignore) const;
+
 protected:
-    Id modelName;
-    Id deviceName;
+    Id modelName_;
+    Id deviceName_;
     PTParameters parameters_;
     Loc loc;
 };
@@ -217,6 +219,8 @@ public:
     PTInstance&& add(PTParameterExpression&& e) && { return std::move(this->add(std::move(e))); };
 
     void dump(int indent, std::ostream& os) const;
+
+    bool verify(int level, Status& s=Status::ignore) const;
 
 private:
     Id instanceName_;
@@ -267,6 +271,8 @@ public:
 
     void dump(int indent, std::ostream& os) const;
 
+    bool verify(int level, Status& s=Status::ignore) const;
+
 private:
     std::vector<PTModel> models_;
     std::vector<PTInstance> instances_;
@@ -300,6 +306,8 @@ public:
     };
 
     void dump(int indent, std::ostream& os) const;
+
+    bool verify(int level, Status& s=Status::ignore);
 
 private:
     std::vector<PTBlockSequenceEntry> entries_;
@@ -346,7 +354,7 @@ public:
     void dump(int indent, std::ostream& os) const;
 
     // Checker
-    bool verifyTerminals(Status& s=Status::ignore) const;
+    bool verify(int level, Status& s=Status::ignore) const;
     
 private:
     PTIdentifierList terminals_;
@@ -376,12 +384,12 @@ public:
     // Fluent API
     PTLoad& add(PTParameters&& par) & { parameters_.add(std::move(par)); return *this; };
     PTLoad& add(PTParameterValue&& v) & { parameters_.add(std::move(v)); return *this; };
-    PTLoad& add(PTParameterExpression&& e) & { parameters_.add(std::move(e)); return *this; };
     PTLoad&& add(PTParameters&& par) && { return std::move(this->add(std::move(par))); };
     PTLoad&& add(PTParameterValue&& v) && { return std::move(this->add(std::move(v))); };
-    PTLoad&& add(PTParameterExpression&& e) && { return std::move(this->add(std::move(e))); };
     
     void dump(int indent, std::ostream& os) const;
+
+    bool verify(int level, Status& s=Status::ignore) const;
 
 private:
     PTParameters parameters_;
@@ -479,6 +487,8 @@ public:
     // Operator that prints a sweep directive
     friend std::ostream& operator<<(std::ostream& os, const PTSweep& o);
 
+    bool verify(int level, Status& s=Status::ignore) const;
+
 private:
     Id name_;
     Loc loc;
@@ -547,6 +557,8 @@ public:
     PTAnalysis&& add(PTParameterExpression&& e) && { return std::move(this->add(std::move(e))); };
     
     void dump(int indent, std::ostream& os) const;
+
+    bool verify(int level, Status& s=Status::ignore) const;
 
 private:
     Id name_;
@@ -672,7 +684,10 @@ public:
     void addCommand(PTAnalysis&& a) {  control_.push_back(std::move(a)); };
     
     // Post-parse checks
-    bool verify(Status& s=Status::ignore) const;
+    bool verifyAfterParse(Status& s=Status::ignore) const { return verifyWorker(0, s); };
+
+    // More thorough checks applied to manually built circuits
+    bool verify(Status& s=Status::ignore) const { return verifyWorker(1, s); };
 
     // Write embedded files
     bool writeEmbedded(int debug=0, Status& s=Status::ignore);
@@ -680,6 +695,8 @@ public:
     void dump(int indent, std::ostream& os) const;
 
 private:
+    bool verifyWorker(int level, Status& s=Status::ignore) const;
+
     Accounting acct_;
     std::string title_;
     FileStack fileStack_;

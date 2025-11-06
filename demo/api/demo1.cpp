@@ -8,7 +8,6 @@
 using namespace sim;
 
 // TODO: 
-//   Validation
 //   Sweep demo
 //   Subcircuit demo
 //   Conditional block demo
@@ -84,6 +83,12 @@ fig1.axes[0].plot(tran1["time"], tran1["r1.i"]*1000, "--")
 
 plt.show()
 )script"));
+
+    // Verify tables
+    if (!tab.verify(s)) {
+        Simulator::err() << s.message() << "\n";
+        exit(1);
+    }
 
     // Dump tables for debugging
     tab.dump(0, Simulator::out());

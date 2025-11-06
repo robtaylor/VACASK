@@ -38,35 +38,6 @@ void PTParameterExpression::dump(int indent, std::ostream& os) const {
 }
 
 
-bool PTParameters::verify(Status& s) const {
-    std::unordered_map<Id,Loc> puniq;
-    for(auto& it : values_) {
-        auto [itPrev, inserted] = puniq.insert({it.name(), it.location()});
-        if (!inserted) {
-            s.set(Status::Redefinition, "Parameter '"+std::string(it.name())+"' redefinition.");
-            s.extend(it.location());
-            if (itPrev->second) {
-                s.extend("Parameter was first defined here");
-                s.extend(itPrev->second);
-            }
-            return false;
-        }
-    }
-    for(auto& it : expressions_) {
-        auto [itPrev, inserted] = puniq.insert({it.name(), it.location()});
-        if (!inserted) {
-            s.set(Status::Redefinition, "Parameter '"+std::string(it.name())+"' redefinition.");
-            s.extend(it.location());
-            if (itPrev->second) {
-                s.extend("Parameter was first defined here");
-                s.extend(itPrev->second);
-            }
-            return false;
-        }
-    }
-    return true;
-}
-
 std::ostream& operator<<(std::ostream& os, const PTParameters& obj) {
     for(auto it=obj.values_.cbegin(); it!=obj.values_.cend(); ++it) {
         os << (it->name()) << "=" << it->val() << " " ;
@@ -81,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, const PTParameters& obj) {
 
 void PTModel::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
-    os << pfx << "model " << (modelName) << " " << (deviceName) << " ";
+    os << pfx << "model " << (modelName_) << " " << (deviceName_) << " ";
     os << parameters_ << "\n";
 }
 
@@ -128,31 +99,13 @@ void PTBlock::dump(int indent, std::ostream& os) const {
     }
 }
 
-
-// Subcircuit terminal can have the same name as a global node. 
-// In that case it is simply a local node name. It does not 
-// behave as a global node. 
-bool PTSubcircuitDefinition::verifyTerminals(Status& s) const {
-    // Create terminal set for duplicates check
-    std::unordered_set<Id> tset;
-    for(auto& term : terminals_) {
-        auto [exIt, inserted] = tset.insert(term.name());
-        if (!inserted) {
-            s.set(Status::Conflicting, "Terminal '"+std::string(term.name())+"' is not unique.");
-            s.extend(location());
-            return false;
-        }
-    }
-    return true; 
-}
-
 void PTSubcircuitDefinition::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
 
-    bool isToplevel = !modelName;
+    bool isToplevel = !modelName_;
 
     if (!isToplevel) {
-        os << pfx << "subckt " << (modelName) << " (" << terminals_ << ")\n";
+        os << pfx << "subckt " << (modelName_) << " (" << terminals_ << ")\n";
     }
     
     if (parameters_.count()>0) {
@@ -270,8 +223,213 @@ std::ostream& operator<<(std::ostream& os, const PTCommand& c) {
 }
 
 
-bool ParserTables::verify(Status& s) const {
-    // Check duplicate analyses
+bool PTParameters::verify(int level, Status& s) const {
+    std::unordered_map<Id,Loc> puniq;
+    for(auto& it : values_) {
+        auto [itPrev, inserted] = puniq.insert({it.name(), it.location()});
+        if (!inserted) {
+            s.set(Status::Redefinition, "Parameter '"+std::string(it.name())+"' redefinition.");
+            s.extend(it.location());
+            if (itPrev->second) {
+                s.extend("Parameter was first defined here");
+                s.extend(itPrev->second);
+            }
+            return false;
+        }
+    }
+    for(auto& it : expressions_) {
+        auto [itPrev, inserted] = puniq.insert({it.name(), it.location()});
+        if (!inserted) {
+            s.set(Status::Redefinition, "Parameter '"+std::string(it.name())+"' redefinition.");
+            s.extend(it.location());
+            if (itPrev->second) {
+                s.extend("Parameter was first defined here");
+                s.extend(itPrev->second);
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+bool PTModel::verify(int level, Status& s) const {
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in model '"+std::string(modelName_)+"'");
+        }
+        return false;
+    }
+    return true;
+}
+
+bool PTInstance::verify(int level, Status& s) const {
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in instance '"+std::string(instanceName_)+"'");
+        }
+        return false;
+    }
+    return true;
+}
+
+bool PTBlock::verify(int level, Status& s) const {
+    // Check models
+    for(auto& mod : models_) {
+        if (!mod.verify(level, s)) {
+            return false;
+        }
+    }
+
+    // Check instances
+    for(auto& inst : instances_) {
+        if (!inst.verify(level, s)) {
+            return false;
+        }
+    }
+
+    // Recurse into all blocks in all block sequences
+    if (blockSequences_) {
+        int cnt=1;
+        for(auto& blkSeq : *blockSequences_) {
+            if (!blkSeq.verify(level, s)) {
+                if (!loc) {
+                    s.extend("  in block sequence '"+std::to_string(cnt)+"'");
+                }
+                return false;
+            }
+            cnt++;
+        }
+    }
+    return true;
+}
+
+bool PTBlockSequence::verify(int level, Status& s) {
+    // Check all blocks in all block sequences
+    int cnt = 1;
+    for(auto& blkSeqEntry : entries_) {
+        auto& [loc, cond, blk] = blkSeqEntry;
+        if (!blk.verify(level, s)) {
+            if (!loc) {
+                s.extend("  in block '"+std::to_string(cnt)+"'");
+            }
+            return false;
+        }
+        cnt++;
+    }
+    return true;
+}
+
+bool PTSubcircuitDefinition::verify(int level, Status& s) const {
+    // Subcircuit terminal can have the same name as a global node. 
+    // In that case it is simply a local node name. It does not 
+    // behave as a global node. 
+    // So do not check against global nodes. 
+
+    // Check for duplicate terminal names
+    std::unordered_set<Id> tset;
+    for(auto& term : terminals_) {
+        auto [exIt, inserted] = tset.insert(term.name());
+        if (!inserted) {
+            s.set(Status::Conflicting, "Terminal '"+std::to_string(term.name())+"' is not unique.");
+            if (loc) {
+                s.extend(loc);
+            } else {
+                s.extend("  in subcircuit definition '"+std::string(name())+"'");
+            }
+            
+            return false;
+        }
+    }
+
+    // Do not check name conflicts between instances, models, and subcircuits
+    // Elaboration will handle that
+
+    // Check parameters
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in subcircuit definition '"+std::string(name())+"'");
+        }
+        return false;
+    }
+    
+    // Check root block
+    if (!root_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in subcircuit definition '"+std::string(name())+"'");
+        }
+        return false;
+    }
+
+    // Check all subcircuit definitions within this definition
+    for(auto& subDef : subDefs_) {
+        if (!subDef->verify(level, s)) {
+            if (!loc) {
+                s.extend("  in subcircuit definition '"+std::string(name())+"'");
+            }
+            return false;
+        }
+    }
+    return true; 
+}
+
+bool PTLoad::verify(int level, Status& s) const {
+    // Check for parameters whose values are defined with expressions
+    if (parameters_.expressionCount()>0) {
+        s.set(Status::BadArguments, "Load directive parameters must be constants.");
+        if (loc) {
+            s.extend(loc);
+        } else {
+            s.extend("  in load directive for '"+file_+"'.");
+        }
+        return false;
+    }
+
+    // Check for parameter duplicates
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in load directive for '"+file_+"'.");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool PTSweep::verify(int level, Status& s) const {
+    // Verify parameters
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in sweep '"+std::string(name_)+"'.");
+        }
+        return false;
+    }
+    return true;
+}
+
+bool PTAnalysis::verify(int level, Status& s) const {
+    // Verify sweeps
+    for(auto& sw : sweeps_) {
+        if (!sw.verify(level, s)) {
+            if (!loc) {
+                s.extend("  in analysis '"+std::string(name_)+"'.");
+            }
+            return false;
+        }
+    }
+
+    // Verify parameters
+    if (!parameters_.verify(level, s)) {
+        if (!loc) {
+            s.extend("  in analyis '"+std::string(name_)+"'.");
+        }
+        return false;
+    }
+
+    return true;
+}
+
+bool ParserTables::verifyWorker(int level, Status& s) const {
+    // Check for duplicate analyses (all levels)
     std::unordered_map<Id,const PTAnalysis*> anmap;
     for(auto& it : control_) {
         if (!std::holds_alternative<PTAnalysis>(it)) {
@@ -282,14 +440,31 @@ bool ParserTables::verify(Status& s) const {
         if (!inserted) {
             s.set(Status::Redefinition, "Analysis '"+std::string(an.name())+"' redefinition.");
             s.extend(an.location());
-            s.extend("Analysis was first defined here");
-            s.extend(itEx->second->location());
+            if (itEx->second->location()) {
+                s.extend("Analysis was first defined here");
+                s.extend(itEx->second->location());
+            }
+            return false;
+        }
+    }
+
+    // Verify load directives
+    for(auto& load : loads_) {
+        if (!load.verify(level, s)) {
+            return false;
+        }
+    }
+
+    // Verify default subcircuit definition
+    if (level>0) {
+        if (!defaultSubDef_.verify(level, s)) {
             return false;
         }
     }
 
     return true;
 }
+
 
 bool ParserTables::writeEmbedded(int debug, Status& s) {
     for(auto& e : embed_) {

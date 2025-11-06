@@ -244,7 +244,7 @@ output
     $2.def.add(std::move($2.parameters));
     tables.setDefaultSubDef(std::move($2.def));
     tables.defaultGround();
-    // Verify tables
+    // Verify tables (basic level 0 verifications)
     if (!(tables.verify(status))) {
         YYERROR;
     }
