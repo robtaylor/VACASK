@@ -853,7 +853,7 @@ subcktparameters
 
 embed
   : EMBED STRING STRING {
-    $$ = std::move(PTEmbed(@1.loc(), std::move($2), std::move($3))); 
+    $$ = std::move(PTEmbed(std::move($2), std::move($3), @1.loc())); 
   }
 
 savestr

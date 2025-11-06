@@ -560,7 +560,7 @@ private:
 class PTEmbed {
 public:
     PTEmbed() {};
-    PTEmbed(const Loc& l, std::string&& filename, std::string&& contents)
+    PTEmbed(std::string&& filename, std::string&& contents, const Loc& l=Loc::bad)
         : loc_(l), filename_(std::move(filename)), contents_(std::move(contents)) {};
     
     PTEmbed           (const PTEmbed&)  = delete;

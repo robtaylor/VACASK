@@ -293,42 +293,84 @@ bool ParserTables::verify(Status& s) const {
 
 bool ParserTables::writeEmbedded(int debug, Status& s) {
     for(auto& e : embed_) {
-        // Get canonical path of file with the embed directive
-        auto [fs, pos, line, offset] = e.location().data();
-        auto timeRefCanonicalPath = fs->canonicalName(pos);
-
-        // Check if the file to be dumped exists
+        // Do we have a valid location of the embed directive
         bool dump = false;
-        if (!std::filesystem::exists(e.filename())) {
-            // Does not exist, needs dumping
+        std::string originatorFile;
+        if (!e.location()) {
+            // Location not available, always dump
             dump = true;
         } else {
-            // File with embed directive is newer than the dumped file, needs dumping
-            auto refModificationTime = std::filesystem::last_write_time(timeRefCanonicalPath);
-            auto fileModificationTime = std::filesystem::last_write_time(e.filename());
-            if (refModificationTime>fileModificationTime) {
-                dump = true;
-            }
-        }
+            // Get canonical path of file with the embed directive
+            auto [fs, pos, line, offset] = e.location().data();
+            auto directiveLocationCanonicalPath = fs->canonicalName(pos);
 
-        // TODO: multiple .sim files can create an embedded file with the same name
-        // Therefore we must also check the embedded file's origin. 
-        // Until this is implemented, always dump file. 
-        dump = true;
-        
-        if (dump) {
-            if (debug) {
-                Simulator::dbg() << "Dumping embedded file '" << e.filename() << "'.\n";
+            // Build name of origin file - add .origin to dumped file name
+            auto originFilePath = e.filename() + ".origin";
+            
+            // Does origin file exist, does dumped file exist
+            if (
+                !std::filesystem::exists(originFilePath) ||
+                !std::filesystem::exists(e.filename())
+            ) {
+                // No, dump
+                dump = true;
+            } else {
+                // Read origin file, get name of the file with the embed directive that
+                // produced the existing dumped file
+                std::ifstream file(originFilePath);
+                if (!file) {
+                    // Failed to read, dump
+                    dump = true;
+                } else {
+                    // Read origin file to get actual origin
+                    originatorFile = std::string(
+                        std::istreambuf_iterator<char>(file),
+                        std::istreambuf_iterator<char>()
+                    );
+                    file.close();
+
+                    // Does the actual origin match the embed directive location
+                    if (originatorFile!=directiveLocationCanonicalPath) {
+                        // No, dump
+                        dump = true;
+                    } else {
+                        // Compare last modification of originator and dumped file
+                        auto refModificationTime = std::filesystem::last_write_time(originatorFile);
+                        auto fileModificationTime = std::filesystem::last_write_time(e.filename());
+                        if (refModificationTime>fileModificationTime) {
+                            // Originator is newer, dump
+                            dump = true;
+                        }
+                    }
+                }
             }
-            std::ofstream fs;
-            fs.open(e.filename(), std::ios::out);
-            fs << e.contents();
-            if (fs.fail()) {
+
+            // No need to dump
+            if (!dump) {
+                continue;
+            }
+            
+            // Create origin file
+            std::ofstream originFile(originFilePath, std::ios::out);
+            if (!originFile) {
+                // Failure to write origin file is silently inored
+            } else {
+                // Dump and close
+                originFile << directiveLocationCanonicalPath; 
+                originFile.close();
+            }
+
+            std::ofstream file(e.filename(), std::ios::out);
+            if (!file) {
+                // Failure to dump is an error
                 s.set(Status::CreationFailed, "Failed to write file '"+e.filename()+"'.");
                 s.extend(e.location());
                 return false;
+            } else {
+                // Dump
+                file << e.contents();
+                file.close();
             }
-            fs.close();
         }
     }
     return true;

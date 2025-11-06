@@ -35,7 +35,6 @@ Loc::Loc(const FileStack* fs, FileStackFileIndex file, SourceLineNumber l, Sourc
 // }
 
 std::tuple<const FileStack*, FileStackFileIndex, SourceLineNumber, SourceColumnNumber> Loc::data() const { 
-    auto fs = FileStack::lookup(entry.fileId_);
     return std::make_tuple(FileStack::lookup(entry.fileStackId_), entry.fileId_, entry.line_, entry.offset_); 
 };
 

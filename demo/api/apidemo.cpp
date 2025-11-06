@@ -9,7 +9,6 @@ using namespace sim;
 
 // TODO: 
 //   Validation
-//   track source file
 //   Sweep demo
 //   Subcircuit demo
 //   Conditional block demo
@@ -68,10 +67,32 @@ int main() {
                 // Add parsed parameters
                 .add(p.parseParameters("type=\"pulse\" val0=0 val1=v0 delay=1m rise=1u fall=1u width=4m"))
             )
-        );
+        )
+        // Embedded Python postprocessing script
+        .add(PTEmbed("runme.py", R"script(
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt 
+import sys
+
+tran1 = rawread('tran1.raw').get()
+print("Vectors:", tran1.names)
+fig1, ax1 = plt.subplots(1, 1, figsize=(6,4), dpi=100, constrained_layout=True)
+fig1.axes[0].plot(tran1["time"], tran1["2"], "r", marker=".")
+fig1.axes[0].plot(tran1["time"], tran1["1"], "b")
+fig1.axes[0].plot(tran1["time"], tran1["r1.i"]*1000, "--")
+
+plt.show()
+)script"));
 
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
+
+    // Store embedded files (we don't have any, but this is how you do it)
+    if (!tab.writeEmbedded(1, s)) {
+        Simulator::err() << s.message() << "\n";
+        exit(1);
+    }
 
     // Create circuit, OpenVAF compiler with no options
     OpenvafCompiler comp;
@@ -127,25 +148,6 @@ int main() {
 
     // Cleanup
     delete tran;
-
-    // Python postprocessing script
-    std::ofstream file("runme.py");
-    file << R"script(
-from rawfile import rawread
-import numpy as np
-import matplotlib.pyplot as plt 
-import sys
-
-tran1 = rawread('tran1.raw').get()
-print(tran1.names)
-fig1, ax1 = plt.subplots(1, 1, figsize=(6,4), dpi=100, constrained_layout=True)
-fig1.axes[0].plot(tran1["time"], tran1["2"], "r", marker=".")
-fig1.axes[0].plot(tran1["time"], tran1["1"], "b")
-fig1.axes[0].plot(tran1["time"], tran1["r1.i"]*1000, "--")
-
-plt.show()
-)script";
-    file.close();
 
     // Run postprocessing
     runProcess(pythonBinary, {"runme.py"}, &pythonLibraryPath, false, false);
