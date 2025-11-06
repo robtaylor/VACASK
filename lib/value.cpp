@@ -48,15 +48,15 @@ bool operator==(const Value& l, const Value& r) {
     switch (type_pair(l.type_, r.type_)) {
         case type_pair(Value::Type::Int,    Value::Type::Int):    return valueEqual<Int, Int>(l, r);
         case type_pair(Value::Type::Int,    Value::Type::Real):   return valueEqual<Int, Real>(l, r);
-        case type_pair(Value::Type::Real,   Value::Type::Int):    return valueEqual<Int, Int>(l, r);
-        case type_pair(Value::Type::Real,   Value::Type::Real):   return valueEqual<Int, Real>(l, r);
-        case type_pair(Value::Type::String, Value::Type::String): return valueEqual<Int, Real>(l, r);
+        case type_pair(Value::Type::Real,   Value::Type::Int):    return valueEqual<Real, Int>(l, r);
+        case type_pair(Value::Type::Real,   Value::Type::Real):   return valueEqual<Real, Real>(l, r);
+        case type_pair(Value::Type::String, Value::Type::String): return valueEqual<String, String>(l, r);
 
         case type_pair(Value::Type::IntVec,    Value::Type::IntVec):    return valueEqual<IntVector, IntVector>(l, r);
         case type_pair(Value::Type::IntVec,    Value::Type::RealVec):   return valueEqual<IntVector, RealVector>(l, r);
-        case type_pair(Value::Type::RealVec,   Value::Type::IntVec):    return valueEqual<IntVector, IntVector>(l, r);
-        case type_pair(Value::Type::RealVec,   Value::Type::RealVec):   return valueEqual<IntVector, RealVector>(l, r);
-        case type_pair(Value::Type::StringVec, Value::Type::StringVec): return valueEqual<IntVector, RealVector>(l, r);
+        case type_pair(Value::Type::RealVec,   Value::Type::IntVec):    return valueEqual<RealVector, IntVector>(l, r);
+        case type_pair(Value::Type::RealVec,   Value::Type::RealVec):   return valueEqual<RealVector, RealVector>(l, r);
+        case type_pair(Value::Type::StringVec, Value::Type::StringVec): return valueEqual<StringVector, StringVector>(l, r);
         case type_pair(Value::Type::ValueVec,  Value::Type::ValueVec):  return valueEqual<ValueVector, ValueVector>(l, r);
     }
     return false;
