@@ -418,6 +418,10 @@ Circuit::~Circuit() {
 }
 
 void Circuit::clear() {
+    // Do not clear variables. User might set them before elaboration
+    // because they are used in parameterized expressions. 
+    // elaborate() calls this method before starting elaboration. 
+    
     // Be careful about the order
     // Instances need models, which in turn need devices
     instanceMap.clear();
