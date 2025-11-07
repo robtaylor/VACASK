@@ -556,30 +556,6 @@ private:
 };
 
 
-class PTSweeps {
-public:
-    PTSweeps() {};
-
-    PTSweeps           (const PTSweeps&)  = delete;
-    PTSweeps           (      PTSweeps&&) = default;
-    PTSweeps& operator=(const PTSweeps&)  = delete;
-    PTSweeps& operator=(      PTSweeps&&) = default;
-
-    // Getters
-    std::vector<PTSweep>& sweeps() { return sweeps_; }; 
-    const std::vector<PTSweep>& sweeps() const { return sweeps_; }; 
-    
-    // Fluent API
-    PTSweeps& add(PTSweep&& s) & { sweeps_.push_back(std::move(s)); return *this; };
-    PTSweeps&& add(PTSweep&& s) && { return std::move(this->add(std::move(s))); };
-    
-    void dump(int indent, std::ostream& os) const;
-
-private:
-    std::vector<PTSweep> sweeps_;
-};
-
-
 class PTAnalysis {
 public:
     PTAnalysis() {};
@@ -601,9 +577,9 @@ public:
 
     // Fluent API
     PTAnalysis& add(PTSweep&& sw) & { sweeps_.push_back(std::move(sw)); return *this; };
-    PTAnalysis& add(PTSweeps&& swps) & { 
-        for(size_t i=0; i<swps.sweeps().size(); i++) {
-            sweeps_.push_back(std::move(swps.sweeps()[i]));
+    PTAnalysis& add(std::vector<PTSweep>&& swps) & { 
+        for(size_t i=0; i<swps.size(); i++) {
+            sweeps_.push_back(std::move(swps[i]));
         }
         return *this; 
     };
@@ -611,7 +587,7 @@ public:
     PTAnalysis& add(PTParameterValue&& v) & { parameters_.add(std::move(v)); return *this; };
     PTAnalysis& add(PTParameterExpression&& e) & { parameters_.add(std::move(e)); return *this; };
     PTAnalysis&& add(PTSweep&& sw) && { return std::move(this->add(std::move(sw))); };
-    PTAnalysis&& add(PTSweeps&& swps) && { return std::move(this->add(std::move(swps))); };
+    PTAnalysis&& add(std::vector<PTSweep>&& swps) && { return std::move(this->add(std::move(swps))); };
     PTAnalysis&& add(PTParameters&& par) && { return std::move(this->add(std::move(par))); };
     PTAnalysis&& add(PTParameterValue&& v) && { return std::move(this->add(std::move(v))); };
     PTAnalysis&& add(PTParameterExpression&& e) && { return std::move(this->add(std::move(e))); };

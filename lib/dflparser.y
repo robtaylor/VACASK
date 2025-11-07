@@ -67,7 +67,7 @@ struct paramlist {
 };
 
 struct sweeps {
-    PTSweeps ptSweeps;
+    std::vector<PTSweep> sweeps;
     std::unordered_map<Id,Location> locations;
 };
 
@@ -938,7 +938,7 @@ load
 sweeps
   : SWEEP IDENTIFIER opt_broken_parameter_list {
     Id id = $2;
-    $$.ptSweeps.add(PTSweep(id, std::move($3.params), @1.loc()));
+    $$.sweeps.push_back(PTSweep(id, std::move($3.params), @1.loc()));
     $$.locations.insert({id, @1});
   }
   | sweeps NEWLINE {
@@ -955,7 +955,7 @@ sweeps
         status.extend(it->second.loc());
         YYERROR;
     }
-    $$.ptSweeps.add(PTSweep(id, std::move($4.params), @2.loc()));
+    $$.sweeps.push_back(PTSweep(id, std::move($4.params), @2.loc()));
   }
 
 pre_analysis
@@ -964,7 +964,7 @@ pre_analysis
   }
   | sweeps ANALYSIS IDENTIFIER IDENTIFIER {
     $$ = std::move(PTAnalysis($3, $4, @2.loc()));
-    $$.add(std::move($1.ptSweeps));
+    $$.add(std::move($1.sweeps));
   }
 
 analysis_with_params

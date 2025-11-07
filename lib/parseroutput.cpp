@@ -170,14 +170,6 @@ std::ostream& operator<<(std::ostream& os, const PTSweep& s) {
 }
 
 
-void PTSweeps::dump(int indent, std::ostream& os) const {
-    std::string pfx = std::string(indent, ' ');
-    for(auto it=sweeps().cbegin(); it!=sweeps().cend(); ++it) {
-        os << pfx << *it << "\n";
-    }
-}
-
-
 void PTAnalysis::dump(int indent, std::ostream& os) const {
     std::string pfx = std::string(indent, ' ');
     if (sweeps_.size()>0) {
