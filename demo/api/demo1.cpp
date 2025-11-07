@@ -92,7 +92,7 @@ plt.show()
         exit(1);
     }
 
-    // Create circuit, OpenVAF compiler with no options
+    // Create circuit, create OpenVAF compiler with no options
     OpenvafCompiler comp;
     // Circuit object
     Circuit cir(tab, &comp, s);
@@ -101,9 +101,11 @@ plt.show()
         exit(1);
     }
 
-    // Elaborate it, just the default toplevel subcircuit. 
-    // Use __topdef__ and __topinst__ as prefixes for toplevel subcircuit definition and instance names. 
-    // Do not collect device requests. 
+    // Elaborate it, just the default toplevel subcircuit 
+    // (empty list of subcircuit definition names). 
+    // Use __topdef__ and __topinst__ as prefixes for toplevel 
+    // subcircuit model and toplevel subcircuit instance names. 
+    // Do not collect device requests (i.e. abort/finish/stop). 
     SimulatorOptions opt;
     opt.reltol = 1e-4;
     if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {

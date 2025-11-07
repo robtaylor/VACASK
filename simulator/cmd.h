@@ -59,8 +59,6 @@ public:
     bool minimalElaboration(Status& s);
     // If circuit is not elaboarated, perform default elaboration, otherwise do nothing
     bool defaultElaboration(Status& s);
-    // Elaborate changes (propagate parameters)
-    bool elaborateChanges(Status& s);
     // Elaborate circuit from given toplevel definitions
     bool elaborate(const std::vector<Id>& names, const std::string& topDefName, const std::string& topInstName, Status& s=Status::ignore);
     

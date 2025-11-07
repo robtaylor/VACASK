@@ -88,7 +88,7 @@ plt.show()
         exit(1);
     }
 
-    // Create circuit, OpenVAF compiler with no options
+    // Create circuit, create OpenVAF compiler with no options
     OpenvafCompiler comp;
     // Circuit object
     Circuit cir(tab, &comp, s);
@@ -97,9 +97,11 @@ plt.show()
         exit(1);
     }
 
-    // Elaborate it, just the default toplevel subcircuit. 
-    // Use __topdef__ and __topinst__ as prefixes for toplevel subcircuit definition and instance names. 
-    // Do not collect device requests. 
+    // Elaborate it, just the default toplevel subcircuit 
+    // (empty list of subcircuit definition names). 
+    // Use __topdef__ and __topinst__ as prefixes for toplevel 
+    // subcircuit model and toplevel subcircuit instance names. 
+    // Do not collect device requests (i.e. abort/finish/stop). 
     SimulatorOptions opt;
     opt.reltol = 1e-4;
     if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
@@ -125,6 +127,7 @@ plt.show()
     cir.setVariable("myvar", 0);
 
     // Options map that is applied in analysis
+    // Holds only options that are defined as expressions. 
     
     // We need PTParameterMap because once a parameter is added to PTParameters
     // it can no longer be changed. It also allows duplicate parameters which 
@@ -136,9 +139,9 @@ plt.show()
     // If, however created with an lvalue, then the ownership is not transferred. 
     PTParameterMap pmap(
         p.parseParameters(
-            // reltol will override the reltol value set in the circuit
             // temp will be computed from an expression that depends on the myvar circuit variable
-            "reltol=1e-6 temp=myvar"
+            // Any option specified as a constant will be ignored. 
+            "temp=myvar"
         )
     );
     

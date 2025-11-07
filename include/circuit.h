@@ -234,6 +234,7 @@ public:
     // Build circuit from parsed description
     // Prefix is used for prefixing the definition name to obtain the toplevel instance name
     // opt and devReq can be nullptr
+    // Only constant options are allowed, no options map. 
     bool elaborate(
         const std::vector<Id>& toplevelDefinitions={}, 
         const std::string& topDefName="__topdef__", const std::string& topInstName="__topinst__", 
@@ -241,6 +242,81 @@ public:
         DeviceRequests* devReq=nullptr, 
         Status& s=Status::ignore
     );
+
+    // Elaborates changes (but keeps the list of toplevel subcircuits unchanged)
+    // Called from inside of analysis. 
+    // Updates the circuit and takes into account changes in 
+    // - circuit variables
+    // - instance/model parameters
+    // - swept quantities
+    // - parameterized analysis
+    // - parameterized options
+    // Propagates changes down the hierarchy, optionally changes 
+    // - the hierarchy
+    // - the set of unknowns, the system of equations, the sparsity map
+    // - the set of analog states
+    // - sparsity map
+    // Handles analysis requests for extra sparsity map entries and extra analog states. 
+    // Return value: ok, hierarchy changed, analysis binding needed 
+    // Analysis binding is needed if unknowns changed or analysis requested sparsity map entries. 
+    // devReq can be nullptr
+    // This one is intended to be called from an analysis during sweep. 
+    std::tuple<bool, bool, bool> elaborateChanges(
+        CommonData& commons, 
+        ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
+        Analysis* an, IStruct<SimulatorOptions>* opt, 
+        PTParameterMap* optionsMap, 
+        DeviceRequests* devReq, 
+        Status& s=Status::ignore
+    );
+
+    // Elaborates changes (but keeps the list of toplevel subcircuits unchanged)
+    // Called from outside of analysis. 
+    // Does not require 
+    // - commons (builds it on the fly)
+    // - sweeper and what to do with swept values (no sweep)
+    // - analysis (elaborates circuit outside of an analysis)
+    // Applies all options in optionsMap to a clean slate of default options, 
+    // then writes them into the circuit. All changes from default options
+    // are specified by optionsMap. 
+    // Return value: ok, hierarchy changed, analysis binding needed
+    // Analysis binding is needed if unknowns changed or analysis requested sparsity map entries. 
+    // devReq can be nullptr
+    // This one is intended for the command intepreter where the options commands set all 
+    // changes to the options. 
+    std::tuple<bool, bool, bool> elaborateChanges(
+        PTParameterMap* optionsMap, 
+        DeviceRequests* devReq, 
+        Status& s=Status::ignore
+    ) { 
+        CommonData commons;
+        if (optionsMap) {
+            // Apply optionsMap now. elaborateChanges() applies it only if variables changed 
+            // but we must apply it always. Apply to default set of circuit oiptions. 
+            IStruct<SimulatorOptions> opt;
+            if (auto [ok, changed] = opt.setParameters(*optionsMap, variableEvaluator_, s); !ok) {
+                return std::make_tuple(false, false, false);
+            }
+
+            // Prepare CommonData
+            commons.fromOptions(simOptions.core());
+
+            // Options in optionsMap specify changes to default options
+            return elaborateChanges(commons, nullptr, ParameterSweeper::WriteValues::Sweep, nullptr, &opt, nullptr, devReq, s); 
+        } else {
+            // Elaborates everything with the current set of circuit's simulator options
+            return elaborateChanges(commons, nullptr, ParameterSweeper::WriteValues::Sweep, nullptr, nullptr, nullptr, devReq, s); 
+        }
+    };
+
+    // A simplified version of elaborateChanges() without optionsMap
+    // This one is intended to be used by the user via API. 
+    std::tuple<bool, bool, bool> elaborateChanges(
+        DeviceRequests* devReq, 
+        Status& s=Status::ignore
+    ) {
+        return elaborateChanges(nullptr, devReq, s);
+    };
 
     // Title API
     const std::string& title() const { return title_; };
@@ -358,22 +434,6 @@ public:
     // Return existing solution, if not found return nullptr
     AnnotatedSolution* storedSolution(Id typeCode, Id name);
     
-    // Sets swept values, 
-    // Applies common options expressions, analysis parameter expressions, and analysis options expressions
-    // Propagates changes down hierarchy, applies changes to the hierarchy (if needed)
-    // Rebuilds system (if needed)
-    // Adds sparsity map entries and state vector slots requested by analysis (if needed)
-    // Return value: ok, hierarchy changed, analysis binding needed
-    // devReq can be nullptr
-    std::tuple<bool, bool, bool> elaborateChanges(
-        CommonData& commons, 
-        ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
-        Analysis* an, IStruct<SimulatorOptions>* opt, 
-        PTParameterMap* optionsMap, 
-        DeviceRequests* devReq, 
-        Status& s=Status::ignore
-    );
-
     ParserTables& tables() { return tables_; };
 
 private:

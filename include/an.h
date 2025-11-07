@@ -48,7 +48,7 @@ public:
     
     // Setup api
     void setSaves(PTSavesVector* commonSaves);
-    void setParametrization(const PTParameterMap* optionsMap);
+    bool setParametrization(const PTParameterMap* optionsMap, Status& s=Status::ignore);
 
     // Install progress reporter
     void install(ProgressReporter* p) { progressReporter = p; }

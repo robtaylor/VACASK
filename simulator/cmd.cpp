@@ -83,38 +83,14 @@ bool CommandInterpreter::defaultElaboration(Status& s) {
     return elaborate({}, defaultTopDefName, defaultTopInstName, s); 
 }
 
-bool CommandInterpreter::elaborateChanges(Status& s) {
-    // Compute options and let elaborateChanges() set them
-    // We need to do this here, not in elaborateChanges() because the latter
-    // evaluates and applies expressions, but not constant 
-    IStruct<SimulatorOptions> opt;
-    if (auto [ok, changed] = opt.setParameters(userOptions_, variableEvaluator(), s); !ok) {
-        return false;
-    }
-    // Prepare common data
-    CommonData commons;
-    commons.fromOptions(circuit_.simulatorOptions().core());
-    // Elaborate changes
-    auto [ok, hierarchyChanged, mappingChanged] = circuit_.elaborateChanges(
-        commons, 
-        nullptr, ParameterSweeper::WriteValues::Sweep, 
-        nullptr, &opt,  
-        // No need to specify options expressions - they were processed when opt was built
-        nullptr, 
-        // TODO: for now ignore devReq and Abort, Finish, Stop
-        nullptr, 
-        s
-    );
-    return ok;
-}
-
 bool CommandInterpreter::minimalElaboration(Status& s) {
     if (circuit_.checkFlags(Circuit::Flags::Elaborated)) { 
         // Already elaborated, elaborate changes only
-        return elaborateChanges(s);
+        auto [ok, hierarchyChanged, mappingChanged] = circuit_.elaborateChanges(&userOptions_, nullptr, s);
+        return ok;
     } else {
         // Not elaborated yet, default elaboration
-        return defaultElaboration(s);
+        return elaborate({}, defaultTopDefName, defaultTopInstName, s); 
     }
 }
 

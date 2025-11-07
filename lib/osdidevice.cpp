@@ -511,7 +511,7 @@ std::tuple<size_t, size_t> OsdiDevice::simParasSizes() {
     );
 }
 
-void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const CommonData& internals, double* dblArray, char** chrPtrArray) {
+void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt, const CommonData& commons, double* dblArray, char** chrPtrArray) {
     // dblArray and chrPtrArray should be allocated on stack to save time
     // simParasSizes() reports the reuired size of these two arrays
     double* simParamValues = dblArray; 
@@ -519,17 +519,17 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
     simParamValues[0] = 0; // iniLim
     // Because most Verilog-A devices use only gmin, we set it to internals gmin+gdev
     // Those that implement this properly will actually use 2x gdev when gdev!=0
-    simParamValues[1] = internals.gmin + internals.gdev; 
-    simParamValues[2] = internals.gdev; 
+    simParamValues[1] = commons.gmin + commons.gdev; 
+    simParamValues[2] = commons.gdev; 
     // $simparam(tnom) should return the tnom value given by options (in C)
     // No conversion needed. 
     simParamValues[3] = opt.tnom;
     simParamValues[4] = opt.minr;
     simParamValues[5] = opt.scale;
-    simParamValues[6] = internals.iteration;
+    simParamValues[6] = commons.iteration;
     simParamValues[7] = Simulator::majorVersion;
     simParamValues[8] = Simulator::minorVersion;
-    simParamValues[9] = internals.sourcescalefactor;
+    simParamValues[9] = commons.sourcescalefactor;
     
     simParamValues[10] = opt.reltol;
     simParamValues[11] = opt.vntol;
@@ -542,8 +542,8 @@ void OsdiDevice::populateSimParas(OsdiSimParas& sp, const SimulatorOptions& opt,
 
     char** simStrParamValues = chrPtrArray; 
     
-    simStrParamValues[0] = const_cast<char*>(internals.analysis_name.c_str());
-    simStrParamValues[1] = const_cast<char*>(internals.analysis_type.c_str());
+    simStrParamValues[0] = const_cast<char*>(commons.analysis_name.c_str());
+    simStrParamValues[1] = const_cast<char*>(commons.analysis_type.c_str());
     simStrParamValues[2] = const_cast<char*>(Simulator::startupPath().c_str());
 
     sp.names_str = const_cast<char**>(simStrParamNames); 

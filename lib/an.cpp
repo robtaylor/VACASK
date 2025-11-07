@@ -17,7 +17,7 @@ void Analysis::setSaves(PTSavesVector* saves) {
     commonSaves = saves;
 }
 
-void Analysis::setParametrization(const PTParameterMap* optionsMap) {
+bool Analysis::setParametrization(const PTParameterMap* optionsMap, Status& s) {
     // Store only options that are defined with expressions
     parameterizedOptions.clear();
     if (optionsMap) {
@@ -27,6 +27,7 @@ void Analysis::setParametrization(const PTParameterMap* optionsMap) {
             }
         }
     }
+    return true;
 }
 
 bool Analysis::registerFactory(Id name, Analysis::AnalysisFactory factory) {
@@ -58,7 +59,10 @@ Analysis* Analysis::create(
     an->setSaves(commonSaves);
 
     // Set up parametrization
-    an->setParametrization(optionsMap);
+    if (!an->setParametrization(optionsMap, s)) {
+        delete an;
+        return nullptr;
+    }
 
     // Set analysis parameters based on global circuit context
     auto [ok, changed] = an->parameters().setParameters(ptAnalysis.parameters(), circuit.variableEvaluator(), s);

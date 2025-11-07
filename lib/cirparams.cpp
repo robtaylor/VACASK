@@ -262,7 +262,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     
     // Mark circuit as unelaborated
     clearFlags(Flags::Elaborated);
-    
+
     // First, write variables if we have a sweeper
     if (sweeper) {
         auto [ok, changed] = sweeper->write(ParameterSweeper::ParameterFamily::Variable, what, s);
@@ -284,6 +284,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     }
     
     // Simulator options structure that will be updated and written to the circuit
+    // If options is given, then it is used, otherwise the circuit's simOptions structure is used
     auto optPtr = options ? options : &simOptions;
     
     // If variables changed, rebuild global context, update options and analysis parameters
@@ -294,10 +295,10 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
             return std::make_tuple(false, false, false);
         }
         
-        // Options expressions -> options
+        // Options map (values and expressions) -> options in optPtr
         if (optionsMap && optionsMap->size()>0) {
             if (auto [ok, changed] = optPtr->setParameters(*optionsMap, variableEvaluator_, s); !ok) {
-                s.extend("Failed to apply options expressions.");
+                s.extend("Failed to apply options map.");
                 tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
                 return std::make_tuple(false, false, false);
             }
@@ -325,9 +326,10 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
         }
     }
 
-    // Write options to the circuit (if needed)
-    if (optPtr!=&simOptions) {
-        setOptions(*optPtr);
+    // Write options to the circuit (needed only if options were specified)
+    // If they were not, we were writing to circuit's simOptions structure directly. 
+    if (options) {
+        setOptions(*options);
     }
     bool hierarchyAffectingOptionsChanged = checkFlags(Circuit::Flags::HierarchyAffectingOptionsChanged);
     bool parametrizationAffectingOptionsChanged = checkFlags(Circuit::Flags::ParametrizationAffectingOptionsChanged);
@@ -384,6 +386,14 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     }
 
     // Now we are ready for calling setup
+
+    // Fill commons with values from simulator options
+    // The gmin/gshunt options are used by setup. 
+    // Any other changes to these values in commons are made by homotopy 
+    // algorithms which are called from within analyses after elaboration 
+    // is finished. Homotopy always finishes before next elaboration is 
+    // performed so this does not affect homotopy. 
+    commons.fromOptions(simOptions.core());
 
     // Do a setup if
     // - hierarchy changed

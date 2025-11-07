@@ -910,6 +910,7 @@ bool Circuit::elaborate(
 
     // We do a full setup
     CommonData commons;
+    // Fill commons with current simulator options because setup() needs them. 
     commons.fromOptions(simOptions.core());
     auto [ok, unknownsChanged, sparsityChanged] = setup(commons, true, devReq, s);
     if (!ok) {
