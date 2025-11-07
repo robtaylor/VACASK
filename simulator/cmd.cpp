@@ -506,34 +506,14 @@ bool cmd_alter(CommandInterpreter& interpreter, PTCommand& cmd, Status& s) {
 
     if (what==idModel) {
         for(auto& modelName : objNames) {
-            auto model = circuit.findModel(modelName);
-            if (!model) {
-                s.set(Status::NotFound, "Model '"+std::string(modelName)+"' not found.");
+            if (!circuit.setModelParameters(modelName, cmd.args(), s)) {
                 return false;
-            }
-            auto [ok, changed] = model->setParameters(cmd.args(), circuit.paramEvaluator(), s); 
-            if (!ok) {
-                return false;
-            }
-            if (changed) {
-                // This makes sure Circuit::elaborateChanges() will propagate changes down hierarchy
-                circuit.setFlags(Circuit::Flags::HierarchyParametersChanged);
             }
         }
     } else if (what==idInstance) {
         for(auto& instanceName : objNames) {
-            auto instance = circuit.findInstance(instanceName);
-            if (!instance) {
-                s.set(Status::NotFound, "Instance '"+std::string(instanceName)+"' not found.");
+            if (!circuit.setInstanceParameters(instanceName, cmd.args(), s)) {
                 return false;
-            }
-            auto [ok, changed] = instance->setParameters(cmd.args(), circuit.paramEvaluator(), s); 
-            if (!ok) {
-                return false;
-            }
-            if (changed) {
-                // This makes sure Circuit::elaborateChanges() will propagate changes down hierarchy
-                circuit.setFlags(Circuit::Flags::HierarchyParametersChanged);
             }
         }
     }

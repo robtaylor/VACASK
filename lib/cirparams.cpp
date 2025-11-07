@@ -500,4 +500,85 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     return std::make_tuple(true, hierarchyChanged, mapUnknownsNeeded || buildNeeded);
 }
 
+template<typename T> bool Circuit::singleSetterHelper(Id name, Id param, const Value& v, Status& s, const char* failMsg) {
+    T* obj;
+    if constexpr(std::is_same_v<T, Instance>) {
+        obj = findInstance(name);
+    } else {
+        obj = findModel(name);
+    }
+    if (!obj) {
+        s.set(Status::NotFound, failMsg);
+        return false;
+    }
+    auto [ok, changed] = obj->setParameter(param, v, s); 
+    if (!ok) {
+        return false;
+    }
+    if (changed) {
+        setFlags(Circuit::Flags::HierarchyParametersChanged);
+    }
+    return true;
+}
+
+bool Circuit::setInstanceParameter(Id name, Id param, const Value& v, Status& s) {
+   return singleSetterHelper<Instance>(name, param, v, s, "Instance not found.");
+}
+
+bool Circuit::setModelParameter(Id name, Id param, const Value& v, Status& s) {
+    return singleSetterHelper<Model>(name, param, v, s, "Model not found.");
+}
+
+template<typename T> bool Circuit::groupSetterHelper(Id name, const PTParameters& params, Status& s, const char* failMsg) {
+    T* obj;
+    if constexpr(std::is_same_v<T, Instance>) {
+        obj = findInstance(name);
+    } else {
+        obj = findModel(name);
+    }
+    if (!obj) {
+        s.set(Status::NotFound, failMsg);
+        return false;
+    }
+    auto [ok, changed] = obj->setParameters(params, paramEvaluator(), s); 
+    if (!ok) {
+        return false;
+    }
+    if (changed) {
+        setFlags(Circuit::Flags::HierarchyParametersChanged);
+    }
+    return true;
+}
+
+bool Circuit::setInstanceParameters(Id name, const PTParameters& params, Status& s) {
+    return groupSetterHelper<Instance>(name, params, s, "Instance not found.");
+}
+
+bool Circuit::setModelParameters(Id name, const PTParameters& params, Status& s) {
+    return groupSetterHelper<Model>(name, params, s, "Model not found.");
+}
+
+template<typename T> std::tuple<bool, Value> Circuit::getterHelper(Id name, Id param, Status& s, const char* failMsg) const {
+    const T* obj;
+    if constexpr(std::is_same_v<T, Instance>) {
+        obj = findInstance(name);
+    } else {
+        obj = findModel(name);
+    }
+    Value v;
+    auto ok = obj->getParameter(name, v, s);
+    if (!ok) {
+        return std::make_tuple(false, 0);
+    }
+    return std::make_tuple(true, v);
+}
+
+std::tuple<bool, Value> Circuit::instanceParameter(Id name, Id param, Status& s) const {
+    return getterHelper<Instance>(name, param, s, "Instance not found.");
+}
+
+std::tuple<bool, Value> Circuit::modelParameter(Id name, Id param, Status& s) const {
+    return getterHelper<Model>(name, param, s, "Model not found.");
+}
+
 }

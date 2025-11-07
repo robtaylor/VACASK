@@ -173,7 +173,10 @@ enum class CircuitFlags : uint8_t {
     TolerancesAffectingOptionsChanged = 16, 
     
     // This one should be set manually whenever an instance/model parameter is changed
-    // so that elaborateChanges() will do its job correctly and propagate changes. 
+    // directly via instance/model methods so that elaborateChanges() will do its job 
+    // correctly and propagate changes. 
+    // If any of the setters defined in the circuit class is used then this flag is 
+    // set automatically whenever a hierarchy parameter changes. 
     HierarchyParametersChanged = 32,  
 
     Elaborated = 64,  
@@ -192,22 +195,39 @@ public:
     
     bool isValid() const { return valid; };
 
+    bool needsElaboration() { 
+        return (
+            !checkFlags(Flags::Elaborated) || 
+            checkFlags(Flags::VariablesChanged) ||
+            checkFlags(Flags::HierarchyAffectingOptionsChanged) ||
+            checkFlags(Flags::ParametrizationAffectingOptionsChanged) ||
+            checkFlags(Flags::MappingAffectingOptionsChanged) ||
+            checkFlags(Flags::TolerancesAffectingOptionsChanged) ||
+            checkFlags(Flags::HierarchyParametersChanged)
+        );
+    };
+
     // Clear circuit (return to the state that existed immediately after the constructor was called)
     void clear();
-
-    // Devices
-    size_t deviceCount() const { return devices.size(); };
-    Device* device(size_t ndx) { return devices[ndx].get(); };
 
     // Variables API
     const Value* getVariable(Id name, Status& s=Status::ignore) const;
     // ok, changed
     std::tuple<bool, bool> setVariable(Id name, const Value& v, Status& s=Status::ignore);
     bool clearVariables(Status& s=Status::ignore);
-    
-    // Update global context
-    bool updateGlobalContext(Status& s=Status::ignore);
 
+    // Instance/model parameters API
+    // Sets HierarchyParametersChanged so that elaborateChanges() will process the instance/model
+    // Return value: ok
+    bool setInstanceParameter(Id name, Id param, const Value& v, Status& s=Status::ignore);
+    bool setModelParameter(Id name, Id param, const Value& v, Status& s=Status::ignore);
+    bool setInstanceParameters(Id name, const PTParameters& params, Status& s=Status::ignore);
+    bool setModelParameters(Id name, const PTParameters& params, Status& s=Status::ignore);
+
+    // Return value: ok, value
+    std::tuple<bool, Value> instanceParameter(Id name, Id param, Status& s=Status::ignore) const;
+    std::tuple<bool, Value> modelParameter(Id name, Id param, Status& s=Status::ignore) const;
+    
     // Sets option, sets HierarchyAffectingOptionsChanged and MappingAffectingOptionsChanged if needed
     // Return value: ok, option changed
     std::tuple<bool, bool> setOption(Id name, const Value& v, Status& s=Status::ignore);
@@ -221,6 +241,13 @@ public:
     // Sets HierarchyAffectingOptionsChanged and MappingAffectingOptionsChanged if needed
     // Return value: ok, options changed
     std::tuple<bool, bool> setOptions(const PTParameters& params, Status& s=Status::ignore);
+
+    // Devices
+    size_t deviceCount() const { return devices.size(); };
+    Device* device(size_t ndx) { return devices[ndx].get(); };
+
+    // Update global context
+    bool updateGlobalContext(Status& s=Status::ignore);
 
     // Collapse nodes, assign unknowns to nodes, assign representative nodes to unknowns
     bool mapUnknowns(Status& s=Status::ignore);
@@ -356,11 +383,16 @@ public:
     // Remove model from map and delete it
     bool remove(Model* model, Status& s=Status::ignore);
     
-    // Fast node, device, model, and instace by name
+    // Find node, device, model, and instace by name
     Node* findNode(Id name);
     Device* findDevice(Id name, int* index=nullptr);
     Model* findModel(Id name);
     Instance* findInstance(Id name);
+
+    const Node* findNode(Id name) const { return findNode(name); };
+    const Device* findDevice(Id name, int* index=nullptr) const { return findDevice(name); };
+    const Model* findModel(Id name) const { return findModel(name); };
+    const Instance* findInstance(Id name) const { return findInstance(name); };
     
     std::vector<HierarchicalModel*>& toplevelModels() { return toplevelModels_; };
     std::vector<HierarchicalInstance*>& toplevelInstances() { return toplevelInstances_; };
@@ -547,6 +579,10 @@ private:
 
     // Annotated solutions (for nodesets, ics, and hb-assisted hb)
     std::unordered_map<std::pair<Id, Id>, AnnotatedSolution> solutionRepository;
+
+    template<typename T> bool singleSetterHelper(Id name, Id param, const Value& v, Status& s, const char* failMsg);
+    template<typename T> bool groupSetterHelper(Id name, const PTParameters& params, Status& s, const char* failMsg);
+    template<typename T> std::tuple<bool, Value> getterHelper(Id name, Id param, Status& s, const char* failMsg) const;
 };
 
 
