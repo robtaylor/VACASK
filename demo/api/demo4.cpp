@@ -96,7 +96,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
         exit(1);
     }
 
-    // Elaborate default toplevelcircuit + sub1
+    // Elaborate default toplevel circuit + sub1
     if (!cir.elaborate({"sub1"}, "__topdef__", "__topinst__", nullptr, nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
@@ -124,7 +124,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     }
 
 
-    // Elaborate default toplevelcircuit + sub2
+    // Elaborate default toplevel circuit + sub2
     if (!cir.elaborate({"sub2"}, "__topdef__", "__topinst__", nullptr, nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";

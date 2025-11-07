@@ -66,7 +66,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/mirror.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/amp.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/bsim3-ptm/diffpair.sim" ], 
-             "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
+            // "args": [ "-df", "-dt",  "${workspaceFolder}/demo/bsim3-ptm-amp/toplevel.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/builtin.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/limiting/custom.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/rcl.sim" ], 
@@ -129,7 +129,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/natures/vbr.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/switchbr.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/idt.sim" ], 
-            // "args": [ "-df", "${workspaceFolder}/demo/natures/ddt.sim" ], 
+             "args": [ "-df", "${workspaceFolder}/demo/natures/ddt.sim" ], 
             // "args": [ "-df", "-dp" ],
             
             "stopAtEntry": false,
@@ -191,6 +191,27 @@
                 { "name": "SIM_INCLUDE_PATH", "value": "${workspaceFolder}/inc" }, 
                 { "name": "PYTHONPATH", "value": "${workspaceFolder}/python" }
             ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }, 
+
+        {
+            "name": "Run address sanitizer (Debug)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/AsanDebug/simulator/vacask",
+            // "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Debug/simulator/vacask",
+            // "program": "${workspaceFolder}/../build.${workspaceRootFolderName}/Release/simulator/vacask",
+            "args": [ "-df", "${workspaceFolder}/../vacask_models/test.sim" ], 
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/../vacask_models",
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

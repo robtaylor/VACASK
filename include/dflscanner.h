@@ -43,12 +43,11 @@ public:
     // Method body created by flex in dfllexer.cpp
 
     std::ifstream* pushStream(const std::string& fileName, Location& loc) {
-        streamStack.emplace_back();
+        streamStack.emplace_back(std::make_unique<std::ifstream>(fileName));
         auto& s = streamStack.back();
-        s.open(fileName);
         locationStack.push_back(loc);
-        if (s.good()) {
-            return &(streamStack.back());
+        if (s->good()) {
+            return streamStack.back().get();
         } else {
             return nullptr;
         }
@@ -80,7 +79,7 @@ private:
     std::string sbuf;
     std::string marker;
     Position stringStart;
-    std::vector<std::ifstream> streamStack;
+    std::vector<std::unique_ptr<std::ifstream>> streamStack;
     std::vector<Location> locationStack;
     Status& status_;
     std::string section;
