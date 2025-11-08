@@ -1,0 +1,81 @@
+Subcircuit definition hierarchy
+
+load "resistor.osdi"
+
+model res resistor
+
+subckt sub1(a b)
+  model ressub1 resistor
+  rsub1_glob (a b) res r=1k
+  rsub1_loc (a b) ressub1 r=1k
+
+  subckt sub1sub1(a b)
+    model ressub1sub1 resistor
+    rsub1sub1_glob (a b) res r=1k
+    rsub1sub1_loc (a b) ressub1sub1 r=1k
+  ends
+ends
+
+subckt sub2(a b)
+  model ressub2 resistor
+  rsub1_glob (a b) res r=1k
+  rsub1_loc (a b) ressub2 r=1k
+
+  subckt sub2sub1(a b)
+    model ressub2sub1 resistor
+    rsub2sub1_glob (a b) res r=1k
+    rsub2sub1_loc (a b) ressub2sub1 r=1k
+  ends
+ends
+
+rtop (1 0) res r=1k
+x1 (2 0) sub2
+
+control 
+  // Toplevel definition only
+  elaborate circuit
+  // Models:
+  //   __topdef__ .. default toplevel subcircuit
+  //   res .. global resistor model
+  //   sub1 .. subcircuit sub1
+  //   sub1::sub1sub1 .. subcircuit defined inside sub1
+  //   sub2 .. subcircuit sub2
+  //   sub2::sub2sub1 .. subcircuit defined inside sub2
+  //   x1:ressub2 .. ressub2 resistor model defined inside instance x1 of sub2
+  print models
+  // Hierarchy
+  //   __topinst__ .. instance of __topdef__
+  //   res .. global resistor model
+  //   rtop .. instance of res
+  //   x1 .. instance of sub2
+  //     x1:ressub2 .. resistor model defined inside instance x1 of sub2
+  //     x1:rsub1_glob .. instance of global resistor model
+  //     x1:rsub1_loc .. instance of x1:ressub2
+  print hierarchy
+
+  // Toplevel definition + sub1 also treated as toplevel
+  elaborate circuit("sub1")
+  // Models 
+  //   __topdef__ .. default toplevel subcircuit
+  //   __topdef__(sub1) .. subcircuit sub1 in role of a toplevel subcircuit
+  //   sub1sub1 .. subcircuit defined inside sub1 which is now a global subcircuit
+  //   ressub1 .. resistor model defined inside sub1, but is now a global resistor model
+  //   res .. global resistor model
+  //   sub2 .. subcircuit sub2
+  //   sub2::sub2sub1 .. subcircuit defined inside sub2
+  //   x1:ressub2 .. ressub2 resistor model defined inside instance x1 of sub2
+  print models
+  // Hierarchy
+  //   __topinst__ .. instance of __topdef__
+  //   res .. global resistor model
+  //   rtop .. instance of res
+  //   x1 .. instance of sub2
+  //     x1:ressub2 .. resistor model defined inside instance x1 of sub2
+  //     x1:rsub1_glob .. instance of global resistor model
+  //     x1:rsub1_loc .. instance of x1:ressub2
+  //   __topinst__(sub1) .. instance of sub1 treated as a toplevel subcircuit
+  //   ressub1 .. resistor model defined in sub1, now a global model
+  //   rsub1_glob .. instance of global resistor model defined inside sub1
+  //   rsub1_loc .. instance of local resistor model defined inside sub1
+  print hierarchy
+endc

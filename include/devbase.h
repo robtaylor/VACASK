@@ -177,11 +177,9 @@ public:
     bool addAncestor(Instance* inst);
     bool removeAncestor(Instance* inst);
     bool isAncestor(Model* model);
-    Id translateDefinition(Id definitionName);
 
 private:
     std::unordered_set<Model*> ancestorModels_;
-    std::vector<std::string> ancestorPathStack_;
 } InstantiationData;
 
 

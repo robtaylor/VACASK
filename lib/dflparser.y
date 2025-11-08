@@ -322,12 +322,6 @@ subckt_build
     $$.def.add(std::move($2));
   }
   | subckt_build subckt {
-    // subcircuit definition, not allowed inside other subcircuit definitions
-    if (!$1.isToplevel) {
-        status.set(Status::Syntax, "Nested subcircuit definitions are not allowed.");
-        status.extend(@2.loc());
-        YYERROR;
-    }
     $$ = std::move($1);
     $$.def.add(std::move($2));
   }

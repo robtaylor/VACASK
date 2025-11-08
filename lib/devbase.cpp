@@ -29,20 +29,10 @@ InstantiationData::InstantiationData(Instance* inst) {
     std::vector<Instance*> instPath;
     
     // Start at given instance, collect all ancestor models up to top level instance
+    // Toplevel hierarchical model must be in the list of hierarchical models that are ancestors. 
     for(;inst; inst=inst->parent()) {
         ancestorModels_.insert(inst->model());
         instPath.push_back(inst);
-    }
-
-    // Build ancestor path stack (master names) from toplevel down to inst
-    std::string ancestorPath;
-    // Reverse iterator over instPath vector because toplevel instance is last
-    for (auto it = instPath.rbegin(); it != instPath.rend(); ++it) {
-        if (ancestorPath.size()>0) {
-            ancestorPath += ":";
-        }
-        ancestorPath += std::string((*it)->model()->name());
-        ancestorPathStack_.push_back(ancestorPath);
     }
 }
 
@@ -53,40 +43,20 @@ bool InstantiationData::addAncestor(Instance* inst) {
         if (!inserted) {
             return false;
         }
-        if (inst->parent()) {
-            // Not toplevel instance
-            auto& base = ancestorPathStack_.back();
-            if (base.size()>0) {
-                ancestorPathStack_.push_back(base+":"+std::string(inst->model()->name()));
-            } else {
-                ancestorPathStack_.push_back(inst->model()->name());
-            }
-        } else {
-            // Toplevel instance, ancestor path is empty for all its children
-            ancestorPathStack_.push_back("");
-        }
     }
     return true;
 }
 
 bool InstantiationData::removeAncestor(Instance* inst) {
+    // TODO: ancestor instance should not be specified explicitly
     // Remove ancestor from set, return true if the ancestor was found and removed
     if (inst) {
         auto numRemoved = ancestorModels_.erase(inst->model());
         if (numRemoved=0) {
             return false;
         }
-        ancestorPathStack_.pop_back();
     }
     return true;
-}
-
-Id InstantiationData::translateDefinition(Id definitionName) { 
-    if (ancestorPathStack_.size()>0) {
-        return definitionName; 
-    } else { 
-        return ancestorPathStack_.back()+":"+std::string(definitionName); 
-    }
 }
 
 bool InstantiationData::isAncestor(Model* model) {

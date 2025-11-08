@@ -486,6 +486,7 @@ private:
     
     // Create a subcircuit definitions and all its subdefinitions
     HierarchicalModel* processSubcircuitDefinition(
+        HierarchicalModel* parentModel, 
         const PTSubcircuitDefinition& def, 
         const std::unordered_set<Id>* toplevelDefIds, 
         const std::string& topDefName, 

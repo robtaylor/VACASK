@@ -49,7 +49,7 @@ public:
     // The model is added to the list of models of the given device so that when
     // a device is destroyed all the models in the list are destroyed, too. 
     // HierarchicalModel(HierarchicalDevice* dev, Id name, Status& s=Status::ignore);
-    HierarchicalModel(HierarchicalDevice* dev, Id name, Instance* parentInstance, const PTSubcircuitDefinition& parsedSubcircuit, Status& s=Status::ignore);
+    HierarchicalModel(HierarchicalDevice* dev, Id name, Instance* parentInstance, HierarchicalModel* parentModel, const std::string childrenPathPrefix, const PTSubcircuitDefinition& parsedSubcircuit, Status& s=Status::ignore);
     virtual ~HierarchicalModel();
 
     HierarchicalModel           (const HierarchicalModel&)  = delete;
@@ -86,6 +86,17 @@ public:
 
     // Expose parser table
     const PTSubcircuitDefinition& definition() const { return static_cast<const PTSubcircuitDefinition&>(parsedModel_); };
+
+    // Definition hierarchy, translate child model
+    Id translate(Id childModel) {
+        if (childrenPathPrefix_.size()==0) {
+            // Toplevel instance has an empty path, does not prepend it to its children
+            return childModel;
+        } else {
+            // Other instances prepend their name to their children
+            return childrenPathPrefix_+"::"+std::string(childModel);
+        }
+    };
     
 protected:
     // Build a map from terminal name to terminal index
@@ -97,6 +108,10 @@ protected:
 private:
     std::unordered_map<Id,TerminalIndex> terminalMap;
     std::unordered_map<Id,ParameterIndex> parameterMap;
+    // Parent subcircuit definition - set at elaboration 
+    // This is the hierarchical definition parent. 
+    HierarchicalModel* parentDefinition_;
+    std::string childrenPathPrefix_;
 };
 
 

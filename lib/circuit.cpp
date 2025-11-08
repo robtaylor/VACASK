@@ -689,6 +689,7 @@ bool Circuit::buildEntityLists(Status& s) {
 }
 
 HierarchicalModel* Circuit::processSubcircuitDefinition(
+    HierarchicalModel* parentModel, 
     const PTSubcircuitDefinition& def, 
     const std::unordered_set<Id>* toplevelDefIds, 
     const std::string& topDefName, 
@@ -697,6 +698,20 @@ HierarchicalModel* Circuit::processSubcircuitDefinition(
     Status& s
 ) {
     auto name = def.name();
+
+    // Toplevel definition names are
+    // <topDefName> ... for default toplevel definition
+    // <topDefName>(<name>) ... extra toplevel definitions
+    // <def1>::<def2>::...::<name> ... for all other definitions
+    // def1, def2, ... represent the path from the first hierarchical model below the toplevel
+    // to the hierarchical model <name>.
+    // Hierarchical models defined in toplevel hierarchical models are not prefixed. 
+    // Hierarchical models defined inside hierarchical models that are defined inside the toplevel 
+    // hierarchical models are the first ones that have their names prefixed. 
+    // 
+    // Note that the separator is a double colon (::). 
+    // This way paths to non-global hierarchical models cannot conflict 
+    // with paths to non-global ordinary models and instances. 
     
     // Do we treat this definition as a toplevel definition? 
     bool asToplevel;
@@ -704,34 +719,31 @@ HierarchicalModel* Circuit::processSubcircuitDefinition(
     if (depth==0) {
         // At depth 0 (default toplevel definition) we treat it as toplevel definition
         asToplevel = true;
+        // Definition name 
         name = topDefName;
-        // Definition names of children are not prefixed
+        // Definition names of children are not prefixed with definition path
         childrenPathPrefix = "";
     } else if (depth==1 && toplevelDefIds->contains(name)) {
-        // At depth 1 we check if its name is in toplevelDefNames
+        // depth is 1 and definition name is in toplevelDefNames - we treat it as toplevel definition
         asToplevel = true;
+        // Definition name is <topDefName>(<name>)
         name = topDefName+"("+std::string(name)+")"; 
-        // Definition names of children are not prefixed
+        // Definition names of children are not prefixed with definition path
         childrenPathPrefix = "";
     } else {
-        // All others are treated as ordinary definitions and are prefixed by path
+        // All others are treated as ordinary definitions and prefix children with definition path
         asToplevel = false;
-        // Add prefix to definition names of children
+        // Definition name - prefix with pathPrefix if pathPrefix has nonzero legth
+        if (pathPrefix.size()>0) {
+            name = pathPrefix + "::" + std::string(name);
+        }
+        // Children path prefix is the name of the definition
         childrenPathPrefix = std::string(name);
     }
     
-    // Hierarchical definition name - prefix it with specified path
-    std::string hierDefName;
-    if (pathPrefix.size()>0) {
-        // Have prefix
-        hierDefName = pathPrefix + ":" + std::string(name);
-    } else {
-        // No prefix
-        hierDefName = std::string(name);
-    }
-
-    // Create definition
-    auto hierarchicalModel = new HierarchicalModel(hdev, hierDefName, nullptr, def, s);
+    // Create definition, no instance is the parent - all subcircuit definitions are toplevel objects and appear in no children list
+    // Therefore they cannot be deleted when deleteHierarchy() is called. 
+    auto hierarchicalModel = new HierarchicalModel(hdev, name, nullptr, parentModel, childrenPathPrefix, def, s);
     // std::cout << hierDefName << "\n";
     if (!hierarchicalModel->checkFlags(Model::Flags::IsValid)) {
         // Need to delete it manually because it is not stored in modelMap
@@ -746,7 +758,7 @@ HierarchicalModel* Circuit::processSubcircuitDefinition(
 
     // Now process all definitions that were defined inside this definition
     for(auto& it : def.subDefs()) {
-        if (!processSubcircuitDefinition(*(it.get()), toplevelDefIds, topDefName, childrenPathPrefix, depth+1, s)) {
+        if (!processSubcircuitDefinition(hierarchicalModel, *(it.get()), toplevelDefIds, topDefName, childrenPathPrefix, depth+1, s)) {
             return nullptr;
         }
     }
@@ -802,22 +814,12 @@ bool Circuit::elaborate(
     // Definitions that were specified in toplevelDefinitions are processed differently,  
     // that is definitions defined within them are not prefixed 
     // (i.e. behave as if they were defined in the toplevel definition). 
-    defaultToplevelModel_ = processSubcircuitDefinition(tables_.defaultSubDef(), &defIdSet, topDefName, "", 0, s);
+    defaultToplevelModel_ = processSubcircuitDefinition(nullptr, tables_.defaultSubDef(), &defIdSet, topDefName, "", 0, s);
     if (!defaultToplevelModel_) {
         tables_.accounting().acctNew.telab += Accounting::wclkDelta(t0);
         return false;
     }
     
-    // // Propagate global parameters to options, skip propagation to analysis because we have none
-    // IStruct<SimulatorOptions> opt;
-    // if (auto [ok, changed] = opt.setParameters(tables_.options(), paramEvaluator_, s); !ok) {
-    //     s.extend("Initial options computation failed.");
-    //     return false;
-    // }
-    // 
-    // // Set options
-    // auto changed = setOptions(opt);
-
     // Now we are ready to build the circuit
     
     // Set up ground nodes

@@ -29,8 +29,8 @@ void HierarchicalDevice::dump(int indent, std::ostream& os) const {
 }
 
 
-HierarchicalModel::HierarchicalModel(HierarchicalDevice* dev, Id name, Instance* parentInstance, const PTSubcircuitDefinition& parsedSubcircuit, Status& s)
-    : Model(dev, name, parentInstance, parsedSubcircuit) {
+HierarchicalModel::HierarchicalModel(HierarchicalDevice* dev, Id name, Instance* parentInstance, HierarchicalModel* parentModel, const std::string childrenPathPrefix, const PTSubcircuitDefinition& parsedSubcircuit, Status& s)
+    : Model(dev, name, parentInstance, parsedSubcircuit), parentDefinition_(parentModel), childrenPathPrefix_(childrenPathPrefix) {
     // Prepare terminal map, check uniqueness
     if (!buildTerminalMap(s)) {
         return;
@@ -587,7 +587,7 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
 bool HierarchicalInstance::buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Status& s) {
     // Create models
     for(auto it=block.models().cbegin(); it!=block.models().cend(); ++it) {
-        // Find device
+        // Find devicetranslate(
         // This returns a Device* pointer
         auto* dev = circuit.findDevice(it->device());
         if (!dev || dev->isHierarchical()) {
@@ -614,7 +614,9 @@ bool HierarchicalInstance::buildBlock(Circuit& circuit, RpnEvaluator& evaluator,
         // 2) try local definitions of hierarchical devices
         //    (prefix by definition path)
         if (!mod) {
-            auto localDefId = idata.translateDefinition(it->masterName());
+            // This is a hierarchical instacne and its model is a hierarchical model
+            auto hmod = static_cast<HierarchicalModel*>(model_);
+            auto localDefId = hmod->translate(it->masterName());
             mod = circuit.findModel(localDefId);
         }
 
@@ -662,7 +664,11 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
     auto i = connectedTerminalCount;
     for(auto it=defTerms.begin()+connectedTerminalCount; it!=defTerms.end(); ++it, i++) {
         auto nodeName = it->name();
-        nodeName = parent()->translateNode(circuit, nodeName);
+        // Translate unconnected terminal names, but only if we have a parent. 
+        // There is no parent if we are using a subcircuit as one of the toplevel subcircuits in elaboration. 
+        if (parent()) {
+            nodeName = parent()->translateNode(circuit, nodeName);
+        }
         // Terminals are potential nodes
         auto node = circuit.getNode(nodeName, Node::Flags::PotentialNode, s);
         if (node == nullptr) {
