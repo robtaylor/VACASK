@@ -124,25 +124,28 @@ bool RpnEvaluator::evaluate(const Rpn& rpn, Value& result, Status& s) {
                 auto* builtinPtr = contextStack_.getBuiltin(f.name);
                 if (!builtinPtr) {
                     s.set(
-                        Status::NotFound, 
+                        Status::NotFound,
                         std::string("Function '")+std::string(f.name)+"' not found."
                     );
                     appendLocation(s, loc);
+                    return false;
                 }
                 // Check arity
                 if (f.arity>builtinPtr->maxArity) {
                     s.set(
-                        Status::BadArguments, 
+                        Status::BadArguments,
                         std::string("Function '")+std::string(f.name)+"' accepts at most "+std::to_string(builtinPtr->maxArity)+" argument(s))."
                     );
                     appendLocation(s, loc);
+                    return false;
                 }
                 if (f.arity<builtinPtr->minArity) {
                     s.set(
-                        Status::BadArguments, 
+                        Status::BadArguments,
                         std::string("Function '")+std::string(f.name)+"' requires at lest "+std::to_string(builtinPtr->maxArity)+" argument(s))."
                     );
                     appendLocation(s, loc);
+                    return false;
                 }
                 // Call
                 if (!builtinPtr->func(stack_, f.arity, s)) {
