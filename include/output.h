@@ -77,7 +77,7 @@ public:
                 return (*rVec)[index];
             case Type::RealVecRepo:
                 // Valid solution of NR algorithm is always the current one
-                // Latest opvars are computed at this solution
+                // Latest output variables are computed at this solution
                 return rRepoPtr->data()[index]; 
             
             // Complex value -> real value (return real part)
@@ -126,7 +126,7 @@ public:
                 return (*rVec)[index];
             case Type::RealVecRepo:
                 // Valid solution of NR algorithm is always the current one
-                // Latest opvars are computed at this solution
+                // Latest output variables are computed at this solution
                 return rRepoPtr->data()[index]; 
             
             // Complex value -> complex value
@@ -195,7 +195,7 @@ private:
 // 
 // Type                 Content      Coverted to output source by
 // solution component       id           analysis
-// opvar                    id id        analysis (via circuit)
+// outvar                   id id        analysis (via circuit)
 // sweep variable           ndx          abstract analysis
 // simulator internal       id           abstract analysis (via circuit)
 //   (time, freq, ...)    
@@ -242,7 +242,7 @@ const OutputDescriptor::Type OutdSimStat     = OutputDescriptor::CommonMask() | 
 // Descriptor types used by several analyses (64 possible values)
 const OutputDescriptor::Type OutdSolComponent             = 0;
 const OutputDescriptor::Type OutdPinCurrent               = 1; 
-const OutputDescriptor::Type OutdOpvar                    = 2;
+const OutputDescriptor::Type OutdOutvar                   = 2;
 const OutputDescriptor::Type OutdTf                       = 3;
 const OutputDescriptor::Type OutdZin                      = 4;
 const OutputDescriptor::Type OutdYin                      = 5;

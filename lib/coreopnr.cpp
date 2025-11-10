@@ -182,7 +182,7 @@ OpNRSolver::OpNRSolver(
         .evaluateResistiveJacobian = true, 
         .evaluateResistiveResidual = true, 
         .evaluateLinearizedResistiveRhsResidual = true, 
-        .evaluateOpvars = true, 
+        .evaluateOutvars = true, 
     };
 
     loadSetup_ = LoadSetup {

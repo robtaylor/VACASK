@@ -169,7 +169,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
     paramOsdiIdTranslators.resize(descriptorCount);
     instanceParamOsdiIdLists.resize(descriptorCount);
     modelParamOsdiIdLists.resize(descriptorCount);
-    opvarOsdiIdLists.resize(descriptorCount); 
+    outvarOsdiIdLists.resize(descriptorCount); 
     osdiIdSimInstIdLists.resize(descriptorCount);
     osdiIdSimModIdLists.resize(descriptorCount);
     instParAllocatedOsdiId.resize(descriptorCount);
@@ -216,7 +216,7 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                 //     int a=1;
                 // }
             }
-            // Add id to instance/model/opvar osdi ID lists
+            // Add id to instance/model/output variable osdi ID lists
             if ((paramInfo.flags & PARA_KIND_MASK) == PARA_KIND_INST) {
                 // Instance and model parameter
                 instanceParamOsdiIdLists[i].push_back(j);
@@ -231,10 +231,10 @@ OsdiFile::OsdiFile(void* handle_, std::string file_, Status& s)
                     modParAllocatedOsdiId[i].push_back(j);
                 }
             } else if ((paramInfo.flags & PARA_KIND_MASK) == PARA_KIND_OPVAR) {
-                // Opvar
-                opvarOsdiIdLists[i].push_back(j);
+                // Output variable
+                outvarOsdiIdLists[i].push_back(j);
                 // Add to osdi id to simulator id translator list
-                osdiIdSimInstIdLists[i][j] = opvarOsdiIdLists[i].size()-1;
+                osdiIdSimInstIdLists[i][j] = outvarOsdiIdLists[i].size()-1;
             } else {
                 // Model parameter
                 modelParamOsdiIdLists[i].push_back(j);

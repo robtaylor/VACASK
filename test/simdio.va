@@ -25,7 +25,7 @@ module simdio(A,C);
     (*desc = "Debug messages", units = ""*) 
       parameter integer debug = 1 from [0:inf];
 
-    // Opvars
+    // Output variables
     (*desc= "Diode ohmic current", units ="A" *) real Id;
     (*desc= "Differential conductance", units ="A/V" *) real gd;
     

@@ -60,7 +60,7 @@ bool OperatingPoint::resolveSave(const PTSave& save, bool verify, Status& s) {
     } else if (save.typeName() == idI) {
         st = core.addFlow(save);
     } else if (save.typeName() == idP) {
-        st = core.addInstanceOpvar(save);
+        st = core.addInstanceOutvar(save);
     } else {
         // Report error only if verification is required
         if (verify) {

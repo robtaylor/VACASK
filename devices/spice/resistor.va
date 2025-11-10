@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:27:35 UTC
+// Date         : 2025-11-10 15:10:23 UTC
 // Module name  : sp_resistor
 // Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Model parameters tc1, tc2, tce, w, l, bv_max, and r were renamed to 
@@ -121,11 +121,11 @@ module sp_resistor(pos, neg);
   (* desc = "noise area width exponent" *) parameter real wf = 1.0;
   (* desc = "noise frequency exponent" *) parameter real ef = 1.0;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Current" *) real i;
   (* desc = "Power" *) real p;
 
-  // Model opvars
+  // Model output variables
 
   // Instance fields
   real REStemp = 0;
@@ -317,13 +317,13 @@ module sp_resistor(pos, neg);
       I(pos, neg) <+ flicker_noise(kf*pow(abs(REScurrent), af)/RESeffNoiseArea, ef, "flicker");
     end
 
-    // Instance opvar computation
+    // Instance output variable computation
     i = V(pos, neg);
     i = i * (RESconduct);
     p = V(pos, neg)*V(pos, neg);
     p = p * (RESconduct);
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

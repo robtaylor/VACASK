@@ -115,7 +115,7 @@ Node* findControl(Circuit& circuit, InstanceType& inst, Id instanceName, Id inte
     return node;
 }
 
-template<typename InstanceData> static bool getCtlsrcOpvar(InstanceData& data, ParameterIndex ndx, Value& v, Status& s) { 
+template<typename InstanceData> static bool getCtlsrcOutvar(InstanceData& data, ParameterIndex ndx, Value& v, Status& s) { 
     switch (ndx) {
     case 0:
         v = data.core().ctl;
@@ -127,13 +127,13 @@ template<typename InstanceData> static bool getCtlsrcOpvar(InstanceData& data, P
         v = data.core().i;
         break;
     default:
-        s.set(Status::Range, std::string("Opvar index id=")+std::to_string(ndx)+" out of range.");
+        s.set(Status::Range, std::string("Output variable index id=")+std::to_string(ndx)+" out of range.");
         return false;
     }
     return true;
 }
 
-template<typename InstanceData> static std::tuple<bool, OutputSource> ctlsrcOpvarOutputSource(InstanceData& data, ParameterIndex ndx) { 
+template<typename InstanceData> static std::tuple<bool, OutputSource> ctlsrcOutvarOutputSource(InstanceData& data, ParameterIndex ndx) { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().ctl));
@@ -172,12 +172,12 @@ template<> bool BuiltinVccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluat
     return true; 
 };  
 
-template<> bool BuiltinVccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
-    return getCtlsrcOpvar(data, ndx, v, s);
+template<> bool BuiltinVccsInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
+    return getCtlsrcOutvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::opvarOutputSource(ParameterIndex ndx) const { 
-    return ctlsrcOpvarOutputSource(data, ndx);
+template<> std::tuple<bool, OutputSource> BuiltinVccsInstance::outvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOutvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinVccsInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s) { 
@@ -250,7 +250,7 @@ template<> bool BuiltinVccsInstance::evalCore(Circuit& circuit, CommonData& comm
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*p.gain*(evalSetup.oldSolution[d.uCp] - evalSetup.oldSolution[d.uCn]);
         }
-        // Opvars
+        // Output variables
         d.ctl = evalSetup.oldSolution[d.uCp] - evalSetup.oldSolution[d.uCn]; // controlling voltage
         d.i = p.gain*d.ctl;  // current of one parallel instance
         d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance
@@ -335,12 +335,12 @@ template<> bool BuiltinVcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluat
     return true; 
 };  
 
-template<> bool BuiltinVcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
-    return getCtlsrcOpvar(data, ndx, v, s);
+template<> bool BuiltinVcvsInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
+    return getCtlsrcOutvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::opvarOutputSource(ParameterIndex ndx) const { 
-    return ctlsrcOpvarOutputSource(data, ndx);
+template<> std::tuple<bool, OutputSource> BuiltinVcvsInstance::outvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOutvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinVcvsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -427,7 +427,7 @@ template<> bool BuiltinVcvsInstance::evalCore(Circuit& circuit, CommonData& comm
             d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN] + 
                 p.gain*(evalSetup.oldSolution[d.uCp] - evalSetup.oldSolution[d.uCn]);
         }
-        // Opvars
+        // Output variables
         d.ctl = evalSetup.oldSolution[d.uCp] - evalSetup.oldSolution[d.uCn]; // controlling voltage
         d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance
         d.i = evalSetup.oldSolution[d.uFlow]; // current of one parallel instance
@@ -506,12 +506,12 @@ template<> bool BuiltinCccsInstance::buildHierarchy(Circuit& circuit, RpnEvaluat
     return true; 
 };  
 
-template<> bool BuiltinCccsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
-    return getCtlsrcOpvar(data, ndx, v, s);
+template<> bool BuiltinCccsInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
+    return getCtlsrcOutvar(data, ndx, v, s);
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::opvarOutputSource(ParameterIndex ndx) const { 
-    return ctlsrcOpvarOutputSource(data, ndx);
+template<> std::tuple<bool, OutputSource> BuiltinCccsInstance::outvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOutvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinCccsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -582,7 +582,7 @@ template<> bool BuiltinCccsInstance::evalCore(Circuit& circuit, CommonData& comm
         if (evalSetup.evaluateResistiveResidual) {
             d.flowResidual = p.mfactor*p.gain*evalSetup.oldSolution[d.uCtl];
         }
-        // Opvars
+        // Output variables
         d.ctl = evalSetup.oldSolution[d.uCtl]; // controlling current (unknown)
         d.i = p.gain*d.ctl;  // current of one parallel instance
         d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance
@@ -665,12 +665,12 @@ template<> bool BuiltinCcvsInstance::buildHierarchy(Circuit& circuit, RpnEvaluat
     return true; 
 };  
 
-template<> bool BuiltinCcvsInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
-    return getCtlsrcOpvar(data, ndx, v, s); 
+template<> bool BuiltinCcvsInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
+    return getCtlsrcOutvar(data, ndx, v, s); 
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::opvarOutputSource(ParameterIndex ndx) const { 
-    return ctlsrcOpvarOutputSource(data, ndx);
+template<> std::tuple<bool, OutputSource> BuiltinCcvsInstance::outvarOutputSource(ParameterIndex ndx) const { 
+    return ctlsrcOutvarOutputSource(data, ndx);
 }
 
 template<> bool BuiltinCcvsInstance::populateStructuresCore(Circuit& circuit, Status& s) {
@@ -761,7 +761,7 @@ template<> bool BuiltinCcvsInstance::evalCore(Circuit& circuit, CommonData& comm
             d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN]
                 + p.gain*evalSetup.oldSolution[d.uCtl];
         }
-        // Opvars
+        // Output variables
         d.ctl = evalSetup.oldSolution[d.uCtl]; // controlling current
         d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance 
         d.i = evalSetup.oldSolution[d.uFlow]; // current of one parallel instance

@@ -43,14 +43,14 @@ HBNRSolver::HBNRSolver(
         // Evaluation
         // - no limiting
         // - resistive and reactive
-        // - no opvars for now - maybe later we can collect their time-domain points
+        // - no output variables for now - maybe later we can collect their time-domain points
         //   and transform them to frequency domain before dumping them
         .enableLimiting = false, 
         .evaluateResistiveJacobian = true, 
         .evaluateReactiveJacobian = true, 
         .evaluateResistiveResidual = true, 
         .evaluateReactiveResidual = true, 
-        .evaluateOpvars = true, 
+        .evaluateOutvars = true, 
     };
 
     loadSetup_ = LoadSetup {

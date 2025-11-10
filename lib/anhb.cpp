@@ -53,7 +53,7 @@ bool HB::resolveSave(const PTSave& save, bool verify, Status& s) {
     static const auto idP = Id("p");
 
     bool st = true;
-    // TODO: handle opvars someday
+    // TODO: handle output variables someday
     if (save.typeName() == idDefault) {
         st = core.addAllUnknowns(save);
     } else if (save.typeName() == idFull) {

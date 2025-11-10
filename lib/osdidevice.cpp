@@ -123,8 +123,8 @@ std::tuple<bool,bool> OsdiDevice::writeParameter(OsdiFile::OsdiParameterId osdiI
         return std::make_tuple(false, false);
     }
 
-    if (coreInst && isOpvar(osdiId)) {
-        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an opvar and cannot be written.");
+    if (coreInst && isOutvar(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an output variable and cannot be written.");
         return std::make_tuple(false, false);
     }
 
@@ -267,8 +267,8 @@ std::tuple<bool, bool> OsdiDevice::parameterGiven(OsdiFile::OsdiParameterId osdi
         return std::make_tuple(false, false);
     }
 
-    if (coreInst && isOpvar(osdiId)) {
-        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an opvar and cannot be given.");
+    if (coreInst && isOutvar(osdiId)) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is an output variable and cannot be given.");
         return std::make_tuple(false, false);
     }
 
@@ -408,7 +408,7 @@ bool OsdiDevice::evalAndLoad(Circuit& circuit, CommonData& commons, EvalSetup* e
         if (evalSetup->evaluateNoise) {
             simInfo.flags |= CALC_NOISE; 
         }
-        if (evalSetup->evaluateOpvars) {
+        if (evalSetup->evaluateOutvars) {
             simInfo.flags |= CALC_OP; 
         }
         
@@ -782,11 +782,11 @@ void OsdiDevice::dump(int indent, std::ostream& os) const {
             os << "\n";
         }
     }
-    if (opvarCount()>0) {
-        os << pfx << "  Opvars:\n";
-        for(ParameterIndex i=0; i<opvarCount(); i++) {
-            os << pfx << "   " << " id=" << opvarOsdiParameterId(i) << ": " << std::string(opvarName(i));
-            auto& p = descriptor_->param_opvar[opvarOsdiParameterId(i)];
+    if (outvarCount()>0) {
+        os << pfx << "  Output variables:\n";
+        for(ParameterIndex i=0; i<outvarCount(); i++) {
+            os << pfx << "   " << " id=" << outvarOsdiParameterId(i) << ": " << std::string(outvarName(i));
+            auto& p = descriptor_->param_opvar[outvarOsdiParameterId(i)];
             os << ": \"" << p.description << "\"";
             if (p.num_alias>0) {
                 os << "\n" << pfx << "      Aliases: ";

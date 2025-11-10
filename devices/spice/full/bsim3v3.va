@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:31:53 UTC
+// Date         : 2025-11-10 15:15:07 UTC
 // Module name  : sp_bsim3v3
 // Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
@@ -33,7 +33,7 @@
 //   use a lot of memory for storing past samples, and are thus not 
 //   appropriate for simulating circuits with many transistors.
 //
-//   This model exposes opvars that can lead to creation of
+//   This model exposes output variables that can lead to creation of
 //   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
@@ -568,7 +568,7 @@ module sp_bsim3v3(d, g, s, b);
   (* desc = "maximum voltage B-D branch" *) parameter real vbdr_max = 1e+99;
   (* desc = "N-type (1) or P-type (-1)" *) parameter integer type = 1;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Gmb" *) real gmbs;
   (* desc = "Gm" *) real gm;
   (* desc = "Gds" *) real gds;
@@ -600,7 +600,7 @@ module sp_bsim3v3(d, g, s, b);
   (* desc = "Capbd" *) real capbd;
   (* desc = "Capbs" *) real capbs;
 
-  // Model opvars
+  // Model output variables
 
   // Instance fields
   real BSIM3ueff = 0;
@@ -4204,7 +4204,7 @@ module sp_bsim3v3(d, g, s, b);
 
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     gmbs = BSIM3gmbs;
     gm = BSIM3gm;
     gds = BSIM3gds;
@@ -4236,7 +4236,7 @@ module sp_bsim3v3(d, g, s, b);
     capbd = BSIM3capbd;
     capbs = BSIM3capbs;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

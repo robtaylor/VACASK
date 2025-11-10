@@ -63,7 +63,7 @@ typedef struct EvalSetup {
     bool evaluateLinearizedResistiveRhsResidual {};
     bool evaluateLinearizedReactiveRhsResidual {};
     bool evaluateNoise {};
-    bool evaluateOpvars {};
+    bool evaluateOutvars {};
 
     // Force bypass
     bool forceBypass {};

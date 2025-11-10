@@ -49,8 +49,8 @@ bool OperatingPointCore::resolveOutputDescriptors(bool strict, Status& s) {
         case OutdSolComponent:
             ok = addRealVarOutputSource(strict, it->id, solution);
             break;
-        case OutdOpvar:
-            ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2);
+        case OutdOutvar:
+            ok = addOutvarOutputSource(strict, it->idId.id1, it->idId.id2);
             break;
         default:
             // Delegate to parent

@@ -494,7 +494,7 @@ template<> double BuiltinISourceInstance::responseScalingFactor() const {
     return 1.0; 
 }
 
-template<> bool BuiltinVSourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
+template<> bool BuiltinVSourceInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
     switch (ndx) {
     case 0:
         v = data.core().v;
@@ -503,13 +503,13 @@ template<> bool BuiltinVSourceInstance::getOpvar(ParameterIndex ndx, Value& v, S
         v = data.core().i;
         break;
     default:
-        s.set(Status::Range, std::string("Opvar index id=")+std::to_string(ndx)+" out of range.");
+        s.set(Status::Range, std::string("Output variable index id=")+std::to_string(ndx)+" out of range.");
         return false;
     }
     return true;
 }
 
-template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const { 
+template<> bool BuiltinISourceInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const { 
     switch (ndx) {
     case 0:
         v = data.core().v;
@@ -518,13 +518,13 @@ template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, S
         v = data.core().i;
         break;
     default:
-        s.set(Status::Range, std::string("Opvar index id=")+std::to_string(ndx)+" out of range.");
+        s.set(Status::Range, std::string("Output variable index id=")+std::to_string(ndx)+" out of range.");
         return false;
     }
     return true;
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx) const { 
+template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::outvarOutputSource(ParameterIndex ndx) const { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().v));
@@ -535,7 +535,7 @@ template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSou
     }
 }
 
-template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx) const { 
+template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::outvarOutputSource(ParameterIndex ndx) const { 
     switch (ndx) {
     case 0:
         return std::make_tuple(true, OutputSource(&data.core().v));
@@ -673,7 +673,7 @@ template<> bool BuiltinVSourceInstance::evalCore(Circuit& circuit, CommonData& c
                 d.flowResidual = p.mfactor*evalSetup.oldSolution[d.uFlow];
                 d.eqResidual = -evalSetup.oldSolution[d.uP] + evalSetup.oldSolution[d.uN] + sourceFactor*val;
             }
-            // Opvars
+            // Output variables
             d.v = sourceFactor*val; // mfactor does not affect voltage source value
             d.i = evalSetup.oldSolution[d.uFlow]; // flow across one parallel instance
         }
@@ -761,7 +761,7 @@ template<> bool BuiltinISourceInstance::evalCore(Circuit& circuit, CommonData& c
         if (evalSetup.evaluateResistiveResidual) {
             if (evalSetup.evaluateResistiveResidual) {
                 d.flowResidual = sourceFactor*p.mfactor*val;
-                // Opvars
+                // Ooutput variables
                 d.i = sourceFactor*val; // current of one parallel instance
                 d.v = evalSetup.oldSolution[d.uP] - evalSetup.oldSolution[d.uN]; // voltage across instance
             }  

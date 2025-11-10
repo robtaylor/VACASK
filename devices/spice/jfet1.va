@@ -3,25 +3,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:27:57 UTC
+// Date         : 2025-11-10 15:10:47 UTC
 // Module name  : sp_jfet1
 // Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
 //   
 //   Device type is set by the type parameter to NJF (1) or PJF (-1). 
 //   
-//   Opvars id, is, ig, and igd were renamed to i_d, i_s, i_g, and i_gd 
-//   due to a conflict between is and model parameter is. To keep names 
-//   consistent all current opvars were renamed. 
+//   Output variables id, is, ig, and igd were renamed to i_d, i_s, i_g, 
+//   and i_gd due to a conflict between is and model parameter is. To keep 
+//   names consistent all current output variables were renamed. 
 //   
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism.
@@ -118,7 +118,7 @@ module sp_jfet1(d, g, s);
   (* desc = "Noise equation selector" *) parameter integer nlev = 2;
   (* desc = "Channel noise coefficient" *) parameter real gdsnoi = 1.0;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Voltage G-S" *) real vgs;
   (* desc = "Voltage G-D" *) real vgd;
   (* desc = "Transconductance" *) real gm;
@@ -130,7 +130,7 @@ module sp_jfet1(d, g, s);
   (* desc = "Capacitance due to charge storage G-S junction" *) real cqgs;
   (* desc = "Capacitance due to charge storage G-D junction" *) real cqgd;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Drain conductance" *) real gd;
   (* desc = "Source conductance" *) real gs;
 
@@ -703,7 +703,7 @@ module sp_jfet1(d, g, s);
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(JFETcd)>1E-38) ? (abs(JFETcd)) : (1E-38)))), 1, "flicker");
     I(d_int, s_int) <+ white_noise(id_psd, "id");
 
-    // Instance opvar computation
+    // Instance output variable computation
     vgs = JFETvgs;
     vgd = JFETvgd;
     gm = JFETgm;
@@ -715,7 +715,7 @@ module sp_jfet1(d, g, s);
     cqgs = capgs;
     cqgd = capgd;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

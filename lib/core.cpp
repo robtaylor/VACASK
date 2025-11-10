@@ -135,7 +135,7 @@ bool AnalysisCore::addFlow(const PTSave& save) {
     return true;
 }
 
-bool AnalysisCore::addInstanceOpvar(const PTSave& save) {
+bool AnalysisCore::addInstanceOutvar(const PTSave& save) {
     clearError();
     if (!save.objName() || !save.subName()) {
         // Both parameters should be passed
@@ -145,7 +145,7 @@ bool AnalysisCore::addInstanceOpvar(const PTSave& save) {
     }
     // Create descriptor
     auto name = std::string(save.objName()) + "." + std::string(save.subName());
-    addOutputDescriptor(OutputDescriptor(OutdOpvar, name, save.objName(), save.subName()));
+    addOutputDescriptor(OutputDescriptor(OutdOutvar, name, save.objName(), save.subName()));
     savesCount++;
     return true;
 }
@@ -422,22 +422,22 @@ bool AnalysisCore::addComplexVarOutputSource(bool strict, Id name, const VectorR
     return true;
 }
 
-bool AnalysisCore::addOpvarOutputSource(bool strict, Id instance, Id opvar) {
+bool AnalysisCore::addOutvarOutputSource(bool strict, Id instance, Id outvar) {
     clearError();
     auto inst = circuit.findInstance(instance);
     if (inst) {
-        // Find opvar
-        auto [ndx, found] = inst->opvarIndex(opvar);
+        // Find output variable
+        auto [ndx, found] = inst->outvarIndex(outvar);
         if (found) {
-            auto [ok, osrc] = inst->opvarOutputSource(ndx);
+            auto [ok, osrc] = inst->outvarOutputSource(ndx);
             if (!ok && strict) {
                 return false;
             }
             outputSources.push_back(std::move(osrc));
         } else if (strict) {
-            lastError = Error::OpvarNotFound;
+            lastError = Error::OutvarNotFound;
             errorId = instance;
-            errorId2 = opvar;
+            errorId2 = outvar;
             return false;
         }
     } else if (strict) {
@@ -542,8 +542,8 @@ bool AnalysisCore::formatError(Status& s) const {
         case Error::NodeNotFound:
             s.set(Status::Analysis, std::string("Node '")+std::string(errorId)+"' not found.");
             return false;
-        case Error::OpvarNotFound:
-            s.set(Status::Analysis, std::string("Opvar '")+std::string(errorId2)+"' of instance '"+std::string(errorId)+"' not found.");
+        case Error::OutvarNotFound:
+            s.set(Status::Analysis, std::string("Output variable '")+std::string(errorId2)+"' of instance '"+std::string(errorId)+"' not found.");
             return false;
         case Error::InstanceNotFound:
             s.set(Status::Analysis, std::string("Instance '")+std::string(errorId)+"' not found.");

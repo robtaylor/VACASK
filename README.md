@@ -29,7 +29,7 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - [operating point](include/coreop.h), [DC small-signal](include/coredcinc.h), [DC transfer function](include/coredcxf.h), [AC small-signal](include/coreac.h), [AC transfer function](include/coreacxf.h), [noise](include/corenoise.h), [transient](include/coretran.h), and [(multitone) harmonic balance](include/corehb.h) analyses 
 - [options](lib/options.cpp) for fine tuning the simulator
 - selection of what should be saved during simulation (save directives)
-- collection of auxiliary values (opvars) computed by device models
+- collection of output variables (OSDI opvars) computed by device models
 - [parametric sweep](include/answeep.h) of any analysis with arbitrary depth
 - almost anything can be swept (instance, model, and subcircuit parameters, options, and circuit variables)
 - anything that can be swept can also be modified without reloading the circuit (no need to build a new netlist and restart the simulator)
@@ -114,11 +114,11 @@ Devices marked with an asterisk (*) do not conserve charge because of the modeli
 
 The converted SPICE models can be found in the [devices/spice](devices/spice) directory.
 
-Most devices provide several model variants. The `sn` variant ([devices/spice/sn](devices/spice/sn) directory) models have a simplified noise model and do not expose opvars that would introduce extra internal nodes. These models are the fastest, but they cannot be used in advanced noise analyses (they give correct noise values in the ordinary small-signal noise analysis only). 
+Most devices provide several model variants. The `sn` variant ([devices/spice/sn](devices/spice/sn) directory) models have a simplified noise model and do not expose output variables that would introduce extra internal nodes. These models are the fastest, but they cannot be used in advanced noise analyses (they give correct noise values in the ordinary small-signal noise analysis only). 
 
-The `full` variant  ([devices/spice/full](devices/spice/full) directory) of a model exposes all opvars and the noise model is appropriate for all types of analysis. 
+The `full` variant  ([devices/spice/full](devices/spice/full) directory) of a model exposes all output variables and the noise model is appropriate for all types of analysis. 
 
-The `default` variant of models can be found in the [devices/spice](devices/spice) directory. These models do not expose opvars that introduce extra internal nodes. The noise model, however, is appropriate for all types of noise analysis. If a particular device does not have a `sn` or a `full` variant then that variant is equal to the `default` variant. For more information consult the [Verilog-A Distiller repository](https://codeberg.org/arpadbuermen/VADistiller). 
+The `default` variant of models can be found in the [devices/spice](devices/spice) directory. These models do not expose output variables that introduce extra internal nodes. The noise model, however, is appropriate for all types of noise analysis. If a particular device does not have a `sn` or a `full` variant then that variant is equal to the `default` variant. For more information consult the [Verilog-A Distiller repository](https://codeberg.org/arpadbuermen/VADistiller). 
 
 Examples of SPICE3 model usage are in [demo/spice](demo/spice). 
 

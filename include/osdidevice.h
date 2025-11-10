@@ -73,10 +73,10 @@ public:
         return (descriptor_->param_opvar[osdiId].flags & PARA_KIND_MASK)==PARA_KIND_INST;
     };
     bool isModelParameter(OsdiFile::OsdiParameterId osdiId) const {
-        // All parameters that are not opvars can be model parameters
+        // All parameters that are not output variables can be model parameters
         return (descriptor_->param_opvar[osdiId].flags & PARA_KIND_MASK)!=PARA_KIND_OPVAR;
     };
-    bool isOpvar(OsdiFile::OsdiParameterId osdiId) const {
+    bool isOutvar(OsdiFile::OsdiParameterId osdiId) const {
         return (descriptor_->param_opvar[osdiId].flags & PARA_KIND_MASK)==PARA_KIND_OPVAR;
     };
 
@@ -86,39 +86,39 @@ public:
     };
 
     // Translators
-    // Id (name) -> simulator id of parameter/opvar
+    // Id (name) -> simulator id of parameter
     std::tuple<ParameterIndex, bool> instanceParameterIndex(Id name) const {
         return osdiFile->instanceParameterIndex(index_, name);
     };
     std::tuple<ParameterIndex, bool> modelParameterIndex(Id name) const {
         return osdiFile->modelParameterIndex(index_, name);
     };
-    std::tuple<ParameterIndex, bool> opvarIndex(Id name) const {
-        return osdiFile->opvarIndex(index_, name);
+    std::tuple<ParameterIndex, bool> outvarIndex(Id name) const {
+        return osdiFile->outvarIndex(index_, name);
     };
-    // Number of parameters/opvars
+    // Number of parameters/output variables
     ParameterIndex instanceParameterCount() const { 
         return osdiFile->instanceParameterCount(index_); 
     };
     ParameterIndex modelParameterCount() const { 
         return osdiFile->modelParameterCount(index_); 
     };
-    ParameterIndex opvarCount() const { 
-        return osdiFile->opvarCount(index_); 
+    ParameterIndex outvarCount() const { 
+        return osdiFile->outvarCount(index_); 
     };
-    // Number of osdi parameters+opvars
+    // Number of osdi parameters+output variables
     OsdiFile::OsdiParameterId osdiIdCount() const {
         return osdiFile->osdiIdCount(index_);
     };
-    // Simulator id of parameter/opvar -> primary name
+    // Simulator id of parameter/output variable -> primary name
     Id instanceParameterName(ParameterIndex ndx) const {
         return osdiFile->instanceParameterName(index_, ndx);
     };
     Id modelParameterName(ParameterIndex ndx) const {
         return osdiFile->modelParameterName(index_, ndx);
     };
-    Id opvarName(ParameterIndex ndx) const {
-        return osdiFile->opvarName(index_, ndx);
+    Id outvarName(ParameterIndex ndx) const {
+        return osdiFile->outvarName(index_, ndx);
     };
     // Osdi parameter id
     std::tuple<OsdiFile::OsdiParameterId, bool> osdiParameterId(Id name) const {
@@ -130,12 +130,12 @@ public:
     OsdiFile::OsdiParameterId modelOsdiParameterId(ParameterIndex ndx) const {
         return osdiFile->modelOsdiParameterId(index_, ndx);
     }; 
-    OsdiFile::OsdiParameterId opvarOsdiParameterId(ParameterIndex ndx) const {
-        return osdiFile->opvarOsdiParameterId(index_, ndx);
+    OsdiFile::OsdiParameterId outvarOsdiParameterId(ParameterIndex ndx) const {
+        return osdiFile->outvarOsdiParameterId(index_, ndx);
     }; 
     // Osdi parameter id -> primary name
     Id parameterName(OsdiFile::OsdiParameterId osdiId) const {
-        return osdiFile->opvarName(index_, osdiId);
+        return osdiFile->outvarName(index_, osdiId);
     };
 
     // Terminal and node api
@@ -226,7 +226,7 @@ template<typename T> const T* OsdiDevice::parameterPtr(OsdiFile::OsdiParameterId
         return nullptr;
     }
 
-    if (coreInst && !(isInstanceParameter(osdiId) || isOpvar(osdiId))) {
+    if (coreInst && !(isInstanceParameter(osdiId) || isOutvar(osdiId))) {
         return nullptr;
     }
 

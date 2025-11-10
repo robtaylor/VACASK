@@ -495,33 +495,33 @@ public:
     // reflect the total response of all parallel instances combined. 
     virtual double responseScalingFactor() const { return 1.0; };
     
-    // Opvar API
-    // Returns the number of opvars
-    virtual ParameterIndex opvarCount() const { return 0; };
+    // Output variable API
+    // Returns the number of output variables
+    virtual ParameterIndex outvarCount() const { return 0; };
 
-    // Returns the opvar index corresponding to opvar name
-    virtual std::tuple<ParameterIndex, bool> opvarIndex(Id name) const { return std::make_tuple(0, false); };
+    // Returns the output variable index corresponding to variable name
+    virtual std::tuple<ParameterIndex, bool> outvarIndex(Id name) const { return std::make_tuple(0, false); };
 
-    // Returns the opvar name for given opvar index
-    virtual Id opvarName(ParameterIndex ndx) const { return Id(); };
+    // Returns the output variable name for given output variable index
+    virtual Id outvarName(ParameterIndex ndx) const { return Id(); };
 
-    // Returns the opvar type for given opvar index
-    // Return value: type, opvar exists
-    virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return std::make_tuple(Value::Type::Int, false); };
+    // Returns the output variable type for given output variable index
+    // Return value: type, output variable exists
+    virtual std::tuple<Value::Type,bool> outvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return std::make_tuple(Value::Type::Int, false); };
     
-    // Returns the opvar type for given opvar name
-    // Return value: type, opvar exists
-    virtual std::tuple<Value::Type,bool> opvarType(Id name, Status& s=Status::ignore) const;
+    // Returns the output variable type for given variable name
+    // Return value: type, output variable exists
+    virtual std::tuple<Value::Type,bool> outvarType(Id name, Status& s=Status::ignore) const;
     
-    // Returns the value of an opvar given by index
-    virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return false; };
+    // Returns the value of an output variable given by index
+    virtual bool getOutvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return false; };
 
-    // Returns the value of an opvar given by name
-    virtual bool getOpvar(Id name, Value& v, Status& s=Status::ignore) const;
+    // Returns the value of an output variable given by name
+    virtual bool getOutvar(Id name, Value& v, Status& s=Status::ignore) const;
 
-    // Returns an output source corresponding to an opvar with given index
+    // Returns an output source corresponding to an output variable with given index
     // Return value: ok, output source
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
+    virtual std::tuple<bool, OutputSource> outvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
     
     // Noise API
     virtual ParameterIndex noiseSourceCount() const { return 0; };

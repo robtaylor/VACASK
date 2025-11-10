@@ -57,7 +57,7 @@ public:
         OK, 
         Arguments, 
         NodeNotFound, 
-        OpvarNotFound, 
+        OutvarNotFound, 
         InstanceNotFound, 
         OutputSpec, 
         OutputType, 
@@ -160,7 +160,7 @@ public:
     bool addAllNodes(const PTSave& save);
     bool addNode(const PTSave& save);
     bool addFlow(const PTSave& save);
-    bool addInstanceOpvar(const PTSave& save);
+    bool addInstanceOutvar(const PTSave& save);
     bool addAllTfZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
     bool addTf(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
     bool addZin(const PTSave& save, std::unordered_map<Id,size_t>& nameMap);
@@ -173,7 +173,7 @@ public:
     bool addRealVarOutputSource(bool strict, Id name, const VectorRepository<double>& solution);
     bool addComplexVarOutputSource(bool strict, Id name, const Vector<Complex>& solution);
     bool addComplexVarOutputSource(bool strict, Id name, const VectorRepository<Complex>& solution);
-    bool addOpvarOutputSource(bool strict, Id instance, Id opvar);
+    bool addOutvarOutputSource(bool strict, Id instance, Id outvar);
 
 protected:
     // Clear error

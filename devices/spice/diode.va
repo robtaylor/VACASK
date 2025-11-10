@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:27:46 UTC
+// Date         : 2025-11-10 15:10:34 UTC
 // Module name  : sp_diode
 // Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
@@ -27,7 +27,8 @@
 //   Instance parameter thermal and model parameters rth0 and cth0 were 
 //   removed because the model does not support self-heating. 
 //   
-//   Opvar alias c was removed due to a conflict with a terminal name.
+//   Output variable alias c was removed due to a conflict with a 
+//   terminal name.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //   OpenVAF may create implicit equations.
@@ -168,13 +169,13 @@ module sp_diode(a, c);
   (* desc = "Masking and etching effects in polysilicon (level=3)" *) parameter real xp = 0.0;
   (* desc = "Masking and etching effects (level=3)" *) parameter real xw = 0.0;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Diode voltage" *) real vd;
   (* desc = "Diode conductance" *) real gd;
   (* desc = "Diode capacitance" *) real cd;
   (* desc = "Diode capacitor charge" *) real charge;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Ohmic conductance" *) real cond;
 
   // Instance fields
@@ -878,13 +879,13 @@ module sp_diode(a, c);
     I(a_int, c) <+ white_noise(2*(VACONSTcharge*DIOcurrent), "id");
     I(a_int, c) <+ flicker_noise(kf*exp(af*ln(((abs(DIOcurrent)>1E-38) ? (abs(DIOcurrent)) : (1E-38)))), 1, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     vd = DIOvoltage;
     gd = DIOconduct;
     cd = DIOcap;
     charge = DIOcapCharge;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

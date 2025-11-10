@@ -3,16 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:29:45 UTC
+// Date         : 2025-11-10 15:12:46 UTC
 // Module name  : sp_bjt
 // Model variant: sn
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
@@ -22,16 +22,16 @@
 //   Model parameter subs chooses whether the device is vertical 
 //   (1, default) or lateral (-1). 
 //   
-//   Opvars is and csub were renamed to isubs and csubs due to conflicts 
-//   with model parameters is and csub. 
+//   Output variable is and csub were renamed to isubs and csubs due to 
+//   conflicts with model parameters is and csub. 
 //   
 //   Input instance parameter ic was removed. Initial conditions should be 
 //   set via the simulator's initial conditions mechanism. 
 //   
-//   Opvars geqcb, geqbx, and gcsub were removed as equivalent conductances 
-//   of capacitors are not available in Verilog-A. 
+//   Output variables geqcb, geqbx, and gcsub were removed as equivalent 
+//   conductances of capacitors are not available in Verilog-A. 
 //   
-//   Opvars for accessing node numbers (*node) were removed. 
+//   Output variables for accessing node numbers (*node) were removed. 
 //   
 //   The Weil-McNamee excess phase model has been implemented using the 
 //   McAndrew-Huszka-Coram approach. The model adds two internal nodes (xf1 and 
@@ -228,7 +228,7 @@ module sp_bjt(c, b, e, sub);
   (* desc = "maximum temperature" *) parameter real te_max = 1e+99;
   (* desc = "thermal resistance juntion to ambient" *) parameter real rth0 = 0;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "B-E voltage" *) real vbe;
   (* desc = "B-C voltage" *) real vbc;
   (* desc = "Small signal transconductance" *) real gm;
@@ -251,7 +251,7 @@ module sp_bjt(c, b, e, sub);
   (* desc = "Charge storage Subs. junction" *) real qsub;
   (* desc = "Charge storage B-X junction" *) real qbx;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Inverse early voltage:forward" *) real invearlyvoltf;
   (* desc = "Inverse early voltage:reverse" *) real invearlyvoltr;
   (* desc = "Inverse roll off - forward" *) real invrollofff;
@@ -1414,7 +1414,7 @@ module sp_bjt(c, b, e, sub);
     I(b_int, e_int) <+ white_noise(2*(VACONSTcharge*BJTdcBaseCurrent), "ib");
     I(b_int, e_int) <+ flicker_noise(kf*exp(af*ln(((abs(BJTdcBaseCurrent)>1E-38) ? (abs(BJTdcBaseCurrent)) : (1E-38)))), 1, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     vbe = BJTvbe;
     vbc = BJTvbc;
     gm = BJTgm;
@@ -1437,7 +1437,7 @@ module sp_bjt(c, b, e, sub);
     qsub = BJTqsub;
     qbx = BJTqbx;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

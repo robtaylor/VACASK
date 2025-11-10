@@ -3,28 +3,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:31:02 UTC
+// Date         : 2025-11-10 15:14:10 UTC
 // Module name  : sp_jfet2
 // Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
 //   
 //   Device type is set by the type parameter to NJF (1) or PJF (-1). 
 //   
-//   Opvars id, is, ig, and igd were renamed to i_d, i_s, i_g, and i_gd 
-//   due to a conflict between is and model parameter is. To keep names 
-//   consistent all current opvars were renamed. 
+//   Output variables id, is, ig, and igd were renamed to i_d, i_s, i_g, 
+//   and i_gd due to a conflict between is and model parameter is. To keep 
+//   names consistent all current output variables were renamed. 
 //   
-//   Opvar p was renamed to pwr due to a conflict with a model parameter. 
-//   Opvars vtrap and vpave were removed. 
+//   Output variable p was renamed to pwr due to a conflict with a model 
+//   parameter. Output variables vtrap and vpave were removed. 
 //   
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
@@ -34,12 +34,13 @@
 //   taug to 0 collapses vgs_avg and vgd_avg to ground. Setting model 
 //   parameter taud collapses p_avg to ground. 
 //   
-//   When computing opvars gm and gds the effects of average vgs, 
-//   vgs, and power are not taken into account. 
+//   When computing output variables gm and gds the effects of average 
+//   vgs, vgs, and power are not taken into account. 
 //   
-//   G-D and G-S charge is not computed. Opvars qgs and qgd were removed.
+//   G-D and G-S charge is not computed. Output variables qgs and qgd 
+//   were removed.
 //
-//   This model exposes opvars that can lead to creation of
+//   This model exposes output variables that can lead to creation of
 //   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
@@ -216,7 +217,7 @@ module sp_jfet2(d, g, s);
   (* desc = "high freq drain feedback parm" *) parameter real hfgam = 0;
   (* desc = "parameter measurement temperature" *) parameter real tnom = 0;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Voltage G-S" *) real vgs;
   (* desc = "Voltage G-D" *) real vgd;
   (* desc = "Current at gate node" *) real i_g;
@@ -231,7 +232,7 @@ module sp_jfet2(d, g, s);
   (* desc = "Capacitance due to charge storage G-D junction" *) real cqgd;
   (* desc = "Power dissipated by the JFET2" *) real pwr;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Drain conductance" *) real gd;
   (* desc = "Source conductance" *) real gs;
 
@@ -999,7 +1000,7 @@ module sp_jfet2(d, g, s);
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0/3.0*abs(JFET2gm)))), "id");
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(JFET2cd)>1E-38) ? (abs(JFET2cd)) : (1E-38)))), 1, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     vgs = JFET2vgs;
     vgd = JFET2vgd;
     i_g = JFET2cg;
@@ -1017,7 +1018,7 @@ module sp_jfet2(d, g, s);
     pwr = pwr + (JFET2cg*V(g));
     pwr = pwr - ((JFET2cd+JFET2cg)*V(s));
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

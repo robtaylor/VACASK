@@ -282,8 +282,8 @@ bool TranCore::resolveOutputDescriptors(bool strict) {
         case OutdSolComponent:
             ok = addRealVarOutputSource(strict, it->id, solution);
             break;
-        case OutdOpvar:
-            ok = addOpvarOutputSource(strict, it->idId.id1, it->idId.id2);
+        case OutdOutvar:
+            ok = addOutvarOutputSource(strict, it->idId.id1, it->idId.id2);
             break;
         case OutdTime:
             outputSources.emplace_back(&(nrSolver.evalSetup().time));

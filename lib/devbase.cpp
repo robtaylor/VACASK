@@ -150,22 +150,22 @@ Id Instance::translatePeer(Id peer) {
     }
 }
 
-std::tuple<Value::Type,bool> Instance::opvarType(Id name, Status& s) const {
-    auto [ndx, found] = opvarIndex(name);
+std::tuple<Value::Type,bool> Instance::outvarType(Id name, Status& s) const {
+    auto [ndx, found] = outvarIndex(name);
     if (!found) {
-        s.set(Status::NotFound, std::string("Opvar '")+std::string(name)+"' not found.");
+        s.set(Status::NotFound, std::string("Output variable '")+std::string(name)+"' not found.");
         return std::make_tuple(Value::Type::Int, false);
     }
-    return opvarType(ndx, s);
+    return outvarType(ndx, s);
 }
 
-bool Instance::getOpvar(Id name, Value& v, Status& s) const {
-    auto [ndx, found] = opvarIndex(name);
+bool Instance::getOutvar(Id name, Value& v, Status& s) const {
+    auto [ndx, found] = outvarIndex(name);
     if (!found) {
-        s.set(Status::NotFound, std::string("Opvar '")+std::string(name)+"' not found.");
+        s.set(Status::NotFound, std::string("Oputput variable '")+std::string(name)+"' not found.");
         return false;
     }
-    return getOpvar(ndx, v, s);
+    return getOutvar(ndx, v, s);
 }
 
 Node* Instance::getInternalNode(Circuit& circuit, const std::string& name, Node::Flags flags, Status& s) {

@@ -47,7 +47,7 @@ module diode(A,C);
     (*desc = "Device area factor", type = "instance", units = "" *) 
       parameter real area = 1.0 from (0:inf);
     	
-    // Opvars
+    // Output variables
     (*desc= "Diode voltage", units ="V" *) real Vd;
     (*desc= "Diode ohmic current", units ="A" *) real Id;
     (*desc= "Diode charge", units ="As" *) real Qd;
@@ -150,7 +150,7 @@ module diode(A,C);
                    (F1 + (F3*(Vf-FC*Vjeff)+(M/(2*Vjeff)*(pow(Vf, 2)-pow(FC*Vjeff, 2))))/F2);
         end
         
-        // Opvars (ddx(.,V(A))=ddx(.,V(br_a_ci))
+        // Output variables (ddx(.,V(A))=ddx(.,V(br_a_ci)))
         Vd = Vf;
         Id = If - Ib;
         Qd = Q;

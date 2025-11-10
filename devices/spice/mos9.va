@@ -3,31 +3,31 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:28:41 UTC
+// Date         : 2025-11-10 15:11:36 UTC
 // Module name  : sp_mos9
 // Model variant: default
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
 //   
 //   Device type is set by the type parameter to NMOS (1) or PMOS (-1). 
 //   
-//   Opvars rs and rd were removed due to a conflict with model parameters. 
-//   Their inverses are available as sourceconductance and drainconductance 
-//   opvars. 
+//   Output variables rs and rd were removed due to a conflict with model 
+//   parameters. Their inverses are available as sourceconductance and 
+//   drainconductance output variables. 
 //   
-//   Opvars cbd, cbs, ig, id, is, and ib were renamed to c_bd and c_bs, 
-//   i_g, i_d, i_s, i_b due to conflicts with model parameters. 
+//   Output variables cbd, cbs, ig, id, is, and ib were renamed to c_bd, 
+//   c_bs, i_g, i_d, i_s, i_b due to conflicts with model parameters. 
 //   
-//   Meyer charge is not computed and therefore not available. Opvars qgs, 
-//   qgd, and qgb were removed. 
+//   Meyer charge is not computed and therefore not available. 
+//   Output variables qgs, qgd, and qgb were removed. 
 //   
 //   Parameters ic, icvds, icvgs, and icvbs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism. 
@@ -154,7 +154,7 @@ module sp_mos9(d, g, s, b);
   (* desc = "Flicker noise coefficient" *) parameter real kf = 0;
   (* desc = "Flicker noise exponent" *) parameter real af = 1;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Drain current" *) real i_d;
   (* desc = "B-D junction current" *) real ibd;
   (* desc = "B-S junction current" *) real ibs;
@@ -193,7 +193,7 @@ module sp_mos9(d, g, s, b);
   (* desc = "Bulk-Source charge storage" *) real qbs;
   (* desc = "Bulk-Drain charge storage" *) real qbd;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Depletion layer width" *) real xd;
   (* desc = "Alpha" *) real alpha;
   (* desc = "" *) real input_delta;
@@ -1474,7 +1474,7 @@ module sp_mos9(d, g, s, b);
     flicker_exp = 1;
     I(d_int, s_int) <+ flicker_noise(flicker_psd, flicker_exp, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     i_d = MOS9cd;
     ibd = MOS9cbd;
     ibs = MOS9cbs;
@@ -1518,7 +1518,7 @@ module sp_mos9(d, g, s, b);
     qbs = MOS9qbs;
     qbd = MOS9qbd;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

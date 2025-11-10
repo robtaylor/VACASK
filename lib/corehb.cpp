@@ -82,7 +82,7 @@ bool HBCore::resolveOutputDescriptors(bool strict, Status& s) {
     for (auto it = outputDescriptors.cbegin(); it != outputDescriptors.cend(); ++it) {
         Node *node;
         Instance *inst;
-        // TODO: handle opvars someday
+        // TODO: handle output variables someday
         switch (it->type) {
         case OutdSolComponent:
             ok = addComplexVarOutputSource(strict, it->id, outputPhasors); 

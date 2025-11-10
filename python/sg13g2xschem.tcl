@@ -28,7 +28,7 @@ proc write_save_lines_vacask {type model schpath spiceprefix instname} {
     set m q$model
     set devpath [ string map {. :} '$schpath$spiceprefix$instname.$m' ]
 
-    # TODO: Verilog-A VBIC does not expose opvars
+    # TODO: Verilog-A VBIC does not expose output variables
     # append sch_expand(savelist) "save p($devpath,gm)\n"
     # append sch_expand(savelist) "save p($devpath,go)\n"
     # append sch_expand(savelist) "save p($devpath,gmu)\n"

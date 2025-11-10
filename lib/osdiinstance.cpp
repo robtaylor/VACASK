@@ -150,46 +150,46 @@ std::tuple<bool,bool> OsdiInstance::parameterGiven(ParameterIndex ndx, Status& s
     return model()->device()->parameterGiven(osdiId, nullptr, core_, s);
 }
 
-ParameterIndex OsdiInstance::opvarCount() const {
-    return model()->device()->opvarCount();
+ParameterIndex OsdiInstance::outvarCount() const {
+    return model()->device()->outvarCount();
 }
 
-std::tuple<ParameterIndex, bool> OsdiInstance::opvarIndex(Id name) const {
-    return model()->device()->opvarIndex(name);
+std::tuple<ParameterIndex, bool> OsdiInstance::outvarIndex(Id name) const {
+    return model()->device()->outvarIndex(name);
 }
 
-Id OsdiInstance::opvarName(ParameterIndex ndx) const {
-    return model()->device()->opvarName(ndx);
+Id OsdiInstance::outvarName(ParameterIndex ndx) const {
+    return model()->device()->outvarName(ndx);
 }
 
-std::tuple<Value::Type,bool> OsdiInstance::opvarType(ParameterIndex ndx, Status& s) const {
-    if (ndx>=model()->device()->opvarCount()) {
+std::tuple<Value::Type,bool> OsdiInstance::outvarType(ParameterIndex ndx, Status& s) const {
+    if (ndx>=model()->device()->outvarCount()) {
         s.set(Status::Range, std::string("Parameter index id=")+std::to_string(ndx)+" out of range.");
         return std::make_tuple(Value::Type::Int, false);
     }
-    auto osdiId = model()->device()->opvarOsdiParameterId(ndx);
+    auto osdiId = model()->device()->outvarOsdiParameterId(ndx);
     return std::make_tuple(model()->device()->parameterType(osdiId), true);
 }
 
-bool OsdiInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const {
-    if (ndx>=model()->device()->opvarCount()) {
-        s.set(Status::Range, std::string("Opvar index id=")+std::to_string(ndx)+" out of range.");
+bool OsdiInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const {
+    if (ndx>=model()->device()->outvarCount()) {
+        s.set(Status::Range, std::string("Output variable index id=")+std::to_string(ndx)+" out of range.");
         return false;
     }
     auto osdiId = model()->device()->instanceOsdiParameterId(ndx);
     return model()->device()->readParameter(osdiId, const_cast<void*>(model()->core()), core_, v, s);
 }
 
-std::tuple<bool, OutputSource> OsdiInstance::opvarOutputSource(ParameterIndex ndx) const {
-    if (ndx>=model()->device()->opvarCount()) {
+std::tuple<bool, OutputSource> OsdiInstance::outvarOutputSource(ParameterIndex ndx) const {
+    if (ndx>=model()->device()->outvarCount()) {
         return std::make_tuple(false, OutputSource());
     }
-    auto [t, ok] = opvarType(ndx);
+    auto [t, ok] = outvarType(ndx);
     if (!ok) {
         return std::make_tuple(false, OutputSource());
     }
 
-    auto osdiId = model()->device()->opvarOsdiParameterId(ndx);
+    auto osdiId = model()->device()->outvarOsdiParameterId(ndx);
     switch (t) {
         case Value::Type::Int: {
             const int* ptr = model()->device()->parameterPtr<int>(osdiId, model()->core(), core());

@@ -1,7 +1,7 @@
 // Derivative operator (ddt())
 
 // ddt(f(x)) creates an implicit equation if the ddt(.) term 
-// is used in a nonlinear expression or in an opvar. 
+// is used in a nonlinear expression or in an output variable. 
 // The unknown is y, its value is ddt(.). 
 // The implicit equation is
 //   -y + ddt(f(x)) = 0

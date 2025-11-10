@@ -84,7 +84,7 @@ bool Tran::resolveSave(const PTSave& save, bool verify, Status& s) {
     } else if (save.typeName() == idI) {
         st = tranCore.addFlow(save);
     } else if (save.typeName() == idP) {
-        st = tranCore.addInstanceOpvar(save);
+        st = tranCore.addInstanceOutvar(save);
     } else {
         // Report error only if verification is required
         if (verify) {

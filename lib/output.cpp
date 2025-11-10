@@ -47,12 +47,12 @@ void OutputTdRhs::dump(std::ostream& os) {
 }
 
 
-Id OutputOpvar::name() const {
-    return Id(std::string(instance_)+"."+std::string(opvar_));
+Id OutputOutvar::name() const {
+    return Id(std::string(instance_)+"."+std::string(outvar_));
 }
 
-void OutputOpvar::dump(std::ostream& os) {
-    os << "Opvar("+std::string(instance_)+","+std::string(opvar_)+")";
+void OutputOutvar::dump(std::ostream& os) {
+    os << "Outvar("+std::string(instance_)+","+std::string(outvar_)+")";
 }
 
 

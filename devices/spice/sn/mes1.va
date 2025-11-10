@@ -3,25 +3,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-19-gc6a6bd9ed
+// Version      : ngspice-45-20-g683e208d8
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-09-16 07:30:00 UTC
+// Date         : 2025-11-10 15:13:02 UTC
 // Module name  : sp_mes1
 // Model variant: sn
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
 //
-//   All parameters and opvars refer to a single parallel instance,
+//   All parameters and output variables refer to a single parallel instance,
 //   even if $mfactor>1.
 //
 //   Parameter off was removed. Bypassing is not available in Verilog-A. 
 //   
 //   Device type is set by the type parameter to NJF (1) or PJF (-1). 
 //   
-//   Opvars cg, cd, cgd, and is were renamed to i_g, i_d, i_gd, and i_s 
-//   due to a conflict of cgd and is with model parameters. 
-//   To keep names consistent all current opvars were renamed. 
+//   Output variables cg, cd, cgd, and is were renamed to i_g, i_d, i_gd, 
+//   and i_s due to a conflict of cgd and is with model parameters. 
+//   To keep names consistent all current output variables were renamed. 
 //   
 //   Parameters ic, ic-vds, and ic-vgs were removed. Initial conditions 
 //   should be set via the simulator's initial conditions mechanism.
@@ -90,7 +90,7 @@ module sp_mes1(d, g, s);
   (* desc = "Flicker noise coefficient" *) parameter real kf = 0;
   (* desc = "Flicker noise exponent" *) parameter real af = 1;
 
-  // Instance opvars
+  // Instance output variables
   (* desc = "Gate-Source voltage" *) real vgs;
   (* desc = "Gate-Drain voltage" *) real vgd;
   (* desc = "Transconductance" *) real gm;
@@ -102,7 +102,7 @@ module sp_mes1(d, g, s);
   (* desc = "Gate-Source charge storage" *) real qgs;
   (* desc = "Gate-Drain charge storage" *) real qgd;
 
-  // Model opvars
+  // Model output variables
   (* desc = "Drain conductance" *) real gd;
   (* desc = "Source conductance" *) real gs;
   (* desc = "Depletion capacitance" *) real depl_cap;
@@ -595,7 +595,7 @@ module sp_mes1(d, g, s);
     I(d_int, s_int) <+ white_noise(4*(VACONSTboltz*($temperature*(2.0/3.0*abs(MESgm)))), "id");
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(MESdcCurrent)>1E-38) ? (abs(MESdcCurrent)) : (1E-38)))), 1, "flicker");
 
-    // Instance opvar computation
+    // Instance output variable computation
     vgs = MESvgs;
     vgd = MESvgd;
     gm = MESgm;
@@ -607,7 +607,7 @@ module sp_mes1(d, g, s);
     qgs = MESqgs;
     qgd = MESqgd;
 
-    // Model opvar computation
+    // Model output variable computation
 
   end
 endmodule

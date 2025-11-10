@@ -29,7 +29,7 @@ Changes by Arpad Buermen
    This is done to avoid incorrect solution with large Vgs.
    Id(Vgs) curve first rises and then starts to fall at high voltages which is incorrect. 
    But that is just the way BSIM3 behaves. :(
-4. Vds, Vgs, Vbs, Vth, Vdsat are now opvars. 
+4. Vds, Vgs, Vbs, Vth, Vdsat are now output variables. 
 */
 
 //  To enable noise code

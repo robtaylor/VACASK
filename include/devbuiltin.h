@@ -186,12 +186,12 @@ public:
     virtual std::tuple<UnknownIndex,UnknownIndex> sourceResponse(Circuit& circuit) const { return std::make_tuple(0, 0); };
     virtual double scaledUnityExcitation() const { return 1.0; };
     virtual double responseScalingFactor() const { return 1.0; };
-    virtual ParameterIndex opvarCount() const { return data.parameterCount(); };
-    virtual std::tuple<ParameterIndex, bool> opvarIndex(Id name) const { return data.parameterIndex(name); };
-    virtual Id opvarName(ParameterIndex ndx) const { return data.parameterName(ndx); };
-    virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return data.parameterType(ndx, s); };
-    virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return data.getParameter(ndx, v, s); };
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
+    virtual ParameterIndex outvarCount() const { return data.parameterCount(); };
+    virtual std::tuple<ParameterIndex, bool> outvarIndex(Id name) const { return data.parameterIndex(name); };
+    virtual Id outvarName(ParameterIndex ndx) const { return data.parameterName(ndx); };
+    virtual std::tuple<Value::Type,bool> outvarType(ParameterIndex ndx, Status& s=Status::ignore) const { return data.parameterType(ndx, s); };
+    virtual bool getOutvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const { return data.getParameter(ndx, v, s); };
+    virtual std::tuple<bool, OutputSource> outvarOutputSource(ParameterIndex ndx) const { return std::make_tuple(false, OutputSource()); };
     virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual bool setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;
@@ -698,10 +698,10 @@ void BuiltinDevice<ModelParams, InstanceParams, InstanceData>::dump(int indent, 
             os << pfx << "    " << std::string(Introspection<InstanceParams>::name(i)) << "\n";
         }
     }
-    auto opvars = Introspection<InstanceData>::count();
+    auto outvars = Introspection<InstanceData>::count();
     if (ipar>0) {
-        os << pfx << "  Opvars:\n";
-        for(ParameterIndex i=0; i<opvars; i++) {
+        os << pfx << "  Output variables:\n";
+        for(ParameterIndex i=0; i<outvars; i++) {
             os << pfx << "    " << Introspection<InstanceData>::name(i) << "\n";
         }
     }

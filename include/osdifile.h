@@ -74,7 +74,7 @@ public:
     static const std::vector<OsdiFile*>& files() { return fileOrder; };
 
     // Translators
-    // Id (name) -> simulator id of parameter/opvar
+    // Id (name) -> simulator id of parameter/output variable
     inline std::tuple<ParameterIndex, bool> instanceParameterIndex(OsdiDeviceIndex deviceIndex, Id name) const {
         auto it = paramOsdiIdTranslators[deviceIndex].find(name);
         if (it==paramOsdiIdTranslators[deviceIndex].end()) {
@@ -98,32 +98,32 @@ public:
         }
         return std::make_tuple(osdiIdSimModIdLists[deviceIndex][it->second], true);
     };
-    inline std::tuple<ParameterIndex, bool> opvarIndex(OsdiDeviceIndex deviceIndex, Id name) const {
+    inline std::tuple<ParameterIndex, bool> outvarIndex(OsdiDeviceIndex deviceIndex, Id name) const {
         auto it = paramOsdiIdTranslators[deviceIndex].find(name);
         if (it==paramOsdiIdTranslators[deviceIndex].end()) {
             return std::make_tuple(0, false);
         }
-        // Must be opvar parameter
+        // Must be an output variable
         if ((descriptors[deviceIndex]->param_opvar[it->second].flags & PARA_KIND_MASK) != PARA_KIND_OPVAR) {
             return std::make_tuple(0, false);
         }
         return std::make_tuple(osdiIdSimInstIdLists[deviceIndex][it->second], true);
     };
-    // Number of parameters/opvars
+    // Number of parameters/output variables
     inline ParameterIndex instanceParameterCount(OsdiDeviceIndex deviceIndex) const { 
         return instanceParamOsdiIdLists[deviceIndex].size(); 
     };
     inline ParameterIndex modelParameterCount(OsdiDeviceIndex deviceIndex) const { 
         return modelParamOsdiIdLists[deviceIndex].size(); 
     };
-    inline ParameterIndex opvarCount(OsdiDeviceIndex deviceIndex) const { 
-        return opvarOsdiIdLists[deviceIndex].size(); 
+    inline ParameterIndex outvarCount(OsdiDeviceIndex deviceIndex) const { 
+        return outvarOsdiIdLists[deviceIndex].size(); 
     };
-    // Number of osdi parameters+opvars
+    // Number of osdi parameters+output variables
     inline OsdiParameterId osdiIdCount(OsdiDeviceIndex deviceIndex) const {
         return descriptors[deviceIndex]->num_params+descriptors[deviceIndex]->num_opvars;
     };
-    // Simulator id of parameter/opvar -> primary name
+    // Simulator id of parameter/output variable -> primary name
     inline Id instanceParameterName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
         auto osdiId = instanceParamOsdiIdLists[deviceIndex][ndx];
         return osdiIdPrimaryParamName[deviceIndex][osdiId];
@@ -132,8 +132,8 @@ public:
         auto osdiId = modelParamOsdiIdLists[deviceIndex][ndx];
         return osdiIdPrimaryParamName[deviceIndex][osdiId];
     };
-    inline Id opvarName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
-        auto osdiId = opvarOsdiIdLists[deviceIndex][ndx];
+    inline Id outvarName(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
+        auto osdiId = outvarOsdiIdLists[deviceIndex][ndx];
         return osdiIdPrimaryParamName[deviceIndex][osdiId];
     };
     // Osdi parameter id
@@ -150,8 +150,8 @@ public:
     inline OsdiParameterId modelOsdiParameterId(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
         return modelParamOsdiIdLists[deviceIndex][ndx];
     }; 
-    inline OsdiParameterId opvarOsdiParameterId(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
-        return opvarOsdiIdLists[deviceIndex][ndx];
+    inline OsdiParameterId outvarOsdiParameterId(OsdiDeviceIndex deviceIndex, ParameterIndex ndx) const {
+        return outvarOsdiIdLists[deviceIndex][ndx];
     }; 
     // Osdi parameter id -> primary name
     inline Id parameterName(OsdiDeviceIndex deviceIndex, OsdiParameterId osdiId) const {
@@ -358,10 +358,10 @@ private:
     // Vector of vectors of instance parameter ids
     std::vector<std::vector<OsdiParameterId>> instanceParamOsdiIdLists;
     
-    // Vector of vectors of opvar ids
-    std::vector<std::vector<OsdiParameterId>> opvarOsdiIdLists;
+    // Vector of vectors of output variable ids
+    std::vector<std::vector<OsdiParameterId>> outvarOsdiIdLists;
 
-    // Vector of vectors of simulator instance parameter/opvar ids corresponding to osdi ids
+    // Vector of vectors of simulator instance parameter/output variable ids corresponding to osdi ids
     std::vector<std::vector<ParameterIndex>> osdiIdSimInstIdLists;
 
     // Vector of vectors of simulator model parameter ids corresponding to osdi ids

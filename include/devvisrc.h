@@ -129,10 +129,10 @@ template<> std::tuple<EquationIndex,EquationIndex> BuiltinISourceInstance::sourc
 template<> std::tuple<UnknownIndex,UnknownIndex> BuiltinISourceInstance::sourceResponse(Circuit& circuit) const;
 template<> double BuiltinISourceInstance::scaledUnityExcitation() const;
 template<> double BuiltinISourceInstance::responseScalingFactor() const;
-template<> bool BuiltinVSourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> bool BuiltinISourceInstance::getOpvar(ParameterIndex ndx, Value& v, Status& s) const;
-template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::opvarOutputSource(ParameterIndex ndx) const;
-template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::opvarOutputSource(ParameterIndex ndx) const;
+template<> bool BuiltinVSourceInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const;
+template<> bool BuiltinISourceInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const;
+template<> std::tuple<bool, OutputSource> BuiltinVSourceInstance::outvarOutputSource(ParameterIndex ndx) const;
+template<> std::tuple<bool, OutputSource> BuiltinISourceInstance::outvarOutputSource(ParameterIndex ndx) const;
 template<> std::tuple<bool, bool, bool> BuiltinVSourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
 template<> std::tuple<bool, bool, bool> BuiltinISourceInstance::setupCore(Circuit& circuit, CommonData& commons, DeviceRequests* devReq, Status& s);
 template<> bool BuiltinVSourceInstance::setStaticTolerancesCore(Circuit& circuit, CommonData& commons, Status& s);

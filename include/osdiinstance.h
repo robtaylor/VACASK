@@ -48,12 +48,12 @@ public:
     virtual bool buildHierarchy(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore);
     virtual std::tuple<EquationIndex,EquationIndex> sourceExcitation(Circuit& circuit) const;
     virtual std::tuple<UnknownIndex,UnknownIndex> sourceResponse(Circuit& circuit) const;
-    virtual ParameterIndex opvarCount() const;
-    virtual std::tuple<ParameterIndex, bool> opvarIndex(Id name) const;
-    virtual Id opvarName(ParameterIndex ndx) const;
-    virtual std::tuple<Value::Type,bool> opvarType(ParameterIndex ndx, Status& s=Status::ignore) const;
-    virtual bool getOpvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const; 
-    virtual std::tuple<bool, OutputSource> opvarOutputSource(ParameterIndex ndx) const;
+    virtual ParameterIndex outvarCount() const;
+    virtual std::tuple<ParameterIndex, bool> outvarIndex(Id name) const;
+    virtual Id outvarName(ParameterIndex ndx) const;
+    virtual std::tuple<Value::Type,bool> outvarType(ParameterIndex ndx, Status& s=Status::ignore) const;
+    virtual bool getOutvar(ParameterIndex ndx, Value& v, Status& s=Status::ignore) const; 
+    virtual std::tuple<bool, OutputSource> outvarOutputSource(ParameterIndex ndx) const;
     virtual std::tuple<bool, bool, bool> setup(Circuit& circuit, CommonData& commons, bool force, DeviceRequests* devReq, Status& s=Status::ignore);
     virtual bool setStaticTolerances(Circuit& circuit, CommonData& commons, Status& s=Status::ignore);
     virtual void dump(int indent, const Circuit& circuit, std::ostream& os) const;

@@ -190,7 +190,7 @@ std::tuple<bool, bool> SmallSignal<CoreClass, DataMixin>::resolveOpSave(const PT
     } else if (save.typeName() == idI) {
         st = opCore.addFlow(save);
     } else if (save.typeName() == idP) {
-        st = opCore.addInstanceOpvar(save);
+        st = opCore.addInstanceOutvar(save);
     } else {
         // Do not know how to handle this save
         if (verify) {
