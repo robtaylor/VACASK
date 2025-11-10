@@ -503,21 +503,23 @@ after INCEND we have
                 return(token::HEXINTEGER);
             }
 
-<BODY>(0|([1-9][0-9]*))?\.([0-9]*)? {
-                // xxx.xxx
-                // xxx.
+<BODY>((0|([1-9][0-9]*))\.[0-9]*)|(\.[0-9]+) {
+                // xxx.xxx  (integer with dot and optional fraction)
+                // xxx.     (integer with dot)
+                // .xxx     (dot with fraction, at least one digit required)
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
             }
-<BODY>(0|([1-9][0-9]*))?(\.([0-9]*)?)?([eE][+-]?[0-9]+) {
+<BODY>(((0|([1-9][0-9]*))(\.[0-9]*)?)|(\.[0-9]+))([eE][+-]?[0-9]+) {
                 // [.xxx | xxx[.[xxx]] | xxx] e [+|-] xxx
+                // Requires at least one digit in the mantissa
                 yylval->build<double>(std::stod(yytext));
                 return(token::FLOAT);
             }
-<BODY>(\.[0-9]*)|((0|([1-9][0-9]*))(\.([0-9]*)?)?)(([munpfakKMGTxX]|meg|mil)[a-zA-Z_]*) { 
-                // .xxx
-                // xxx[.[xxx]]
-                // xxx
+<BODY>((\.[0-9]+)|((0|([1-9][0-9]*))(\.([0-9]*)?)?))(([munpfakKMGTxX]|meg|mil)[a-zA-Z_]*) {
+                // .xxx      (dot with fraction, at least one digit required)
+                // xxx[.[xxx]] (integer with optional dot and fraction)
+                // xxx       (integer only)
                 // with SI-prefix and optional unit
                 double s;
                 int i;
@@ -530,13 +532,13 @@ after INCEND we have
                 switch (yytext[i]) {
                     case 'm': {
                         if (yytext[i+1]=='e' && yytext[i+2]=='g') {
-                            s=1e6; 
+                            s=1e6;
                         } else if (yytext[i+1]=='i' && yytext[i+2]=='l') {
-                            s=25.4e-6; 
+                            s=25.4e-6;
                         } else {
-                            s=1e-3; 
+                            s=1e-3;
                         }
-                        break; 
+                        break;
                     }
                     case 'u': s=1e-6; break;
                     case 'n': s=1e-9; break;
@@ -550,7 +552,7 @@ after INCEND we have
                     case 'X': s=1e6; break;
                     case 'G': s=1e9; break;
                     case 'T': s=1e12; break;
-                    default: 
+                    default:
                         error(*loc, "Syntax error, incorrectly formed floating point number.");
                         return(token::YYerror);
                 }
