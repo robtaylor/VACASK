@@ -565,7 +565,7 @@ expr
     $$.extend(Rpn::Op(Rpn::OpAnd), @2.loc());  
   }
   | expr OR expr { 
-    // short circuit (a &|| b) translation to RPN
+    // short circuit (a || b) translation to RPN
     //         a
     //         makeboolean
     //         branchiftrue end

@@ -112,7 +112,8 @@ bool Circuit::tolerancesAffectingOptionsChanged(SimulatorOptions& opt) {
 OptionsResolver::OptionsResolver(IStruct<SimulatorOptions>& opt) : opt(opt) {
     size_t ii = 0;
     for(auto it : std::initializer_list<std::tuple<Id, Id>>{
-        { "$temp", "temp" },
+        { "$temp",  "temp" },
+        { "$scale", "scale" },
     } ) {
         // Look up parameter id in options structure
         auto [mappedId, paramId] = it;

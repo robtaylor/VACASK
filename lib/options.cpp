@@ -332,6 +332,7 @@ bool SimulatorOptions::staticInitialize() {
     // Currently only temp (mapped to $temp) 
     for(auto it : std::initializer_list<Id>{
         Id::createStatic("temp"),
+        Id::createStatic("scale"),
     } ) {
         auto [ndx, found] = Introspection<SimulatorOptions>::index(it);
         parametrizationAffectingOptions.insert({it, static_cast<ParameterIndex>(ndx)});
