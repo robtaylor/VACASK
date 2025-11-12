@@ -119,6 +119,8 @@ class HierarchicalInstance : public Instance {
 public:
     friend class HierarchicalModel;
 
+    enum class Build { Models, Instances };
+
     // The instance is added to the list of instances of the given model so that when
     // a model is destroyed all the instances in the list are destroyed, too. 
     HierarchicalInstance(HierarchicalModel* mod, Id name, Instance* parentInstance, const PTInstance& parsedInstance, Status& s=Status::ignore);
@@ -165,7 +167,7 @@ public:
     virtual std::tuple<bool, bool> subhierarchyChanged(Circuit& circuit, RpnEvaluator& evaluator, Status& s=Status::ignore); 
 
 protected:
-    bool buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Status& s=Status::ignore);
+    bool buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Build what=Build::Instances, Status& s=Status::ignore);
     bool recomputeBlockConditions(Circuit& circuit, RpnEvaluator& evaluator, std::vector<const PTBlock*>& newBlocks, Status& s=Status::ignore); 
     
 private:

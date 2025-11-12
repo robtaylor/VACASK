@@ -253,6 +253,9 @@ Instance* HierarchicalModel::createInstance(Circuit& circuit, Instance* parentIn
     // Compute block conditions, store in activeBlocks vector which is empty at the present (fresh instance)
     auto ok3 = instance->recomputeBlockConditions(circuit, evaluator, instance->activeBlocks, s);
     if (!ok3) {
+        // Revert context, remove ancestor, and leave
+        Instance::revertContext(circuit, contextMarker);
+        idata.removeAncestor(instance);
         return nullptr;
     }
     
@@ -584,69 +587,71 @@ bool HierarchicalInstance::propagateParameters(Circuit& circuit, RpnEvaluator& e
     return true;
 }
 
-bool HierarchicalInstance::buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Status& s) {
+bool HierarchicalInstance::buildBlock(Circuit& circuit, RpnEvaluator& evaluator, InstantiationData& idata, const PTBlock& block, Build what, Status& s) {
     // Create models
-    for(auto it=block.models().cbegin(); it!=block.models().cend(); ++it) {
-        // Find devicetranslate(
-        // This returns a Device* pointer
-        auto* dev = circuit.findDevice(it->device());
-        if (!dev || dev->isHierarchical()) {
-            // Device not found or device is a hierarchical device
-            s.set(Status::NotFound, std::string("Device '")+std::string(it->device())+"' not found.");
-            s.extend(it->location());
-            return false;
-        }
+    if (what==Build::Models) {
+        for(auto it=block.models().cbegin(); it!=block.models().cend(); ++it) {
+            // Find devicetranslate(
+            // This returns a Device* pointer
+            auto* dev = circuit.findDevice(it->device());
+            if (!dev || dev->isHierarchical()) {
+                // Device not found or device is a hierarchical device
+                s.set(Status::NotFound, std::string("Device '")+std::string(it->device())+"' not found.");
+                s.extend(it->location());
+                return false;
+            }
 
-        // Create model (generic method)
-        auto* subMod = dev->createModel(circuit, this, evaluator, *it, s);
-        if (!subMod) {
-            return false;
+            // Create model (generic method)
+            auto* subMod = dev->createModel(circuit, this, evaluator, *it, s);
+            if (!subMod) {
+                return false;
+            }
         }
-    }
-    
-    // Create instances
-    for(auto it=block.instances().cbegin(); it!=block.instances().cend(); ++it) {
-        // Find master
-        // 1) try local models (prefix by instance path)
-        auto localMasterId = translate(it->masterName());
-        auto* mod = circuit.findModel(localMasterId);
+    } else {
+        // Create instances
+        for(auto it=block.instances().cbegin(); it!=block.instances().cend(); ++it) {
+            // Find master
+            // 1) try local models (prefix by instance path)
+            auto localMasterId = translate(it->masterName());
+            auto* mod = circuit.findModel(localMasterId);
 
-        // 2) try local definitions of hierarchical devices
-        //    (prefix by definition path)
-        if (!mod) {
-            // This is a hierarchical instacne and its model is a hierarchical model
-            auto hmod = static_cast<HierarchicalModel*>(model_);
-            auto localDefId = hmod->translate(it->masterName());
-            mod = circuit.findModel(localDefId);
-        }
+            // 2) try local definitions of hierarchical devices
+            //    (prefix by definition path)
+            if (!mod) {
+                // This is a hierarchical instacne and its model is a hierarchical model
+                auto hmod = static_cast<HierarchicalModel*>(model_);
+                auto localDefId = hmod->translate(it->masterName());
+                mod = circuit.findModel(localDefId);
+            }
 
-        // 3) try global models/definitions of hierarchical devices
-        if (!mod) {
-            mod = circuit.findModel(it->masterName());
-        }
+            // 3) try global models/definitions of hierarchical devices
+            if (!mod) {
+                mod = circuit.findModel(it->masterName());
+            }
 
-        // We do not try device names (i.e. default models)
-        // If one wants to have default models, one should create them explicitly, e.g. 
-        // add a line of the following form to the netlist
-        //   model <device name> <device name>
-        if (!mod) {
-            s.set(Status::NotFound, std::string("Master '")+std::string(it->masterName())+"' not found.");
-            s.extend(it->location());
-            return false;
-        }
+            // We do not try device names (i.e. default models)
+            // If one wants to have default models, one should create them explicitly, e.g. 
+            // add a line of the following form to the netlist
+            //   model <device name> <device name>
+            if (!mod) {
+                s.set(Status::NotFound, std::string("Master '")+std::string(it->masterName())+"' not found.");
+                s.extend(it->location());
+                return false;
+            }
 
-        // Check for hierarchical recursion
-        if (idata.isAncestor(mod)) {
-            // Recursion detected
-            s.set(Status::Recursion, "Hierarchical recursion detected.");
-            s.extend(it->location());
-            return false;
-        }
+            // Check for hierarchical recursion
+            if (idata.isAncestor(mod)) {
+                // Recursion detected
+                s.set(Status::Recursion, "Hierarchical recursion detected.");
+                s.extend(it->location());
+                return false;
+            }
 
-        // Create child instance
-        Instance *subInst = mod->createInstance(circuit, this, evaluator, nullptr, *it, idata, s);
-        if (!subInst) {
-            return false;
+            // Create child instance
+            Instance *subInst = mod->createInstance(circuit, this, evaluator, nullptr, *it, idata, s);
+            if (!subInst) {
+                return false;
+            }
         }
     }
 
@@ -683,14 +688,26 @@ bool HierarchicalInstance::buildHierarchy(Circuit& circuit, RpnEvaluator& evalua
         }
     }
 
-    // Build root block
-    if (!buildBlock(circuit, evaluator, idata, parsedSubcircuit.root(), s)) {
+    // Build models
+    // ... in root block
+    if (!buildBlock(circuit, evaluator, idata, parsedSubcircuit.root(), Build::Models, s)) {
         return false;
     }
-
-    // Build all active conditional blocks
+    // ... in conditional blocks
     for(auto condBlock : activeBlocks) {
-        if (!buildBlock(circuit, evaluator, idata, *condBlock, s)) {
+        if (!buildBlock(circuit, evaluator, idata, *condBlock, Build::Models, s)) {
+            return false;
+        }
+    }
+
+    // Build instances
+    // .. in root block
+    if (!buildBlock(circuit, evaluator, idata, parsedSubcircuit.root(), Build::Instances, s)) {
+        return false;
+    }
+    // ... inconditional blocks
+    for(auto condBlock : activeBlocks) {
+        if (!buildBlock(circuit, evaluator, idata, *condBlock, Build::Instances, s)) {
             return false;
         }
     }
