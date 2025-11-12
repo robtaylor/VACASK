@@ -1,0 +1,155 @@
+SPICE VDMOS test
+
+load "spice/vdmos.osdi"
+load "resistor.osdi"
+
+model v vsource
+vgs (g 0) v dc=0
+vds (d 0) v dc=0
+  
+subckt ntest()
+  model nm sp_vdmos ( type=1 
+    vto=4 kp=5.9 lambda=0.001 theta=0.015 ksubthres=0.27
+    rd=61m rs=18m rg=3 rds=1e7
+    cgdmax=2.45n cgdmin=10p a=0.3 cgs=1.2n
+    is=60p n=1.1 rb=14m xti=3
+    cjo=1.5n vj=0.8 m=0.5
+    tcvth=0.0065 mu=-1.27 texp0=1.5
+    rthjc=0.4 cthj=5e-3
+    mtriode=0.8 vq=100 rq=0.5
+  )
+  m1 (d g 0) nm $mfactor=2
+ends
+
+subckt ptest()
+  model pm sp_vdmos ( type=-1 
+    vto=-4 kp=5.9 lambda=0.001 theta=0.015 ksubthres=0.27
+    rd=61m rs=18m rg=3 rds=1e7
+    cgdmax=2.45n cgdmin=10p a=0.3 cgs=1.2n
+    is=60p n=1.1 rb=14m xti=3
+    cjo=1.5n vj=0.8 m=0.5
+    tcvth=0.0065 mu=-1.27 texp0=1.5
+    rthjc=0.4 cthj=5e-3
+    mtriode=0.8 vq=100 rq=0.5
+  )
+  m1 (d g 0) pm $mfactor=2
+ends
+
+control
+  print devices
+  print device("sp_vdmos")
+  
+  save p(m1,gm) p(m1,c_gs) p(m1,c_gd) default
+  
+  elaborate circuit("ntest")
+  print instance("m1")
+  sweep vgs instance="vgs" parameter="dc" from=3.5 to=6 step=0.25
+  sweep vds instance="vds" parameter="dc" from=-0.5 to=50 step=0.1
+    analysis op1 op
+  
+  elaborate circuit("ptest")
+  print instance("m1")
+  sweep vgs instance="vgs" parameter="dc" from=-3.5 to=-6 step=-0.25
+  sweep vds instance="vds" parameter="dc" from=0.5 to=-50 step=-0.1
+    analysis op2 op
+ 
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+
+raw = rawread('op1.raw')
+plot = raw.get(sweeps=1)
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('VDMOS NMOS test')
+ax_dict = fig1.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'm1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.c_gs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.c_gd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='upper left')
+ax_dict["B"].legend(loc='upper left')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper right')
+
+fig1.tight_layout()
+
+plt.show()
+
+sys.exit(0)
+
+raw = rawread('op2.raw')
+plot = raw.get(sweeps=1)
+
+fig2 = plt.figure(figsize=(8,8), dpi=100)
+fig2.suptitle('VDMOS PMOS test')
+ax_dict = fig2.subplot_mosaic("""
+AC
+BD
+""")
+
+ax_dict["A"].set_title('DC response')
+ax_dict["A"].set_ylabel('Id [mA]')
+ax_dict["A"].set_xlabel('Vds [V]')
+
+ax_dict["B"].set_title('gm')
+ax_dict["B"].set_ylabel('gm [mS]')
+ax_dict["B"].set_xlabel('Vds [V]')
+
+ax_dict["C"].set_title('cgs')
+ax_dict["C"].set_ylabel('cgs [pF]')
+ax_dict["C"].set_xlabel('Vds [V]')
+
+ax_dict["D"].set_title('cgd')
+ax_dict["D"].set_ylabel('cgd [pF]')
+ax_dict["D"].set_xlabel('Vds [V]')
+
+for ii in range(plot.sweepGroups):
+    sdata = plot.sweepData(ii)
+    # print(sdata)
+    traceName = 'vgs=%.2e' % sdata['vgs']
+    ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
+    ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'm1.gm']*1e3, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.cgs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.cgd']*1e12, label=traceName)
+    
+ax_dict["A"].legend(loc='lower right')
+ax_dict["B"].legend(loc='upper right')
+ax_dict["C"].legend(loc='upper right')
+ax_dict["D"].legend(loc='upper left')
+
+fig2.tight_layout()
+
+plt.show()
+>>>FILE
+
+

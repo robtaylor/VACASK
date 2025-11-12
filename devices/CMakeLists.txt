@@ -24,6 +24,7 @@ set(device_sources
     "spice/mos3.va"      "spice/mos3.osdi"       ""
     "spice/mos6.va"      "spice/mos6.osdi"       ""
     "spice/mos9.va"      "spice/mos9.osdi"       ""
+    "spice/vdmos.va"     "spice/vdmos.osdi"       ""
     "spice/bsim3v3.va"   "spice/bsim3v3.osdi"    ""
     "spice/bsim4v8.va"   "spice/bsim4v8.osdi"    ""
     "spice/sn/diode.va"     "spice/sn/diode.osdi"  ""
