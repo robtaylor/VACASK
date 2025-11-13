@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-45-21-g246276504
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-13 08:56:13 UTC
+// Date         : 2025-11-13 14:29:45 UTC
 // Module name  : sp_vdmos
 // Model variant: default
 // 
@@ -1271,8 +1271,8 @@ module sp_vdmos(d, g, s, t, tc);
       vCktTemp = $temperature-273.15;
     end
     if (selfheat) begin
-      gthjc = 1/rthjc;
-      gthca = 1/rthca;
+      gthjc = 1.0/rthjc;
+      gthca = 1.0/rthca;
     end
     Ith = 0.0;
     dIth_dT = 0.0;

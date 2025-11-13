@@ -17,6 +17,7 @@ subckt ntest()
     tcvth=0.0065 mu=-1.27 texp0=1.5
     rthjc=0.4 cthj=5e-3
     mtriode=0.8 vq=100 rq=0.5
+    kf=0.032f af=1
   )
   m1 (d g 0) nm $mfactor=2
 ends
@@ -31,6 +32,7 @@ subckt ptest()
     tcvth=0.0065 mu=-1.27 texp0=1.5
     rthjc=0.4 cthj=5e-3
     mtriode=0.8 vq=100 rq=0.5
+    kf=0.032f af=1
   )
   m1 (d g 0) pm $mfactor=2
 ends
