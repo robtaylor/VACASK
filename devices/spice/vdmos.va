@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-45-21-g246276504
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-12 13:33:39 UTC
+// Date         : 2025-11-13 08:56:13 UTC
 // Module name  : sp_vdmos
 // Model variant: default
 // 
@@ -719,6 +719,7 @@ module sp_vdmos(d, g, s, t, tc);
 
     // Model field assignments
     VDMOStype = type;
+    VDMOStypeGiven = 1;
     if ($param_given(vto)) begin
       VDMOSvth0 = vto;
     end
@@ -969,7 +970,6 @@ module sp_vdmos(d, g, s, t, tc);
     /* Previous vgs, vds */
     VDMOSvgs = VDMOStype * $limit(V(g_int, s_int), DEVlimitOldGet);
     VDMOSvds = VDMOStype * $limit(V(d_int, s_int), DEVlimitOldGet);
-    VDIOvoltage = VDMOStype * $limit(V(bd_int, d_int), DEVlimitOldGet);
     VDMOSdelTemp = $limit(V(t), DEVlimitOldGet);
     
     /* vgdo value */
@@ -1008,13 +1008,11 @@ module sp_vdmos(d, g, s, t, tc);
     if (initialize_limiting()) begin
         load_vgs = VDMOStype * VDMOSvth0 + 0.1;
         load_vds = 0;
-        vd = VDIOtVcrit;
         delTemp = 0;
     end
     
     load_vgs = VDMOStype * $limit(V(g_int, s_int), DEVlimitNewSet, VDMOStype * load_vgs, limited);
     load_vds = VDMOStype * $limit(V(d_int, s_int), DEVlimitNewSet, VDMOStype * load_vds, limited);
-    vd  = VDMOStype * $limit(V(bd_int, d_int), DEVlimitNewSet, VDMOStype * vd, limited);
     delTemp = $limit(V(t), DEVlimitNewSet, delTemp, limited);
     if (selfheat) begin
       Temp = VDMOStemp+delTemp;

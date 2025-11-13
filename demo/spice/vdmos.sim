@@ -103,9 +103,6 @@ ax_dict["D"].legend(loc='upper right')
 
 fig1.tight_layout()
 
-plt.show()
-
-sys.exit(0)
 
 raw = rawread('op2.raw')
 plot = raw.get(sweeps=1)
@@ -139,8 +136,8 @@ for ii in range(plot.sweepGroups):
     traceName = 'vgs=%.2e' % sdata['vgs']
     ax_dict["A"].plot(plot[ii, 'd'], -plot[ii, 'vds:flow(br)']*1e3, label=traceName)
     ax_dict["B"].plot(plot[ii, 'd'], plot[ii, 'm1.gm']*1e3, label=traceName)
-    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.cgs']*1e12, label=traceName)
-    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.cgd']*1e12, label=traceName)
+    ax_dict["C"].plot(plot[ii, 'd'], plot[ii, 'm1.c_gs']*1e12, label=traceName)
+    ax_dict["D"].plot(plot[ii, 'd'], plot[ii, 'm1.c_gd']*1e12, label=traceName)
     
 ax_dict["A"].legend(loc='lower right')
 ax_dict["B"].legend(loc='upper right')
