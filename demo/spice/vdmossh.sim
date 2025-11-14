@@ -1,0 +1,93 @@
+SPICE VDMOS amplifier with self-heating
+
+load "spice/vdmos.osdi"
+load "resistor.osdi"
+load "capacitor.osdi"
+
+model v vsource
+model r resistor
+model c capacitor
+
+subckt namp()
+  model nm sp_vdmos ( type=1 
+    vto=4 kp=5.9 lambda=0.001 theta=0.015 ksubthres=0.27
+    rd=61m rs=18m rg=3 rds=1e7
+    cgdmax=2.45n cgdmin=10p a=0.3 cgs=1.2n
+    is=60p n=1.1 rb=14m xti=3
+    cjo=1.5n vj=0.8 m=0.5
+    tcvth=0.0065 mu=-1.27 texp0=1.5
+    rthjc=0.4 cthj=5e-3 rthca=4
+    mtriode=0.8 vq=100 rq=0.5
+    kf=0.032f af=1
+  )
+  vdd (1 0) v dc=20
+  vd (1 10) v dc=0
+  rd (10 d) r r=20
+  m1 (d g 0 tj tc) nm $mfactor=2 thermal_enabled=1
+  r1 (1 g) r r=79k
+  r2 (g 0) r r=21k
+  c1 (in g) c c=1u
+  vin (in 0) v dc=0 mag=1 type="sine" ampl=10m freq=1k
+ends
+
+
+control
+  elaborate circuit("namp")
+  clear saves
+  save default p(m1,gm) 
+  analysis op1 op
+
+  clear saves
+  analysis tran1 tran step=0.1m stop=0.2 maxstep=0.1m icmode="uic"
+  
+  
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
+raw = rawread('op1.raw')
+plot = raw.get()
+for name in plot.names:
+    print(name, plot[name])
+
+raw = rawread('tran1.raw')
+plot = raw.get()
+
+fig1 = plt.figure(figsize=(8,8), dpi=100)
+fig1.suptitle('VDMOS NMOS amplifier')
+ax_dict = fig1.subplot_mosaic("""
+A
+B
+C
+""")
+
+ax_dict["A"].set_title('Input')
+ax_dict["A"].set_ylabel('Vin [V]')
+ax_dict["A"].set_xlabel('time [ms]')
+ax_dict["A"].plot(plot['time']*1e3, plot['in'])
+
+ax_dict["B"].set_title('Output')
+ax_dict["B"].set_ylabel('Vout [V]')
+ax_dict["B"].set_xlabel('time [ms]')
+ax_dict["B"].plot(plot['time']*1e3, plot['d'])
+
+ax_dict["C"].set_title('Temperature')
+ax_dict["C"].set_ylabel('T [oC]')
+ax_dict["C"].set_xlabel('time [ms]')
+ax_dict["C"].plot(plot['time']*1e3, plot['tj'], label="delta Tj")
+ax_dict["C"].plot(plot['time']*1e3, plot['tc'], label="delta Tc")
+ax_dict["C"].legend(loc='lower right')
+
+fig1.tight_layout()
+
+
+
+plt.show()
+>>>FILE
+
+

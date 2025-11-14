@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-45-75-g8d26e8b2c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 08:51:39 UTC
+// Date         : 2025-11-14 10:07:54 UTC
 // Module name  : sp_vdmos
 // Model variant: default
 // 
@@ -1388,7 +1388,7 @@ module sp_vdmos(d, g, s, t, tc);
     I(d, s) <+ V(d, s) * VDMOSdsConductance;
     
     /* Thermal model */
-    V(tbr) <+ vCktTemp;
+    V(tbr) <+ 0; // vCktTemp;
     I(t, tc) <+ V(t, tc) * gthjc;
     I(tc, t_int) <+ V(tc, t_int) * gthca;
     I(t) <+ -VDMOScth + ceqqth;
