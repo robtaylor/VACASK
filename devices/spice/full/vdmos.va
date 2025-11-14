@@ -5,9 +5,9 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-45-75-g8d26e8b2c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 08:51:39 UTC
+// Date         : 2025-11-14 08:54:50 UTC
 // Module name  : sp_vdmos
-// Model variant: default
+// Model variant: full
 // 
 // Notes:
 //   Parameter m was replaced with builtin Verilog-A parameter $mfactor.
@@ -39,6 +39,9 @@
 //   Simplified noise model also excludes the capacitive current of the 
 //   D-S diode. Due to the way OpenVAF handles c(v)*ddt(v) the implicit 
 //   equations do not go away even if simplified noise model is used.
+//
+//   This model exposes output variables that can lead to creation of
+//   implicit equations by OpenVAF.
 //
 //   Full noise model used (appropriate for all noise analyses).
 //
@@ -179,11 +182,15 @@ module sp_vdmos(d, g, s, t, tc);
   (* desc = "thermal derating for power" *) parameter real derating = 0;
 
   // Instance output variables
+  (* desc = "Drain current" *) real i_d;
+  (* desc = "Source current" *) real i_s;
+  (* desc = "Gate current" *) real i_g;
   (* desc = "Gate-Source voltage" *) real vgs;
   (* desc = "Drain-Source voltage" *) real vds;
   (* desc = "Gate-Source capacitance" *) real c_gs;
   (* desc = "Gate-Drain capacitance" *) real c_gd;
   (* desc = "Drain-Source capacitance" *) real cds;
+  (* desc = "Body diode current" *) real idio;
   (* desc = "Device on state voltage" *) real von;
   (* desc = "Conductance of source" *) real sourceconductance;
   (* desc = "Conductance of drain" *) real drainconductance;
@@ -191,6 +198,7 @@ module sp_vdmos(d, g, s, t, tc);
   (* desc = "Drain-Source conductance" *) real gds;
   (* desc = "Capacitance due to gate-source charge storage" *) real cqgs;
   (* desc = "Capacitance due to gate-drain charge storage" *) real cqgd;
+  (* desc = "Instantaneous power" *) real p;
 
   // Model output variables
 
@@ -1411,11 +1419,16 @@ module sp_vdmos(d, g, s, t, tc);
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(VDMOScd)>1E-38) ? (abs(VDMOScd)) : (1E-38))))/coxSquared, 1, "flicker");
 
     // Instance output variable computation
+    i_d = VDMOScd;
+    i_s = -VDMOScd;
+    i_s = i_s - (VDMOScqgd+VDMOScqgs);
+    i_g = VDMOScqgd+VDMOScqgs;
     vgs = VDMOSvgs;
     vds = VDMOSvds;
     c_gs = 2*VDMOScapgs;
     c_gd = 2*VDMOScapgd;
     cds = VDIOcap;
+    idio = VDIOcurrent;
     von = VDMOSvon;
     sourceconductance = VDMOSsourceConductance;
     drainconductance = VDMOSdrainConductance;
@@ -1423,6 +1436,10 @@ module sp_vdmos(d, g, s, t, tc);
     gds = VDMOSgds;
     cqgs = VDMOScqgs;
     cqgd = VDMOScqgd;
+    p = abs(VDMOScd*V(d, s));
+    p = p + (abs(VDMOScqgd*V(g, d)));
+    p = p + (abs(VDMOScqgs*V(g, s)));
+    p = p + (abs(VDIOcurrent*V(d, s)));
 
     // Model output variable computation
 

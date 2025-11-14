@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-20-g683e208d8
+// Version      : ngspice-45-75-g8d26e8b2c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-10 15:14:10 UTC
+// Date         : 2025-11-14 08:54:04 UTC
 // Module name  : sp_jfet2
 // Model variant: full
 // 

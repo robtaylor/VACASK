@@ -1,4 +1,4 @@
-SPICE MOSFET level 1 CMOS inverter
+SPICE VDMOS CMOS inverter
 
 load "spice/vdmos.osdi"
 load "resistor.osdi"
@@ -54,7 +54,7 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('Level 1 CMOS inverter')
+fig1.suptitle('VDMOS CMOS inverter')
 ax_dict = fig1.subplot_mosaic("""
 A
 B

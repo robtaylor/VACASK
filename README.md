@@ -107,6 +107,7 @@ The ([Verilog-A Distiller](https://codeberg.org/arpadbuermen/VADistiller)) proje
 |MOSFET level 3 (empirical) *        |mos3.va     |mos3.osdi     |sp_mos3      |
 |MOSFET level 6 (Sakurai-Newton) *   |mos6.va     |mos6.osdi     |sp_mos6      |
 |MOSFET level 9 (modified level 3) * |mos9.va     |mos9.osdi     |sp_mos9      |
+|VDMOS *                             |vdmos.va    |vdmos.osdi    |sp_vdmos     |
 |BSIM3 3.3.0                         |bsim3v3.va  |bsim3v3.osdi  |sp_bsim3v3   |
 |BSIM4 4.8.0, 4.8.1, 4.8.2, 4.8.3    |bsim4v8.va  |bsim4v8.osdi  |sp_bsim4v8   |
 

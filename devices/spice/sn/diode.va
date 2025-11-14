@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-20-g683e208d8
+// Version      : ngspice-45-75-g8d26e8b2c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-10 15:12:40 UTC
+// Date         : 2025-11-14 08:52:40 UTC
 // Module name  : sp_diode
 // Model variant: sn
 // 
@@ -163,8 +163,8 @@ module sp_diode(a, c);
   (* desc = "Length of polysilicon capacitor (level=3)" *) parameter real model_lp = 0.0;
   (* desc = "Width of metal capacitor (level=3)" *) parameter real model_wm = 0.0;
   (* desc = "Width of polysilicon capacitor (level=3)" *) parameter real model_wp = 0.0;
-  (* desc = "Thickness of the metal to bulk oxide (level=3)" *) parameter real xom = 1e-06;
-  (* desc = "Thickness of the polysilicon to bulk oxide (level=3)" *) parameter real xoi = 1e-06;
+  (* desc = "Thickness of the metal to bulk oxide (level=3)" *) parameter real xom = 10000.0;
+  (* desc = "Thickness of the polysilicon to bulk oxide (level=3)" *) parameter real xoi = 10000.0;
   (* desc = "Masking and etching effects in metal (level=3)" *) parameter real xm = 0.0;
   (* desc = "Masking and etching effects in polysilicon (level=3)" *) parameter real xp = 0.0;
   (* desc = "Masking and etching effects (level=3)" *) parameter real xw = 0.0;
@@ -519,10 +519,10 @@ module sp_diode(a, c);
       DIOconductance = 1/rs;
     end
     if (!DIOmetalOxideThickGiven) begin
-      DIOmetalOxideThick = 1e-06;
+      DIOmetalOxideThick = 1e4;
     end
     if (!DIOpolyOxideThickGiven) begin
-      DIOpolyOxideThick = 1e-06;
+      DIOpolyOxideThick = 1e4;
     end
     if (!$param_given(area)) begin
       if (!$param_given(w)&&!$param_given(l)) begin
@@ -847,7 +847,7 @@ module sp_diode(a, c);
       deplcapSW = czof2SW*(DIOtF3SW+mjsw*load_vd/DIOtJctSWPot);
     end
     diffcharge = DIOtTransitTime*load_cd;
-    DIOcapCharge = diffcharge+deplcharge+deplchargeSW;
+    DIOcapCharge = diffcharge+deplcharge+deplchargeSW+(DIOcmetal+DIOcpoly)*load_vd;
     diffcap = DIOtTransitTime*load_gd;
     capd = diffcap+deplcap+deplcapSW+DIOcmetal+DIOcpoly;
     DIOcap = capd;
