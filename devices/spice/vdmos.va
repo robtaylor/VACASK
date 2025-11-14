@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-21-g246276504
+// Version      : ngspice-45-22-g836598273
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-13 14:29:45 UTC
+// Date         : 2025-11-14 08:19:29 UTC
 // Module name  : sp_vdmos
 // Model variant: default
 // 
@@ -41,7 +41,6 @@
 //   equations do not go away even if simplified noise model is used.
 //
 //   Full noise model used (appropriate for all noise analyses).
-//   OpenVAF may create implicit equations.
 //
 // SPICE variable mapping
 //   scale -> $simparam("scale", 1)
@@ -180,15 +179,11 @@ module sp_vdmos(d, g, s, t, tc);
   (* desc = "thermal derating for power" *) parameter real derating = 0;
 
   // Instance output variables
-  (* desc = "Drain current" *) real i_d;
-  (* desc = "Source current" *) real i_s;
-  (* desc = "Gate current" *) real i_g;
   (* desc = "Gate-Source voltage" *) real vgs;
   (* desc = "Drain-Source voltage" *) real vds;
   (* desc = "Gate-Source capacitance" *) real c_gs;
   (* desc = "Gate-Drain capacitance" *) real c_gd;
   (* desc = "Drain-Source capacitance" *) real cds;
-  (* desc = "Body diode current" *) real idio;
   (* desc = "Device on state voltage" *) real von;
   (* desc = "Conductance of source" *) real sourceconductance;
   (* desc = "Conductance of drain" *) real drainconductance;
@@ -365,7 +360,6 @@ module sp_vdmos(d, g, s, t, tc);
   real drd_dT = 0;
   real dgdrain_dT = 0;
   real dIrd_dgdrain = 0;
-  real deldelTemp = 0;
   real delTemp = 0;
   real delTemp1 = 0;
   real Temp = 0;
@@ -957,7 +951,6 @@ module sp_vdmos(d, g, s, t, tc);
     dIth_dVrd = 0.0;
     dIrd_dT = 0.0;
     dgdrain_dT = 0.0;
-    deldelTemp = 0.0;
     ceqqth = 0.0;
     gcTt = 0.0;
     load_cgdmin = cgdmin;
@@ -986,7 +979,6 @@ module sp_vdmos(d, g, s, t, tc);
     end
     vgd = load_vgs-load_vds;
     vgdo = VDMOSvgs-VDMOSvds;
-    deldelTemp = delTemp-VDMOSdelTemp;
     load_von = VDMOStype*VDMOSvon;
     if (VDMOSvds>=0) begin
       load_vgs = DEVfetlim(load_vgs, VDMOSvgs, load_von, limited);
@@ -1201,10 +1193,10 @@ module sp_vdmos(d, g, s, t, tc);
       VDMOSgmT = 0.0;
     end
     if (selfheat) begin
-      VDMOSgtempg = 0;
-      VDMOSgtempT = 0;
-      VDMOSgtempd = VDMOStype*cdrain;
-      VDMOScth = cdrain*Vds-VDMOStype*(VDMOSgtempg*Vgs+VDMOSgtempd*Vds)-VDMOSgtempT*delTemp;
+      VDMOSgtempg = VDMOStype*VDMOSgm*Vds;
+      VDMOSgtempT = GmT*Vds;
+      VDMOSgtempd = VDMOStype*(VDMOSgds*Vds+cdrain);
+      VDMOScth = cdrain*Vds;
       Vrd = V(d, d_int);
       dIth_dVrd = VDMOSdrainConductance*Vrd;
       dIrd_dgdrain = Vrd;
@@ -1399,16 +1391,11 @@ module sp_vdmos(d, g, s, t, tc);
     I(d_int, s_int) <+ flicker_noise(kf*exp(af*ln(((abs(VDMOScd)>1E-38) ? (abs(VDMOScd)) : (1E-38))))/coxSquared, 1, "flicker");
 
     // Instance output variable computation
-    i_d = VDMOScd;
-    i_s = -VDMOScd;
-    i_s = i_s - (VDMOScqgd+VDMOScqgs);
-    i_g = VDMOScqgd+VDMOScqgs;
     vgs = VDMOSvgs;
     vds = VDMOSvds;
     c_gs = 2*VDMOScapgs;
     c_gd = 2*VDMOScapgd;
     cds = VDIOcap;
-    idio = VDIOcurrent;
     von = VDMOSvon;
     sourceconductance = VDMOSsourceConductance;
     drainconductance = VDMOSdrainConductance;
