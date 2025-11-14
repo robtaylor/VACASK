@@ -1,6 +1,6 @@
 SPICE VDMOS amplifier with self-heating
 
-load "spice/vdmos.osdi"
+load "spice/full/vdmos.osdi"
 load "resistor.osdi"
 load "capacitor.osdi"
 
@@ -34,12 +34,10 @@ ends
 control
   elaborate circuit("namp")
   clear saves
-  save default p(m1,gm) 
+  save default p(m1,gm) p(m1,p)
   analysis op1 op
 
-  clear saves
   analysis tran1 tran step=0.1m stop=0.2 maxstep=0.1m icmode="uic"
-  
   
   postprocess(PYTHON, "runme.py")
 endc
@@ -59,11 +57,12 @@ raw = rawread('tran1.raw')
 plot = raw.get()
 
 fig1 = plt.figure(figsize=(8,8), dpi=100)
-fig1.suptitle('VDMOS NMOS amplifier')
+fig1.suptitle('VDMOS NMOS amplifier self-heating')
 ax_dict = fig1.subplot_mosaic("""
 A
 B
 C
+D
 """)
 
 ax_dict["A"].set_title('Input')
@@ -76,12 +75,20 @@ ax_dict["B"].set_ylabel('Vout [V]')
 ax_dict["B"].set_xlabel('time [ms]')
 ax_dict["B"].plot(plot['time']*1e3, plot['d'])
 
-ax_dict["C"].set_title('Temperature')
-ax_dict["C"].set_ylabel('T [oC]')
+ax_dict["C"].set_title('Power (per parallel instance)')
+ax_dict["C"].set_ylabel('p [W]')
 ax_dict["C"].set_xlabel('time [ms]')
-ax_dict["C"].plot(plot['time']*1e3, plot['tj'], label="delta Tj")
-ax_dict["C"].plot(plot['time']*1e3, plot['tc'], label="delta Tc")
-ax_dict["C"].legend(loc='lower right')
+ax_dict["C"].plot(plot['time']*1e3, plot['m1.p'])
+
+ax_dict["D"].set_title('Temperature')
+ax_dict["D"].set_ylabel('T [oC]')
+ax_dict["D"].set_xlabel('time [ms]')
+ax_dict["D"].plot(plot['time']*1e3, plot['tj'], label="delta Tj")
+ax_dict["D"].plot(plot['time']*1e3, plot['tc'], label="delta Tc")
+# Power refers to a single parallel instance - so we multiply with rthjc+rthca
+# to obtain the target junction temperature increase
+ax_dict["D"].plot(plot['time']*1e3, plot['m1.p']*(0.4+4), label="delta Tj target")
+ax_dict["D"].legend(loc='lower right')
 
 fig1.tight_layout()
 

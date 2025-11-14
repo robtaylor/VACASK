@@ -5,7 +5,7 @@
 // SPICE flavour: ngspice
 // Version      : ngspice-45-75-g8d26e8b2c
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 10:07:54 UTC
+// Date         : 2025-11-14 14:21:56 UTC
 // Module name  : sp_vdmos
 // Model variant: default
 // 
@@ -1221,10 +1221,10 @@ module sp_vdmos(d, g, s, t, tc);
       dIth_dVrd = VDMOSdrainConductance*Vrd;
       dIrd_dgdrain = Vrd;
       dIrd_dT = dIrd_dgdrain*dgdrain_dT;
-      VDMOScth = VDMOScth + (0);
+      VDMOScth = VDMOScth + (VDMOSdrainConductance*Vrd*Vrd);
     end
     DevCapVDMOS(vgd, load_cgdmin, load_cgdmax, load_a, load_cgs, VDMOScapgs, VDMOScapgd);
-    VDMOScapth = cthj;
+    VDMOScapth = cthj/2;
     delTemp1 = VDMOSdelTemp;
     capgs = VDMOScapgs+VDMOScapgs;
     capgd = VDMOScapgd+VDMOScapgd;

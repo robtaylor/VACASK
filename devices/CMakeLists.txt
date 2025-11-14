@@ -49,6 +49,7 @@ set(device_sources
     "spice/full/mos3.va"      "spice/full/mos3.osdi"       ""
     "spice/full/mos6.va"      "spice/full/mos6.osdi"       ""
     "spice/full/mos9.va"      "spice/full/mos9.osdi"       ""
+    "spice/full/vdmos.va"     "spice/full/vdmos.osdi"      ""
     "spice/full/bsim3v3.va"   "spice/full/bsim3v3.osdi"    ""
 )
 
