@@ -37,7 +37,8 @@ control
   save default p(m1,gm) p(m1,p)
   analysis op1 op
 
-  analysis tran1 tran step=0.1m stop=0.2 maxstep=0.1m icmode="uic"
+  // Initial junction temperature is 27 deg C
+  analysis tran1 tran step=0.1m stop=0.2 maxstep=0.1m icmode="uic" ic=["tj"; 27]
   
   postprocess(PYTHON, "runme.py")
 endc
@@ -87,7 +88,7 @@ ax_dict["D"].plot(plot['time']*1e3, plot['tj'], label="delta Tj")
 ax_dict["D"].plot(plot['time']*1e3, plot['tc'], label="delta Tc")
 # Power refers to a single parallel instance - so we multiply with rthjc+rthca
 # to obtain the target junction temperature increase
-ax_dict["D"].plot(plot['time']*1e3, plot['m1.p']*(0.4+4), label="delta Tj target")
+ax_dict["D"].plot(plot['time']*1e3, 27+plot['m1.p']*(0.4+4), label="delta Tj target")
 ax_dict["D"].legend(loc='lower right')
 
 fig1.tight_layout()

@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-75-g8d26e8b2c
+// Version      : ngspice-45-81-g05c5472b0
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 14:25:08 UTC
+// Date         : 2025-11-17 15:08:42 UTC
 // Module name  : sp_vdmos
 // Model variant: full
 // 
@@ -434,7 +434,6 @@ module sp_vdmos(d, g, s, t, tc);
   real load_arg1_dT = 0;
   real load_arg2 = 0;
   real load_arg2_dT = 0;
-  real TempRatio = 0;
   real vgst = 0;
   real slope = 0;
   real load_lambda = 0;
@@ -1020,14 +1019,14 @@ module sp_vdmos(d, g, s, t, tc);
     if (initialize_limiting()) begin
         load_vgs = VDMOStype * VDMOSvth0 + 0.1;
         load_vds = 0;
-        delTemp = 0;
+        delTemp = $temperature - 273.15;
     end
     
     load_vgs = VDMOStype * $limit(V(g_int, s_int), DEVlimitNewSet, VDMOStype * load_vgs, limited);
     load_vds = VDMOStype * $limit(V(d_int, s_int), DEVlimitNewSet, VDMOStype * load_vds, limited);
     delTemp = $limit(V(t), DEVlimitNewSet, delTemp, limited);
     if (selfheat) begin
-      Temp = VDMOStemp+delTemp;
+      Temp = delTemp+273.15;
       // inlined: VDMOStempUpdate(model, here, Temp, ckt)
       load_fact1 = VDMOStnom/(27.0+273.15);
       load_vtnom = VDMOStnom*CONSTKoverQ;
@@ -1124,15 +1123,14 @@ module sp_vdmos(d, g, s, t, tc);
     end
     VDMOSTempSH = Temp;
     if (selfheat) begin
-      TempRatio = Temp/VDMOStemp;
-      Beta = VDMOStTransconductance*pow(TempRatio, VDMOSmu);
+      Beta = VDMOStTransconductance;
       dBeta_dT = Beta*VDMOSmu/Temp;
-      rd0T = i_VDMOSdrainResistance*pow(TempRatio, texp0);
+      rd0T = i_VDMOSdrainResistance;
       drd0T_dT = rd0T*texp0/Temp;
       rd1T = 0.0;
       drd1T_dT = 0.0;
       if (VDMOSqsGiven) begin
-        rd1T = i_VDMOSqsResistance*pow(TempRatio, texp1);
+        rd1T = i_VDMOSqsResistance;
         drd1T_dT = rd1T*texp1/Temp;
       end
     end else begin
@@ -1256,7 +1254,6 @@ module sp_vdmos(d, g, s, t, tc);
     gcTt = 0;
     VDMOScqth = ddt(VDMOSqth);
     ceqqth = VDMOScqth;
-    ceqqth = ceqqth;
     if (selfheat) begin
       if (VDMOSmode>=0) begin
         GmT = VDMOStype*VDMOSgmT;
@@ -1396,7 +1393,7 @@ module sp_vdmos(d, g, s, t, tc);
     I(d, s) <+ V(d, s) * VDMOSdsConductance;
     
     /* Thermal model */
-    V(tbr) <+ 0; // vCktTemp;
+    V(tbr) <+ vCktTemp * $simparam("sourceScaleFactor", 1.0);
     I(t, tc) <+ V(t, tc) * gthjc;
     I(tc, t_int) <+ V(tc, t_int) * gthca;
     I(t) <+ -VDMOScth + ceqqth;
