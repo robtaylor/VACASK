@@ -253,7 +253,7 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     CommonData& commons, 
     ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
     Analysis* an, IStruct<SimulatorOptions>* options, 
-    PTParameterMap* optionsMap, 
+    const PTParameterMap* optionsMap, 
     DeviceRequests* devReq, 
     Status& s
 ) {
@@ -295,9 +295,9 @@ std::tuple<bool, bool, bool> Circuit::elaborateChanges(
             return std::make_tuple(false, false, false);
         }
         
-        // Options map (values and expressions) -> options in optPtr
+        // Options map (expressions only) -> options in optPtr
         if (optionsMap && optionsMap->size()>0) {
-            if (auto [ok, changed] = optPtr->setParameters(*optionsMap, variableEvaluator_, s); !ok) {
+            if (auto [ok, changed] = optPtr->setParameters(*optionsMap, variableEvaluator_, Parameterized::Write::Expressions, s); !ok) {
                 s.extend("Failed to apply options map.");
                 tables_.accounting().acctNew.tchgelab += Accounting::wclkDelta(t0);
                 return std::make_tuple(false, false, false);

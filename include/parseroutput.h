@@ -114,8 +114,8 @@ public:
     inline size_t expressionCount() const { return expressions_.size(); };
     inline size_t count() const { return values_.size()+expressions_.size(); };
     inline const auto& values() const { return values_; };
-    inline auto& values() { return values_; };
     inline const auto& expressions() const { return expressions_; };
+    inline auto& values() { return values_; };
     inline auto& expressions() { return expressions_; };
 
     // Fluent API
@@ -145,39 +145,99 @@ private:
 };
 
 
-// A parameter map for preventing parameter duplicates in the command intepreter
-// when options are set via commands. This map holds pointrs to values and expresssions. 
+// A parameter map holds 
+// - references to parameter values and expressions
+// - parameter values and expressions
+// When addind values/expressions by lvalue reference, a pointer is stored 
+// (ownership remains external). 
+// When adding by rvalue reference, the value is stored as a unique_ptr
+// (ownership is taken). 
+// This structure is used internally by analysis objects to collect 
+// all parameter expressions from PTParameters. 
+// It is also used in the control block interpreter for tracking options 
+// set with the options command. 
+// Ordinary API users should never use it. 
 class PTParameterMap {
 public:
-    using PTValueOrExpression = std::variant<const PTParameterValue*, const PTParameterExpression*>;
+    using PTValueOrExpression = std::variant<
+        const PTParameterValue*, 
+        const PTParameterExpression*, 
+        std::unique_ptr<const PTParameterValue>, 
+        std::unique_ptr<const PTParameterExpression>
+    >;
 
-    // Emnpty map
+    // Empty map
     PTParameterMap() {}; 
     // Construct from PTParameters, user must make sure 
     // the PTParameters object lives as long as PTParameterMap does. 
-    PTParameterMap(const PTParameters& p) {
-        for(auto& pv : p.values()) {
-            map_.insert_or_assign(pv.name(), &pv);
-        }
-        for(auto& pe : p.expressions()) {
-            map_.insert_or_assign(pe.name(), &pe);
-        }
-    };
-    // Construct from PTParameters rvalue, take ownership of PTParameters
-    PTParameterMap(PTParameters&& p) {
-        owned = std::move(p);
-        for(auto& pv : owned.values()) {
-            map_.insert_or_assign(pv.name(), &pv);
-        }
-        for(auto& pe : owned.expressions()) {
-            map_.insert_or_assign(pe.name(), &pe);
-        }
-    };
-
+    PTParameterMap(const PTParameters& p) { add(p); };
+    // Construct from PTParameters rvalue, take ownership
+    PTParameterMap(PTParameters&& p) { add(std::move(p)); };
+    
     PTParameterMap           (const PTParameterMap&)  = delete;
     PTParameterMap           (      PTParameterMap&&) = default;
     PTParameterMap& operator=(const PTParameterMap&)  = delete;
     PTParameterMap& operator=(      PTParameterMap&&) = default;
+
+    // Add PTParameterValue rvalue
+    void add(const PTParameterValue& pv) {
+        map_.insert_or_assign(pv.name(), &pv);
+    }
+
+    // Add PTParameterValue lvalue
+    void add(PTParameterValue&& pv) {
+        map_.insert_or_assign(pv.name(), std::make_unique<const PTParameterValue>(std::move(pv)));
+    }
+
+    // Add PTParameterExpression rvalue
+    void add(const PTParameterExpression& pe) {
+        map_.insert_or_assign(pe.name(), &pe);
+    }
+    
+    // Add PTParameterExpression lvalue
+    void add(PTParameterExpression&& pe) {
+        map_.insert_or_assign(pe.name(), std::make_unique<const PTParameterExpression>(std::move(pe)));
+    }
+
+    // Add PTParameters lvalue
+    void add(const PTParameters& p) {        
+        for(auto& pv : p.values()) {
+            add(pv);
+        }
+        for(auto& pe : p.expressions()) {
+            add(pe);
+        }
+    };
+
+    // Add PTParameters rvalue
+    void add(PTParameters&& p) {
+        for(auto& pv : p.values()) {
+            add(std::move(pv));
+        }
+        for(auto& pe : p.expressions()) {
+            add(std::move(pe));
+        }
+    };
+
+    // Add another parameter map, do not move, create references
+    void add(const PTParameterMap& map) {
+        for(auto& it : map.map_) {
+            if (std::holds_alternative<const PTParameterValue*>(it.second)) {
+                // A pointer
+                map_.insert(std::make_pair(it.first, std::get<const PTParameterValue*>(it.second)));
+            } else if (std::holds_alternative<const PTParameterExpression*>(it.second)) {
+                // A pointer
+                map_.insert(std::make_pair(it.first, std::get<const PTParameterExpression*>(it.second)));
+            } else if (std::holds_alternative<std::unique_ptr<const PTParameterValue>>(it.second)) {
+                // Stored value
+                map_.insert_or_assign(it.first, std::get<std::unique_ptr<const PTParameterValue>>(it.second).get());
+            } else {
+                // Stored value
+                map_.insert_or_assign(it.first, std::get<std::unique_ptr<const PTParameterExpression>>(it.second).get());
+            }
+        }
+    };
+
 
     // Forward methods of map_
     auto size() { return map_.size(); };
@@ -191,19 +251,8 @@ public:
 
     auto clear() { return map_.clear(); };
 
-    template <typename... Args>
-    decltype(auto) insert(Args&&... args) & {
-        return map_.insert(std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    decltype(auto) insert_or_assign(Args&&... args) & {
-        return map_.insert_or_assign(std::forward<Args>(args)...);
-    }
-
 private:
     std::unordered_map<Id, PTValueOrExpression> map_;
-    PTParameters owned;
 };
 
 
@@ -516,8 +565,6 @@ public:
 private:
     std::vector<PTSave> saves_;
 };
-
-using PTSavesVector = std::vector<PTSave>;
 
 
 class PTSweep {

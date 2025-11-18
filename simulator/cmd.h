@@ -80,7 +80,7 @@ public:
 private:
     bool printProgress_;
     bool runPostprocess_;
-    PTSavesVector commonSaves_;
+    std::vector<PTSave> commonSaves_;
     PTParameterMap userOptions_;
     
     std::unordered_set<Id> abortCommands;

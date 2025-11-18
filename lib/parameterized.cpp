@@ -91,20 +91,35 @@ std::tuple<bool,bool> Parameterized::setParameters(const PTParameters& params, R
     return std::make_tuple(true, changed);
 }
 
-std::tuple<bool,bool> Parameterized::setParameters(const PTParameterMap& params, RpnEvaluator& eval, Status& s) {
+std::tuple<bool,bool> Parameterized::setParameters(const PTParameterMap& params, RpnEvaluator& eval, Write what, Status& s) {
     // Go through parameter map, set values
     bool changed = false;
     for(auto& it : params) {
-        if (std::holds_alternative<const PTParameterValue*>(it.second)) {
-            auto* pv = std::get<const PTParameterValue*>(it.second); 
+        if (
+            (
+                std::holds_alternative<const PTParameterValue*>(it.second) ||
+                std::holds_alternative<std::unique_ptr<const PTParameterValue>>(it.second)
+            ) && (what==Write::All || what==Write::Values)
+        ) {
+            // A fixed value
+            auto pv = (std::holds_alternative<const PTParameterValue*>(it.second))?
+                std::get<const PTParameterValue*>(it.second) : std::get<std::unique_ptr<const PTParameterValue>>(it.second).get();
             auto [ok, ch] = setParameter(it.first, pv->val(), s);
             changed |= ch;
             if (!ok) {
                 s.extend(pv->location());
                 return std::make_tuple(false, changed);
             }
-        } else {
-            auto* pe = std::get<const PTParameterExpression*>(it.second); 
+        } else if (
+            (
+                std::holds_alternative<const PTParameterExpression*>(it.second) ||
+                std::holds_alternative<std::unique_ptr<const PTParameterExpression>>(it.second)
+            ) && (what==Write::All || what==Write::Expressions)
+        ) {
+            // An expression
+            auto pe = (std::holds_alternative<const PTParameterExpression*>(it.second))?
+                std::get<const PTParameterExpression*>(it.second) 
+                : std::get<std::unique_ptr<const PTParameterExpression>>(it.second).get();
             Value res;
             if (!eval.evaluate(pe->rpn(), res, s)) {
                 return std::make_tuple(false, changed);

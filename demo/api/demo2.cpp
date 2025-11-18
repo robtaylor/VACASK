@@ -115,19 +115,26 @@ print("Expected: [2, 8]")
         exit(1);
     }
 
+    // Set circuit variable var1 to 60
+    cir.setVariable("var1", 60);
+
     // Elaborate it, just the default toplevel subcircuit 
     // (empty list of subcircuit definition names). 
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
-    SimulatorOptions opt;
-    opt.reltol = 1e-4;
-    if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
+    // This time we use an initializer list of PTParameters objects for initial simulator options
+    // The first PTParameters object holds the reltol value. 
+    // The second one holds an expression for temp (computed from variables).
+    if (!cir.elaborate({}, "__topdef__", "__topinst__", { PTParameters(PVv( PV("reltol", 1e-4))), p.parseParameters("temp=var1") }, nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
 
+    // Print circuit option temp
+    std::cout << "temp=" << cir.simulatorOptions().core().temp << "\n\n";
+    
     cir.dumpHierarchy(0, Simulator::out());
 
     // Analysis description
@@ -141,7 +148,7 @@ print("Expected: [2, 8]")
         );
 
     // Analysis object, no options map (options that are given as parameterized expressions)
-    auto dc = Analysis::create(dcDesc, nullptr, nullptr, cir, s);
+    auto dc = Analysis::create(dcDesc, cir, s);
     if (!dc) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";

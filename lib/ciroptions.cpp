@@ -62,6 +62,9 @@ bool Circuit::setOptions(IStruct<SimulatorOptions>& opt) {
 
 // Set options based on PTParameters
 std::tuple<bool, bool> Circuit::setOptions(const PTParameters& params, Status& s) {
+    // Must do this manually without Parameterized::setParameters() because 
+    // we want to intercept changes in special options. 
+    // Use variableEvaluator(), not paramEvaluator(). 
     bool changed = false;
     for(auto& it : params.values()) {
         auto [ok, ch] = setOption(it.name(), it.val(), s); 
@@ -71,7 +74,7 @@ std::tuple<bool, bool> Circuit::setOptions(const PTParameters& params, Status& s
         }
         changed = changed || ch;
     }
-    auto& e = paramEvaluator();
+    auto& e = variableEvaluator();
     for(auto& it : params.expressions()) {
         Value v;
         if (!e.evaluate(it.rpn(), v, s)) {

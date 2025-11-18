@@ -46,12 +46,40 @@ public:
     size_t sweepCount() const { return ptAnalysis.sweeps().size(); };
     bool updateSweeper(Status& s=Status::ignore);
     
-    // Setup api
-    void setSaves(PTSavesVector* commonSaves);
-    bool setParametrization(const PTParameterMap* optionsMap, Status& s=Status::ignore);
+    // Add save from PTSave
+    Analysis& add(const PTSave& p) & {
+        commonSaves.push_back(p);
+        return *this;
+    };
 
-    // Install progress reporter
-    void install(ProgressReporter* p) { progressReporter = p; }
+    // Add save from PTSaves
+    Analysis& add(const PTSaves& s) & {
+        for(auto& it : s.saves()) {
+            add(it);
+        }
+        return *this;
+    };
+
+    // Add parameters from PTParameters
+    Analysis& add(const PTParameters& p) & {
+        analysisOptions.add(p);
+        return *this;
+    };
+
+    // Add parameters from PTParameters, take ownership
+    Analysis& add(PTParameters&& p) {
+        analysisOptions.add(std::move(p));
+        return *this;
+    }
+
+    // Add parameters from PTParameterMap
+    Analysis& add(const PTParameterMap& p) {
+        analysisOptions.add(p);
+        return *this;
+    }
+
+    // Add progress reporter
+    Analysis& add(ProgressReporter* p) { progressReporter = p; return *this; }
 
     // Analysis core
     virtual AnalysisCore& analysisCore() = 0;
@@ -79,11 +107,9 @@ public:
 
     static Analysis* create(
         PTAnalysis& ptAnalysis, 
-        PTSavesVector* commonSaves, 
-        const PTParameterMap* optionsMap, 
         Circuit& circuit, Status& s=Status::ignore
     );
-    
+
     virtual Parameterized& parameters() = 0; 
     virtual const Parameterized& parameters() const = 0; 
 
@@ -221,7 +247,8 @@ protected:
     // instead of previous solution. 
     virtual void makeStateIncoherent(size_t ndx) {};
 
-    PTParameterMap parameterizedOptions;
+    // Stores references/values of options values/expressions
+    PTParameterMap analysisOptions;
 
 private:
     AnalysisCoroutine coroutine_;
@@ -237,7 +264,7 @@ private:
         static std::unordered_map<Id,AnalysisFactory> factoryMap;
         return factoryMap;
     };
-    const PTSavesVector* commonSaves;
+    std::vector<PTSave> commonSaves;
     Int advancedSweepIndex;
 
     ProgressReporter* progressReporter;

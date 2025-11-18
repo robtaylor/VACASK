@@ -96,11 +96,12 @@ bool CommandInterpreter::minimalElaboration(Status& s) {
 
 bool CommandInterpreter::elaborate(const std::vector<Id>& names, const std::string& topDefName, const std::string& topInstName, Status& s) {
     // Elaborate circuit
+    // TODO: for now ignore devReq and Abort, Finish, Stop
     IStruct<SimulatorOptions> opt;
-    if (auto [ok, changed] = opt.setParameters(userOptions_, variableEvaluator(), s); !ok) {
+    if (auto [ok, changed] = opt.setParameters(userOptions_, circuit_.variableEvaluator(), Parameterized::Write::All, s); !ok) {
         return false;
     }
-    // TODO: for now ignore devReq and Abort, Finish, Stop
+    // Elaborate needs options, otherwise it sets all options to default
     return circuit_.elaborate(names, topDefName, topInstName, &opt.core(), nullptr, s); 
 }
 
@@ -117,7 +118,7 @@ bool CommandInterpreter::run(Status& s) {
                 Simulator::dbg() << "Running analysis '"+std::string(ptAn.name())+"'.\n";
             }
             Status tmps;
-            auto* an = Analysis::create(ptAn, &commonSaves_, &userOptions_, circuit_, tmps);
+            auto* an = Analysis::create(ptAn, circuit_, tmps);
             if (!an) {
                 if (!mustAbort(idAnalysis)) {
                     Simulator::err() << tmps.message() << "\n";
@@ -128,6 +129,14 @@ bool CommandInterpreter::run(Status& s) {
                 }
             }
 
+            // Add options (expressions)
+            an->add(userOptions_);
+
+            // Add saves
+            for(auto& s : commonSaves_) {
+                an->add(s);
+            }
+            
             // Analysis status message
             tmps.clear();
             // Progress reporter
@@ -137,7 +146,7 @@ bool CommandInterpreter::run(Status& s) {
             // Install progress reporter
             if (printProgress_ && progress.enabled()) {
                 // Install progress reporter
-                an->install(&progress);
+                an->add(&progress);
             }
             // Run analysis
             auto [ret, can_resume] = an->run(tmps);
@@ -235,11 +244,11 @@ bool CommandInterpreter::run(Status& s) {
 }
 
 void CommandInterpreter::addUserOption(const PTParameterValue& pv) {
-    userOptions_.insert_or_assign(pv.name(), &pv);
+    userOptions_.add(pv);
 }
 
 void CommandInterpreter::addUserOption(const PTParameterExpression& pe) {
-    userOptions_.insert_or_assign(pe.name(), &pe);
+    userOptions_.add(pe);
 }
 
 

@@ -106,6 +106,7 @@ plt.show()
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
+    // Use a SimulatorOptions object for setting initial simulator options
     SimulatorOptions opt;
     opt.reltol = 1e-4;
     if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
@@ -123,13 +124,11 @@ plt.show()
         .add(PV("stop", 10e-3));
 
     // Save directives
-    auto saves = PTSavesVector({
-        PTSave("default"),
-        PTSave("p", "r1", "i")
-    });
-
+    
     // Analysis object, no options map (options that are given as parameterized expressions)
-    auto tran = Analysis::create(tranDesc, &saves, nullptr, cir, s);
+    auto tran = Analysis::create(tranDesc, cir, s);
+    tran->add(PTSave("default"));
+    tran->add(PTSave("p", "r1", "i"));
     if (!tran) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";

@@ -6,28 +6,10 @@ namespace NAMESPACE {
 
 Analysis::Analysis(Id name, Circuit& circuit, PTAnalysis& ptAnalysis) 
     : name_(name), circuit(circuit), sweeper(circuit, ptAnalysis.sweeps()), 
-      ptAnalysis(ptAnalysis), commonSaves(nullptr), progressReporter(nullptr) {
+      ptAnalysis(ptAnalysis), progressReporter(nullptr) {
 }
 
 Analysis::~Analysis() {
-}
-
-void Analysis::setSaves(PTSavesVector* saves) {
-    // Store common saves
-    commonSaves = saves;
-}
-
-bool Analysis::setParametrization(const PTParameterMap* optionsMap, Status& s) {
-    // Store only options that are defined with expressions
-    parameterizedOptions.clear();
-    if (optionsMap) {
-        for(auto& it : *optionsMap) {
-            if (std::holds_alternative<const PTParameterExpression*>(it.second)) {
-                parameterizedOptions.insert(it);
-            }
-        }
-    }
-    return true;
 }
 
 bool Analysis::registerFactory(Id name, Analysis::AnalysisFactory factory) {
@@ -37,8 +19,6 @@ bool Analysis::registerFactory(Id name, Analysis::AnalysisFactory factory) {
 
 Analysis* Analysis::create(
     PTAnalysis& ptAnalysis, 
-    PTSavesVector* commonSaves, 
-    const PTParameterMap* optionsMap, 
     Circuit& circuit, Status& s
 ) {
     auto it = getRegistry().find(ptAnalysis.typeName());
@@ -52,15 +32,6 @@ Analysis* Analysis::create(
     auto factory = it->second;
     auto* an = factory(ptAnalysis, circuit, s);
     if (!an) {
-        return nullptr;
-    }
-
-    // Store common saves
-    an->setSaves(commonSaves);
-
-    // Set up parametrization
-    if (!an->setParametrization(optionsMap, s)) {
-        delete an;
         return nullptr;
     }
 
@@ -107,19 +78,17 @@ bool Analysis::addOutputDescriptors(Status& s) {
     
     // Add saves, unknown saves are ignored, known ones are checked for syntax
     strict = false;
-    if (commonSaves) {
-        for(auto& save : *commonSaves) {
-            // Ignore failures, unless strict is true
-            Status saveSt;
-            auto ok = resolveSave(save, strict, saveSt);
-            // Semantic error in save directive results in ok=false, it is always an error
-            // Failure to add a descriptor in strict mode results in ok=false and thus an error
-            // Unsupported descriptor type in strict mode results in ok=false and thus error
-            // Unsupported save directive is not an error unless in strict mode
-            if (strict && !ok) {
-                s.set(saveSt);
-                return false;
-            }
+    for(auto& save : commonSaves) {
+        // Ignore failures, unless strict is true
+        Status saveSt;
+        auto ok = resolveSave(save, strict, saveSt);
+        // Semantic error in save directive results in ok=false, it is always an error
+        // Failure to add a descriptor in strict mode results in ok=false and thus an error
+        // Unsupported descriptor type in strict mode results in ok=false and thus error
+        // Unsupported save directive is not an error unless in strict mode
+        if (strict && !ok) {
+            s.set(saveSt);
+            return false;
         }
     }
 
@@ -257,7 +226,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
                 commons, 
                 &sweeper, ParameterSweeper::WriteValues::Sweep, 
                 this, &simOptions, 
-                &parameterizedOptions, 
+                &analysisOptions, 
                 // TODO: for now ignore devReq and Abort, Finish, Stop
                 nullptr, 
                 s
@@ -455,7 +424,7 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
             commons, 
             nullptr, ParameterSweeper::WriteValues::Sweep, 
             this, &simOptions, 
-            &parameterizedOptions, 
+            &analysisOptions, 
             // TODO: for now ignore devReq and Abort, Finish, Stop
             nullptr, 
             s
@@ -613,7 +582,7 @@ bool Analysis::finish(Status& s) {
             commons, 
             sptr, ParameterSweeper::WriteValues::StoredState, 
             this, &originalSimOptions, 
-            &parameterizedOptions, 
+            &analysisOptions, 
             nullptr, 
             tmps
         );

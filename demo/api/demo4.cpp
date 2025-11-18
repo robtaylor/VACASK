@@ -97,7 +97,8 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     }
 
     // Elaborate default toplevel circuit + sub1
-    if (!cir.elaborate({"sub1"}, "__topdef__", "__topinst__", nullptr, nullptr, s)) {
+    // Use default simulator options
+    if (!cir.elaborate({"sub1"}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -107,7 +108,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     auto dc1Desc = PTAnalysis("dc1", "op");
     
     // Analysis object, no saves, with an options map
-    auto dc1 = Analysis::create(dc1Desc, nullptr, nullptr, cir, s);
+    auto dc1 = Analysis::create(dc1Desc, cir, s);
     if (!dc1) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
@@ -125,7 +126,8 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
 
 
     // Elaborate default toplevel circuit + sub2
-    if (!cir.elaborate({"sub2"}, "__topdef__", "__topinst__", nullptr, nullptr, s)) {
+    // Use default simulator options
+    if (!cir.elaborate({"sub2"}, "__topdef__", "__topinst__", {}, nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -135,7 +137,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     auto dc2Desc = PTAnalysis("dc2", "op");
     
     // Analysis object, no saves, with an options map
-    auto dc2 = Analysis::create(dc2Desc, nullptr, nullptr, cir, s);
+    auto dc2 = Analysis::create(dc2Desc, cir, s);
     if (!dc2) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
@@ -159,3 +161,9 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
 
     return 0;
 }
+
+// TODO:
+//   expression for analysis/sweep parameter, sweep it
+//   change parameter, elaborate changes
+//   change option, elaborate changes
+//   change variable that affects an instance, elaborate changes

@@ -17,7 +17,7 @@ namespace NAMESPACE {
 // Parameterized object with parameter interface
 class Parameterized {
 public:
-    // typedef ParameterIndex Index;
+    enum class Write { All, Values, Expressions };
 
     Parameterized();
 
@@ -43,7 +43,7 @@ public:
     std::tuple<bool,bool> setParameters(const std::vector<PTParameterValue>& params, Status& s=Status::ignore);
     std::tuple<bool,bool> setParameters(const std::vector<PTParameterExpression>& params, RpnEvaluator& eval, Status& s=Status::ignore);
     std::tuple<bool,bool> setParameters(const PTParameters& params, RpnEvaluator& eval, Status& s=Status::ignore);
-    std::tuple<bool,bool> setParameters(const PTParameterMap& params, RpnEvaluator& eval, Status& s=Status::ignore);
+    std::tuple<bool,bool> setParameters(const PTParameterMap& params, RpnEvaluator& eval, Write what=Write::All, Status& s=Status::ignore);
 
     void dump(std::ostream& os, const char* prefix="") const;
 };

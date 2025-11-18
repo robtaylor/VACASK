@@ -241,7 +241,7 @@ public:
     // Sets HierarchyAffectingOptionsChanged and MappingAffectingOptionsChanged if needed
     // Return value: ok, options changed
     std::tuple<bool, bool> setOptions(const PTParameters& params, Status& s=Status::ignore);
-
+    
     // Devices
     size_t deviceCount() const { return devices.size(); };
     Device* device(size_t ndx) { return devices[ndx].get(); };
@@ -261,7 +261,7 @@ public:
     // Build circuit from parsed description
     // Prefix is used for prefixing the definition name to obtain the toplevel instance name
     // opt and devReq can be nullptr
-    // Only constant options are allowed, no options map. 
+    // Variables are not reset! You must reset them manually before elaboration!
     bool elaborate(
         const std::vector<Id>& toplevelDefinitions={}, 
         const std::string& topDefName="__topdef__", const std::string& topInstName="__topinst__", 
@@ -269,6 +269,35 @@ public:
         DeviceRequests* devReq=nullptr, 
         Status& s=Status::ignore
     );
+
+    // Same as previous, except that we pass options as a list of PTParameters
+    // Variables are not reset! You must reset them manually before elaboration!
+    bool elaborate(
+        const std::vector<Id>& toplevelDefinitions={}, 
+        const std::string& topDefName="__topdef__", const std::string& topInstName="__topinst__", 
+        std::initializer_list<PTParameters> opts={}, 
+        DeviceRequests* devReq=nullptr, 
+        Status& s=Status::ignore
+    ) {
+        IStruct<SimulatorOptions> opt; 
+        for(auto& o : opts) {
+            if (auto [ok, changed] = opt.setParameters(o, variableEvaluator(), s); !ok) {
+                return false;
+            }
+        }
+        return elaborate(toplevelDefinitions, topDefName, topInstName, &opt.core(), devReq, s);
+    };
+
+    // Same as previous, but without any options (use defaults)
+    // Variables are not reset! You must reset them manually before elaboration!
+    bool elaborate(
+        const std::vector<Id>& toplevelDefinitions={}, 
+        const std::string& topDefName="__topdef__", const std::string& topInstName="__topinst__", 
+        DeviceRequests* devReq=nullptr, 
+        Status& s=Status::ignore
+    ) {
+        return elaborate(toplevelDefinitions, topDefName, topInstName, nullptr, devReq, s);
+    }
 
     // Elaborates changes (but keeps the list of toplevel subcircuits unchanged)
     // Called from inside of analysis. 
@@ -292,7 +321,7 @@ public:
         CommonData& commons, 
         ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
         Analysis* an, IStruct<SimulatorOptions>* opt, 
-        PTParameterMap* optionsMap, 
+        const PTParameterMap* optionsMap, 
         DeviceRequests* devReq, 
         Status& s=Status::ignore
     );
@@ -321,7 +350,7 @@ public:
             // Apply optionsMap now. elaborateChanges() applies it only if variables changed 
             // but we must apply it always. Apply to default set of circuit oiptions. 
             IStruct<SimulatorOptions> opt;
-            if (auto [ok, changed] = opt.setParameters(*optionsMap, variableEvaluator_, s); !ok) {
+            if (auto [ok, changed] = opt.setParameters(*optionsMap, variableEvaluator_, Parameterized::Write::All, s); !ok) {
                 return std::make_tuple(false, false, false);
             }
 

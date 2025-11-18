@@ -97,6 +97,13 @@ plt.show()
         exit(1);
     }
 
+    // Define myvar circuit variable
+    // Note that elaboration does not clear circuit variables 
+    // because variables are used for evaluating options expressions 
+    // at elaboration. 
+    // If you want to clear the variables, call clearVariables() manually. 
+    cir.setVariable("myvar", 0);
+
     // Elaborate it, just the default toplevel subcircuit 
     // (empty list of subcircuit definition names). 
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
@@ -123,30 +130,21 @@ plt.show()
             .add(PV("step", 2))
         );
     
-    // Define myvar circuit variable
-    cir.setVariable("myvar", 0);
-
     // Options map that is applied in analysis
     // Holds only options that are defined as expressions. 
     
-    // We need PTParameterMap because once a parameter is added to PTParameters
-    // it can no longer be changed. It also allows duplicate parameters which 
-    // is not possible with PTParameterMap (it stores only the latest value/expression). 
     // parseParameters() creates a PTParameters which holds actual vaues and expressions. 
-    // The return value is a rvalue and must be stored somewhere because PTParameterMap
-    // only points to entries in various PTParameters objects. 
-    // PTParameterMap moves the rvalue PTParameters and takes over ownership. 
-    // If, however created with an lvalue, then the ownership is not transferred. 
-    PTParameterMap pmap(
-        p.parseParameters(
-            // temp will be computed from an expression that depends on the myvar circuit variable
-            // Any option specified as a constant will be ignored. 
-            "temp=myvar"
-        )
+    auto anPar = p.parseParameters(
+        // temp will be computed from an expression that depends on the myvar circuit variable
+        // Any option specified as a constant will be ignored. 
+        "temp=myvar"
     );
     
-    // Analysis object, no saves, with an options map
-    auto dc1 = Analysis::create(dc1Desc, nullptr, &pmap, cir, s);
+    // Analysis object, no saves, with parameterized options
+    auto dc1 = Analysis::create(dc1Desc, cir, s);
+    // Add an analysis parameter expression. 
+    // This one will be affected because we sweep myvar.  
+    dc1->add(anPar);
     if (!dc1) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
@@ -177,7 +175,7 @@ plt.show()
         );
     
     // Analysis object, no saves, no options map
-    auto dc2 = Analysis::create(dc2Desc, nullptr, nullptr, cir, s);
+    auto dc2 = Analysis::create(dc2Desc, cir, s);
     if (!dc2) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
