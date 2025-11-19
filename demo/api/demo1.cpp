@@ -101,15 +101,25 @@ plt.show()
         exit(1);
     }
 
+    // Change reltol
+    cir.setOption("reltol", 1e-4);
+    
+    // You could also do
+    // IStruct<SimulatorOptions> opt;
+    // opt.core().reltol = 1e-4;
+    // cir.setOptions(opt);
+
+    // Do not run this in a loop, stuff shoud be parsed only once 
+    // because all strings are stored in tab. 
+    // auto parsedOpt = p.parseParameters("reltol=1e-4");
+    // cir.setOptions(parsedOpt);
+    
     // Elaborate it, just the default toplevel subcircuit 
     // (empty list of subcircuit definition names). 
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
-    // Use a SimulatorOptions object for setting initial simulator options
-    SimulatorOptions opt;
-    opt.reltol = 1e-4;
-    if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
+    if (!cir.elaborate({}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);

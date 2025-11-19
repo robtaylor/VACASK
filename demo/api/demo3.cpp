@@ -109,9 +109,8 @@ plt.show()
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
-    SimulatorOptions opt;
-    opt.reltol = 1e-4;
-    if (!cir.elaborate({}, "__topdef__", "__topinst__", &opt, nullptr, s)) {
+    cir.setOption("reltol", 1e-4);
+    if (!cir.elaborate({}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);

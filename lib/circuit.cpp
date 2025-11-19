@@ -788,7 +788,6 @@ bool Circuit::buildTopInstance(HierarchicalModel* model, Id name, Context& conte
 bool Circuit::elaborate(
     const std::vector<Id>& toplevelDefinitions, 
     const std::string& topDefName, const std::string& topInstName, 
-    SimulatorOptions* opt, 
     DeviceRequests* devReq, 
     Status& s
 ) { 
@@ -799,13 +798,13 @@ bool Circuit::elaborate(
     clearFlags(Flags::Elaborated);
 
     // Set options
-    if (opt) {
-        // Options given
-        simOptions.core() = *opt;
-    } else {
-        // No option given, reset to defaults
-        simOptions.core() = SimulatorOptions();
-    }
+    // if (opt) {
+    //     // Options given
+    //     simOptions.core() = *opt;
+    // } else {
+    //     // No option given, reset to defaults
+    //     simOptions.core() = SimulatorOptions();
+    // }
 
     // Convert vector to set
     std::unordered_set<Id> defIdSet(toplevelDefinitions.begin(), toplevelDefinitions.end());

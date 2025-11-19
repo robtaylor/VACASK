@@ -97,7 +97,8 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     }
 
     // Elaborate default toplevel circuit + sub1
-    // Use default simulator options
+    // If not specified otherwise before first elaboration, 
+    // default simulator options are used. 
     if (!cir.elaborate({"sub1"}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
@@ -124,10 +125,10 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
         Simulator::out() << "DC1 analysis OK. Can resume: " << (canResume ? "true" : "false") << "\n";
     }
 
-
+    // Elaboration does not reset variables and options. 
+    // Need to reset them manually by calling clearVariables() and clearOptions(). 
     // Elaborate default toplevel circuit + sub2
-    // Use default simulator options
-    if (!cir.elaborate({"sub2"}, "__topdef__", "__topinst__", {}, nullptr, s)) {
+    if (!cir.elaborate({"sub2"}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);

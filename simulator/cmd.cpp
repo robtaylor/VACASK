@@ -101,8 +101,9 @@ bool CommandInterpreter::elaborate(const std::vector<Id>& names, const std::stri
     if (auto [ok, changed] = opt.setParameters(userOptions_, circuit_.variableEvaluator(), Parameterized::Write::All, s); !ok) {
         return false;
     }
+    circuit_.setOptions(opt);
     // Elaborate needs options, otherwise it sets all options to default
-    return circuit_.elaborate(names, topDefName, topInstName, &opt.core(), nullptr, s); 
+    return circuit_.elaborate(names, topDefName, topInstName, nullptr, s); 
 }
 
 bool CommandInterpreter::run(Status& s) {

@@ -34,8 +34,7 @@ public:
     Analysis& operator=(      Analysis&&) = delete;
 
     Id name() const { return name_; };
-    IStruct<SimulatorOptions>& simulatorOptions() { return simOptions; };
-
+    
     // Inherited from OutputDescriptorResolver, overide it
     // Converts an output descriptor to output source and stores it in the given output sources list
     // This handles output descriptors that are not specific for an analysis core, 
@@ -142,7 +141,6 @@ protected:
     CommonData commons;
     ParameterSweeper sweeper;
     IStruct<SimulatorOptions> originalSimOptions;
-    IStruct<SimulatorOptions> simOptions;
     PTAnalysis& ptAnalysis;
     
     // Analysis::run() steps:

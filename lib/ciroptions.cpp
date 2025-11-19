@@ -90,6 +90,11 @@ std::tuple<bool, bool> Circuit::setOptions(const PTParameters& params, Status& s
     return std::make_tuple(true, changed);
 }
 
+bool Circuit::clearOptions(Status& s) {
+    IStruct<SimulatorOptions> opt;
+    return setOptions(opt);
+}
+
 // Check if hierarchy affecting options changed when setting all options
 bool Circuit::hierarchyAffectingOptionsChanged(SimulatorOptions& opt) {
     return simOptions.core().optionsDiffer(SimulatorOptions::hierarchyAffectingOptions, opt);

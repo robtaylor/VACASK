@@ -118,15 +118,17 @@ print("Expected: [2, 8]")
     // Set circuit variable var1 to 60
     cir.setVariable("var1", 60);
 
+    // Now temp will be computed from var1
+    cir.setOption("reltol", 1e-4);
+    auto pp = p.parseParameters("temp=var1");
+    cir.setOptions(pp);
+
     // Elaborate it, just the default toplevel subcircuit 
     // (empty list of subcircuit definition names). 
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
-    // This time we use an initializer list of PTParameters objects for initial simulator options
-    // The first PTParameters object holds the reltol value. 
-    // The second one holds an expression for temp (computed from variables).
-    if (!cir.elaborate({}, "__topdef__", "__topinst__", { PTParameters(PVv( PV("reltol", 1e-4))), p.parseParameters("temp=var1") }, nullptr, s)) {
+    if (!cir.elaborate({}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);

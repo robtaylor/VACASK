@@ -42,12 +42,6 @@ Analysis* Analysis::create(
         return nullptr;
     }
 
-    // Store simulator options state
-    an->originalSimOptions.core() = circuit.simulatorOptions().core();
-
-    // Set up initial simulator options for analysis
-    an->simOptions.core() = an->originalSimOptions.core();
-    
     // Build analysis state repository
     // This is the first allocation so states will be allocated startign at slot 0
     an->allocateAnalysisStateStorage(an->sweepCount());
@@ -120,6 +114,19 @@ AnalysisCoroutine Analysis::coroutine(Status& s) {
     // Output descriptors are created with analysis
     // Binding must be done here, just before the core analysis is run
 
+    // Store simulator options state
+    originalSimOptions.core() = circuit.simulatorOptions().core();
+
+    // Set up initial simulator options for analysis
+    IStruct<SimulatorOptions> simOptions;
+    simOptions.core() = originalSimOptions.core();
+
+    // Update with options map
+    if (auto [ok, changed] = simOptions.setParameters(analysisOptions, circuit.variableEvaluator(), Parameterized::Write::All, s); !ok) {
+        s.extend("Failed to set initial options.");
+        co_yield AnalysisState::Aborted;
+    }
+    
     // Clear instance flags: Converged, Bypassed, HasDeviceHistory
     circuit.applyInstanceFlags(
         Instance::Flags::HasDeviceHistory |
@@ -642,7 +649,7 @@ void Analysis::dump(std::ostream& os) const {
     os << "\n"; 
 
     os << "  Simulator options:" << "\n";
-    simOptions.dump(os, "    ");
+    analysisOptions.dump(4, os);
     auto& params = parameters();
     if (params.parameterCount()>0) {
         os << "\n";

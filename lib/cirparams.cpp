@@ -240,14 +240,17 @@ std::tuple<bool, bool> Circuit::propagateDownHierarchy(Status& s) {
 //   - update analysis parameters according to new variable values
 // 
 // opt specifies simulator options that will be updated with
-// variables and options expressions from optionsMap. 
+// options expressions computed from variables given in optionsMap. 
+// Entries in optionsMap that correspond to constant values are ignored. 
+// 
 // If opt is nullptr circuit's simulator options are used. 
 // 
 // Simulator options pointed to by opt are written to circuit's simulator options. 
+// If opt is nullptr this step is skipped. 
 // 
-// Add sparsity map entries and state vector slots requested by analysis. 
+// Adds sparsity map entries and state vector slots requested by analysis. 
 // 
-// Make circuit consistent. 
+// Makes circuit consistent. 
 
 std::tuple<bool, bool, bool> Circuit::elaborateChanges(
     CommonData& commons, 

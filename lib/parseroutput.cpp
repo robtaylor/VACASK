@@ -37,6 +37,22 @@ void PTParameterExpression::dump(int indent, std::ostream& os) const {
     os << pfx << std::string(id_) << "=" << rpn_.str();
 }
 
+void PTParameterMap::dump(int indent, std::ostream& os) const {
+    std::string pfx = std::string(indent, ' ');
+    for(auto& it : map_) {
+        os << pfx << std::string(it.first) << "=";
+        if (std::holds_alternative<const PTParameterValue*>(it.second)) {
+            std::get<const PTParameterValue*>(it.second)->dump(0, os);
+        } else if (std::holds_alternative<std::unique_ptr<const PTParameterValue>>(it.second)) {
+            std::get<std::unique_ptr<const PTParameterValue>>(it.second)->dump(0, os);
+        } else if (std::holds_alternative<const PTParameterExpression*>(it.second)) {
+            std::get<const PTParameterExpression*>(it.second)->dump(0, os);
+        } else {
+            std::get<std::unique_ptr<const PTParameterExpression>>(it.second)->dump(0, os);
+        }
+        os << "\n";
+    }
+}
 
 std::ostream& operator<<(std::ostream& os, const PTParameters& obj) {
     for(auto it=obj.values_.cbegin(); it!=obj.values_.cend(); ++it) {

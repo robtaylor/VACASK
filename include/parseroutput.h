@@ -251,6 +251,8 @@ public:
 
     auto clear() { return map_.clear(); };
 
+    void dump(int indent, std::ostream& os) const;
+
 private:
     std::unordered_map<Id, PTValueOrExpression> map_;
 };
