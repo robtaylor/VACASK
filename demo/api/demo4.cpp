@@ -162,9 +162,3 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
 
     return 0;
 }
-
-// TODO:
-//   expression for analysis/sweep parameter, sweep it
-//   change parameter, elaborate changes
-//   change option, elaborate changes
-//   change variable that affects an instance, elaborate changes

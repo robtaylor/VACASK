@@ -68,3 +68,21 @@ target_link_libraries(
     simlib
     ${SIM_EXE_LIBRARIES}
 )
+
+
+add_executable(demo5
+    demo5.cpp
+)
+
+set_target_properties(demo5 PROPERTIES OUTPUT_NAME "demo5")
+add_dependencies(demo5 simlib)
+
+if (${SIM_PLATFORM} STREQUAL "Windows")
+    target_link_options(demo5 PUBLIC -static)
+endif()
+
+target_link_libraries(
+    demo5
+    simlib
+    ${SIM_EXE_LIBRARIES}
+)

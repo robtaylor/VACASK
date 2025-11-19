@@ -47,7 +47,7 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - numerical solvers based on the KLU sparse matrix library
 - SPICE ASCII/binary raw file output
 - embedded files in the netlist
-- postprocessing of results with external tools (some basic Python/Numpy scripts are provided)
+- postprocessing of results with external tools (see [python/rawfile.py](python/rawfile.py) and [demos](demo))
 - a growing [library of Verilog-A models](devices/) (diode, BSIM3, BSIM4, BSIMBULK, ...)
 - simulator library that can be linked to 3rd party software (see API demo in  [demo/api](demo/api))
 - netlist parser with Spectre-like syntax
