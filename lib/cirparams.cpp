@@ -568,8 +568,12 @@ template<typename T> std::tuple<bool, Value> Circuit::getterHelper(Id name, Id p
     } else {
         obj = findModel(name);
     }
+    if (!obj) {
+        s.set(Status::NotFound, failMsg);
+        return std::make_tuple(false, 0);
+    }
     Value v;
-    auto ok = obj->getParameter(name, v, s);
+    auto ok = obj->getParameter(param, v, s);
     if (!ok) {
         return std::make_tuple(false, 0);
     }

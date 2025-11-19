@@ -287,10 +287,10 @@ public:
     // - the set of analog states
     // - sparsity map
     // Handles analysis requests for extra sparsity map entries and extra analog states. 
-    // Return value: ok, hierarchy changed, analysis binding needed 
     // Analysis binding is needed if unknowns changed or analysis requested sparsity map entries. 
     // devReq can be nullptr
     // This one is intended to be called from an analysis during sweep. 
+    // Return value: ok, hierarchy changed, analysis binding needed 
     std::tuple<bool, bool, bool> elaborateChanges(
         CommonData& commons, 
         ParameterSweeper* sweeper, ParameterSweeper::WriteValues what, 
@@ -387,15 +387,15 @@ public:
     bool remove(Model* model, Status& s=Status::ignore);
     
     // Find node, device, model, and instace by name
-    Node* findNode(Id name);
-    Device* findDevice(Id name, int* index=nullptr);
-    Model* findModel(Id name);
-    Instance* findInstance(Id name);
+    const Node* findNode(Id name) const;
+    const Device* findDevice(Id name, int* index=nullptr) const;
+    const Model* findModel(Id name) const;
+    const Instance* findInstance(Id name) const;
 
-    const Node* findNode(Id name) const { return findNode(name); };
-    const Device* findDevice(Id name, int* index=nullptr) const { return findDevice(name); };
-    const Model* findModel(Id name) const { return findModel(name); };
-    const Instance* findInstance(Id name) const { return findInstance(name); };
+    Node* findNode(Id name) { return const_cast<Node*>(std::as_const(*this).findNode(name)); };
+    Device* findDevice(Id name, int* index=nullptr) { return const_cast<Device*>(std::as_const(*this).findDevice(name)); };
+    Model* findModel(Id name) { return const_cast<Model*>(std::as_const(*this).findModel(name)); };
+    Instance* findInstance(Id name) { return const_cast<Instance*>(std::as_const(*this).findInstance(name)); };
     
     std::vector<HierarchicalModel*>& toplevelModels() { return toplevelModels_; };
     std::vector<HierarchicalInstance*>& toplevelInstances() { return toplevelInstances_; };

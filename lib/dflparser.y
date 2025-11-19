@@ -497,7 +497,7 @@ expr
   | expr NOTEQUAL expr { 
     $$.extend(std::move($1)); 
     $$.extend(std::move($3)); 
-    $$.extend(Rpn::Op(Rpn::OpEqual), @2.loc());  
+    $$.extend(Rpn::Op(Rpn::OpNotEqual), @2.loc());  
   }
   | expr LESS expr { 
     $$.extend(std::move($1)); 

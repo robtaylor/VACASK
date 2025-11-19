@@ -637,7 +637,7 @@ bool Circuit::remove(Model* model, Status& s) {
     return true;
 }
 
-Node* Circuit::findNode(Id name) {
+const Node* Circuit::findNode(Id name) const {
     auto it=nodeMap.find(name);
     if (it==nodeMap.end()) {
         return nullptr;
@@ -645,7 +645,7 @@ Node* Circuit::findNode(Id name) {
     return it->second;
 }
 
-Device* Circuit::findDevice(Id name, int* index) {
+const Device* Circuit::findDevice(Id name, int* index) const {
     auto it = deviceIndex.find(name);
     if (it!=deviceIndex.end()) {
         if (index) {
@@ -656,7 +656,7 @@ Device* Circuit::findDevice(Id name, int* index) {
     return nullptr;
 }
 
-Model* Circuit::findModel(Id name) {
+const Model* Circuit::findModel(Id name) const {
     auto it = modelMap.find(name);
     if (it!=modelMap.end()) {
         return it->second.get();
@@ -664,7 +664,7 @@ Model* Circuit::findModel(Id name) {
     return nullptr;
 }
 
-Instance* Circuit::findInstance(Id name) {
+const Instance* Circuit::findInstance(Id name) const {
     auto it = instanceMap.find(name);
     if (it!=instanceMap.end()) {
         return it->second.get();
