@@ -49,8 +49,12 @@ Before you start Xschem make sure the `PDK_ROOT` and the `PDK` environmental var
 
 For VACASK simulations to work when invoked from Xschem you will have to copy the [.vacaskrc.toml](.vacaskrc.toml) file to the user's home directory. Netlists will be created and VACASK will be started in the `simulations` subdirectory of the directory where Xschem was started. 
 
-Two simple examples are provided. The first example [dc_lv_nmos.sch](dc_lv_nmos.sch) is an analog circuit. The generated netlist contains a control block that performs an operating point analysis, a 1D operating point Sweep, and a 2D operating point sweep. The 2D sweep is plotted by the embedded Python script. By holding the Control button and left-clicking the `SimulateVACASK` launcher you can start the simulation. The operating point results can be loaded with the `Op annotate` launcher and the results of the dc2 analysis can be plotted in the embedded graph with the `Load waves` launcher. 
+Three simple examples are provided. The first example [dc_lv_nmos.sch](dc_lv_nmos.sch) is an analog circuit. The generated netlist contains a control block that performs an operating point analysis, a 1D operating point Sweep, and a 2D operating point sweep. The 2D sweep is plotted by the embedded Python script. By holding the Control button and left-clicking the `SimulateVACASK` launcher you can start the simulation. The operating point results can be loaded with the `Op annotate` launcher and the results of the dc2 analysis can be plotted in the embedded graph with the `Load waves` launcher. 
 
 The second example [tran_inv.sch](tran_inv.sch) demonstrates the operationm of a simple inverter from the `sg13g2_stdcells` library. When simulating circuits that comprise components from this library make sure to define the potentials¸ of nodes `VDD` and `VSS` (i.e. connect a voltage source with the corresponding DC value to each of the two nodes). 
+
+The third example simulates a RS latch. This example uses the analyses Xschem library for setting up the analyses. 
+
+![Xschem showing the tran_rs.sch example.](tran_rs.png)
 
 Currently HBT operating point backannotation does not work because VACASK uses the Verilog-A version of the VBIC model which does not expose operating point data. Once the VBIC model is converted from Ngspice to Verilog-A this feature will be added. 

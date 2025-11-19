@@ -1,0 +1,37 @@
+// sch_path: /home/arpadb/sim/VACASK/demo/ihp-sg13g2/tran_inv.sch
+//subckt tran_inv ( )
+Vin ( in GND ) vsource type="pulse" val0=0 val1=0.9 delay=0 rise=100p fall=100p width=2n period=4n 
+x1 ( out in VDD VSS ) sg13g2_inv_1 
+C2 ( out GND ) capacitor c=4f $mfactor=1 
+Vdd ( VDD GND ) vsource dc=0.9 
+Vss ( VSS GND ) vsource dc=0 
+//// begin user architecture code
+
+
+
+include "sg13g2_vacask_common.lib"
+include "cornerMOSlv.lib" section=mos_tt
+include "cornerMOShv.lib" section=mos_tt
+include "cornerHBT.lib" section=hbt_typ
+include "cornerRES.lib" section=res_typ
+include "cornerCAP.lib" section=cap_typ
+include "sg13g2_stdcell.inc"
+
+
+
+
+
+control
+  options temp=27
+  analysis tran1 tran step=50p stop=20n
+endc
+
+
+//// end user architecture code
+//ends
+ground GND 
+//// begin user architecture code
+model vsource vsource
+load "capacitor.osdi"
+model capacitor capacitor
+//// end user architecture code

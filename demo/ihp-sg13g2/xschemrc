@@ -14,4 +14,14 @@ if {[info exists ::env(PDK_ROOT)]} {
   puts "Set PDK_ROOT envoronmental variable"
 }
 
+append XSCHEM_LIBRARY_PATH :/usr/local/share/doc/xschem/analyses
+append postinit_commands {
+  foreach i $pathlist {
+    if {![catch {source $i/lib_init.tcl} retval]} {
+      puts "Sourced library init file $i/lib_init.tcl"
+    } 
+  }
+}
 
+set netlist_type spectre
+set editor {kwrite}

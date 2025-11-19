@@ -1,0 +1,34 @@
+// sch_path: /home/arpadb/sim/VACASK/demo/ihp-sg13g2/tran_rs.sch
+//subckt tran_rs ( )
+Vdd ( VDD GND ) vsource dc=0.9 
+Vss ( VSS GND ) vsource dc=0 
+Vin1 ( s GND ) vsource type="pulse" val0=0 val1=0.9 delay=1n rise=100p fall=100p width=2n period=9n 
+Vin2 ( r GND ) vsource type="pulse" val0=0 val1=0.9 delay=5n rise=100p fall=100p width=2n 
+x1 ( qbar s q VDD VSS ) sg13g2_nor2_1 
+x2 ( q qbar r VDD VSS ) sg13g2_nor2_1 
+//// begin user architecture code
+control
+  options temp=27
+  
+  analysis tran1 tran ( step=50p stop=14n )
+endc
+//// end user architecture code
+//// begin user architecture code
+
+
+
+include "sg13g2_vacask_common.lib"
+include "cornerMOSlv.lib" section=mos_tt
+include "cornerMOShv.lib" section=mos_tt
+include "cornerHBT.lib" section=hbt_typ
+include "cornerRES.lib" section=res_typ
+include "cornerCAP.lib" section=cap_typ
+include "sg13g2_stdcell.inc"
+
+
+//// end user architecture code
+//ends
+ground GND 
+//// begin user architecture code
+model vsource vsource
+//// end user architecture code

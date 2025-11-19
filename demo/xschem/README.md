@@ -50,6 +50,7 @@ A simple example is provided ([rfosc.sch](rfosc.sch)). After you open it, select
 
 The analyses library in Xschem provides a set of blocks that can be used to visually set up the analyses and other control block commands. To use this library you have to source its initialization script by adding the following lines to your `xschemrc` file. 
 ```
+append XSCHEM_LIBRARY_PATH :/usr/local/share/doc/xschem/analyses
 append postinit_commands {
   foreach i $pathlist {
     if {![catch {source $i/lib_init.tcl} retval]} {
