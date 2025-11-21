@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-81-g05c5472b0
+// Version      : ngspice-45-84-g7f75f09ec
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-17 15:08:42 UTC
+// Date         : 2025-11-21 07:10:04 UTC
 // Module name  : sp_vdmos
 // Model variant: full
 // 
@@ -365,9 +365,12 @@ module sp_vdmos(d, g, s, t, tc);
   real dIrd_dT = 0;
   real drd0T_dT = 0;
   real drd1T_dT = 0;
-  real drd_dT = 0;
   real dgdrain_dT = 0;
-  real dIrd_dgdrain = 0;
+  real rsT = 0;
+  real Vrs = 0;
+  real dIth_dVrs = 0;
+  real dIrs_dT = 0;
+  real dgsource_dT = 0;
   real delTemp = 0;
   real delTemp1 = 0;
   real Temp = 0;
@@ -394,16 +397,16 @@ module sp_vdmos(d, g, s, t, tc);
   real capd = 0;
   real gd = 0;
   real gdb = 0;
-  real gspr = 0;
+  real gbpr = 0;
   real delvd = 0;
   real evrev = 0;
   real Ith = 0;
   real dIth_dT = 0;
   real dIdio_dT = 0;
   real dIth_dVdio = 0;
-  real vrs = 0;
-  real dIrs_dT = 0;
-  real dIth_dVrs = 0;
+  real vrb = 0;
+  real dIrb_dT = 0;
+  real dIth_dVrb = 0;
   real load_egfet = 0;
   real load_egfet1 = 0;
   real load_fact1 = 0;
@@ -434,6 +437,7 @@ module sp_vdmos(d, g, s, t, tc);
   real load_arg1_dT = 0;
   real load_arg2 = 0;
   real load_arg2_dT = 0;
+  real drsT_dT = 0;
   real vgst = 0;
   real slope = 0;
   real load_lambda = 0;
@@ -446,12 +450,18 @@ module sp_vdmos(d, g, s, t, tc);
   real betap = 0;
   real dbetapdvgs = 0;
   real dbetapdvds = 0;
-  real dbetapdT = 0;
   real t2 = 0;
   real dvgstdvgs = 0;
+  real dvgst_dT = 0;
+  real dvdsat_dT = 0;
+  real dt1_dT = 0;
+  real dbetap_dT = 0;
   real vdsn = 0;
   real load_rd = 0;
-  real vCktTemp = 0;
+  real drd_dT = 0;
+  real dIrd_dgdrain = 0;
+  real dIrs_dgsource = 0;
+  real vDevTemp = 0;
   real gthjc = 0;
   real gthca = 0;
   real vdtemp = 0;
@@ -464,8 +474,8 @@ module sp_vdmos(d, g, s, t, tc);
   real diffcap = 0;
   real deplcap = 0;
   real czof2 = 0;
-  real dIrs_dgspr = 0;
-  real dIth_dIrs = 0;
+  real dIrb_dgbpr = 0;
+  real dIth_dIrb = 0;
 
   // Device noise locals
   real coxSquared = 0;
@@ -966,10 +976,15 @@ module sp_vdmos(d, g, s, t, tc);
     capgs = 0.0;
     capgd = 0.0;
     capth = 0.0;
+    dIds_dT = 0.0;
     Vrd = 0.0;
     dIth_dVrd = 0.0;
     dIrd_dT = 0.0;
     dgdrain_dT = 0.0;
+    Vrs = 0.0;
+    dIth_dVrs = 0.0;
+    dIrs_dT = 0.0;
+    dgsource_dT = 0.0;
     ceqqth = 0.0;
     gcTt = 0.0;
     load_cgdmin = cgdmin;
@@ -1012,7 +1027,7 @@ module sp_vdmos(d, g, s, t, tc);
       load_vgs = vgd+load_vds;
     end
     if (selfheat) begin
-      delTemp = DEVlimitlog(delTemp, VDMOSdelTemp, 30, limited);
+      delTemp = DEVlimitlog(delTemp, VDMOSdelTemp, 10, limited);
     end else begin
       delTemp = 0.0;
     end
@@ -1126,13 +1141,20 @@ module sp_vdmos(d, g, s, t, tc);
       Beta = VDMOStTransconductance;
       dBeta_dT = Beta*VDMOSmu/Temp;
       rd0T = i_VDMOSdrainResistance;
-      drd0T_dT = rd0T*texp0/Temp;
+      if ($param_given(texp0)) begin
+        drd0T_dT = rd0T*texp0/Temp;
+      end else begin
+        drd0T_dT = rd*(trd1+2*trd2*(Temp-VDMOStnom));
+      end
       rd1T = 0.0;
       drd1T_dT = 0.0;
       if (VDMOSqsGiven) begin
         rd1T = i_VDMOSqsResistance;
         drd1T_dT = rd1T*texp1/Temp;
       end
+      rsT = 1/VDMOSsourceConductance;
+      drsT_dT = rs*(trs1+2*trs2*(Temp-VDMOStnom));
+      dgsource_dT = -drsT_dT/(rsT*rsT);
     end else begin
       Beta = VDMOStTransconductance;
       dBeta_dT = 0.0;
@@ -1143,6 +1165,7 @@ module sp_vdmos(d, g, s, t, tc);
       if (VDMOSqsGiven) begin
         rd1T = i_VDMOSqsResistance;
       end
+      dgsource_dT = 0.0;
     end
     vgd = load_vgs-load_vds;
     if (load_vds>=0) begin
@@ -1168,7 +1191,6 @@ module sp_vdmos(d, g, s, t, tc);
     betap = Beta*t0/t1;
     dbetapdvgs = -Beta*load_theta*t0/(t1*t1);
     dbetapdvds = Beta*load_lambda/t1;
-    dbetapdT = dBeta_dT*t0/t1;
     t2 = exp((vgst-shift)/slope);
     vgst = slope*ln(1+t2);
     dvgstdvgs = t2/(t2+1);
@@ -1176,12 +1198,24 @@ module sp_vdmos(d, g, s, t, tc);
       cdrain = betap*vgst*vgst*0.5;
       VDMOSgm = betap*vgst*dvgstdvgs+0.5*dbetapdvgs*vgst*vgst;
       VDMOSgds = 0.5*dbetapdvds*vgst*vgst;
-      dIds_dT = dbetapdT*vgst*vgst*0.5;
     end else begin
       cdrain = betap*vdss*(vgst-0.5*vdss);
       VDMOSgm = betap*vdss*dvgstdvgs+vdss*dbetapdvgs*(vgst-0.5*vdss);
       VDMOSgds = vdss*dbetapdvds*(vgst-0.5*vdss)+betap*mtr*(vgst-0.5*vdss)-0.5*vdss*betap*mtr;
-      dIds_dT = dbetapdT*vdss*(vgst-0.5*vdss);
+    end
+    if (selfheat) begin
+      dvgst_dT = VDMOStype*tcvth;
+      dvdsat_dT = 0.0;
+      if (vgst>0) begin
+        dvdsat_dT = dvgst_dT;
+      end
+      dt1_dT = load_theta*dvdsat_dT;
+      dbetap_dT = t0*(t1*dBeta_dT-Beta*dt1_dT)/(t1*t1);
+      if (vgst<=vdss) begin
+        dIds_dT = 0.5*dbetap_dT*vgst*vgst+betap*vgst*dvgst_dT;
+      end else begin
+        dIds_dT = vdss*(dbetap_dT*vgst+betap*dvgst_dT)-dbetap_dT*vdss*0.5*vdss;
+      end
     end
     VDMOSvon = VDMOStype*load_von;
     VDMOSvdsat = VDMOStype*vdsat;
@@ -1224,10 +1258,15 @@ module sp_vdmos(d, g, s, t, tc);
       VDMOSgtempd = VDMOStype*(VDMOSgds*Vds+cdrain);
       VDMOScth = cdrain*Vds;
       Vrd = V(d, d_int);
-      dIth_dVrd = VDMOSdrainConductance*Vrd;
+      dIth_dVrd = VDMOSdrainConductance*2*Vrd;
       dIrd_dgdrain = Vrd;
       dIrd_dT = dIrd_dgdrain*dgdrain_dT;
       VDMOScth = VDMOScth + (VDMOSdrainConductance*Vrd*Vrd);
+      Vrs = V(s, s_int);
+      dIth_dVrs = VDMOSsourceConductance*2*Vrs;
+      dIrs_dgsource = Vrs;
+      dIrs_dT = dIrs_dgsource*dgsource_dT;
+      VDMOScth = VDMOScth + (VDMOSsourceConductance*Vrs*Vrs);
     end
     DevCapVDMOS(vgd, load_cgdmin, load_cgdmax, load_a, load_cgs, VDMOScapgs, VDMOScapgd);
     VDMOScapth = cthj/2;
@@ -1285,7 +1324,10 @@ module sp_vdmos(d, g, s, t, tc);
       cdreq = -VDMOStype*cdrain;
     end
     if (selfheat) begin
-      vCktTemp = $temperature-273.15;
+      vDevTemp = $temperature-273.15;
+      if (VDMOStempGiven) begin
+        vDevTemp = VDMOStemp-273.15;
+      end
     end
     if (selfheat) begin
       gthjc = 1.0/rthjc;
@@ -1295,10 +1337,10 @@ module sp_vdmos(d, g, s, t, tc);
     dIth_dT = 0.0;
     dIdio_dT = 0.0;
     dIth_dVdio = 0.0;
-    vrs = 0.0;
-    dIrs_dT = 0.0;
-    dIth_dVrs = 0.0;
-    gspr = VDIOtConductance;
+    vrb = 0.0;
+    dIrb_dT = 0.0;
+    dIth_dVrb = 0.0;
+    gbpr = VDIOtConductance;
     load_vt = CONSTKoverQ*Temp;
     load_vte = n*load_vt;
     vtebrk = nbv*load_vt;
@@ -1365,14 +1407,14 @@ module sp_vdmos(d, g, s, t, tc);
     VDIOconduct = gd;
     VDIOdIdio_dT = dIdio_dT;
     if (selfheat) begin
-      vrs = V(s, bd_int);
+      vrb = V(s, bd_int);
       Ith = vd*cd;
       dIth_dVdio = cd+vd*gd;
-      dIth_dVrs = vrs*gspr;
-      dIrs_dgspr = vrs;
-      dIrs_dT = dIrs_dgspr*VDIOtConductance_dT;
-      dIth_dIrs = vrs;
-      dIth_dT = dIth_dIrs*dIrs_dT+dIdio_dT*vd;
+      dIth_dVrb = vrb*gbpr;
+      dIrb_dgbpr = vrb;
+      dIrb_dT = dIrb_dgbpr*VDIOtConductance_dT;
+      dIth_dIrb = vrb;
+      dIth_dT = dIth_dIrb*dIrb_dT+dIdio_dT*vd;
     end
     cdeq = cd;
     /* Internal MOSFET */
@@ -1381,7 +1423,7 @@ module sp_vdmos(d, g, s, t, tc);
     I(s_int) <+ -cdreq - VDMOStype * ceqgs;
     
     /* Body diode */
-    I(bd_int, s) <+ V(bd_int, s) * gspr;
+    I(bd_int, s) <+ V(bd_int, s) * gbpr;
     I(bd_int, d) <+ VDMOStype * cdeq;
     
     /* Series resistors */
@@ -1393,7 +1435,7 @@ module sp_vdmos(d, g, s, t, tc);
     I(d, s) <+ V(d, s) * VDMOSdsConductance;
     
     /* Thermal model */
-    V(tbr) <+ vCktTemp * $simparam("sourceScaleFactor", 1.0);
+    V(tbr) <+ vDevTemp * $simparam("sourceScaleFactor", 1.0);
     I(t, tc) <+ V(t, tc) * gthjc;
     I(tc, t_int) <+ V(tc, t_int) * gthca;
     I(t) <+ -VDMOScth + ceqqth;
