@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-75-g8d26e8b2c
+// Version      : ngspice-45-84-g7f75f09ec
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 14:24:49 UTC
+// Date         : 2025-11-21 11:00:20 UTC
 // Module name  : sp_mos3
 // Model variant: full
 // 
@@ -522,7 +522,7 @@ module sp_mos3(d, g, s, b);
   real lc_gmin = 0;
 
   // Translated function definitions
-  analog function DEVqmeyer;
+  analog function real DEVqmeyer;
     input vgs, vgd, vgb, von, _vdsat;
     inout capgs, capgd, capgb;
     input phi, cox;
@@ -543,6 +543,7 @@ module sp_mos3(d, g, s, b);
     real vddif2;
     real vgst;
     begin
+      DEVqmeyer = 0;
       vdsat = _vdsat;
       vgst = vgs-von;
       vdsat = ((vdsat>0.025) ? (vdsat) : (0.025));
@@ -603,7 +604,7 @@ module sp_mos3(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitOldGet;
+  analog function real DEVlimitOldGet;
     input vnew, vold;
     real vnew, vold, result;
     begin
@@ -611,7 +612,7 @@ module sp_mos3(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitNewSet;
+  analog function real DEVlimitNewSet;
     input vnew, vold, new_value, limited;
     real vnew, vold, new_value;
     integer limited;
@@ -1499,8 +1500,8 @@ module sp_mos3(d, g, s, b);
     gcgb = 0;
     ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
     MOS3cqgb = ceqgb;
-    ceqbs = MOS3type*(MOS3cbs-MOS3gbs*load_vbs);
-    ceqbd = MOS3type*(MOS3cbd-MOS3gbd*load_vbd);
+    ceqbs = MOS3type*MOS3cbs;
+    ceqbd = MOS3type*MOS3cbd;
     if (MOS3mode>=0) begin
       xnrm = 1;
       xrev = 0;
@@ -1515,9 +1516,9 @@ module sp_mos3(d, g, s, b);
     I(d) <+ MOS3drainConductance*V(d, d_int);
     I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS3type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS3sourceConductance*V(s, s_int);
-    I(b) <+ MOS3gbd*V(b, d_int)+MOS3gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS3type*ceqgb);
-    I(d_int) <+ MOS3drainConductance*V(d_int, d)+MOS3gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS3type*ceqgd);
-    I(s_int) <+ MOS3gbs*V(s_int, b)+MOS3sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS3type*ceqgs);
+    I(b) <+ gcgb*V(b, g)+(ceqbs+ceqbd-MOS3type*ceqgb);
+    I(d_int) <+ MOS3drainConductance*V(d_int, d)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS3type*ceqgd);
+    I(s_int) <+ MOS3sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS3type*ceqgs);
 
     // Tag: noise, function: MOS3noise
     if (MOS3tempGiven) begin

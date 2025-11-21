@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-75-g8d26e8b2c
+// Version      : ngspice-45-84-g7f75f09ec
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 14:24:34 UTC
+// Date         : 2025-11-21 11:00:05 UTC
 // Module name  : sp_mos1
 // Model variant: full
 // 
@@ -403,7 +403,7 @@ module sp_mos1(d, g, s, b);
   real lc_gmin = 0;
 
   // Translated function definitions
-  analog function DEVqmeyer;
+  analog function real DEVqmeyer;
     input vgs, vgd, vgb, von, _vdsat;
     inout capgs, capgd, capgb;
     input phi, cox;
@@ -424,6 +424,7 @@ module sp_mos1(d, g, s, b);
     real vddif2;
     real vgst;
     begin
+      DEVqmeyer = 0;
       vdsat = _vdsat;
       vgst = vgs-von;
       vdsat = ((vdsat>0.025) ? (vdsat) : (0.025));
@@ -484,7 +485,7 @@ module sp_mos1(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitOldGet;
+  analog function real DEVlimitOldGet;
     input vnew, vold;
     real vnew, vold, result;
     begin
@@ -492,7 +493,7 @@ module sp_mos1(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitNewSet;
+  analog function real DEVlimitNewSet;
     input vnew, vold, new_value, limited;
     real vnew, vold, new_value;
     integer limited;
@@ -986,7 +987,7 @@ module sp_mos1(d, g, s, b);
     vgb = load_vgs-load_vbs;
     if (load_vbs<=-3*load_vt) begin
       MOS1gbs = lc_gmin/$mfactor;
-      MOS1cbs = MOS1gbs*load_vbs-SourceSatCur;
+      MOS1cbs = lc_gmin/$mfactor*load_vbs-SourceSatCur;
     end else begin
       evbs = exp(((709.0<load_vbs/load_vt) ? (709.0) : (load_vbs/load_vt)));
       MOS1gbs = SourceSatCur*evbs/load_vt+lc_gmin/$mfactor;
@@ -994,7 +995,7 @@ module sp_mos1(d, g, s, b);
     end
     if (load_vbd<=-3*load_vt) begin
       MOS1gbd = lc_gmin/$mfactor;
-      MOS1cbd = MOS1gbd*load_vbd-DrainSatCur;
+      MOS1cbd = lc_gmin/$mfactor*load_vbd-DrainSatCur;
     end else begin
       evbd = exp(((709.0<load_vbd/load_vt) ? (709.0) : (load_vbd/load_vt)));
       MOS1gbd = DrainSatCur*evbd/load_vt+lc_gmin/$mfactor;
@@ -1152,8 +1153,8 @@ module sp_mos1(d, g, s, b);
     gcgb = 0;
     ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
     MOS1cqgb = ceqgb;
-    ceqbs = MOS1type*(MOS1cbs-MOS1gbs*load_vbs);
-    ceqbd = MOS1type*(MOS1cbd-MOS1gbd*load_vbd);
+    ceqbs = MOS1type*MOS1cbs;
+    ceqbd = MOS1type*MOS1cbd;
     if (MOS1mode>=0) begin
       xnrm = 1;
       xrev = 0;
@@ -1168,9 +1169,9 @@ module sp_mos1(d, g, s, b);
     I(d) <+ MOS1drainConductance*V(d, d_int);
     I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS1type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS1sourceConductance*V(s, s_int);
-    I(b) <+ MOS1gbd*V(b, d_int)+MOS1gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS1type*ceqgb);
-    I(d_int) <+ MOS1drainConductance*V(d_int, d)+MOS1gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS1type*ceqgd);
-    I(s_int) <+ MOS1gbs*V(s_int, b)+MOS1sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS1type*ceqgs);
+    I(b) <+ gcgb*V(b, g)+(ceqbs+ceqbd-MOS1type*ceqgb);
+    I(d_int) <+ MOS1drainConductance*V(d_int, d)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS1type*ceqgd);
+    I(s_int) <+ MOS1sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS1type*ceqgs);
 
     // Tag: noise, function: MOS1noise
     if (MOS1oxideCapFactor==0.0) begin

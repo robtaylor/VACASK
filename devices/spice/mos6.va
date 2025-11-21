@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-75-g8d26e8b2c
+// Version      : ngspice-45-84-g7f75f09ec
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 14:21:43 UTC
+// Date         : 2025-11-21 10:57:18 UTC
 // Module name  : sp_mos6
 // Model variant: default
 // 
@@ -402,7 +402,7 @@ module sp_mos6(d, g, s, b);
   real lc_gmin = 0;
 
   // Translated function definitions
-  analog function DEVqmeyer;
+  analog function real DEVqmeyer;
     input vgs, vgd, vgb, von, _vdsat;
     inout capgs, capgd, capgb;
     input phi, cox;
@@ -423,6 +423,7 @@ module sp_mos6(d, g, s, b);
     real vddif2;
     real vgst;
     begin
+      DEVqmeyer = 0;
       vdsat = _vdsat;
       vgst = vgs-von;
       vdsat = ((vdsat>0.025) ? (vdsat) : (0.025));
@@ -483,7 +484,7 @@ module sp_mos6(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitOldGet;
+  analog function real DEVlimitOldGet;
     input vnew, vold;
     real vnew, vold, result;
     begin
@@ -491,7 +492,7 @@ module sp_mos6(d, g, s, b);
     end
   endfunction
 
-  analog function DEVlimitNewSet;
+  analog function real DEVlimitNewSet;
     input vnew, vold, new_value, limited;
     real vnew, vold, new_value;
     integer limited;
@@ -983,7 +984,7 @@ module sp_mos6(d, g, s, b);
     vgb = load_vgs-load_vbs;
     if (load_vbs<=-3*load_vt) begin
       MOS6gbs = lc_gmin;
-      MOS6cbs = MOS6gbs*load_vbs-SourceSatCur;
+      MOS6cbs = lc_gmin*load_vbs-SourceSatCur;
     end else begin
       evbs = exp(((709.0<load_vbs/load_vt) ? (709.0) : (load_vbs/load_vt)));
       MOS6gbs = SourceSatCur*evbs/load_vt+lc_gmin;
@@ -991,7 +992,7 @@ module sp_mos6(d, g, s, b);
     end
     if (load_vbd<=-3*load_vt) begin
       MOS6gbd = lc_gmin;
-      MOS6cbd = MOS6gbd*load_vbd-DrainSatCur;
+      MOS6cbd = lc_gmin*load_vbd-DrainSatCur;
     end else begin
       evbd = exp(((709.0<load_vbd/load_vt) ? (709.0) : (load_vbd/load_vt)));
       MOS6gbd = DrainSatCur*evbd/load_vt+lc_gmin;
@@ -1161,8 +1162,8 @@ module sp_mos6(d, g, s, b);
     ceqgb = capgb*(ddt(meyer_scale*vgb)/meyer_unscale);
     MOS6cqgb = ceqgb;
     m = 1;
-    ceqbs = MOS6type*(MOS6cbs-MOS6gbs*load_vbs);
-    ceqbd = MOS6type*(MOS6cbd-MOS6gbd*load_vbd);
+    ceqbs = MOS6type*MOS6cbs;
+    ceqbd = MOS6type*MOS6cbd;
     if (MOS6mode>=0) begin
       xnrm = 1;
       xrev = 0;
@@ -1177,9 +1178,9 @@ module sp_mos6(d, g, s, b);
     I(d) <+ MOS6drainConductance*V(d, d_int);
     I(g) <+ gcgb*V(g, b)+gcgd*V(g, d_int)+gcgs*V(g, s_int)+MOS6type*(ceqgs+ceqgb+ceqgd);
     I(s) <+ MOS6sourceConductance*V(s, s_int);
-    I(b) <+ MOS6gbd*V(b, d_int)+MOS6gbs*V(b, s_int)+gcgb*V(b, g)+(ceqbs+ceqbd-MOS6type*ceqgb);
-    I(d_int) <+ MOS6drainConductance*V(d_int, d)+MOS6gbd*V(d_int, b)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS6type*ceqgd);
-    I(s_int) <+ MOS6gbs*V(s_int, b)+MOS6sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS6type*ceqgs);
+    I(b) <+ gcgb*V(b, g)+(ceqbs+ceqbd-MOS6type*ceqgb);
+    I(d_int) <+ MOS6drainConductance*V(d_int, d)+gcgd*V(d_int, g)+-(ceqbd-cdreq+MOS6type*ceqgd);
+    I(s_int) <+ MOS6sourceConductance*V(s_int, s)+gcgs*V(s_int, g)+-(cdreq+ceqbs+MOS6type*ceqgs);
     // Grafted noise model
     if (MOS6tempGiven) begin
         noise_dtemp = MOS6temp-$temperature+(MOS6tnom-273.15);

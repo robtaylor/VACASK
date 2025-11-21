@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // 
 // SPICE flavour: ngspice
-// Version      : ngspice-45-75-g8d26e8b2c
+// Version      : ngspice-45-84-g7f75f09ec
 // Origin       : https://sourceforge.net/u/arpadbuermen/ngspice/ci/vadng-pre-46/tree/
-// Date         : 2025-11-14 14:24:04 UTC
+// Date         : 2025-11-21 10:59:37 UTC
 // Module name  : sp_diode
 // Model variant: full
 // 
@@ -386,7 +386,7 @@ module sp_diode(a, c);
     end
   endfunction
 
-  analog function DEVlimitOldGet;
+  analog function real DEVlimitOldGet;
     input vnew, vold;
     real vnew, vold, result;
     begin
@@ -394,7 +394,7 @@ module sp_diode(a, c);
     end
   endfunction
 
-  analog function DEVlimitNewSet;
+  analog function real DEVlimitNewSet;
     input vnew, vold, new_value, limited;
     real vnew, vold, new_value;
     integer limited;
