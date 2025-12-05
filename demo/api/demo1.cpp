@@ -31,8 +31,9 @@ int main() {
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
-    // Title, loads, default ground (0)
+    // Build circuit description
     tab
+        // Loads, default ground (0)
         .add(PTLoad("resistor.osdi"))
         .add(PTLoad("capacitor.osdi"))
         .defaultGround()
@@ -86,7 +87,7 @@ plt.show()
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Store embedded files (we don't have any, but this is how you do it)
+    // Write embedded files
     if (!tab.writeEmbedded(1, s)) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -125,6 +126,7 @@ plt.show()
         exit(1);
     }
 
+    // Dump instance hierarchy
     cir.dumpHierarchy(0, Simulator::out());
 
     // Analysis description
@@ -133,18 +135,19 @@ plt.show()
         .add(PV{"step", 1e-6})
         .add(PV("stop", 10e-3));
 
-    // Save directives
     
-    // Analysis object, no options map (options that are given as parameterized expressions)
+    // Analysis object
     auto tran = Analysis::create(tranDesc, cir, s);
-    tran->add(PTSave("default"));
-    tran->add(PTSave("p", "r1", "i"));
     if (!tran) {
         Simulator::err() << "Failed to create analysis.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
-
+    
+    // Save directives
+    tran->add(PTSave("default"));
+    tran->add(PTSave("p", "r1", "i"));
+    
     // Run analysis
     auto [ok, canResume] = tran->run(s);
     if (!ok) {

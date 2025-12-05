@@ -103,7 +103,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/spice/vdmos.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/vdmosamp.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/spice/vdmosinv.sim" ], 
-             "args": [ "-df", "${workspaceFolder}/demo/spice/vdmossh.sim" ], 
+            // "args": [ "-df", "${workspaceFolder}/demo/spice/vdmossh.sim" ], 
             // "args": [ "-df", "-dp", "${workspaceFolder}/demo/spice/bsim3v3.sim" ], 
             // "args": [ "-df", "-dp", "${workspaceFolder}/demo/spice/bsim3v3amp.sim" ], 
             // "args": [ "-df", "-dp", "${workspaceFolder}/demo/spice/bsim3v3inv.sim" ], 
@@ -135,6 +135,7 @@
             // "args": [ "-df", "${workspaceFolder}/demo/natures/idt.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/natures/ddt.sim" ], 
             // "args": [ "-df", "${workspaceFolder}/demo/hierarchy/hier.sim" ], 
+             "args": [ "-df", "/home/arpadb/rram/test.sim" ], 
             // "args": [ "-df", "-dp" ],
             
             "stopAtEntry": false,

@@ -31,8 +31,9 @@ int main() {
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
-    // Title, loads, default ground (0)
+    // Build circuit description
     tab
+        // Loads, default ground (0)
         .add(PTLoad("resistor.osdi"))
         .defaultGround()
         .setDefaultSubDef(
@@ -100,7 +101,7 @@ print("Expected: [2, 8]")
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Store embedded files (we don't have any, but this is how you do it)
+    // Write embedded files
     if (!tab.writeEmbedded(1, s)) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -115,11 +116,13 @@ print("Expected: [2, 8]")
         exit(1);
     }
 
+    // Set reltol option
+    cir.setOption("reltol", 1e-4);
+    
     // Set circuit variable var1 to 60
     cir.setVariable("var1", 60);
 
-    // Now temp will be computed from var1
-    cir.setOption("reltol", 1e-4);
+    // Option temp will be computed from var1
     auto pp = p.parseParameters("temp=var1");
     cir.setOptions(pp);
 
@@ -137,6 +140,7 @@ print("Expected: [2, 8]")
     // Print circuit option temp
     std::cout << "temp=" << cir.simulatorOptions().core().temp << "\n\n";
     
+    // Dump instance hierarchy
     cir.dumpHierarchy(0, Simulator::out());
 
     // Analysis description

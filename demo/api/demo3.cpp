@@ -31,8 +31,9 @@ int main() {
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
-    // Title, loads, default ground (0)
+    // Build circuit description
     tab
+        // Loads, default ground (0)
         .add(PTLoad("resistor.osdi"))
         .add(PTLoad("diode.osdi"))
         .defaultGround()
@@ -82,7 +83,7 @@ plt.show()
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Store embedded files (we don't have any, but this is how you do it)
+    // Write embedded files
     if (!tab.writeEmbedded(1, s)) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -104,20 +105,22 @@ plt.show()
     // If you want to clear the variables, call clearVariables() manually. 
     cir.setVariable("myvar", 0);
 
+    // Set reltol option
+    cir.setOption("reltol", 1e-4);
+    
     // Elaborate it, just the default toplevel subcircuit 
     // (empty list of subcircuit definition names). 
     // Use __topdef__ and __topinst__ as prefixes for toplevel 
     // subcircuit model and toplevel subcircuit instance names. 
     // Do not collect device requests (i.e. abort/finish/stop). 
-    cir.setOption("reltol", 1e-4);
     if (!cir.elaborate({}, "__topdef__", "__topinst__", nullptr, s)) {
         Simulator::err() << "Elaboration failed.\n";
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
 
+    // Dump instance hierarchy
     cir.dumpHierarchy(0, Simulator::out());
-
 
     // Analysis description (sweep temp via variable)
     auto dc1Desc = PTAnalysis("dc1", "op");
@@ -132,7 +135,7 @@ plt.show()
     // Options map that is applied in analysis
     // Holds only options that are defined as expressions. 
     
-    // parseParameters() creates a PTParameters which holds actual vaues and expressions. 
+    // parseParameters() creates a PTParameters object that holds actual vaues and expressions. 
     auto anPar = p.parseParameters(
         // temp will be computed from an expression that depends on the myvar circuit variable
         // Any option specified as a constant will be ignored. 

@@ -31,8 +31,9 @@ int main() {
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
-    // Title, loads, default ground (0)
+    // Build circuit description
     tab
+        // Loads, default ground (0)
         .add(PTLoad("resistor.osdi"))
         .add(PTLoad("diode.osdi"))
         .defaultGround()
@@ -44,7 +45,7 @@ int main() {
                 .add(p.parseParameters("is=1e-12 n=2 rs=1 eg=1.2 xti=2"))
             )
             .add(PTModel("vsrc", "vsource"))
-
+            // Conditional blocks
             .add(PTBlockSequence()
                 // Fixed resistor
                 .add(p.parseExpression("fixed!=0"), PTBlock()
@@ -87,7 +88,7 @@ plt.show()
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Store embedded files (we don't have any, but this is how you do it)
+    // Write embedded files
     if (!tab.writeEmbedded(1, s)) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -102,7 +103,7 @@ plt.show()
         exit(1);
     }
 
-    // Lambda fopr printing the state
+    // Lambda for printing the state
     auto state = [&cir]() {
         Simulator::out() << "reltol=" << cir.simulatorOptions().core().reltol << "\n";
         auto var1 = cir.getVariable("tnominal");
@@ -141,6 +142,7 @@ plt.show()
     cir.setVariable("tnominal", 27);
     cir.setVariable("fixed", 1);
 
+    // Print circuit state before elaboration
     Simulator::out() << "\nBefore elaboration\n";
     state();
 
@@ -150,6 +152,8 @@ plt.show()
         Simulator::err() << s.message() << "\n";
         exit(1);
     }
+
+    // Print state after elaboration
     Simulator::out() << "\nAfter elaboration\n";
     state();
 
@@ -160,6 +164,8 @@ plt.show()
 
     // Elaborate changes
     partialElaborate();
+
+    // Print state after partial elaboration
     Simulator::out() << "After first partial elaboration\n";
     state();
     
@@ -170,6 +176,8 @@ plt.show()
     // After elaboration the whole affected subcircuit is rebuilt. 
     // Therefore v1 dc is reset to its netlist value. 
     partialElaborate();
+
+    // Print state after partial elaboration
     Simulator::out() << "After second partial elaboration\n";
     state();
 
@@ -177,6 +185,8 @@ plt.show()
     cir.setVariable("tnominal", 27);
     // Resistor should now be r=10
     partialElaborate();
+
+    // Print state after partial elaboration
     Simulator::out() << "After third partial elaboration\n";
     state();
 
@@ -190,7 +200,7 @@ plt.show()
             .add(PV("step", 2))
         );
     
-    // Analysis object, no saves, with an options map
+    // Analysis object
     auto dc1 = Analysis::create(dc1Desc, cir, s);
     if (!dc1) {
         Simulator::err() << "Failed to create analysis.\n";

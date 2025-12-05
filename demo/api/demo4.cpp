@@ -31,8 +31,9 @@ int main() {
     // Parser, needs tables to store stats when parsing expressions and parameters
     Parser p(tab);
 
-    // Title, loads, default ground (0)
+    // Build circuit description
     tab
+        // Loads, default ground (0)
         .add(PTLoad("resistor.osdi"))
         .add(PTLoad("diode.osdi"))
         .defaultGround()
@@ -81,7 +82,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     // Dump tables for debugging
     tab.dump(0, Simulator::out());
 
-    // Store embedded files (we don't have any, but this is how you do it)
+    // Write embedded files
     if (!tab.writeEmbedded(1, s)) {
         Simulator::err() << s.message() << "\n";
         exit(1);
@@ -108,7 +109,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     // Analysis description (sweep temp via variable)
     auto dc1Desc = PTAnalysis("dc1", "op");
     
-    // Analysis object, no saves, with an options map
+    // Analysis object
     auto dc1 = Analysis::create(dc1Desc, cir, s);
     if (!dc1) {
         Simulator::err() << "Failed to create analysis.\n";
@@ -137,7 +138,7 @@ print("Sum (should be 10):", dc1["2"]+dc2["2"])
     // Analysis description (sweep temp via variable)
     auto dc2Desc = PTAnalysis("dc2", "op");
     
-    // Analysis object, no saves, with an options map
+    // Analysis object
     auto dc2 = Analysis::create(dc2Desc, cir, s);
     if (!dc2) {
         Simulator::err() << "Failed to create analysis.\n";
