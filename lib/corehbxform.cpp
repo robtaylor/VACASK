@@ -1,6 +1,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <numbers>
 #include "corehb.h"
 #include "simulator.h"
 #include "common.h"
