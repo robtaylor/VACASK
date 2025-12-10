@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys, os, time, subprocess, shutil, importlib, platform
+import sys, os, time, subprocess, shutil, importlib, importlib.util, platform
 import numpy as np
 
 # Simple benchmarking framework

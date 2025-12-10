@@ -341,15 +341,16 @@ private:
 
 
 // Block index
-typedef uint32_t PTBlockIndex; 
+typedef uint32_t PTBlockIndex;
 
+// Forward declaration - PTBlockSequence is defined after PTBlock
 class PTBlockSequence;
 
 // A single netlist block comprising models, instances, and block sequences
 class PTBlock {
 public:
     PTBlock() {};
-    
+
     PTBlock           (const PTBlock&)  = delete;
     PTBlock           (      PTBlock&&) = default;
     PTBlock& operator=(const PTBlock&)  = delete;
@@ -367,16 +368,11 @@ public:
     // Fluent API
     PTBlock& add(PTModel&& mod) & { models_.push_back(std::move(mod)); return *this; };
     PTBlock& add(PTInstance&& inst) & { instances_.push_back(std::move(inst)); return *this; };
-    PTBlock& add(PTBlockSequence&& seq) & {
-        if (blockSequences_==nullptr) {
-            blockSequences_ = std::make_unique<std::vector<PTBlockSequence>>();
-        }
-        blockSequences_->push_back(std::move(seq));
-        return *this;
-    };
+    // add(PTBlockSequence&&) implementations are after PTBlockSequence definition
+    PTBlock& add(PTBlockSequence&& seq) &;
     PTBlock&& add(PTModel&& mod) && { return std::move(this->add(std::move(mod))); };
     PTBlock&& add(PTInstance&& inst) && { return std::move(this->add(std::move(inst))); };
-    PTBlock&& add(PTBlockSequence&& seq) && { return std::move(this->add(std::move(seq))); };
+    PTBlock&& add(PTBlockSequence&& seq) &&;
 
     void dump(int indent, std::ostream& os) const;
 
@@ -389,13 +385,13 @@ private:
     Loc loc;
 };
 
-
+// PTBlockSequenceEntry requires PTBlock to be complete
 typedef std::tuple<Loc, Rpn, PTBlock> PTBlockSequenceEntry;
 
 class PTBlockSequence {
 public:
     PTBlockSequence() {};
-    
+
     PTBlockSequence           (const PTBlockSequence&)  = delete;
     PTBlockSequence           (      PTBlockSequence&&) = default;
     PTBlockSequence& operator=(const PTBlockSequence&)  = delete;
@@ -403,7 +399,7 @@ public:
 
     // Getters
     const std::vector<PTBlockSequenceEntry>& entries() const { return entries_; };
-    PTBlock& back() { return std::get<2>(entries_.back()); }; 
+    PTBlock& back() { return std::get<2>(entries_.back()); };
 
     // Fluent API
     PTBlockSequence& add(Rpn&& cond, PTBlock&& block, const Loc& l=Loc::bad) & {
@@ -421,6 +417,19 @@ public:
 private:
     std::vector<PTBlockSequenceEntry> entries_;
 };
+
+// Deferred implementations that require PTBlockSequence to be complete
+inline PTBlock& PTBlock::add(PTBlockSequence&& seq) & {
+    if (blockSequences_==nullptr) {
+        blockSequences_ = std::make_unique<std::vector<PTBlockSequence>>();
+    }
+    blockSequences_->push_back(std::move(seq));
+    return *this;
+}
+
+inline PTBlock&& PTBlock::add(PTBlockSequence&& seq) && {
+    return std::move(this->add(std::move(seq)));
+}
 
 
 class PTSubcircuitDefinition : public PTModel {

@@ -111,7 +111,7 @@ else()
 
     if (SIM_ARCH STREQUAL "x86_64")
         set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-    elseif (SPICEOPUS_PLATFORM STREQUAL "aarch64")
+    elseif (SIM_ARCH STREQUAL "aarch64" OR SIM_ARCH STREQUAL "arm64")
         set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
     else()
         message(FATAL_ERROR "Unsupported architecture for building .deb package ${SIM_ARCH}")
