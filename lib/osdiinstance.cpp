@@ -564,29 +564,29 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
     auto nnz = descriptor->num_jacobian_entries;
     auto nnzres = descriptor->num_resistive_jacobian_entries;
     auto nnzreact = descriptor->num_reactive_jacobian_entries;
-    
-    // Temporary pointer storage
-    double* resPtrs[nnz];
-    double* reacPtrs[nnz];
-    
-    // Extracted Jacobian contributions via load() 
-    double resVals[nnz] = {0};
-    double reacVals[nnz] = {0};
+
+    // Temporary pointer storage (use vectors instead of VLAs for Clang compatibility)
+    std::vector<double*> resPtrs(nnz);
+    std::vector<double*> reacPtrs(nnz);
+
+    // Extracted Jacobian contributions via load()
+    std::vector<double> resVals(nnz, 0);
+    std::vector<double> reacVals(nnz, 0);
 
     // Extracted Jacobian values via write(), no initialization
-    double reswVals[nnzres];
-    double reacwVals[nnzreact];
+    std::vector<double> reswVals(nnzres);
+    std::vector<double> reacwVals(nnzreact);
 
     // Store pointers, redirect to our structures
     auto instResPtrs = getDataPtr<double**>(instance, descriptor->jacobian_ptr_resist_offset);
     for(decltype(nnz) i=0; i<nnz; i++) {
         auto& jac = descriptor->jacobian_entries[i];
         resPtrs[i] = instResPtrs[i];
-        instResPtrs[i] = resVals+i;
+        instResPtrs[i] = resVals.data()+i;
         if (jac.react_ptr_off != UINT32_MAX) {
             auto reactPtr =  getDataPtr<double**>(instance, jac.react_ptr_off);
             reacPtrs[i] = *reactPtr;
-            *reactPtr = reacVals+i;
+            *reactPtr = reacVals.data()+i;
         } else {
             reacPtrs[i] = nullptr;
         }
@@ -595,16 +595,16 @@ void jacobianWriteSanityCheck(OsdiDescriptor* descriptor, void* model, void* ins
     // Get Jacobian contributions
     if (resist) {
         descriptor->load_jacobian_resist(instance, model);
-        descriptor->write_jacobian_array_resist(instance, model, reswVals);
+        descriptor->write_jacobian_array_resist(instance, model, reswVals.data());
     }
     if (react) {
         descriptor->load_jacobian_react(instance, model, 1.0);
-        descriptor->write_jacobian_array_react(instance, model, reacwVals);
+        descriptor->write_jacobian_array_react(instance, model, reacwVals.data());
     }
 
     // Check values
-    auto resPtr = reswVals;
-    auto reactPtr = reacwVals;
+    auto resPtr = reswVals.data();
+    auto reactPtr = reacwVals.data();
     for(decltype(nnz) i=0; i<nnz; i++) {
         auto& jac = descriptor->jacobian_entries[i];
         if (jac.flags & JACOBIAN_ENTRY_RESIST) {

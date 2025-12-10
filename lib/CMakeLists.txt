@@ -181,8 +181,9 @@ add_library(simlib STATIC
     parser.cpp
     
 )
-target_include_directories(simlib PUBLIC 
+target_include_directories(simlib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${FLEX_INCLUDE_DIR}
 )
 # target_compile_definitions(dlib PRIVATE BUILDING_SIM_DLL)

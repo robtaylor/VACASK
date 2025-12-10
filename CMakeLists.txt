@@ -39,13 +39,32 @@ message(STATUS "Program version: ${PROGRAM_VERSION}")
 
 # Platform
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	# Windows
+    # Windows
     set(SIM_PLATFORM "Windows")
     set(SIM_ARCH "x86_64")
-	add_compile_definitions("SIMWINDOWS")
+    add_compile_definitions("SIMWINDOWS")
     set(PROGRAM_LIB_DIR "lib")
+elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+    # macOS with Homebrew\
+    set(SIM_PLATFORM "Darwin")
+    set(SIM_ARCH "arm64")
+    execute_process(COMMAND brew --prefix OUTPUT_VARIABLE BREW_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(FLEX_EXECUTABLE "${BREW_PREFIX}/opt/flex/bin/flex")
+    set(FLEX_INCLUDE_DIR "${BREW_PREFIX}/opt/flex/include")
+    set(BISON_EXECUTABLE "${BREW_PREFIX}/opt/bison/bin/bison")
+    set(YACC_EXECUTABLE "${BREW_PREFIX}/opt/bison/bin/yacc")
+    message(STATUS "Using BISON ${BISON_EXECUTABLE}")
+    set(LLVM_PREFIX "${BREW_PREFIX}/opt/llvm@18")
+    set(ENV{LLVM_SYS_181_PREFIX "${LLVM_PREFIX}")
+    set(SuiteSparse_DIR "${BREW_PREFIX}/opt/suite-sparse")
+    set(TOMLPP_DIR "${BREW_PREFIX}/opt/tomlplusplus")
+    set(Boost_ROOT "${BREW_PREFIX}/opt/boost")
+    set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
+    find_package(Boost REQUIRED COMPONENTS filesystem)
+    include_directories("${Boost_INCLUDE_DIRS}")
+    message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
 else()
-	# Linux
+    # Linux
     set(SIM_PLATFORM "Linux")
     set(SIM_ARCH "x86_64")
     set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
@@ -58,9 +77,13 @@ if (DEFINED MSVC_VERSION)
 	message(STATUS "Using MSVC toolchain")
 	add_compile_definitions("SIMMSC")
 	# Floating point exceptions are disabled by default in MSVC
-	# Need this for MSVC to correctly define __cplusplus, 
+	# Need this for MSVC to correctly define __cplusplus,
 	# needed by Flex lexers and Bison parsers
 	add_compile_options("/Zc:__cplusplus")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    # Apple Clang (macOS)
+    message(STATUS "Using AppleClang toolchain")
+    add_compile_options("-fno-signaling-nans" "-fno-trapping-math")
 else()
 	# GCC/MINGW
 	message(STATUS "Using GCC/MINGW toolchain")
@@ -102,6 +125,15 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
     include_directories("${Boost_INCLUDE_DIRS}")
     link_directories("${Boost_LIBRARY_DIRS}")
     message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
+    include_directories("${TOMLPP_DIR}/include")
+    message(STATUS "TOMLPP include: ${TOMLPP_DIR}/include")
+elseif (${SIM_PLATFORM} STREQUAL "Darwin")
+    # macOS with Homebrew
+    find_package(Boost 1.85 REQUIRED COMPONENTS filesystem process)
+    include_directories("${Boost_INCLUDE_DIRS}")
+    link_directories("${Boost_LIBRARY_DIRS}")
+    message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
+    message(STATUS "Boost library: ${Boost_LIBRARY_DIRS}")
     include_directories("${TOMLPP_DIR}/include")
     message(STATUS "TOMLPP include: ${TOMLPP_DIR}/include")
 else()
@@ -239,14 +271,24 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
         CACHE STRING "External libraries for creating an executable."
         FORCE
     )
+elseif (${SIM_PLATFORM} STREQUAL "Darwin")
+    # macOS with Homebrew
+    link_directories(${SuiteSparse_DIR}/lib)
+    set(SIM_EXE_LIBRARIES
+            Boost::filesystem
+            Boost::process
+            klu amd camd colamd ccolamd btf cholmod suitesparseconfig
+        CACHE STRING "External libraries for creating an executable."
+        FORCE
+    )
 else()
-    set(SIM_EXE_LIBRARIES 
-            dl m klu amd camd colamd ccolamd btf cholmod suitesparseconfig 
+    set(SIM_EXE_LIBRARIES
+            dl m klu amd camd colamd ccolamd btf cholmod suitesparseconfig
             boost_system boost_filesystem boost_process
         CACHE STRING "External libraries for creating an executable."
         FORCE
     )
-    # -Wl,-Bstatic 
+    # -Wl,-Bstatic
 endif()
 
 
