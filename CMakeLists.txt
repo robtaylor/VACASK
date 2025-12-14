@@ -150,6 +150,12 @@ else()
     message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
     message(STATUS "Boost extra link directory: ${Boost_EXTRA_LINK_DIR}")
 
+    # toml++ for Linux (passed via -DTOMLPP_DIR=...)
+    if (DEFINED TOMLPP_DIR)
+        include_directories("${TOMLPP_DIR}/include")
+        message(STATUS "TOMLPP include: ${TOMLPP_DIR}/include")
+    endif()
+
     # For 1.88 system-installed boost
     # find_package(Boost 1.88 REQUIRED COMPONENTS filesystem process)
     # include_directories("${Boost_INCLUDE_DIRS}")
