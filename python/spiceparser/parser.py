@@ -121,7 +121,8 @@ class NetlistParser:
             self.netlist.title = self.lines[0].strip()
 
         # Parse remaining lines
-        for self.line_no, line in enumerate(self.lines[1:], start=2):
+        for line_no, line in enumerate(self.lines[1:], start=2):
+            self.line_no = line_no
             line = line.strip()
 
             # Skip empty lines and comments

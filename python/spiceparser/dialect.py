@@ -12,7 +12,6 @@ differences.
 from abc import ABC, abstractmethod
 from typing import Any
 
-
 # Registry for dialect implementations
 _DIALECT_REGISTRY: dict[str, type["SpiceDialect"]] = {}
 

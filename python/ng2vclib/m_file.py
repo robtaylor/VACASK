@@ -1,10 +1,8 @@
-import re
-import sys
 import os
-from pprint import pprint
 
 from .exc import ConverterError
 from .patterns import *
+
 
 def remove_paired_parentheses_spaces(l):
     """
@@ -136,7 +134,7 @@ class FileLoaderMixin:
         if fp is None:
             raise ConverterError("File "+filename+" not found")
         try:
-            with open(fp, 'r', errors='ignore') as file:
+            with open(fp, errors='ignore') as file:
                 lines = [line.rstrip('\r\n') for line in file]
         except:
             raise ConverterError("Failed to open "+fp)
@@ -261,8 +259,8 @@ class FileLoaderMixin:
                 s = l[8:].strip()
                 # Unquote
                 if (
-                    s.startswith(("'")) and s.endswith(("'")) or 
-                    s.startswith(('"')) and s.endswith(('"'))
+                    s.startswith("'") and s.endswith("'") or 
+                    s.startswith('"') and s.endswith('"')
                 ):
                     s = s[1:-1]
                 # Load include file
@@ -294,8 +292,8 @@ class FileLoaderMixin:
                     lfname = s[:sndx].strip()
                     # Unquote
                     if (
-                        lfname.startswith(("'")) and lfname.endswith(("'")) or 
-                        lfname.startswith(('"')) and lfname.endswith(('"'))
+                        lfname.startswith("'") and lfname.endswith("'") or 
+                        lfname.startswith('"') and lfname.endswith('"')
                     ):
                         lfname = lfname[1:-1]
                     # Get section name

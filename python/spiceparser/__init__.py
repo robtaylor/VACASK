@@ -42,21 +42,27 @@ Device type lookup:
     # OsdiModuleInfo(osdi_file='bsim4.osdi', module_name='bsim4', ...)
 """
 
-from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect, detect_dialect, detect_dialect_from_file
-from spiceparser.netlist import ModelDef, Subcircuit, Instance, Netlist
-from spiceparser.parser import parse_netlist
-from spiceparser.elements import (
-    DeviceTypeInfo,
-    OsdiModuleInfo,
-    get_device_type_info,
-    get_osdi_module,
-    get_default_model,
-    DEVICE_TYPES,
-    OSDI_MODULES,
+from spiceparser.dialect import (
+    SpiceDialect,
+    detect_dialect,
+    detect_dialect_from_file,
+    get_dialect,
+    register_dialect,
 )
 
 # Import dialects to register them
 from spiceparser.dialects import ngspice as _ngspice  # noqa: F401
+from spiceparser.elements import (
+    DEVICE_TYPES,
+    OSDI_MODULES,
+    DeviceTypeInfo,
+    OsdiModuleInfo,
+    get_default_model,
+    get_device_type_info,
+    get_osdi_module,
+)
+from spiceparser.netlist import Instance, ModelDef, Netlist, Subcircuit
+from spiceparser.parser import parse_netlist
 
 __all__ = [
     "SpiceDialect",

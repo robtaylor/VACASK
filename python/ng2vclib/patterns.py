@@ -1,4 +1,4 @@
-import re 
+import re
 
 # End of line comment
 pat_eolcomment = re.compile(r'(\$|;|//)')

@@ -7,7 +7,6 @@
 import pytest
 
 from spiceparser import parse_netlist
-from spiceparser.netlist import ModelDef, Subcircuit
 
 
 class TestBasicParsing:

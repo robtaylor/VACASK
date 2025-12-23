@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-
 # Test data directories
 TESTS_DIR = Path(__file__).parent
 FIXTURES_DIR = TESTS_DIR / "fixtures"

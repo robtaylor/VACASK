@@ -9,25 +9,24 @@ to VACASK format. It supports multiple SPICE dialects through the
 spiceparser.dialect system.
 """
 
-from .m_file import FileLoaderMixin
-from .m_masters import MastersMixin
-from .m_output import OutputMixin
-from .m_model import ModelMixin
-from .m_inst_passive import InstancePassiveMixin
-from .m_inst_d import InstanceDMixin
-from .m_inst_n import InstanceNMixin
-from .m_inst_q import InstanceQMixin
-from .m_inst_v import InstanceVMixin
-from .m_inst_x import InstanceXMixin
-from .m_devices import DevicesMixin
-from .m_params import ParamsMixin
-
-from . import dfl
-
 import os
 
 # Import dialect support from spiceparser
-from spiceparser.dialect import get_dialect, SpiceDialect
+from spiceparser.dialect import SpiceDialect, get_dialect
+
+from . import dfl
+from .m_devices import DevicesMixin
+from .m_file import FileLoaderMixin
+from .m_inst_d import InstanceDMixin
+from .m_inst_n import InstanceNMixin
+from .m_inst_passive import InstancePassiveMixin
+from .m_inst_q import InstanceQMixin
+from .m_inst_v import InstanceVMixin
+from .m_inst_x import InstanceXMixin
+from .m_masters import MastersMixin
+from .m_model import ModelMixin
+from .m_output import OutputMixin
+from .m_params import ParamsMixin
 
 
 class Converter(

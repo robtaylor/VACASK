@@ -1,6 +1,9 @@
 # Xschem symbol patcher for VACASK
 
-import os, sys, shutil
+import os
+import shutil
+import sys
+
 
 def simple_patcher(line):
     """
@@ -31,7 +34,7 @@ def convert(fname, cvt=simple_patcher):
     orig_lines = []
     format_line = None
     format_spectre_line = None
-    with open(origfile, "r") as f:
+    with open(origfile) as f:
         for l in f:
             # Look for format= and format_spectre=
             if l.startswith("format="):

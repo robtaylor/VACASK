@@ -1,5 +1,6 @@
 from .generators import format_history
 
+
 # Define out own exception
 class ConverterError(Exception):
     def __init__(self, message, history=None, lineno=None):

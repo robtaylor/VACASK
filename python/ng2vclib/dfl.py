@@ -9,11 +9,11 @@ from spiceparser.elements for device type and OSDI module mappings.
 """
 
 from spiceparser.elements import (
-    DEVICE_TYPES,
-    OSDI_MODULES,
     DEFAULT_MODELS,
-    REMOVE_INSTANCE_PARAMS,
+    DEVICE_TYPES,
     MERGE_VECTOR_INSTANCE_PARAMS,
+    OSDI_MODULES,
+    REMOVE_INSTANCE_PARAMS,
 )
 
 

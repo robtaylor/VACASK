@@ -18,7 +18,6 @@ from typing import Any
 
 from spiceparser.dialect import SpiceDialect, register_dialect
 
-
 # HSPICE uses single quotes for expressions
 _QUOTED_EXPR_PATTERN = re.compile(r"'([^']*)'")
 
