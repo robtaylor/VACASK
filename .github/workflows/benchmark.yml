@@ -28,22 +28,48 @@ jobs:
             libboost-system-dev \
             libsuitesparse-dev \
             flex \
-            bison
+            bison \
+            llvm-15 \
+            llvm-15-dev \
+            clang-15 \
+            lld-15
+          # Create symlinks for clang-cl and llvm-lib that OpenVAF expects
+          sudo ln -sf /usr/bin/clang-15 /usr/bin/clang-cl
+          sudo ln -sf /usr/bin/llvm-ar-15 /usr/bin/llvm-lib
 
       - name: Install toml++ (header-only)
         run: |
           git clone --depth 1 --branch v3.4.0 https://github.com/marzer/tomlplusplus.git /tmp/tomlplusplus
           sudo cp -r /tmp/tomlplusplus/include/toml++ /usr/local/include/
 
-      - name: Download OpenVAF
+      - name: Cache OpenVAF build
+        id: cache-openvaf
+        uses: actions/cache@v4
+        with:
+          path: ~/openvaf-r
+          key: openvaf-${{ runner.os }}-llvm15-v3
+
+      - name: Build OpenVAF
+        if: steps.cache-openvaf.outputs.cache-hit != 'true'
+        env:
+          LLVM_CONFIG: /usr/bin/llvm-config-15
         run: |
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          # shellcheck source=/dev/null
+          source ~/.cargo/env
+
+          # Clone OpenVAF
+          git clone --depth 1 https://github.com/pascalkuthe/OpenVAF.git ~/openvaf-src
+          cd ~/openvaf-src
+
+          # Build OpenVAF
+          cargo build --release --bin openvaf
+
+          # Install
           mkdir -p ~/openvaf-r/bin
-          cd ~/openvaf-r/bin
-          curl -sSL https://github.com/pascalkuthe/OpenVAF/releases/download/OpenVAF-v23.5.0/openvaf_23_5_0_linux_amd64.tar.gz | tar xz
-          chmod +x openvaf
-          # Create symlink for compatibility
-          ln -sf openvaf openvaf-r
-          ./openvaf --version
+          cp target/release/openvaf ~/openvaf-r/bin/openvaf-r
+          ~/openvaf-r/bin/openvaf-r --version
 
       - name: Add OpenVAF to PATH
         run: echo "$HOME/openvaf-r/bin" >> "$GITHUB_PATH"
