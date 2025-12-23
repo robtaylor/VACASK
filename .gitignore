@@ -1,4 +1,4 @@
-# settings.json should be copied from 
+# settings.json should be copied from
 #   settings-windows.json or
 #   settings-linux.json
 settings.json
@@ -6,6 +6,7 @@ __pycache__
 bug
 benchmark/rundir
 
-
-
-test/tb_dp/tb_dp512x8.sim
+# Generated test files
+test/tb_dp/*.sim
+test/tb_dp/*.raw
+test/tb_dp/*.png
