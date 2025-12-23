@@ -32,7 +32,8 @@ jobs:
             llvm-15 \
             llvm-15-dev \
             clang-15 \
-            lld-15
+            lld-15 \
+            libpolly-15-dev
           # Create symlinks for clang-cl and llvm-lib that OpenVAF expects
           sudo ln -sf /usr/bin/clang-15 /usr/bin/clang-cl
           sudo ln -sf /usr/bin/llvm-ar-15 /usr/bin/llvm-lib
