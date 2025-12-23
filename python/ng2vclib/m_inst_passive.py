@@ -89,11 +89,19 @@ class InstancePassiveMixin:
             model = self.cfg["default_model_prefix"]+"c"
             self.data["default_models_needed"].add("c")
 
-            # Part 3 is a parameter assignment
-            params = parts[2:]
+            # Check if part 3 is not a parameter assignment (like resistor handler)
+            if len(parts) > 2 and "=" not in parts[2]:
+                # Part 3 is the capacitance, the rest are parameter assignments
+                params = parts[3:]
 
-            # No parameter assignments yet
-            psplit = []
+                # Add value as first parameter assignment
+                psplit = [("c", self.format_value(parts[2]))]
+            else:
+                # Part 3 is a parameter assignment
+                params = parts[2:]
+
+                # No parameter assignments yet
+                psplit = []
         else:
             # Have model
             if mod_index==2:
@@ -110,9 +118,9 @@ class InstancePassiveMixin:
                 # Don't know how to handle
                 raise ConverterError("Cannot handle model at position "+str(mod_index+1)+".")
 
-        # Process parameters
-        psplit = self.process_instance_params(params, "c", handle_m=True)
-                
+        # Process parameters - extend psplit rather than replace
+        psplit.extend(self.process_instance_params(params, "c", handle_m=True))
+
         txt = lws + annot["output_name"] + " (" + (" ".join(terminals))+") "+model+" "
 
         if len(psplit)>0:

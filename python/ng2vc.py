@@ -103,7 +103,7 @@ Arguments:
         ndx += 1
     
     cfg = dfl.default_config()
-    cfg["sourcepath"] = [ ".", "/home/arpadb/sim/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models" ]
+    cfg["sourcepath"] = sourcepath
     cfg["read_depth"] = read_depth
     cfg["process_depth"] = process_depth
     cfg["output_depth"] = output_depth
