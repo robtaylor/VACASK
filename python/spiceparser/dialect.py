@@ -12,7 +12,6 @@ differences.
 from abc import ABC, abstractmethod
 from typing import Any
 
-
 # Registry for dialect implementations
 _DIALECT_REGISTRY: dict[str, type["SpiceDialect"]] = {}
 
@@ -44,6 +43,124 @@ def get_dialect(name: str) -> "SpiceDialect":
         available = ", ".join(sorted(_DIALECT_REGISTRY.keys()))
         raise ValueError(f"Unknown dialect '{name}'. Available: {available}")
     return _DIALECT_REGISTRY[name_lower]()
+
+
+def detect_dialect(content: str) -> str:
+    """Detect SPICE dialect from file content.
+
+    Analyzes the content for dialect-specific patterns and returns the
+    most likely dialect name. If no specific patterns are found, defaults
+    to "ngspice".
+
+    Args:
+        content: SPICE netlist content as a string
+
+    Returns:
+        Dialect name: "spectre", "ltspice", "hspice", or "ngspice"
+    """
+    import re
+
+    content_lower = content.lower()
+
+    # Spectre indicators (highest priority - industry standard)
+    spectre_score = 0
+    # simulator lang=spectre declaration
+    if "simulator lang=spectre" in content_lower or "simulator lang = spectre" in content_lower:
+        spectre_score += 5
+    # library/endlibrary blocks (Spectre structural syntax)
+    if re.search(r"^library\s+\w+", content, re.MULTILINE | re.IGNORECASE):
+        spectre_score += 3
+    if "endlibrary" in content_lower:
+        spectre_score += 2
+    # section/endsection blocks
+    if re.search(r"^section\s+\w+", content, re.MULTILINE | re.IGNORECASE):
+        spectre_score += 3
+    if "endsection" in content_lower:
+        spectre_score += 2
+    # subckt without dot prefix (Spectre style)
+    if re.search(r"^subckt\s+\w+", content, re.MULTILINE | re.IGNORECASE):
+        spectre_score += 3
+    # ends without dot prefix
+    if re.search(r"^ends\s+\w+", content, re.MULTILINE | re.IGNORECASE):
+        spectre_score += 2
+    # // inline comments (Spectre style)
+    if "//" in content:
+        spectre_score += 2
+    # Instance syntax with nodes in parentheses: name (nodes) model
+    # This is a strong Spectre indicator
+    if re.search(r"^\w+\s+\([^)]+\)\s+\w+", content, re.MULTILINE):
+        spectre_score += 2
+
+    # LTSpice indicators
+    ltspice_score = 0
+    if ".backanno" in content_lower:
+        ltspice_score += 3
+    # Windows paths with backslashes
+    if "\\" in content and (".lib" in content_lower or ".inc" in content_lower):
+        ltspice_score += 2
+    # Unicode micro symbol
+    if "µ" in content:
+        ltspice_score += 2
+    # LTSpice-specific parameters on passives
+    if "rser=" in content_lower or "lser=" in content_lower:
+        ltspice_score += 2
+
+    # HSPICE indicators
+    hspice_score = 0
+    if ".if " in content_lower or ".if(" in content_lower:
+        hspice_score += 3
+    if ".elseif" in content_lower:
+        hspice_score += 2
+    if ".endif" in content_lower:
+        hspice_score += 2
+    if ".alter" in content_lower:
+        hspice_score += 3
+    if ".data " in content_lower:
+        hspice_score += 2
+    if ".prot" in content_lower or ".unprot" in content_lower:
+        hspice_score += 2
+    # Single-quoted expressions (common in HSPICE)
+    if re.search(r"=\s*'[^']+[+\-*/][^']+'", content):
+        hspice_score += 2
+    # Spaces around = in parameters (HSPICE style)
+    if re.search(r"\s=\s", content):
+        hspice_score += 1
+
+    # Return highest scoring dialect, default to ngspice
+    scores = {
+        "spectre": spectre_score,
+        "ltspice": ltspice_score,
+        "hspice": hspice_score,
+    }
+    max_dialect = max(scores, key=scores.get)
+    if scores[max_dialect] >= 2:
+        return max_dialect
+    return "ngspice"
+
+
+def detect_dialect_from_file(filepath: str) -> str:
+    """Detect SPICE dialect from a file.
+
+    Uses both file extension and content analysis to determine dialect.
+    The .scs extension strongly indicates Spectre format.
+
+    Args:
+        filepath: Path to SPICE netlist file
+
+    Returns:
+        Dialect name: "spectre", "ltspice", "hspice", or "ngspice"
+    """
+    from pathlib import Path
+
+    path = Path(filepath)
+
+    # .scs extension is a strong Spectre indicator
+    if path.suffix.lower() == ".scs":
+        return "spectre"
+
+    with open(filepath, encoding="utf-8", errors="replace") as f:
+        content = f.read()
+    return detect_dialect(content)
 
 
 class SpiceDialect(ABC):

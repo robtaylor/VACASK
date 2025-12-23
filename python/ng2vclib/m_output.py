@@ -1,8 +1,8 @@
-import re
 
-from .generators import traverse, format_history
 from .exc import ConverterError
+from .generators import traverse
 from .patterns import *
+
 
 class OutputMixin:
     def proces_params(self, line):

@@ -6,7 +6,7 @@
 
 import pytest
 
-from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect
+from spiceparser.dialect import SpiceDialect, detect_dialect, get_dialect, register_dialect
 
 
 class TestDialectRegistry:
@@ -134,3 +134,101 @@ class TestNgspiceDialect:
     def test_does_not_support_conditionals(self, dialect):
         """Ngspice doesn't support .if/.else/.endif."""
         assert dialect.supports_conditional() is False
+
+
+class TestDialectDetection:
+    """Tests for dialect auto-detection."""
+
+    def test_detect_ltspice_backanno(self):
+        """Detect LTSpice from .backanno directive."""
+        content = """.title test
+.backanno
+M1 out in vdd vdd pmos
+"""
+        assert detect_dialect(content) == "ltspice"
+
+    def test_detect_ltspice_rser(self):
+        """Detect LTSpice from Rser parameter on passives."""
+        content = """.title test
+C1 out 0 1u Rser=10
+"""
+        assert detect_dialect(content) == "ltspice"
+
+    def test_detect_ltspice_micro_unicode(self):
+        """Detect LTSpice from Unicode micro symbol."""
+        content = """.title test
+C1 out 0 1µF
+"""
+        assert detect_dialect(content) == "ltspice"
+
+    def test_detect_ltspice_windows_path(self):
+        """Detect LTSpice from Windows-style paths."""
+        content = r""".title test
+.lib C:\Users\test\models.lib
+"""
+        assert detect_dialect(content) == "ltspice"
+
+    def test_detect_hspice_conditionals(self):
+        """Detect HSPICE from .if/.endif conditionals."""
+        content = """.title test
+.if (cond == 1)
+.param x=1
+.endif
+"""
+        assert detect_dialect(content) == "hspice"
+
+    def test_detect_hspice_alter(self):
+        """Detect HSPICE from .ALTER statement."""
+        content = """.title test
+.op
+.alter
+.temp 85
+.end
+"""
+        assert detect_dialect(content) == "hspice"
+
+    def test_detect_hspice_prot(self):
+        """Detect HSPICE from .prot/.unprot encryption wrappers."""
+        content = """.title test
+.prot
+* encrypted content
+.unprot
+"""
+        assert detect_dialect(content) == "hspice"
+
+    def test_detect_hspice_quoted_expression(self):
+        """Detect HSPICE from single-quoted expressions."""
+        content = """.title test
+.param x='1+y*2'
+"""
+        assert detect_dialect(content) == "hspice"
+
+    def test_detect_ngspice_default(self):
+        """Default to Ngspice when no specific patterns found."""
+        content = """.title test
+R1 in out 1k
+M1 out in vdd vdd pmos
+.end
+"""
+        assert detect_dialect(content) == "ngspice"
+
+    def test_detect_ngspice_control_block(self):
+        """Ngspice control blocks don't trigger false positives."""
+        content = """.title test
+.control
+op
+print all
+.endc
+"""
+        assert detect_dialect(content) == "ngspice"
+
+    def test_detect_prefers_higher_score(self):
+        """When multiple dialects have indicators, prefer higher score."""
+        # Content with weak HSPICE indicator (spaces around =)
+        # but no strong HSPICE patterns - should default to ngspice
+        content = """.title test
+.param x = 1
+R1 in out 1k
+"""
+        # Spaces around = gives HSPICE only 1 point, below threshold of 2
+        assert detect_dialect(content) == "ngspice"

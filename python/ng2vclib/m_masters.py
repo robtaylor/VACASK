@@ -1,8 +1,10 @@
 
 import re
-from .generators import traverse
+
 from .exc import ConverterError
+from .generators import traverse
 from .patterns import *
+
 
 class MastersMixin:
     pat_paramassign = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')

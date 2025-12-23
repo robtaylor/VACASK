@@ -13,7 +13,6 @@ from typing import Any
 
 from spiceparser.dialect import SpiceDialect, register_dialect
 
-
 # SI prefix patterns for Ngspice
 # Ngspice uses: meg (M), g (G), t (T), mil (25.4e-6)
 # Plus standard: f, p, n, u, m, k
