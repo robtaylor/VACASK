@@ -1,113 +1,81 @@
+# SPDX-FileCopyrightText: 2025 ChipFlow
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
-def default_config(): 
+"""Default configuration for ng2vc converter.
+
+This module provides the default configuration and uses shared definitions
+from spiceparser.elements for device type and OSDI module mappings.
+"""
+
+from spiceparser.elements import (
+    DEVICE_TYPES,
+    OSDI_MODULES,
+    DEFAULT_MODELS,
+    REMOVE_INSTANCE_PARAMS,
+    MERGE_VECTOR_INSTANCE_PARAMS,
+)
+
+
+def _build_type_map():
+    """Build type_map from spiceparser.elements.DEVICE_TYPES.
+
+    Converts DeviceTypeInfo dataclasses to the tuple format expected by ng2vclib.
     """
-    Returns a default configuration. 
+    type_map = {}
+    for name, info in DEVICE_TYPES.items():
+        type_map[name] = (
+            dict(info.extra_params),  # params dict
+            info.family,
+            info.remove_level,
+            info.remove_version,
+        )
+    return type_map
+
+
+def _build_family_map():
+    """Build family_map from spiceparser.elements.OSDI_MODULES.
+
+    Converts OsdiModuleInfo dataclasses to the tuple format expected by ng2vclib.
+    """
+    family_map = {}
+    for key, info in OSDI_MODULES.items():
+        family_map[key] = (info.osdi_file, info.module_name, dict(info.extra_params))
+    return family_map
+
+
+def _build_default_models():
+    """Build default_models from spiceparser.elements.DEFAULT_MODELS.
+
+    Converts OsdiModuleInfo dataclasses to the tuple format expected by ng2vclib.
     """
     return {
-        "signature": "// Converted by ng2vc converter\n", 
-        "sourcepath": [ "." ], 
-        "merge_vector_instance_params": {
-            "q": set(["ic"])
-        }, 
-        "remove_instance_params": {
-            "c": set(["ic"]), 
-            "l": set(["ic"]), 
-            "d": set(["ic", "off"]), 
-            "q" : set(["ic", "off"]), 
-        }, 
-        "merge_vector_model_params": {
-        }, 
-        "remove_model_params": {
-        }, 
-        "type_map": {
-            # name     params             family  remove level  remove version
-            "r":     ( {},                "r",     False,        False), 
-            "res":   ( {},                "r",     False,        False), 
-            "c":     ( {},                "c",     False,        False), 
-            "l":     ( {},                "l",     False,        False), 
-            "d":     ( {},                "d",     False,        False), 
-            "npn":   ( { "type": "1" },   "bjt",   True,         False), 
-            "pnp":   ( { "type": "-1" },  "bjt",   True,         False), 
-            "njf":   ( { "type": "1" },   "jfet",  True,         False), 
-            "pjf":   ( { "type": "-1" },  "jfet",  True,         False), 
-            "nmf":   ( { "type": "1" },   "mes",   True,         False), 
-            "pmf":   ( { "type": "-1" },  "mes",   True,         False), 
-            "nhfet": ( { "type": "1" },   "hemt",  True,         False), 
-            "phfet": ( { "type": "-1" },  "hemt",  True,         False), 
-            "nmos":  ( { "type": "1" },   "mos",   True,         True), 
-            "pmos":  ( { "type": "-1" },  "mos",   True,         True), 
-            "nsoi":  ( { "type": "1" },   "soi",   True,         True), 
-            "psoi":  ( { "type": "-1" },  "soi",   True,         True), 
-        }, 
-        "family_map": {
-            # family, level, version     file                    module          params
-            ("r",     None,  None):    ( "spice/resistor.osdi",  "sp_resistor",  {} ), 
-            ("c",     None,  None):    ( "spice/capacitor.osdi", "sp_capacitor", {} ), 
-            ("l",     None,  None):    ( "spice/inductor.osdi",  "sp_inductor",  {} ), 
-            
-            ("d",     None, None):     ( "spice/diode.osdi",     "sp_diode",     {} ), 
-            ("d",     1,    None):     ( "spice/diode.osdi",     "sp_diode",     {} ), 
-            ("d",     3,    None):     ( "spice/diode.osdi",     "sp_diode",     {} ), 
+        prefix: (info.osdi_file, info.module_name) for prefix, info in DEFAULT_MODELS.items()
+    }
 
-            ("bjt",   None, None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
-            ("bjt",   1,    None):     ( "spice/bjt.osdi",       "sp_bjt",       {} ), 
-            ("bjt",   4,    None):     ( "spice/vbic.osdi",      "sp_vbic",      {} ), 
-            ("bjt",   9,    None):     ( "spice/vbic.osdi",      "sp_vbic",      {} ), 
-            
-            ("jfet",  None, None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 
-            ("jfet",  1,    None):     ( "spice/jfet1.osdi",     "sp_jfet1",     {} ), 
-            ("jfet",  2,    None):     ( "spice/jfet2.osdi",     "sp_jfet2",     {} ), 
-            
-            ("mes",   None, None):     ( "spice/mes1.osdi",      "sp_mes1",      {} ), 
-            ("mes",   1,    None):     ( "spice/mes1.osdi",      "sp_mes1",      {} ), 
 
-            ("mos",   None, None):     ( "spice/mos1.osdi",      "sp_mos1",      {} ), 
-            ("mos",   1,    None):     ( "spice/mos1.osdi",      "sp_mos1",      {} ), 
-            ("mos",   2,    None):     ( "spice/mos2.osdi",      "sp_mos2",      {} ), 
-            ("mos",   3,    None):     ( "spice/mos3.osdi",      "sp_mos3",      {} ), 
-            ("mos",   6,    None):     ( "spice/mos6.osdi",      "sp_mos6",      {} ), 
-            ("mos",   9,    None):     ( "spice/mos9.osdi",      "sp_mos9",      {} ), 
-            
-            ("mos",   8,    None):     ( "spice/bsim3v3.osdi",  "sp_bsim3v3",    {} ), 
-            ("mos",   8,    "3.3"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v3",    {} ), 
-            ("mos",   8,    "3.3.0"):  ( "spice/bsim3v3.osdi",  "sp_bsim3v3",    {} ), 
-            ("mos",   8,    "3.2"):    ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.2"'   } ), 
-            ("mos",   8,    "3.20"):   ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.20"'  } ), 
-            ("mos",   8,    "3.2.2"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.2.2"' } ), 
-            ("mos",   8,    "3.22"):   ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.22"'  } ), 
-            ("mos",   8,    "3.2.3"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.2.3"' } ), 
-            ("mos",   8,    "3.23"):   ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.23"'  } ), 
-            ("mos",   8,    "3.2.4"):  ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.2.4"' } ), 
-            ("mos",   8,    "3.24"):   ( "spice/bsim3v2.osdi",  "sp_bsim3v2",    { "version": '"3.24"'  } ), 
-            ("mos",   8,    "3.1"):    ( "spice/bsim3v1.osdi",  "sp_bsim3v1",    {} ), 
-            ("mos",   8,    "3.0"):    ( "spice/bsim3v3.osdi",  "sp_bsim3v0",    {} ), 
-            
-            ("mos",   49,   None):     ( "spice/bsim3v3.osdi",   "sp_bsim3v3",   {} ), 
-            ("mos",   49,   "3.3"):    ( "spice/bsim3v3.osdi",   "sp_bsim3v3",   {} ), 
-            ("mos",   49,   "3.3.0"):  ( "spice/bsim3v3.osdi",   "sp_bsim3v3",   {} ), 
-            ("mos",   49,   "3.2"):    ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.2"'   } ), 
-            ("mos",   49,   "3.20"):   ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.20"'  } ), 
-            ("mos",   49,   "3.2.2"):  ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.2.2"' } ), 
-            ("mos",   49,   "3.22"):   ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.22"'  } ), 
-            ("mos",   49,   "3.2.3"):  ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.2.3"' } ), 
-            ("mos",   49,   "3.23"):   ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.23"'  } ), 
-            ("mos",   49,   "3.2.4"):  ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.2.4"' } ), 
-            ("mos",   49,   "3.24"):   ( "spice/bsim3v2.osdi",   "sp_bsim3v2",   { "version": '"3.24"'  } ), 
-            ("mos",   49,   "3.1"):    ( "spice/bsim3v1.osdi",   "sp_bsim3v1",   {} ), 
-            ("mos",   49,   "3.0"):    ( "spice/bsim3v0.osdi",   "sp_bsim3v0",   {} ), 
-        }, 
-        "all_models": False, 
-        "default_models": {
-            # letter   osdi file           module
-            "r": ( "spice/resistor.osdi",  "sp_resistor" ), 
-            "c": ( "spice/capacitor.osdi", "sp_capacitor" ), 
-            "l": ( "spice/inductor.osdi",  "sp_inductor" ), 
-        }, 
-        "default_model_prefix": "defmod_", 
-        "as_toplevel": "auto", 
-        "read_depth": None,    # Fully recursive
-        "process_depth": None, # Fully recursive
+def default_config():
+    """Returns a default configuration.
+
+    Uses shared definitions from spiceparser.elements for device mappings,
+    ensuring consistency between ng2vc and the multi-dialect parser.
+    """
+    return {
+        "signature": "// Converted by ng2vc converter\n",
+        "sourcepath": ["."],
+        "merge_vector_instance_params": dict(MERGE_VECTOR_INSTANCE_PARAMS),
+        "remove_instance_params": {k: set(v) for k, v in REMOVE_INSTANCE_PARAMS.items()},
+        "merge_vector_model_params": {},
+        "remove_model_params": {},
+        "type_map": _build_type_map(),
+        "family_map": _build_family_map(),
+        "all_models": False,
+        "default_models": _build_default_models(),
+        "default_model_prefix": "defmod_",
+        "as_toplevel": "auto",
+        "read_depth": None,  # Fully recursive
+        "process_depth": None,  # Fully recursive
         "output_depth": None,  # Fully recursive
-        "patch": {}, 
-        "columns": 80, 
+        "patch": {},
+        "columns": 80,
     }
