@@ -18,7 +18,6 @@ from typing import Any
 
 from spiceparser.dialect import SpiceDialect, register_dialect
 
-
 # SI prefix pattern - includes 'meg' for mega and µ for micro
 _SI_PREFIX_PATTERN = re.compile(
     r"(\d+\.?\d*|\.\d+)\s*(t|g|meg|k|m|u|µ|n|p|f|mil)",

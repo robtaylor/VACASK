@@ -12,9 +12,9 @@ SPICE simulators:
     - ltspice: Analog Devices LTSpice
 """
 
-from spiceparser.dialects.ngspice import NgspiceDialect
 from spiceparser.dialects.hspice import HspiceDialect
 from spiceparser.dialects.ltspice import LtspiceDialect
+from spiceparser.dialects.ngspice import NgspiceDialect
 
 __all__ = [
     "NgspiceDialect",

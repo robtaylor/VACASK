@@ -1,5 +1,4 @@
 import re
-from .exc import ConverterError
 
 
 class InstanceVMixin:

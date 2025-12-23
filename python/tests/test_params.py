@@ -4,7 +4,6 @@
 
 """Tests for parameter handling utilities."""
 
-import pytest
 
 from spiceparser.params import (
     convert_si_prefixes,
@@ -114,8 +113,8 @@ class TestRemoveParams:
         """Removal should be case-insensitive."""
         params = [("R", "1k"), ("IC", "0")]
         result = remove_params(params, {"ic"})
-        # Note: current implementation is case-sensitive
-        # This test documents current behavior
+        # Removal is case-insensitive - IC is removed even with lowercase 'ic'
+        assert result == [("R", "1k")]
 
 
 class TestProcessExpressions:

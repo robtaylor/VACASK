@@ -8,18 +8,27 @@ This module uses shared functions from spiceparser.params where possible,
 providing a backward-compatible interface for the ng2vclib converter.
 """
 
-from .exc import ConverterError
-
 # Import shared parameter utilities
 from spiceparser.params import (
     convert_si_prefixes as si_replace,
+)
+from spiceparser.params import (
     format_value as _format_value,
-    split_params as _split_params,
-    remove_params as _remove_params,
+)
+from spiceparser.params import (
     merge_vector_params,
+)
+from spiceparser.params import (
     process_expressions as _process_expressions,
+)
+from spiceparser.params import (
     process_terminals as _process_terminals,
 )
+from spiceparser.params import (
+    split_params as _split_params,
+)
+
+from .exc import ConverterError
 
 
 class ParamsMixin:

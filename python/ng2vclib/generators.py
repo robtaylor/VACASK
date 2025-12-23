@@ -1,5 +1,6 @@
 from .patterns import *
 
+
 # A generator that traverses a deck
 def traverse(deck, depth=None, input_history=[], parent_line=None, inside_control=False):
     """

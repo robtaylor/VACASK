@@ -16,8 +16,9 @@ If no output file is provided, the converted netlist is printed to stdout.
 """
 
 import sys
-from ng2vclib.converter import Converter
+
 from ng2vclib import dfl
+from ng2vclib.converter import Converter
 from spiceparser.dialect import detect_dialect_from_file
 
 HELP_TEXT = """\

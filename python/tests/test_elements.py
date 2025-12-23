@@ -4,13 +4,8 @@
 
 """Tests for device element definitions and OSDI module mappings."""
 
-import pytest
 
 from spiceparser.elements import (
-    DEVICE_TYPES,
-    OSDI_MODULES,
-    DeviceTypeInfo,
-    OsdiModuleInfo,
     get_default_model,
     get_device_type_info,
     get_osdi_module,

@@ -39,7 +39,7 @@ class RawFile:
 			self.allends.sort()
 			
 			# Beginnings
-			self.allbegins = np.hstack([0, allends[:-1]]);
+			self.allbegins = np.hstack([0, allends[:-1]])
 
 			# Sweep groups
 			self.sweepGroups = self.allbegins.size
@@ -150,7 +150,6 @@ def rawread(fname):
 	return RawData(arrs)
 
 if __name__ == '__main__':
-	from pprint import pprint
 	plots = rawread('op1.raw').get(sweeps=1)
 	
 	# First plot

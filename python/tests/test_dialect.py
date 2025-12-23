@@ -6,7 +6,7 @@
 
 import pytest
 
-from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect, detect_dialect
+from spiceparser.dialect import SpiceDialect, detect_dialect, get_dialect, register_dialect
 
 
 class TestDialectRegistry:

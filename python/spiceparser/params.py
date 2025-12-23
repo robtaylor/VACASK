@@ -11,13 +11,11 @@ Extracted from ng2vclib/m_params.py to provide shared parameter handling.
 """
 
 import re
-from typing import Any
 
 from spiceparser.elements import (
     MERGE_VECTOR_INSTANCE_PARAMS,
     REMOVE_INSTANCE_PARAMS,
 )
-
 
 # SI prefix pattern for Ngspice-style prefixes
 # meg, g, t, mil are Ngspice-specific (case-insensitive)

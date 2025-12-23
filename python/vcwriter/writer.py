@@ -12,10 +12,10 @@ from pathlib import Path
 from typing import TextIO
 
 from spiceparser.elements import (
+    OsdiModuleInfo,
+    get_default_model,
     get_device_type_info,
     get_osdi_module,
-    get_default_model,
-    OsdiModuleInfo,
 )
 from spiceparser.netlist import Instance, ModelDef, Netlist, Subcircuit
 from spiceparser.params import format_value, process_terminals

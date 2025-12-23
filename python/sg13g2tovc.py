@@ -5,11 +5,15 @@
 # PDK_ROOT .. directory created by cloning the PDK 
 # PDK .. subdirectory with the PDK, by default ihp-sg13g2
 
-import sys, os, platform, subprocess, shutil
-from pprint import pprint
+import os
+import platform
+import shutil
+import subprocess
+import sys
+
+import xschem2vc
 from ng2vclib.converter import Converter
 from ng2vclib.dfl import default_config
-import xschem2vc
 
 tech_files = [
     # file  read&process depth  output depth  destination (relative path)
@@ -468,7 +472,7 @@ module_path_prefix = [ "$(PDK_ROOT)/$(PDK)/libs.tech/vacask/osdi" ]
     
     # Read orig file
     orig_lines = []
-    with open(xschorig, "r") as f:
+    with open(xschorig) as f:
         for l in f:
             orig_lines.append(l)
     
