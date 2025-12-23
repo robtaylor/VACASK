@@ -46,6 +46,79 @@ def get_dialect(name: str) -> "SpiceDialect":
     return _DIALECT_REGISTRY[name_lower]()
 
 
+def detect_dialect(content: str) -> str:
+    """Detect SPICE dialect from file content.
+
+    Analyzes the content for dialect-specific patterns and returns the
+    most likely dialect name. If no specific patterns are found, defaults
+    to "ngspice".
+
+    Args:
+        content: SPICE netlist content as a string
+
+    Returns:
+        Dialect name: "ltspice", "hspice", or "ngspice"
+    """
+    content_lower = content.lower()
+
+    # LTSpice indicators
+    ltspice_score = 0
+    if ".backanno" in content_lower:
+        ltspice_score += 3
+    # Windows paths with backslashes
+    if "\\" in content and (".lib" in content_lower or ".inc" in content_lower):
+        ltspice_score += 2
+    # Unicode micro symbol
+    if "µ" in content:
+        ltspice_score += 2
+    # LTSpice-specific parameters on passives
+    if "rser=" in content_lower or "lser=" in content_lower:
+        ltspice_score += 2
+
+    # HSPICE indicators
+    hspice_score = 0
+    if ".if " in content_lower or ".if(" in content_lower:
+        hspice_score += 3
+    if ".elseif" in content_lower:
+        hspice_score += 2
+    if ".endif" in content_lower:
+        hspice_score += 2
+    if ".alter" in content_lower:
+        hspice_score += 3
+    if ".data " in content_lower:
+        hspice_score += 2
+    if ".prot" in content_lower or ".unprot" in content_lower:
+        hspice_score += 2
+    # Single-quoted expressions (common in HSPICE)
+    import re
+    if re.search(r"=\s*'[^']+[+\-*/][^']+'", content):
+        hspice_score += 2
+    # Spaces around = in parameters (HSPICE style)
+    if re.search(r"\s=\s", content):
+        hspice_score += 1
+
+    # Return highest scoring dialect, default to ngspice
+    if ltspice_score > hspice_score and ltspice_score >= 2:
+        return "ltspice"
+    if hspice_score > ltspice_score and hspice_score >= 2:
+        return "hspice"
+    return "ngspice"
+
+
+def detect_dialect_from_file(filepath: str) -> str:
+    """Detect SPICE dialect from a file.
+
+    Args:
+        filepath: Path to SPICE netlist file
+
+    Returns:
+        Dialect name: "ltspice", "hspice", or "ngspice"
+    """
+    with open(filepath, encoding="utf-8", errors="replace") as f:
+        content = f.read()
+    return detect_dialect(content)
+
+
 class SpiceDialect(ABC):
     """Base class for SPICE dialect implementations.
 
