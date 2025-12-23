@@ -1,0 +1,68 @@
+DC response of an IHP SG13G2 inverter
+
+ground 0
+
+load "./psp103_ihp.osdi"
+
+include "sg13g2_moslv.inc"
+model vsource vsource
+
+// Simple inverter using IHP SG13G2 low-voltage MOSFETs
+// NMOS: W=0.78um, L=0.13um (minimum L for sg13_lv)
+// PMOS: W=1.2um, L=0.13um
+
+m1 (out in 0 0) sg13g2_lv_nmos w=0.78u l=0.13u
+m2 (out in vdd vdd) sg13g2_lv_pmos w=1.2u l=0.13u
+
+vdd (vdd 0) vsource dc=1.2
+vin (in 0) vsource dc=0
+
+control
+  abort always
+
+  sweep vin instance="vin" parameter="dc" from=0 to=1.2 mode="lin" points=100
+    analysis op1 op
+  postprocess(PYTHON, "runme.py")
+endc
+
+embed "runme.py" <<<FILE
+from rawfile import rawread
+from runtest import *
+import numpy as np
+import sys
+
+tests=[]
+
+plot = rawread('op1.raw').get()
+x = plot["in"]
+y = plot["out"]
+
+status = (x[1:]-x[:-1]>0).all()
+tests.append(status)
+print("Input voltage monotonically increasing:", status)
+
+status = (y[1:]-y[:-1]<0).all()
+tests.append(status)
+print("Output voltage monotonically decreasing:", status)
+
+status = x[0]<0.01 and x[-1]>1.19
+tests.append(status)
+print("Input range covers 0 to 1.2V:", status)
+
+status = y[0]>1.10 and y[-1]<0.10
+tests.append(status)
+print("Output swings from high to low:", status)
+
+if isTest():
+    sys.exit(not all(tests))
+else:
+    import matplotlib.pyplot as plt
+
+    fig1, ax1 = plt.subplots(1, 1)
+    fig1.axes[0].set_title('IHP SG13G2 Inverter DC Response')
+    fig1.axes[0].set_ylabel('Vout [V]')
+    fig1.axes[0].set_xlabel('Vin [V]')
+    fig1.axes[0].plot(x, y)
+    fig1.axes[0].grid(which='both')
+    plt.show()
+>>>FILE
