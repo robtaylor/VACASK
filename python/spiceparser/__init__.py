@@ -20,7 +20,7 @@ Usage:
     netlist = parse_netlist("circuit.sp", dialect=NgspiceDialect())
 """
 
-from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect
+from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect, detect_dialect, detect_dialect_from_file
 from spiceparser.netlist import ModelDef, Subcircuit, Instance, Netlist
 from spiceparser.parser import parse_netlist
 from spiceparser.elements import (
@@ -40,6 +40,8 @@ __all__ = [
     "SpiceDialect",
     "get_dialect",
     "register_dialect",
+    "detect_dialect",
+    "detect_dialect_from_file",
     "ModelDef",
     "Subcircuit",
     "Instance",

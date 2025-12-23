@@ -18,6 +18,7 @@ If no output file is provided, the converted netlist is printed to stdout.
 import sys
 from ng2vclib.converter import Converter
 from ng2vclib import dfl
+from spiceparser.dialect import detect_dialect_from_file
 
 HELP_TEXT = """\
 SPICE to VACASK netlist converter.
@@ -34,7 +35,8 @@ Creates destination directory, if needed.
 
 Arguments:
   -h --help           print help
-  -d  --dialect       SPICE dialect: ngspice (default), hspice, ltspice
+  -d  --dialect       SPICE dialect: auto, ngspice (default), hspice, ltspice
+                      auto detects dialect from file content
   -dr --read-depth    maximal depth to which sources are loaded
                       (infinite by default)
   -dp --process-depth maximal depth to which sources are processed
@@ -73,9 +75,9 @@ def main():
                     return 1
                 ndx += 1
                 dialect = sys.argv[ndx].lower()
-                if dialect not in ("ngspice", "hspice", "ltspice"):
+                if dialect not in ("auto", "ngspice", "hspice", "ltspice"):
                     print(f"Unknown dialect: {dialect}", file=sys.stderr)
-                    print("Valid dialects: ngspice, hspice, ltspice", file=sys.stderr)
+                    print("Valid dialects: auto, ngspice, hspice, ltspice", file=sys.stderr)
                     return 1
             elif arg in ("-dr", "--read-depth"):
                 if ndx + 1 >= len(sys.argv):
@@ -141,6 +143,10 @@ def main():
     cfg["process_depth"] = process_depth
     cfg["output_depth"] = output_depth
     cfg["all_models"] = all_models
+
+    # Auto-detect dialect if requested
+    if dialect == "auto":
+        dialect = detect_dialect_from_file(from_file)
 
     # Create converter with specified dialect
     converter = Converter(cfg, dialect=dialect)
