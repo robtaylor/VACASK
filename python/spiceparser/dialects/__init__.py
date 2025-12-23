@@ -14,12 +14,10 @@ SPICE simulators:
 
 from spiceparser.dialects.ngspice import NgspiceDialect
 from spiceparser.dialects.hspice import HspiceDialect
-
-# Import dialects to register them
-# from spiceparser.dialects.ltspice import LtspiceDialect  # TODO
+from spiceparser.dialects.ltspice import LtspiceDialect
 
 __all__ = [
     "NgspiceDialect",
     "HspiceDialect",
-    # "LtspiceDialect",
+    "LtspiceDialect",
 ]
