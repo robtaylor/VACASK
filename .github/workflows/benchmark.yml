@@ -29,9 +29,10 @@ jobs:
             libsuitesparse-dev \
             flex \
             bison \
-            llvm-18 \
-            llvm-18-dev \
-            clang-18
+            llvm-15 \
+            llvm-15-dev \
+            clang-15 \
+            libclang-15-dev
 
       - name: Install toml++ (header-only)
         run: |
@@ -43,12 +44,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/openvaf-r
-          key: openvaf-r-${{ runner.os }}-llvm18-v2
+          key: openvaf-r-${{ runner.os }}-llvm15-v1
 
       - name: Build OpenVAF-reloaded
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
         env:
-          LLVM_CONFIG: /usr/bin/llvm-config-18
+          LLVM_CONFIG: /usr/bin/llvm-config-15
         run: |
           # Install Rust
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
