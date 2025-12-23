@@ -1,6 +1,5 @@
 .title Top block test simulation
 // Converted by ng2vc converter
-// IHP SG13G2 dual-port SRAM block test
 
 ground 0
 
@@ -533,7 +532,7 @@ model sg13g2_lv_pmos_psp pspnqs103va (
 @end
 ends
 subckt dp8tclockgenerator_8s1r(vss vdd clk decodeclk columnclk precharge_n wl_en we_en)
-xnonovl (vss vdd clk firststage_0_ firststage_1_ firststage_2_ firststage_3_ firststage_4_ firststage_5_ firststage_6_ firstpulse firststage_8_ secondstage_0_ secondstage_1_ secondstage_2_ secondstage_3_ secondstage_4_ secondstage_5_ secondstage_6_ secondpulse secondstage_8_) DP8TNonOverlapClock_8S1R 
+xnonovl (vss vdd clk firststage_0_ firststage_1_ firststage_2_ firststage_3_ firststage_4_ firststage_5_ firststage_6_ firstpulse firststage_8_ secondstage_0_ secondstage_1_ secondstage_2_ secondstage_3_ secondstage_4_ secondstage_5_ secondstage_6_ secondpulse secondstage_8_) dp8tnonoverlapclock_8s1r 
 xdecodeclkbuf (vdd vss clk decodeclk) buf_x1 
 xprechargeinv (vdd vss secondpulse precharge_n) inv_x1 
 xwlenbuf (vdd vss firstpulse wl_en) buf_x1 
@@ -542,18 +541,18 @@ xweenbuf (vdd vss firstpulse we_en) buf_x1
 ends
 
 subckt dp8tlatcheddecoder_2a2r(vss vdd clk a_0_ a_1_ line_0_ line_1_ line_2_ line_3_)
-xaff_0_ (vdd vss a_0_ clk aint_0_) DP8TDec_dff_x1 
-xaff_1_ (vdd vss a_1_ clk aint_1_) DP8TDec_dff_x1 
-xainv_0_ (vdd vss aint_0_ aint_n_0_) DP8TDec_inv_x1 
-xainv_1_ (vdd vss aint_1_ aint_n_1_) DP8TDec_inv_x1 
-xlinenand_0_ (vdd vss line_n_0_ aint_n_0_ aint_n_1_) DP8TDec_nand2_x0 
-xlinenand_1_ (vdd vss line_n_1_ aint_0_ aint_n_1_) DP8TDec_nand2_x0 
-xlinenand_2_ (vdd vss line_n_2_ aint_n_0_ aint_1_) DP8TDec_nand2_x0 
-xlinenand_3_ (vdd vss line_n_3_ aint_0_ aint_1_) DP8TDec_nand2_x0 
-xlineinv_0_ (vdd vss line_n_0_ line_0_) DP8TDec_inv_x2 
-xlineinv_1_ (vdd vss line_n_1_ line_1_) DP8TDec_inv_x2 
-xlineinv_2_ (vdd vss line_n_2_ line_2_) DP8TDec_inv_x2 
-xlineinv_3_ (vdd vss line_n_3_ line_3_) DP8TDec_inv_x2 
+xaff_0_ (vdd vss a_0_ clk aint_0_) dp8tdec_dff_x1 
+xaff_1_ (vdd vss a_1_ clk aint_1_) dp8tdec_dff_x1 
+xainv_0_ (vdd vss aint_0_ aint_n_0_) dp8tdec_inv_x1 
+xainv_1_ (vdd vss aint_1_ aint_n_1_) dp8tdec_inv_x1 
+xlinenand_0_ (vdd vss line_n_0_ aint_n_0_ aint_n_1_) dp8tdec_nand2_x0 
+xlinenand_1_ (vdd vss line_n_1_ aint_0_ aint_n_1_) dp8tdec_nand2_x0 
+xlinenand_2_ (vdd vss line_n_2_ aint_n_0_ aint_1_) dp8tdec_nand2_x0 
+xlinenand_3_ (vdd vss line_n_3_ aint_0_ aint_1_) dp8tdec_nand2_x0 
+xlineinv_0_ (vdd vss line_n_0_ line_0_) dp8tdec_inv_x2 
+xlineinv_1_ (vdd vss line_n_1_ line_1_) dp8tdec_inv_x2 
+xlineinv_2_ (vdd vss line_n_2_ line_2_) dp8tdec_inv_x2 
+xlineinv_3_ (vdd vss line_n_3_ line_3_) dp8tdec_inv_x2 
 ends
 
 subckt dp8tdec_dff_x1(vdd vss i clk q)
@@ -613,44 +612,44 @@ xq_pu (vdd nq q vdd) sg13_lv_pmos  l=0.13um w=4.4um
 ends
 
 subckt dp8trowpredecoders_3_4b_wl1(vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_)
-xaff_0_ (vdd vss a_0_ clk aint_0_) DP8TDec_dff_x1 
-xaff_1_ (vdd vss a_1_ clk aint_1_) DP8TDec_dff_x1 
-xaff_2_ (vdd vss a_2_ clk aint_2_) DP8TDec_dff_x1 
-xaff_3_ (vdd vss a_3_ clk aint_3_) DP8TDec_dff_x1 
-xaff_4_ (vdd vss a_4_ clk aint_4_) DP8TDec_dff_x1 
-xaff_5_ (vdd vss a_5_ clk aint_5_) DP8TDec_dff_x1 
-xaff_6_ (vdd vss a_6_ clk aint_6_) DP8TDec_dff_x1 
-xainv_0_ (vdd vss aint_0_ aint_n_0_) DP8TDec_inv_x1 
-xainv_1_ (vdd vss aint_1_ aint_n_1_) DP8TDec_inv_x1 
-xainv_2_ (vdd vss aint_2_ aint_n_2_) DP8TDec_inv_x1 
-xainv_3_ (vdd vss aint_3_ aint_n_3_) DP8TDec_inv_x1 
-xainv_4_ (vdd vss aint_4_ aint_n_4_) DP8TDec_inv_x1 
-xainv_5_ (vdd vss aint_5_ aint_n_5_) DP8TDec_inv_x1 
-xainv_6_ (vdd vss aint_6_ aint_n_6_) DP8TDec_inv_x1 
-xpd_0_and_0_ (vdd vss pd_0__0_ aint_n_0_ aint_n_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_1_ (vdd vss pd_0__1_ aint_0_ aint_n_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_2_ (vdd vss pd_0__2_ aint_n_0_ aint_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_3_ (vdd vss pd_0__3_ aint_0_ aint_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_4_ (vdd vss pd_0__4_ aint_n_0_ aint_n_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_5_ (vdd vss pd_0__5_ aint_0_ aint_n_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_6_ (vdd vss pd_0__6_ aint_n_0_ aint_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_7_ (vdd vss pd_0__7_ aint_0_ aint_1_ aint_2_) DP8TDec_and3_x1 
-xpage_and_0_ (vdd vss page_0_ aint_n_3_ aint_n_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_1_ (vdd vss page_1_ aint_3_ aint_n_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_2_ (vdd vss page_2_ aint_n_3_ aint_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_3_ (vdd vss page_3_ aint_3_ aint_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_4_ (vdd vss page_4_ aint_n_3_ aint_n_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_5_ (vdd vss page_5_ aint_3_ aint_n_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_6_ (vdd vss page_6_ aint_n_3_ aint_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_7_ (vdd vss page_7_ aint_3_ aint_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_8_ (vdd vss page_8_ aint_n_3_ aint_n_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_9_ (vdd vss page_9_ aint_3_ aint_n_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_10_ (vdd vss page_10_ aint_n_3_ aint_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_11_ (vdd vss page_11_ aint_3_ aint_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_12_ (vdd vss page_12_ aint_n_3_ aint_n_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_13_ (vdd vss page_13_ aint_3_ aint_n_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_14_ (vdd vss page_14_ aint_n_3_ aint_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_15_ (vdd vss page_15_ aint_3_ aint_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
+xaff_0_ (vdd vss a_0_ clk aint_0_) dp8tdec_dff_x1 
+xaff_1_ (vdd vss a_1_ clk aint_1_) dp8tdec_dff_x1 
+xaff_2_ (vdd vss a_2_ clk aint_2_) dp8tdec_dff_x1 
+xaff_3_ (vdd vss a_3_ clk aint_3_) dp8tdec_dff_x1 
+xaff_4_ (vdd vss a_4_ clk aint_4_) dp8tdec_dff_x1 
+xaff_5_ (vdd vss a_5_ clk aint_5_) dp8tdec_dff_x1 
+xaff_6_ (vdd vss a_6_ clk aint_6_) dp8tdec_dff_x1 
+xainv_0_ (vdd vss aint_0_ aint_n_0_) dp8tdec_inv_x1 
+xainv_1_ (vdd vss aint_1_ aint_n_1_) dp8tdec_inv_x1 
+xainv_2_ (vdd vss aint_2_ aint_n_2_) dp8tdec_inv_x1 
+xainv_3_ (vdd vss aint_3_ aint_n_3_) dp8tdec_inv_x1 
+xainv_4_ (vdd vss aint_4_ aint_n_4_) dp8tdec_inv_x1 
+xainv_5_ (vdd vss aint_5_ aint_n_5_) dp8tdec_inv_x1 
+xainv_6_ (vdd vss aint_6_ aint_n_6_) dp8tdec_inv_x1 
+xpd_0_and_0_ (vdd vss pd_0__0_ aint_n_0_ aint_n_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_1_ (vdd vss pd_0__1_ aint_0_ aint_n_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_2_ (vdd vss pd_0__2_ aint_n_0_ aint_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_3_ (vdd vss pd_0__3_ aint_0_ aint_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_4_ (vdd vss pd_0__4_ aint_n_0_ aint_n_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_5_ (vdd vss pd_0__5_ aint_0_ aint_n_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_6_ (vdd vss pd_0__6_ aint_n_0_ aint_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_7_ (vdd vss pd_0__7_ aint_0_ aint_1_ aint_2_) dp8tdec_and3_x1 
+xpage_and_0_ (vdd vss page_0_ aint_n_3_ aint_n_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_1_ (vdd vss page_1_ aint_3_ aint_n_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_2_ (vdd vss page_2_ aint_n_3_ aint_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_3_ (vdd vss page_3_ aint_3_ aint_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_4_ (vdd vss page_4_ aint_n_3_ aint_n_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_5_ (vdd vss page_5_ aint_3_ aint_n_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_6_ (vdd vss page_6_ aint_n_3_ aint_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_7_ (vdd vss page_7_ aint_3_ aint_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_8_ (vdd vss page_8_ aint_n_3_ aint_n_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_9_ (vdd vss page_9_ aint_3_ aint_n_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_10_ (vdd vss page_10_ aint_n_3_ aint_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_11_ (vdd vss page_11_ aint_3_ aint_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_12_ (vdd vss page_12_ aint_n_3_ aint_n_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_13_ (vdd vss page_13_ aint_3_ aint_n_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_14_ (vdd vss page_14_ aint_n_3_ aint_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_15_ (vdd vss page_15_ aint_3_ aint_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
 ends
 
 subckt dp8trowdecodernand3x2(vss vdd pd_0__0_ pd_0__1_ page wl_en wl_n_0_ wl_n_1_)
@@ -676,18 +675,18 @@ xpmos2 (wl_drive wl_n vdd nwell) sg13_lv_pmos  l=0.13um w=1.0um
 ends
 
 subckt dp8trowdecoderdriverpage_2pd8r_wl1(vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page wl_en)
-xnand3_0_ (vss vdd pd_0__0_ pd_0__1_ page wl_en wl_n_0_ wl_n_1_) DP8TRowDecoderNand3X2 
-xnand3_1_ (vss vdd pd_0__2_ pd_0__3_ page wl_en wl_n_2_ wl_n_3_) DP8TRowDecoderNand3X2 
-xnand3_2_ (vss vdd pd_0__4_ pd_0__5_ page wl_en wl_n_4_ wl_n_5_) DP8TRowDecoderNand3X2 
-xnand3_3_ (vss vdd pd_0__6_ pd_0__7_ page wl_en wl_n_6_ wl_n_7_) DP8TRowDecoderNand3X2 
-xdrive_0_ (vss vss vdd vdd wl_n_0_ wl_0_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_1_ (vss vss vdd vdd wl_n_1_ wl_1_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_2_ (vss vss vdd vdd wl_n_2_ wl_2_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_3_ (vss vss vdd vdd wl_n_3_ wl_3_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_4_ (vss vss vdd vdd wl_n_4_ wl_4_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_5_ (vss vss vdd vdd wl_n_5_ wl_5_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_6_ (vss vss vdd vdd wl_n_6_ wl_6_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
-xdrive_7_ (vss vss vdd vdd wl_n_7_ wl_7_) DP8TWLDrive_26LN100WN26LP200WP_wl1 
+xnand3_0_ (vss vdd pd_0__0_ pd_0__1_ page wl_en wl_n_0_ wl_n_1_) dp8trowdecodernand3x2 
+xnand3_1_ (vss vdd pd_0__2_ pd_0__3_ page wl_en wl_n_2_ wl_n_3_) dp8trowdecodernand3x2 
+xnand3_2_ (vss vdd pd_0__4_ pd_0__5_ page wl_en wl_n_4_ wl_n_5_) dp8trowdecodernand3x2 
+xnand3_3_ (vss vdd pd_0__6_ pd_0__7_ page wl_en wl_n_6_ wl_n_7_) dp8trowdecodernand3x2 
+xdrive_0_ (vss vss vdd vdd wl_n_0_ wl_0_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_1_ (vss vss vdd vdd wl_n_1_ wl_1_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_2_ (vss vss vdd vdd wl_n_2_ wl_2_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_3_ (vss vss vdd vdd wl_n_3_ wl_3_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_4_ (vss vss vdd vdd wl_n_4_ wl_4_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_5_ (vss vss vdd vdd wl_n_5_ wl_5_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_6_ (vss vss vdd vdd wl_n_6_ wl_6_) dp8twldrive_26ln100wn26lp200wp_wl1 
+xdrive_7_ (vss vss vdd vdd wl_n_7_ wl_7_) dp8twldrive_26ln100wn26lp200wp_wl1 
 ends
 
 subckt dp8trowdecoderbulkconn(vdd vss)
@@ -695,38 +694,38 @@ subckt dp8trowdecoderbulkconn(vdd vss)
 ends
 
 subckt dp8trowdecoder_3_4b_wl1(vss vdd a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ clk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_)
-xpredec (vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_) DP8TRowPredecoders_3_4B_wl1 
-xpage_0_ (vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_1_ (vss vdd wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_1_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_2_ (vss vdd wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_2_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_3_ (vss vdd wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_3_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_4_ (vss vdd wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_4_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_5_ (vss vdd wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_5_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_6_ (vss vdd wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_6_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_7_ (vss vdd wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_7_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_8_ (vss vdd wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_8_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_9_ (vss vdd wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_9_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_10_ (vss vdd wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_10_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_11_ (vss vdd wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_11_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_12_ (vss vdd wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_12_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_13_ (vss vdd wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_13_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_14_ (vss vdd wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_14_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xpage_15_ (vss vdd wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_15_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl1 
-xbulkcon_0_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_1_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_2_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_3_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_4_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_5_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_6_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_7_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_8_ (vdd vss) DP8TRowDecoderBulkConn 
+xpredec (vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_) dp8trowpredecoders_3_4b_wl1 
+xpage_0_ (vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_1_ (vss vdd wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_1_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_2_ (vss vdd wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_2_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_3_ (vss vdd wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_3_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_4_ (vss vdd wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_4_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_5_ (vss vdd wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_5_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_6_ (vss vdd wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_6_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_7_ (vss vdd wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_7_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_8_ (vss vdd wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_8_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_9_ (vss vdd wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_9_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_10_ (vss vdd wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_10_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_11_ (vss vdd wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_11_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_12_ (vss vdd wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_12_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_13_ (vss vdd wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_13_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_14_ (vss vdd wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_14_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xpage_15_ (vss vdd wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_15_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl1 
+xbulkcon_0_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_1_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_2_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_3_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_4_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_5_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_6_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_7_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_8_ (vdd vss) dp8trowdecoderbulkconn 
 ends
 
 subckt dp8trowperiphery_3_4_2_wl1(vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ mux_0_ mux_1_ mux_2_ mux_3_ columnclk precharge_n we_en)
-xclkgen (vss vdd clk decodeclk columnclk precharge_n wl_en we_en) DP8TClockGenerator_8S1R 
-xcoldec (vss vdd decodeclk a_0_ a_1_ mux_0_ mux_1_ mux_2_ mux_3_) DP8TLatchedDecoder_2A2R 
-xrowdec (vss vdd a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ decodeclk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_) DP8TRowDecoder_3_4B_wl1 
+xclkgen (vss vdd clk decodeclk columnclk precharge_n wl_en we_en) dp8tclockgenerator_8s1r 
+xcoldec (vss vdd decodeclk a_0_ a_1_ mux_0_ mux_1_ mux_2_ mux_3_) dp8tlatcheddecoder_2a2r 
+xrowdec (vss vdd a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ decodeclk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_) dp8trowdecoder_3_4b_wl1 
 ends
 
 subckt nand2_x0(vdd vss nq i0 i1)
@@ -790,44 +789,44 @@ xpmos_1_ (nq i vdd vdd) sg13_lv_pmos  l=0.13um w=4.4um
 ends
 
 subckt dp8trowpredecoders_3_4b_wl2(vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_)
-xaff_0_ (vdd vss a_0_ clk aint_0_) DP8TDec_dff_x1 
-xaff_1_ (vdd vss a_1_ clk aint_1_) DP8TDec_dff_x1 
-xaff_2_ (vdd vss a_2_ clk aint_2_) DP8TDec_dff_x1 
-xaff_3_ (vdd vss a_3_ clk aint_3_) DP8TDec_dff_x1 
-xaff_4_ (vdd vss a_4_ clk aint_4_) DP8TDec_dff_x1 
-xaff_5_ (vdd vss a_5_ clk aint_5_) DP8TDec_dff_x1 
-xaff_6_ (vdd vss a_6_ clk aint_6_) DP8TDec_dff_x1 
-xainv_0_ (vdd vss aint_0_ aint_n_0_) DP8TDec_inv_x1 
-xainv_1_ (vdd vss aint_1_ aint_n_1_) DP8TDec_inv_x1 
-xainv_2_ (vdd vss aint_2_ aint_n_2_) DP8TDec_inv_x1 
-xainv_3_ (vdd vss aint_3_ aint_n_3_) DP8TDec_inv_x1 
-xainv_4_ (vdd vss aint_4_ aint_n_4_) DP8TDec_inv_x1 
-xainv_5_ (vdd vss aint_5_ aint_n_5_) DP8TDec_inv_x1 
-xainv_6_ (vdd vss aint_6_ aint_n_6_) DP8TDec_inv_x1 
-xpd_0_and_0_ (vdd vss pd_0__0_ aint_n_0_ aint_n_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_1_ (vdd vss pd_0__1_ aint_0_ aint_n_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_2_ (vdd vss pd_0__2_ aint_n_0_ aint_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_3_ (vdd vss pd_0__3_ aint_0_ aint_1_ aint_n_2_) DP8TDec_and3_x1 
-xpd_0_and_4_ (vdd vss pd_0__4_ aint_n_0_ aint_n_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_5_ (vdd vss pd_0__5_ aint_0_ aint_n_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_6_ (vdd vss pd_0__6_ aint_n_0_ aint_1_ aint_2_) DP8TDec_and3_x1 
-xpd_0_and_7_ (vdd vss pd_0__7_ aint_0_ aint_1_ aint_2_) DP8TDec_and3_x1 
-xpage_and_0_ (vdd vss page_0_ aint_n_3_ aint_n_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_1_ (vdd vss page_1_ aint_3_ aint_n_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_2_ (vdd vss page_2_ aint_n_3_ aint_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_3_ (vdd vss page_3_ aint_3_ aint_4_ aint_n_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_4_ (vdd vss page_4_ aint_n_3_ aint_n_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_5_ (vdd vss page_5_ aint_3_ aint_n_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_6_ (vdd vss page_6_ aint_n_3_ aint_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_7_ (vdd vss page_7_ aint_3_ aint_4_ aint_5_ aint_n_6_) DP8TDec_and4_x1 
-xpage_and_8_ (vdd vss page_8_ aint_n_3_ aint_n_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_9_ (vdd vss page_9_ aint_3_ aint_n_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_10_ (vdd vss page_10_ aint_n_3_ aint_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_11_ (vdd vss page_11_ aint_3_ aint_4_ aint_n_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_12_ (vdd vss page_12_ aint_n_3_ aint_n_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_13_ (vdd vss page_13_ aint_3_ aint_n_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_14_ (vdd vss page_14_ aint_n_3_ aint_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
-xpage_and_15_ (vdd vss page_15_ aint_3_ aint_4_ aint_5_ aint_6_) DP8TDec_and4_x1 
+xaff_0_ (vdd vss a_0_ clk aint_0_) dp8tdec_dff_x1 
+xaff_1_ (vdd vss a_1_ clk aint_1_) dp8tdec_dff_x1 
+xaff_2_ (vdd vss a_2_ clk aint_2_) dp8tdec_dff_x1 
+xaff_3_ (vdd vss a_3_ clk aint_3_) dp8tdec_dff_x1 
+xaff_4_ (vdd vss a_4_ clk aint_4_) dp8tdec_dff_x1 
+xaff_5_ (vdd vss a_5_ clk aint_5_) dp8tdec_dff_x1 
+xaff_6_ (vdd vss a_6_ clk aint_6_) dp8tdec_dff_x1 
+xainv_0_ (vdd vss aint_0_ aint_n_0_) dp8tdec_inv_x1 
+xainv_1_ (vdd vss aint_1_ aint_n_1_) dp8tdec_inv_x1 
+xainv_2_ (vdd vss aint_2_ aint_n_2_) dp8tdec_inv_x1 
+xainv_3_ (vdd vss aint_3_ aint_n_3_) dp8tdec_inv_x1 
+xainv_4_ (vdd vss aint_4_ aint_n_4_) dp8tdec_inv_x1 
+xainv_5_ (vdd vss aint_5_ aint_n_5_) dp8tdec_inv_x1 
+xainv_6_ (vdd vss aint_6_ aint_n_6_) dp8tdec_inv_x1 
+xpd_0_and_0_ (vdd vss pd_0__0_ aint_n_0_ aint_n_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_1_ (vdd vss pd_0__1_ aint_0_ aint_n_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_2_ (vdd vss pd_0__2_ aint_n_0_ aint_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_3_ (vdd vss pd_0__3_ aint_0_ aint_1_ aint_n_2_) dp8tdec_and3_x1 
+xpd_0_and_4_ (vdd vss pd_0__4_ aint_n_0_ aint_n_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_5_ (vdd vss pd_0__5_ aint_0_ aint_n_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_6_ (vdd vss pd_0__6_ aint_n_0_ aint_1_ aint_2_) dp8tdec_and3_x1 
+xpd_0_and_7_ (vdd vss pd_0__7_ aint_0_ aint_1_ aint_2_) dp8tdec_and3_x1 
+xpage_and_0_ (vdd vss page_0_ aint_n_3_ aint_n_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_1_ (vdd vss page_1_ aint_3_ aint_n_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_2_ (vdd vss page_2_ aint_n_3_ aint_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_3_ (vdd vss page_3_ aint_3_ aint_4_ aint_n_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_4_ (vdd vss page_4_ aint_n_3_ aint_n_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_5_ (vdd vss page_5_ aint_3_ aint_n_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_6_ (vdd vss page_6_ aint_n_3_ aint_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_7_ (vdd vss page_7_ aint_3_ aint_4_ aint_5_ aint_n_6_) dp8tdec_and4_x1 
+xpage_and_8_ (vdd vss page_8_ aint_n_3_ aint_n_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_9_ (vdd vss page_9_ aint_3_ aint_n_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_10_ (vdd vss page_10_ aint_n_3_ aint_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_11_ (vdd vss page_11_ aint_3_ aint_4_ aint_n_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_12_ (vdd vss page_12_ aint_n_3_ aint_n_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_13_ (vdd vss page_13_ aint_3_ aint_n_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_14_ (vdd vss page_14_ aint_n_3_ aint_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
+xpage_and_15_ (vdd vss page_15_ aint_3_ aint_4_ aint_5_ aint_6_) dp8tdec_and4_x1 
 ends
 
 subckt dp8twldrive_26ln100wn26lp200wp_wl2(vss substrate vdd nwell wl_n wl_drive)
@@ -838,53 +837,53 @@ xpmos2 (wl_drive wl_n vdd nwell) sg13_lv_pmos  l=0.13um w=1.0um
 ends
 
 subckt dp8trowdecoderdriverpage_2pd8r_wl2(vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page wl_en)
-xnand3_0_ (vss vdd pd_0__0_ pd_0__1_ page wl_en wl_n_0_ wl_n_1_) DP8TRowDecoderNand3X2 
-xnand3_1_ (vss vdd pd_0__2_ pd_0__3_ page wl_en wl_n_2_ wl_n_3_) DP8TRowDecoderNand3X2 
-xnand3_2_ (vss vdd pd_0__4_ pd_0__5_ page wl_en wl_n_4_ wl_n_5_) DP8TRowDecoderNand3X2 
-xnand3_3_ (vss vdd pd_0__6_ pd_0__7_ page wl_en wl_n_6_ wl_n_7_) DP8TRowDecoderNand3X2 
-xdrive_0_ (vss vss vdd vdd wl_n_0_ wl_0_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_1_ (vss vss vdd vdd wl_n_1_ wl_1_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_2_ (vss vss vdd vdd wl_n_2_ wl_2_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_3_ (vss vss vdd vdd wl_n_3_ wl_3_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_4_ (vss vss vdd vdd wl_n_4_ wl_4_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_5_ (vss vss vdd vdd wl_n_5_ wl_5_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_6_ (vss vss vdd vdd wl_n_6_ wl_6_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
-xdrive_7_ (vss vss vdd vdd wl_n_7_ wl_7_) DP8TWLDrive_26LN100WN26LP200WP_wl2 
+xnand3_0_ (vss vdd pd_0__0_ pd_0__1_ page wl_en wl_n_0_ wl_n_1_) dp8trowdecodernand3x2 
+xnand3_1_ (vss vdd pd_0__2_ pd_0__3_ page wl_en wl_n_2_ wl_n_3_) dp8trowdecodernand3x2 
+xnand3_2_ (vss vdd pd_0__4_ pd_0__5_ page wl_en wl_n_4_ wl_n_5_) dp8trowdecodernand3x2 
+xnand3_3_ (vss vdd pd_0__6_ pd_0__7_ page wl_en wl_n_6_ wl_n_7_) dp8trowdecodernand3x2 
+xdrive_0_ (vss vss vdd vdd wl_n_0_ wl_0_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_1_ (vss vss vdd vdd wl_n_1_ wl_1_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_2_ (vss vss vdd vdd wl_n_2_ wl_2_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_3_ (vss vss vdd vdd wl_n_3_ wl_3_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_4_ (vss vss vdd vdd wl_n_4_ wl_4_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_5_ (vss vss vdd vdd wl_n_5_ wl_5_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_6_ (vss vss vdd vdd wl_n_6_ wl_6_) dp8twldrive_26ln100wn26lp200wp_wl2 
+xdrive_7_ (vss vss vdd vdd wl_n_7_ wl_7_) dp8twldrive_26ln100wn26lp200wp_wl2 
 ends
 
 subckt dp8trowdecoder_3_4b_wl2(vss vdd a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ clk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_)
-xpredec (vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_) DP8TRowPredecoders_3_4B_wl2 
-xpage_0_ (vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_1_ (vss vdd wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_1_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_2_ (vss vdd wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_2_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_3_ (vss vdd wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_3_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_4_ (vss vdd wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_4_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_5_ (vss vdd wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_5_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_6_ (vss vdd wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_6_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_7_ (vss vdd wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_7_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_8_ (vss vdd wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_8_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_9_ (vss vdd wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_9_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_10_ (vss vdd wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_10_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_11_ (vss vdd wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_11_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_12_ (vss vdd wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_12_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_13_ (vss vdd wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_13_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_14_ (vss vdd wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_14_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xpage_15_ (vss vdd wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_15_ wl_en) DP8TRowDecoderDriverPage_2PD8R_wl2 
-xbulkcon_0_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_1_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_2_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_3_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_4_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_5_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_6_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_7_ (vdd vss) DP8TRowDecoderBulkConn 
-xbulkcon_8_ (vdd vss) DP8TRowDecoderBulkConn 
+xpredec (vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ page_1_ page_2_ page_3_ page_4_ page_5_ page_6_ page_7_ page_8_ page_9_ page_10_ page_11_ page_12_ page_13_ page_14_ page_15_) dp8trowpredecoders_3_4b_wl2 
+xpage_0_ (vss vdd wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_0_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_1_ (vss vdd wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_1_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_2_ (vss vdd wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_2_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_3_ (vss vdd wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_3_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_4_ (vss vdd wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_4_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_5_ (vss vdd wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_5_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_6_ (vss vdd wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_6_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_7_ (vss vdd wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_7_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_8_ (vss vdd wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_8_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_9_ (vss vdd wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_9_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_10_ (vss vdd wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_10_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_11_ (vss vdd wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_11_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_12_ (vss vdd wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_12_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_13_ (vss vdd wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_13_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_14_ (vss vdd wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_14_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xpage_15_ (vss vdd wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ pd_0__0_ pd_0__1_ pd_0__2_ pd_0__3_ pd_0__4_ pd_0__5_ pd_0__6_ pd_0__7_ page_15_ wl_en) dp8trowdecoderdriverpage_2pd8r_wl2 
+xbulkcon_0_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_1_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_2_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_3_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_4_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_5_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_6_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_7_ (vdd vss) dp8trowdecoderbulkconn 
+xbulkcon_8_ (vdd vss) dp8trowdecoderbulkconn 
 ends
 
 subckt dp8trowperiphery_3_4_2_wl2(vss vdd clk a_0_ a_1_ a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_ mux_0_ mux_1_ mux_2_ mux_3_ columnclk precharge_n we_en)
-xclkgen (vss vdd clk decodeclk columnclk precharge_n wl_en we_en) DP8TClockGenerator_8S1R 
-xcoldec (vss vdd decodeclk a_0_ a_1_ mux_0_ mux_1_ mux_2_ mux_3_) DP8TLatchedDecoder_2A2R 
-xrowdec (vss vdd a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ decodeclk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_) DP8TRowDecoder_3_4B_wl2 
+xclkgen (vss vdd clk decodeclk columnclk precharge_n wl_en we_en) dp8tclockgenerator_8s1r 
+xcoldec (vss vdd decodeclk a_0_ a_1_ mux_0_ mux_1_ mux_2_ mux_3_) dp8tlatcheddecoder_2a2r 
+xrowdec (vss vdd a_2_ a_3_ a_4_ a_5_ a_6_ a_7_ a_8_ decodeclk wl_en wl_0_ wl_1_ wl_2_ wl_3_ wl_4_ wl_5_ wl_6_ wl_7_ wl_8_ wl_9_ wl_10_ wl_11_ wl_12_ wl_13_ wl_14_ wl_15_ wl_16_ wl_17_ wl_18_ wl_19_ wl_20_ wl_21_ wl_22_ wl_23_ wl_24_ wl_25_ wl_26_ wl_27_ wl_28_ wl_29_ wl_30_ wl_31_ wl_32_ wl_33_ wl_34_ wl_35_ wl_36_ wl_37_ wl_38_ wl_39_ wl_40_ wl_41_ wl_42_ wl_43_ wl_44_ wl_45_ wl_46_ wl_47_ wl_48_ wl_49_ wl_50_ wl_51_ wl_52_ wl_53_ wl_54_ wl_55_ wl_56_ wl_57_ wl_58_ wl_59_ wl_60_ wl_61_ wl_62_ wl_63_ wl_64_ wl_65_ wl_66_ wl_67_ wl_68_ wl_69_ wl_70_ wl_71_ wl_72_ wl_73_ wl_74_ wl_75_ wl_76_ wl_77_ wl_78_ wl_79_ wl_80_ wl_81_ wl_82_ wl_83_ wl_84_ wl_85_ wl_86_ wl_87_ wl_88_ wl_89_ wl_90_ wl_91_ wl_92_ wl_93_ wl_94_ wl_95_ wl_96_ wl_97_ wl_98_ wl_99_ wl_100_ wl_101_ wl_102_ wl_103_ wl_104_ wl_105_ wl_106_ wl_107_ wl_108_ wl_109_ wl_110_ wl_111_ wl_112_ wl_113_ wl_114_ wl_115_ wl_116_ wl_117_ wl_118_ wl_119_ wl_120_ wl_121_ wl_122_ wl_123_ wl_124_ wl_125_ wl_126_ wl_127_) dp8trowdecoder_3_4b_wl2 
 ends
 
 subckt dp8tcell(vss substrate vdd nwell wl1 wl2 bl1 bl1_n bl2 bl2_n)
@@ -899,65 +898,65 @@ xpg2n (bit_n wl2 bl2_n substrate) sg13_lv_nmos  l=0.13um w=0.2um
 ends
 
 subckt dp8tarray_2x1(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) DP8TCell 
-xinst1x0 (vss substrate vdd nwell wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) DP8TCell 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) dp8tcell 
+xinst1x0 (vss substrate vdd nwell wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) dp8tcell 
 ends
 
 subckt dp8tarray_2x2(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) DP8TArray_2X1 
-xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) DP8TArray_2X1 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_) dp8tarray_2x1 
+xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) dp8tarray_2x1 
 ends
 
 subckt dp8tarray_4x2(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) DP8TArray_2X2 
-xinst1x0 (vss substrate vdd nwell wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) DP8TArray_2X2 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) dp8tarray_2x2 
+xinst1x0 (vss substrate vdd nwell wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) dp8tarray_2x2 
 ends
 
 subckt dp8tarray_4x4(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) DP8TArray_4X2 
-xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TArray_4X2 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) dp8tarray_4x2 
+xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tarray_4x2 
 ends
 
 subckt dp8tarray_8x4(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TArray_4X4 
-xinst1x0 (vss substrate vdd nwell wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TArray_4X4 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tarray_4x4 
+xinst1x0 (vss substrate vdd nwell wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tarray_4x4 
 ends
 
 subckt dp8tarray_8x8(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TArray_8X4 
-xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TArray_8X4 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tarray_8x4 
+xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tarray_8x4 
 ends
 
 subckt dp8tarray_16x8(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TArray_8X8 
-xinst1x0 (vss substrate vdd nwell wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TArray_8X8 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tarray_8x8 
+xinst1x0 (vss substrate vdd nwell wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tarray_8x8 
 ends
 
 subckt dp8tarray_16x16(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TArray_16X8 
-xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) DP8TArray_16X8 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tarray_16x8 
+xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) dp8tarray_16x8 
 ends
 
 subckt dp8tarray_16x32(vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_)
-xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) DP8TArray_16X16 
-xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_16X16 
+xinst0x0 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) dp8tarray_16x16 
+xinst0x1 (vss substrate vdd nwell wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_16x16 
 ends
 
 subckt dp8tbulkconnrow_32(vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_)
-xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) DP8TBulkConnRow_16 
-xinst1 (vss vdd bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_16 
+xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) dp8tbulkconnrow_16 
+xinst1 (vss vdd bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_16 
 ends
 
 subckt dp8tarray_32x32(vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_)
-xinst0x0 (vss vss vdd vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_16X32 
-xinst1x0 (vss vss vdd vdd wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_16X32 
-xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_32 
+xinst0x0 (vss vss vdd vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_16x32 
+xinst1x0 (vss vss vdd vdd wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_16x32 
+xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_32 
 ends
 
 subckt dp8tarray_64x32(vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_)
-xinst0x0 (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_32X32 
-xinst1x0 (vss vdd wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_32X32 
-xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_32 
+xinst0x0 (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_32x32 
+xinst1x0 (vss vdd wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_32x32 
+xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_32 
 ends
 
 subckt dp8tbulkconn(vdd vss bl1 bl2 bl1_n bl2_n)
@@ -965,31 +964,31 @@ subckt dp8tbulkconn(vdd vss bl1 bl2 bl1_n bl2_n)
 ends
 
 subckt dp8tbulkconnrow_2(vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_)
-xinst0 (vdd vss bl1_0_ bl2_0_ bl1_n_0_ bl2_n_0_) DP8TBulkConn 
-xinst1 (vdd vss bl1_1_ bl2_1_ bl1_n_1_ bl2_n_1_) DP8TBulkConn 
+xinst0 (vdd vss bl1_0_ bl2_0_ bl1_n_0_ bl2_n_0_) dp8tbulkconn 
+xinst1 (vdd vss bl1_1_ bl2_1_ bl1_n_1_ bl2_n_1_) dp8tbulkconn 
 ends
 
 subckt dp8tbulkconnrow_4(vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_)
-xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) DP8TBulkConnRow_2 
-xinst1 (vss vdd bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TBulkConnRow_2 
+xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_) dp8tbulkconnrow_2 
+xinst1 (vss vdd bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tbulkconnrow_2 
 ends
 
 subckt dp8tbulkconnrow_8(vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_)
-xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) DP8TBulkConnRow_4 
-xinst1 (vss vdd bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TBulkConnRow_4 
+xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_) dp8tbulkconnrow_4 
+xinst1 (vss vdd bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tbulkconnrow_4 
 ends
 
 subckt dp8tbulkconnrow_16(vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_)
-xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) DP8TBulkConnRow_8 
-xinst1 (vss vdd bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) DP8TBulkConnRow_8 
+xinst0 (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_) dp8tbulkconnrow_8 
+xinst1 (vss vdd bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_) dp8tbulkconnrow_8 
 ends
 
 subckt dp8tarray_128x32bc(vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_)
-xinst0x0 (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_64X32 
-xinst1x0 (vss vdd wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_64X32 
-xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_32 
-xbottombcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_32 
-xtopbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TBulkConnRow_32 
+xinst0x0 (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_64x32 
+xinst1x0 (vss vdd wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_64x32 
+xbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_32 
+xbottombcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_32 
+xtopbcrow (vss vdd bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tbulkconnrow_32 
 ends
 
 subckt dp8tprecharge_bl1(vdd nwell bl bl_n precharge_n)
@@ -1026,55 +1025,55 @@ xwenand (vdd vss we_n we_l we_en) nand2_x0
 ends
 
 subckt dp8tcolumnperiphery_8b4m_bl1(vss vdd nwell clk precharge_n we we_en q_0_ d_0_ bl_0_ bl_n_0_ bl_1_ bl_n_1_ bl_2_ bl_n_2_ bl_3_ bl_n_3_ q_1_ d_1_ bl_4_ bl_n_4_ bl_5_ bl_n_5_ bl_6_ bl_n_6_ bl_7_ bl_n_7_ q_2_ d_2_ bl_8_ bl_n_8_ bl_9_ bl_n_9_ bl_10_ bl_n_10_ bl_11_ bl_n_11_ q_3_ d_3_ bl_12_ bl_n_12_ bl_13_ bl_n_13_ bl_14_ bl_n_14_ bl_15_ bl_n_15_ q_4_ d_4_ bl_16_ bl_n_16_ bl_17_ bl_n_17_ bl_18_ bl_n_18_ bl_19_ bl_n_19_ q_5_ d_5_ bl_20_ bl_n_20_ bl_21_ bl_n_21_ bl_22_ bl_n_22_ bl_23_ bl_n_23_ q_6_ d_6_ bl_24_ bl_n_24_ bl_25_ bl_n_25_ bl_26_ bl_n_26_ bl_27_ bl_n_27_ q_7_ d_7_ bl_28_ bl_n_28_ bl_29_ bl_n_29_ bl_30_ bl_n_30_ bl_31_ bl_n_31_ mux_0_ mux_1_ mux_2_ mux_3_)
-xprecharge_0_ (vdd nwell bl_0_ bl_n_0_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_1_ (vdd nwell bl_1_ bl_n_1_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_2_ (vdd nwell bl_2_ bl_n_2_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_3_ (vdd nwell bl_3_ bl_n_3_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_4_ (vdd nwell bl_4_ bl_n_4_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_5_ (vdd nwell bl_5_ bl_n_5_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_6_ (vdd nwell bl_6_ bl_n_6_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_7_ (vdd nwell bl_7_ bl_n_7_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_8_ (vdd nwell bl_8_ bl_n_8_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_9_ (vdd nwell bl_9_ bl_n_9_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_10_ (vdd nwell bl_10_ bl_n_10_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_11_ (vdd nwell bl_11_ bl_n_11_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_12_ (vdd nwell bl_12_ bl_n_12_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_13_ (vdd nwell bl_13_ bl_n_13_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_14_ (vdd nwell bl_14_ bl_n_14_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_15_ (vdd nwell bl_15_ bl_n_15_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_16_ (vdd nwell bl_16_ bl_n_16_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_17_ (vdd nwell bl_17_ bl_n_17_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_18_ (vdd nwell bl_18_ bl_n_18_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_19_ (vdd nwell bl_19_ bl_n_19_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_20_ (vdd nwell bl_20_ bl_n_20_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_21_ (vdd nwell bl_21_ bl_n_21_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_22_ (vdd nwell bl_22_ bl_n_22_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_23_ (vdd nwell bl_23_ bl_n_23_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_24_ (vdd nwell bl_24_ bl_n_24_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_25_ (vdd nwell bl_25_ bl_n_25_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_26_ (vdd nwell bl_26_ bl_n_26_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_27_ (vdd nwell bl_27_ bl_n_27_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_28_ (vdd nwell bl_28_ bl_n_28_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_29_ (vdd nwell bl_29_ bl_n_29_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_30_ (vdd nwell bl_30_ bl_n_30_ precharge_n) DP8TPrecharge_bl1 
-xprecharge_31_ (vdd nwell bl_31_ bl_n_31_ precharge_n) DP8TPrecharge_bl1 
-xcolmux_0_ (bl_0_ bl_n_0_ mux_0_ bl_1_ bl_n_1_ mux_1_ bl_2_ bl_n_2_ mux_2_ bl_3_ bl_n_3_ mux_3_ vss muxbl_0_ muxbl_n_0_) DP8TColMux_4C26L699W_bl1 
-xcolmux_1_ (bl_4_ bl_n_4_ mux_0_ bl_5_ bl_n_5_ mux_1_ bl_6_ bl_n_6_ mux_2_ bl_7_ bl_n_7_ mux_3_ vss muxbl_1_ muxbl_n_1_) DP8TColMux_4C26L699W_bl1 
-xcolmux_2_ (bl_8_ bl_n_8_ mux_0_ bl_9_ bl_n_9_ mux_1_ bl_10_ bl_n_10_ mux_2_ bl_11_ bl_n_11_ mux_3_ vss muxbl_2_ muxbl_n_2_) DP8TColMux_4C26L699W_bl1 
-xcolmux_3_ (bl_12_ bl_n_12_ mux_0_ bl_13_ bl_n_13_ mux_1_ bl_14_ bl_n_14_ mux_2_ bl_15_ bl_n_15_ mux_3_ vss muxbl_3_ muxbl_n_3_) DP8TColMux_4C26L699W_bl1 
-xcolmux_4_ (bl_16_ bl_n_16_ mux_0_ bl_17_ bl_n_17_ mux_1_ bl_18_ bl_n_18_ mux_2_ bl_19_ bl_n_19_ mux_3_ vss muxbl_4_ muxbl_n_4_) DP8TColMux_4C26L699W_bl1 
-xcolmux_5_ (bl_20_ bl_n_20_ mux_0_ bl_21_ bl_n_21_ mux_1_ bl_22_ bl_n_22_ mux_2_ bl_23_ bl_n_23_ mux_3_ vss muxbl_5_ muxbl_n_5_) DP8TColMux_4C26L699W_bl1 
-xcolmux_6_ (bl_24_ bl_n_24_ mux_0_ bl_25_ bl_n_25_ mux_1_ bl_26_ bl_n_26_ mux_2_ bl_27_ bl_n_27_ mux_3_ vss muxbl_6_ muxbl_n_6_) DP8TColMux_4C26L699W_bl1 
-xcolmux_7_ (bl_28_ bl_n_28_ mux_0_ bl_29_ bl_n_29_ mux_1_ bl_30_ bl_n_30_ mux_2_ bl_31_ bl_n_31_ mux_3_ vss muxbl_7_ muxbl_n_7_) DP8TColMux_4C26L699W_bl1 
-xrw_0_ (vss vdd d_0_ q_0_ muxbl_0_ muxbl_n_0_ intclk we_n) DP8TReadWrite_4M 
-xrw_1_ (vss vdd d_1_ q_1_ muxbl_1_ muxbl_n_1_ intclk we_n) DP8TReadWrite_4M 
-xrw_2_ (vss vdd d_2_ q_2_ muxbl_2_ muxbl_n_2_ intclk we_n) DP8TReadWrite_4M 
-xrw_3_ (vss vdd d_3_ q_3_ muxbl_3_ muxbl_n_3_ intclk we_n) DP8TReadWrite_4M 
-xrw_4_ (vss vdd d_4_ q_4_ muxbl_4_ muxbl_n_4_ intclk we_n) DP8TReadWrite_4M 
-xrw_5_ (vss vdd d_5_ q_5_ muxbl_5_ muxbl_n_5_ intclk we_n) DP8TReadWrite_4M 
-xrw_6_ (vss vdd d_6_ q_6_ muxbl_6_ muxbl_n_6_ intclk we_n) DP8TReadWrite_4M 
-xrw_7_ (vss vdd d_7_ q_7_ muxbl_7_ muxbl_n_7_ intclk we_n) DP8TReadWrite_4M 
-xclkwe (vss vdd clk intclk we we_en we_n) DP8TClockWE 
+xprecharge_0_ (vdd nwell bl_0_ bl_n_0_ precharge_n) dp8tprecharge_bl1 
+xprecharge_1_ (vdd nwell bl_1_ bl_n_1_ precharge_n) dp8tprecharge_bl1 
+xprecharge_2_ (vdd nwell bl_2_ bl_n_2_ precharge_n) dp8tprecharge_bl1 
+xprecharge_3_ (vdd nwell bl_3_ bl_n_3_ precharge_n) dp8tprecharge_bl1 
+xprecharge_4_ (vdd nwell bl_4_ bl_n_4_ precharge_n) dp8tprecharge_bl1 
+xprecharge_5_ (vdd nwell bl_5_ bl_n_5_ precharge_n) dp8tprecharge_bl1 
+xprecharge_6_ (vdd nwell bl_6_ bl_n_6_ precharge_n) dp8tprecharge_bl1 
+xprecharge_7_ (vdd nwell bl_7_ bl_n_7_ precharge_n) dp8tprecharge_bl1 
+xprecharge_8_ (vdd nwell bl_8_ bl_n_8_ precharge_n) dp8tprecharge_bl1 
+xprecharge_9_ (vdd nwell bl_9_ bl_n_9_ precharge_n) dp8tprecharge_bl1 
+xprecharge_10_ (vdd nwell bl_10_ bl_n_10_ precharge_n) dp8tprecharge_bl1 
+xprecharge_11_ (vdd nwell bl_11_ bl_n_11_ precharge_n) dp8tprecharge_bl1 
+xprecharge_12_ (vdd nwell bl_12_ bl_n_12_ precharge_n) dp8tprecharge_bl1 
+xprecharge_13_ (vdd nwell bl_13_ bl_n_13_ precharge_n) dp8tprecharge_bl1 
+xprecharge_14_ (vdd nwell bl_14_ bl_n_14_ precharge_n) dp8tprecharge_bl1 
+xprecharge_15_ (vdd nwell bl_15_ bl_n_15_ precharge_n) dp8tprecharge_bl1 
+xprecharge_16_ (vdd nwell bl_16_ bl_n_16_ precharge_n) dp8tprecharge_bl1 
+xprecharge_17_ (vdd nwell bl_17_ bl_n_17_ precharge_n) dp8tprecharge_bl1 
+xprecharge_18_ (vdd nwell bl_18_ bl_n_18_ precharge_n) dp8tprecharge_bl1 
+xprecharge_19_ (vdd nwell bl_19_ bl_n_19_ precharge_n) dp8tprecharge_bl1 
+xprecharge_20_ (vdd nwell bl_20_ bl_n_20_ precharge_n) dp8tprecharge_bl1 
+xprecharge_21_ (vdd nwell bl_21_ bl_n_21_ precharge_n) dp8tprecharge_bl1 
+xprecharge_22_ (vdd nwell bl_22_ bl_n_22_ precharge_n) dp8tprecharge_bl1 
+xprecharge_23_ (vdd nwell bl_23_ bl_n_23_ precharge_n) dp8tprecharge_bl1 
+xprecharge_24_ (vdd nwell bl_24_ bl_n_24_ precharge_n) dp8tprecharge_bl1 
+xprecharge_25_ (vdd nwell bl_25_ bl_n_25_ precharge_n) dp8tprecharge_bl1 
+xprecharge_26_ (vdd nwell bl_26_ bl_n_26_ precharge_n) dp8tprecharge_bl1 
+xprecharge_27_ (vdd nwell bl_27_ bl_n_27_ precharge_n) dp8tprecharge_bl1 
+xprecharge_28_ (vdd nwell bl_28_ bl_n_28_ precharge_n) dp8tprecharge_bl1 
+xprecharge_29_ (vdd nwell bl_29_ bl_n_29_ precharge_n) dp8tprecharge_bl1 
+xprecharge_30_ (vdd nwell bl_30_ bl_n_30_ precharge_n) dp8tprecharge_bl1 
+xprecharge_31_ (vdd nwell bl_31_ bl_n_31_ precharge_n) dp8tprecharge_bl1 
+xcolmux_0_ (bl_0_ bl_n_0_ mux_0_ bl_1_ bl_n_1_ mux_1_ bl_2_ bl_n_2_ mux_2_ bl_3_ bl_n_3_ mux_3_ vss muxbl_0_ muxbl_n_0_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_1_ (bl_4_ bl_n_4_ mux_0_ bl_5_ bl_n_5_ mux_1_ bl_6_ bl_n_6_ mux_2_ bl_7_ bl_n_7_ mux_3_ vss muxbl_1_ muxbl_n_1_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_2_ (bl_8_ bl_n_8_ mux_0_ bl_9_ bl_n_9_ mux_1_ bl_10_ bl_n_10_ mux_2_ bl_11_ bl_n_11_ mux_3_ vss muxbl_2_ muxbl_n_2_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_3_ (bl_12_ bl_n_12_ mux_0_ bl_13_ bl_n_13_ mux_1_ bl_14_ bl_n_14_ mux_2_ bl_15_ bl_n_15_ mux_3_ vss muxbl_3_ muxbl_n_3_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_4_ (bl_16_ bl_n_16_ mux_0_ bl_17_ bl_n_17_ mux_1_ bl_18_ bl_n_18_ mux_2_ bl_19_ bl_n_19_ mux_3_ vss muxbl_4_ muxbl_n_4_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_5_ (bl_20_ bl_n_20_ mux_0_ bl_21_ bl_n_21_ mux_1_ bl_22_ bl_n_22_ mux_2_ bl_23_ bl_n_23_ mux_3_ vss muxbl_5_ muxbl_n_5_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_6_ (bl_24_ bl_n_24_ mux_0_ bl_25_ bl_n_25_ mux_1_ bl_26_ bl_n_26_ mux_2_ bl_27_ bl_n_27_ mux_3_ vss muxbl_6_ muxbl_n_6_) dp8tcolmux_4c26l699w_bl1 
+xcolmux_7_ (bl_28_ bl_n_28_ mux_0_ bl_29_ bl_n_29_ mux_1_ bl_30_ bl_n_30_ mux_2_ bl_31_ bl_n_31_ mux_3_ vss muxbl_7_ muxbl_n_7_) dp8tcolmux_4c26l699w_bl1 
+xrw_0_ (vss vdd d_0_ q_0_ muxbl_0_ muxbl_n_0_ intclk we_n) dp8treadwrite_4m 
+xrw_1_ (vss vdd d_1_ q_1_ muxbl_1_ muxbl_n_1_ intclk we_n) dp8treadwrite_4m 
+xrw_2_ (vss vdd d_2_ q_2_ muxbl_2_ muxbl_n_2_ intclk we_n) dp8treadwrite_4m 
+xrw_3_ (vss vdd d_3_ q_3_ muxbl_3_ muxbl_n_3_ intclk we_n) dp8treadwrite_4m 
+xrw_4_ (vss vdd d_4_ q_4_ muxbl_4_ muxbl_n_4_ intclk we_n) dp8treadwrite_4m 
+xrw_5_ (vss vdd d_5_ q_5_ muxbl_5_ muxbl_n_5_ intclk we_n) dp8treadwrite_4m 
+xrw_6_ (vss vdd d_6_ q_6_ muxbl_6_ muxbl_n_6_ intclk we_n) dp8treadwrite_4m 
+xrw_7_ (vss vdd d_7_ q_7_ muxbl_7_ muxbl_n_7_ intclk we_n) dp8treadwrite_4m 
+xclkwe (vss vdd clk intclk we we_en we_n) dp8tclockwe 
 ends
 
 subckt dp8tprecharge_bl2(vdd nwell bl bl_n precharge_n)
@@ -1149,73 +1148,73 @@ xpmos_1_ (q _i_n vdd vdd) sg13_lv_pmos  l=0.13um w=1.06um
 ends
 
 subckt dp8tcolumnperiphery_8b4mr_bl2(vss vdd nwell clk precharge_n we we_en q_0_ d_0_ bl_0_ bl_n_0_ bl_1_ bl_n_1_ bl_2_ bl_n_2_ bl_3_ bl_n_3_ q_1_ d_1_ bl_4_ bl_n_4_ bl_5_ bl_n_5_ bl_6_ bl_n_6_ bl_7_ bl_n_7_ q_2_ d_2_ bl_8_ bl_n_8_ bl_9_ bl_n_9_ bl_10_ bl_n_10_ bl_11_ bl_n_11_ q_3_ d_3_ bl_12_ bl_n_12_ bl_13_ bl_n_13_ bl_14_ bl_n_14_ bl_15_ bl_n_15_ q_4_ d_4_ bl_16_ bl_n_16_ bl_17_ bl_n_17_ bl_18_ bl_n_18_ bl_19_ bl_n_19_ q_5_ d_5_ bl_20_ bl_n_20_ bl_21_ bl_n_21_ bl_22_ bl_n_22_ bl_23_ bl_n_23_ q_6_ d_6_ bl_24_ bl_n_24_ bl_25_ bl_n_25_ bl_26_ bl_n_26_ bl_27_ bl_n_27_ q_7_ d_7_ bl_28_ bl_n_28_ bl_29_ bl_n_29_ bl_30_ bl_n_30_ bl_31_ bl_n_31_ mux_0_ mux_1_ mux_2_ mux_3_)
-xprecharge_0_ (vdd nwell bl_0_ bl_n_0_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_1_ (vdd nwell bl_1_ bl_n_1_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_2_ (vdd nwell bl_2_ bl_n_2_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_3_ (vdd nwell bl_3_ bl_n_3_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_4_ (vdd nwell bl_4_ bl_n_4_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_5_ (vdd nwell bl_5_ bl_n_5_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_6_ (vdd nwell bl_6_ bl_n_6_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_7_ (vdd nwell bl_7_ bl_n_7_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_8_ (vdd nwell bl_8_ bl_n_8_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_9_ (vdd nwell bl_9_ bl_n_9_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_10_ (vdd nwell bl_10_ bl_n_10_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_11_ (vdd nwell bl_11_ bl_n_11_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_12_ (vdd nwell bl_12_ bl_n_12_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_13_ (vdd nwell bl_13_ bl_n_13_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_14_ (vdd nwell bl_14_ bl_n_14_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_15_ (vdd nwell bl_15_ bl_n_15_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_16_ (vdd nwell bl_16_ bl_n_16_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_17_ (vdd nwell bl_17_ bl_n_17_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_18_ (vdd nwell bl_18_ bl_n_18_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_19_ (vdd nwell bl_19_ bl_n_19_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_20_ (vdd nwell bl_20_ bl_n_20_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_21_ (vdd nwell bl_21_ bl_n_21_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_22_ (vdd nwell bl_22_ bl_n_22_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_23_ (vdd nwell bl_23_ bl_n_23_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_24_ (vdd nwell bl_24_ bl_n_24_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_25_ (vdd nwell bl_25_ bl_n_25_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_26_ (vdd nwell bl_26_ bl_n_26_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_27_ (vdd nwell bl_27_ bl_n_27_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_28_ (vdd nwell bl_28_ bl_n_28_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_29_ (vdd nwell bl_29_ bl_n_29_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_30_ (vdd nwell bl_30_ bl_n_30_ precharge_n) DP8TPrecharge_bl2 
-xprecharge_31_ (vdd nwell bl_31_ bl_n_31_ precharge_n) DP8TPrecharge_bl2 
-xcolmux_0_ (bl_3_ bl_n_3_ mux_3_ bl_2_ bl_n_2_ mux_2_ bl_1_ bl_n_1_ mux_1_ bl_0_ bl_n_0_ mux_0_ vss muxbl_0_ muxbl_n_0_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_1_ (bl_7_ bl_n_7_ mux_3_ bl_6_ bl_n_6_ mux_2_ bl_5_ bl_n_5_ mux_1_ bl_4_ bl_n_4_ mux_0_ vss muxbl_1_ muxbl_n_1_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_2_ (bl_11_ bl_n_11_ mux_3_ bl_10_ bl_n_10_ mux_2_ bl_9_ bl_n_9_ mux_1_ bl_8_ bl_n_8_ mux_0_ vss muxbl_2_ muxbl_n_2_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_3_ (bl_15_ bl_n_15_ mux_3_ bl_14_ bl_n_14_ mux_2_ bl_13_ bl_n_13_ mux_1_ bl_12_ bl_n_12_ mux_0_ vss muxbl_3_ muxbl_n_3_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_4_ (bl_19_ bl_n_19_ mux_3_ bl_18_ bl_n_18_ mux_2_ bl_17_ bl_n_17_ mux_1_ bl_16_ bl_n_16_ mux_0_ vss muxbl_4_ muxbl_n_4_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_5_ (bl_23_ bl_n_23_ mux_3_ bl_22_ bl_n_22_ mux_2_ bl_21_ bl_n_21_ mux_1_ bl_20_ bl_n_20_ mux_0_ vss muxbl_5_ muxbl_n_5_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_6_ (bl_27_ bl_n_27_ mux_3_ bl_26_ bl_n_26_ mux_2_ bl_25_ bl_n_25_ mux_1_ bl_24_ bl_n_24_ mux_0_ vss muxbl_6_ muxbl_n_6_) DP8TColMux_4C26L699WR_bl2 
-xcolmux_7_ (bl_31_ bl_n_31_ mux_3_ bl_30_ bl_n_30_ mux_2_ bl_29_ bl_n_29_ mux_1_ bl_28_ bl_n_28_ mux_0_ vss muxbl_7_ muxbl_n_7_) DP8TColMux_4C26L699WR_bl2 
-xrw_0_ (vss vdd d_0_ q_0_ muxbl_0_ muxbl_n_0_ intclk we_n) DP8TReadWrite_4M 
-xrw_1_ (vss vdd d_1_ q_1_ muxbl_1_ muxbl_n_1_ intclk we_n) DP8TReadWrite_4M 
-xrw_2_ (vss vdd d_2_ q_2_ muxbl_2_ muxbl_n_2_ intclk we_n) DP8TReadWrite_4M 
-xrw_3_ (vss vdd d_3_ q_3_ muxbl_3_ muxbl_n_3_ intclk we_n) DP8TReadWrite_4M 
-xrw_4_ (vss vdd d_4_ q_4_ muxbl_4_ muxbl_n_4_ intclk we_n) DP8TReadWrite_4M 
-xrw_5_ (vss vdd d_5_ q_5_ muxbl_5_ muxbl_n_5_ intclk we_n) DP8TReadWrite_4M 
-xrw_6_ (vss vdd d_6_ q_6_ muxbl_6_ muxbl_n_6_ intclk we_n) DP8TReadWrite_4M 
-xrw_7_ (vss vdd d_7_ q_7_ muxbl_7_ muxbl_n_7_ intclk we_n) DP8TReadWrite_4M 
-xclkwe (vss vdd clk intclk we we_en we_n) DP8TClockWE 
+xprecharge_0_ (vdd nwell bl_0_ bl_n_0_ precharge_n) dp8tprecharge_bl2 
+xprecharge_1_ (vdd nwell bl_1_ bl_n_1_ precharge_n) dp8tprecharge_bl2 
+xprecharge_2_ (vdd nwell bl_2_ bl_n_2_ precharge_n) dp8tprecharge_bl2 
+xprecharge_3_ (vdd nwell bl_3_ bl_n_3_ precharge_n) dp8tprecharge_bl2 
+xprecharge_4_ (vdd nwell bl_4_ bl_n_4_ precharge_n) dp8tprecharge_bl2 
+xprecharge_5_ (vdd nwell bl_5_ bl_n_5_ precharge_n) dp8tprecharge_bl2 
+xprecharge_6_ (vdd nwell bl_6_ bl_n_6_ precharge_n) dp8tprecharge_bl2 
+xprecharge_7_ (vdd nwell bl_7_ bl_n_7_ precharge_n) dp8tprecharge_bl2 
+xprecharge_8_ (vdd nwell bl_8_ bl_n_8_ precharge_n) dp8tprecharge_bl2 
+xprecharge_9_ (vdd nwell bl_9_ bl_n_9_ precharge_n) dp8tprecharge_bl2 
+xprecharge_10_ (vdd nwell bl_10_ bl_n_10_ precharge_n) dp8tprecharge_bl2 
+xprecharge_11_ (vdd nwell bl_11_ bl_n_11_ precharge_n) dp8tprecharge_bl2 
+xprecharge_12_ (vdd nwell bl_12_ bl_n_12_ precharge_n) dp8tprecharge_bl2 
+xprecharge_13_ (vdd nwell bl_13_ bl_n_13_ precharge_n) dp8tprecharge_bl2 
+xprecharge_14_ (vdd nwell bl_14_ bl_n_14_ precharge_n) dp8tprecharge_bl2 
+xprecharge_15_ (vdd nwell bl_15_ bl_n_15_ precharge_n) dp8tprecharge_bl2 
+xprecharge_16_ (vdd nwell bl_16_ bl_n_16_ precharge_n) dp8tprecharge_bl2 
+xprecharge_17_ (vdd nwell bl_17_ bl_n_17_ precharge_n) dp8tprecharge_bl2 
+xprecharge_18_ (vdd nwell bl_18_ bl_n_18_ precharge_n) dp8tprecharge_bl2 
+xprecharge_19_ (vdd nwell bl_19_ bl_n_19_ precharge_n) dp8tprecharge_bl2 
+xprecharge_20_ (vdd nwell bl_20_ bl_n_20_ precharge_n) dp8tprecharge_bl2 
+xprecharge_21_ (vdd nwell bl_21_ bl_n_21_ precharge_n) dp8tprecharge_bl2 
+xprecharge_22_ (vdd nwell bl_22_ bl_n_22_ precharge_n) dp8tprecharge_bl2 
+xprecharge_23_ (vdd nwell bl_23_ bl_n_23_ precharge_n) dp8tprecharge_bl2 
+xprecharge_24_ (vdd nwell bl_24_ bl_n_24_ precharge_n) dp8tprecharge_bl2 
+xprecharge_25_ (vdd nwell bl_25_ bl_n_25_ precharge_n) dp8tprecharge_bl2 
+xprecharge_26_ (vdd nwell bl_26_ bl_n_26_ precharge_n) dp8tprecharge_bl2 
+xprecharge_27_ (vdd nwell bl_27_ bl_n_27_ precharge_n) dp8tprecharge_bl2 
+xprecharge_28_ (vdd nwell bl_28_ bl_n_28_ precharge_n) dp8tprecharge_bl2 
+xprecharge_29_ (vdd nwell bl_29_ bl_n_29_ precharge_n) dp8tprecharge_bl2 
+xprecharge_30_ (vdd nwell bl_30_ bl_n_30_ precharge_n) dp8tprecharge_bl2 
+xprecharge_31_ (vdd nwell bl_31_ bl_n_31_ precharge_n) dp8tprecharge_bl2 
+xcolmux_0_ (bl_3_ bl_n_3_ mux_3_ bl_2_ bl_n_2_ mux_2_ bl_1_ bl_n_1_ mux_1_ bl_0_ bl_n_0_ mux_0_ vss muxbl_0_ muxbl_n_0_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_1_ (bl_7_ bl_n_7_ mux_3_ bl_6_ bl_n_6_ mux_2_ bl_5_ bl_n_5_ mux_1_ bl_4_ bl_n_4_ mux_0_ vss muxbl_1_ muxbl_n_1_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_2_ (bl_11_ bl_n_11_ mux_3_ bl_10_ bl_n_10_ mux_2_ bl_9_ bl_n_9_ mux_1_ bl_8_ bl_n_8_ mux_0_ vss muxbl_2_ muxbl_n_2_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_3_ (bl_15_ bl_n_15_ mux_3_ bl_14_ bl_n_14_ mux_2_ bl_13_ bl_n_13_ mux_1_ bl_12_ bl_n_12_ mux_0_ vss muxbl_3_ muxbl_n_3_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_4_ (bl_19_ bl_n_19_ mux_3_ bl_18_ bl_n_18_ mux_2_ bl_17_ bl_n_17_ mux_1_ bl_16_ bl_n_16_ mux_0_ vss muxbl_4_ muxbl_n_4_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_5_ (bl_23_ bl_n_23_ mux_3_ bl_22_ bl_n_22_ mux_2_ bl_21_ bl_n_21_ mux_1_ bl_20_ bl_n_20_ mux_0_ vss muxbl_5_ muxbl_n_5_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_6_ (bl_27_ bl_n_27_ mux_3_ bl_26_ bl_n_26_ mux_2_ bl_25_ bl_n_25_ mux_1_ bl_24_ bl_n_24_ mux_0_ vss muxbl_6_ muxbl_n_6_) dp8tcolmux_4c26l699wr_bl2 
+xcolmux_7_ (bl_31_ bl_n_31_ mux_3_ bl_30_ bl_n_30_ mux_2_ bl_29_ bl_n_29_ mux_1_ bl_28_ bl_n_28_ mux_0_ vss muxbl_7_ muxbl_n_7_) dp8tcolmux_4c26l699wr_bl2 
+xrw_0_ (vss vdd d_0_ q_0_ muxbl_0_ muxbl_n_0_ intclk we_n) dp8treadwrite_4m 
+xrw_1_ (vss vdd d_1_ q_1_ muxbl_1_ muxbl_n_1_ intclk we_n) dp8treadwrite_4m 
+xrw_2_ (vss vdd d_2_ q_2_ muxbl_2_ muxbl_n_2_ intclk we_n) dp8treadwrite_4m 
+xrw_3_ (vss vdd d_3_ q_3_ muxbl_3_ muxbl_n_3_ intclk we_n) dp8treadwrite_4m 
+xrw_4_ (vss vdd d_4_ q_4_ muxbl_4_ muxbl_n_4_ intclk we_n) dp8treadwrite_4m 
+xrw_5_ (vss vdd d_5_ q_5_ muxbl_5_ muxbl_n_5_ intclk we_n) dp8treadwrite_4m 
+xrw_6_ (vss vdd d_6_ q_6_ muxbl_6_ muxbl_n_6_ intclk we_n) dp8treadwrite_4m 
+xrw_7_ (vss vdd d_7_ q_7_ muxbl_7_ muxbl_n_7_ intclk we_n) dp8treadwrite_4m 
+xclkwe (vss vdd clk intclk we we_en we_n) dp8tclockwe 
 ends
 
 subckt dp8tcolumn_128r8b4m(vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_ we1 clk1 we_en1 precharge1_n we2 clk2 we_en2 precharge2_n mux1_0_ mux2_0_ mux1_1_ mux2_1_ mux1_2_ mux2_2_ mux1_3_ mux2_3_)
-xarray (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) DP8TArray_128X32BC 
-xperiph1 (vss vdd vdd clk1 precharge1_n we1 we_en1 q1_0_ d1_0_ bl1_0_ bl1_n_0_ bl1_1_ bl1_n_1_ bl1_2_ bl1_n_2_ bl1_3_ bl1_n_3_ q1_1_ d1_1_ bl1_4_ bl1_n_4_ bl1_5_ bl1_n_5_ bl1_6_ bl1_n_6_ bl1_7_ bl1_n_7_ q1_2_ d1_2_ bl1_8_ bl1_n_8_ bl1_9_ bl1_n_9_ bl1_10_ bl1_n_10_ bl1_11_ bl1_n_11_ q1_3_ d1_3_ bl1_12_ bl1_n_12_ bl1_13_ bl1_n_13_ bl1_14_ bl1_n_14_ bl1_15_ bl1_n_15_ q1_4_ d1_4_ bl1_16_ bl1_n_16_ bl1_17_ bl1_n_17_ bl1_18_ bl1_n_18_ bl1_19_ bl1_n_19_ q1_5_ d1_5_ bl1_20_ bl1_n_20_ bl1_21_ bl1_n_21_ bl1_22_ bl1_n_22_ bl1_23_ bl1_n_23_ q1_6_ d1_6_ bl1_24_ bl1_n_24_ bl1_25_ bl1_n_25_ bl1_26_ bl1_n_26_ bl1_27_ bl1_n_27_ q1_7_ d1_7_ bl1_28_ bl1_n_28_ bl1_29_ bl1_n_29_ bl1_30_ bl1_n_30_ bl1_31_ bl1_n_31_ mux1_0_ mux1_1_ mux1_2_ mux1_3_) DP8TColumnPeriphery_8B4M_bl1 
-xperiph2 (vss vdd vdd clk2 precharge2_n we2 we_en2 q2_0_ d2_0_ bl2_0_ bl2_n_0_ bl2_1_ bl2_n_1_ bl2_2_ bl2_n_2_ bl2_3_ bl2_n_3_ q2_1_ d2_1_ bl2_4_ bl2_n_4_ bl2_5_ bl2_n_5_ bl2_6_ bl2_n_6_ bl2_7_ bl2_n_7_ q2_2_ d2_2_ bl2_8_ bl2_n_8_ bl2_9_ bl2_n_9_ bl2_10_ bl2_n_10_ bl2_11_ bl2_n_11_ q2_3_ d2_3_ bl2_12_ bl2_n_12_ bl2_13_ bl2_n_13_ bl2_14_ bl2_n_14_ bl2_15_ bl2_n_15_ q2_4_ d2_4_ bl2_16_ bl2_n_16_ bl2_17_ bl2_n_17_ bl2_18_ bl2_n_18_ bl2_19_ bl2_n_19_ q2_5_ d2_5_ bl2_20_ bl2_n_20_ bl2_21_ bl2_n_21_ bl2_22_ bl2_n_22_ bl2_23_ bl2_n_23_ q2_6_ d2_6_ bl2_24_ bl2_n_24_ bl2_25_ bl2_n_25_ bl2_26_ bl2_n_26_ bl2_27_ bl2_n_27_ q2_7_ d2_7_ bl2_28_ bl2_n_28_ bl2_29_ bl2_n_29_ bl2_30_ bl2_n_30_ bl2_31_ bl2_n_31_ mux2_0_ mux2_1_ mux2_2_ mux2_3_) DP8TColumnPeriphery_8B4MR_bl2 
+xarray (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ bl1_0_ bl1_n_0_ bl2_0_ bl2_n_0_ bl1_1_ bl1_n_1_ bl2_1_ bl2_n_1_ bl1_2_ bl1_n_2_ bl2_2_ bl2_n_2_ bl1_3_ bl1_n_3_ bl2_3_ bl2_n_3_ bl1_4_ bl1_n_4_ bl2_4_ bl2_n_4_ bl1_5_ bl1_n_5_ bl2_5_ bl2_n_5_ bl1_6_ bl1_n_6_ bl2_6_ bl2_n_6_ bl1_7_ bl1_n_7_ bl2_7_ bl2_n_7_ bl1_8_ bl1_n_8_ bl2_8_ bl2_n_8_ bl1_9_ bl1_n_9_ bl2_9_ bl2_n_9_ bl1_10_ bl1_n_10_ bl2_10_ bl2_n_10_ bl1_11_ bl1_n_11_ bl2_11_ bl2_n_11_ bl1_12_ bl1_n_12_ bl2_12_ bl2_n_12_ bl1_13_ bl1_n_13_ bl2_13_ bl2_n_13_ bl1_14_ bl1_n_14_ bl2_14_ bl2_n_14_ bl1_15_ bl1_n_15_ bl2_15_ bl2_n_15_ bl1_16_ bl1_n_16_ bl2_16_ bl2_n_16_ bl1_17_ bl1_n_17_ bl2_17_ bl2_n_17_ bl1_18_ bl1_n_18_ bl2_18_ bl2_n_18_ bl1_19_ bl1_n_19_ bl2_19_ bl2_n_19_ bl1_20_ bl1_n_20_ bl2_20_ bl2_n_20_ bl1_21_ bl1_n_21_ bl2_21_ bl2_n_21_ bl1_22_ bl1_n_22_ bl2_22_ bl2_n_22_ bl1_23_ bl1_n_23_ bl2_23_ bl2_n_23_ bl1_24_ bl1_n_24_ bl2_24_ bl2_n_24_ bl1_25_ bl1_n_25_ bl2_25_ bl2_n_25_ bl1_26_ bl1_n_26_ bl2_26_ bl2_n_26_ bl1_27_ bl1_n_27_ bl2_27_ bl2_n_27_ bl1_28_ bl1_n_28_ bl2_28_ bl2_n_28_ bl1_29_ bl1_n_29_ bl2_29_ bl2_n_29_ bl1_30_ bl1_n_30_ bl2_30_ bl2_n_30_ bl1_31_ bl1_n_31_ bl2_31_ bl2_n_31_) dp8tarray_128x32bc 
+xperiph1 (vss vdd vdd clk1 precharge1_n we1 we_en1 q1_0_ d1_0_ bl1_0_ bl1_n_0_ bl1_1_ bl1_n_1_ bl1_2_ bl1_n_2_ bl1_3_ bl1_n_3_ q1_1_ d1_1_ bl1_4_ bl1_n_4_ bl1_5_ bl1_n_5_ bl1_6_ bl1_n_6_ bl1_7_ bl1_n_7_ q1_2_ d1_2_ bl1_8_ bl1_n_8_ bl1_9_ bl1_n_9_ bl1_10_ bl1_n_10_ bl1_11_ bl1_n_11_ q1_3_ d1_3_ bl1_12_ bl1_n_12_ bl1_13_ bl1_n_13_ bl1_14_ bl1_n_14_ bl1_15_ bl1_n_15_ q1_4_ d1_4_ bl1_16_ bl1_n_16_ bl1_17_ bl1_n_17_ bl1_18_ bl1_n_18_ bl1_19_ bl1_n_19_ q1_5_ d1_5_ bl1_20_ bl1_n_20_ bl1_21_ bl1_n_21_ bl1_22_ bl1_n_22_ bl1_23_ bl1_n_23_ q1_6_ d1_6_ bl1_24_ bl1_n_24_ bl1_25_ bl1_n_25_ bl1_26_ bl1_n_26_ bl1_27_ bl1_n_27_ q1_7_ d1_7_ bl1_28_ bl1_n_28_ bl1_29_ bl1_n_29_ bl1_30_ bl1_n_30_ bl1_31_ bl1_n_31_ mux1_0_ mux1_1_ mux1_2_ mux1_3_) dp8tcolumnperiphery_8b4m_bl1 
+xperiph2 (vss vdd vdd clk2 precharge2_n we2 we_en2 q2_0_ d2_0_ bl2_0_ bl2_n_0_ bl2_1_ bl2_n_1_ bl2_2_ bl2_n_2_ bl2_3_ bl2_n_3_ q2_1_ d2_1_ bl2_4_ bl2_n_4_ bl2_5_ bl2_n_5_ bl2_6_ bl2_n_6_ bl2_7_ bl2_n_7_ q2_2_ d2_2_ bl2_8_ bl2_n_8_ bl2_9_ bl2_n_9_ bl2_10_ bl2_n_10_ bl2_11_ bl2_n_11_ q2_3_ d2_3_ bl2_12_ bl2_n_12_ bl2_13_ bl2_n_13_ bl2_14_ bl2_n_14_ bl2_15_ bl2_n_15_ q2_4_ d2_4_ bl2_16_ bl2_n_16_ bl2_17_ bl2_n_17_ bl2_18_ bl2_n_18_ bl2_19_ bl2_n_19_ q2_5_ d2_5_ bl2_20_ bl2_n_20_ bl2_21_ bl2_n_21_ bl2_22_ bl2_n_22_ bl2_23_ bl2_n_23_ q2_6_ d2_6_ bl2_24_ bl2_n_24_ bl2_25_ bl2_n_25_ bl2_26_ bl2_n_26_ bl2_27_ bl2_n_27_ q2_7_ d2_7_ bl2_28_ bl2_n_28_ bl2_29_ bl2_n_29_ bl2_30_ bl2_n_30_ bl2_31_ bl2_n_31_ mux2_0_ mux2_1_ mux2_2_ mux2_3_) dp8tcolumnperiphery_8b4mr_bl2 
 ends
 
 subckt dp8tcolumnblock_128r8b4m1w(vss vdd clk1 clk2 precharge1_n precharge2_n we_en1 we_en2 wl1_0_ wl1_1_ wl1_2_ wl1_3_ wl1_4_ wl1_5_ wl1_6_ wl1_7_ wl1_8_ wl1_9_ wl1_10_ wl1_11_ wl1_12_ wl1_13_ wl1_14_ wl1_15_ wl1_16_ wl1_17_ wl1_18_ wl1_19_ wl1_20_ wl1_21_ wl1_22_ wl1_23_ wl1_24_ wl1_25_ wl1_26_ wl1_27_ wl1_28_ wl1_29_ wl1_30_ wl1_31_ wl1_32_ wl1_33_ wl1_34_ wl1_35_ wl1_36_ wl1_37_ wl1_38_ wl1_39_ wl1_40_ wl1_41_ wl1_42_ wl1_43_ wl1_44_ wl1_45_ wl1_46_ wl1_47_ wl1_48_ wl1_49_ wl1_50_ wl1_51_ wl1_52_ wl1_53_ wl1_54_ wl1_55_ wl1_56_ wl1_57_ wl1_58_ wl1_59_ wl1_60_ wl1_61_ wl1_62_ wl1_63_ wl1_64_ wl1_65_ wl1_66_ wl1_67_ wl1_68_ wl1_69_ wl1_70_ wl1_71_ wl1_72_ wl1_73_ wl1_74_ wl1_75_ wl1_76_ wl1_77_ wl1_78_ wl1_79_ wl1_80_ wl1_81_ wl1_82_ wl1_83_ wl1_84_ wl1_85_ wl1_86_ wl1_87_ wl1_88_ wl1_89_ wl1_90_ wl1_91_ wl1_92_ wl1_93_ wl1_94_ wl1_95_ wl1_96_ wl1_97_ wl1_98_ wl1_99_ wl1_100_ wl1_101_ wl1_102_ wl1_103_ wl1_104_ wl1_105_ wl1_106_ wl1_107_ wl1_108_ wl1_109_ wl1_110_ wl1_111_ wl1_112_ wl1_113_ wl1_114_ wl1_115_ wl1_116_ wl1_117_ wl1_118_ wl1_119_ wl1_120_ wl1_121_ wl1_122_ wl1_123_ wl1_124_ wl1_125_ wl1_126_ wl1_127_ wl2_0_ wl2_1_ wl2_2_ wl2_3_ wl2_4_ wl2_5_ wl2_6_ wl2_7_ wl2_8_ wl2_9_ wl2_10_ wl2_11_ wl2_12_ wl2_13_ wl2_14_ wl2_15_ wl2_16_ wl2_17_ wl2_18_ wl2_19_ wl2_20_ wl2_21_ wl2_22_ wl2_23_ wl2_24_ wl2_25_ wl2_26_ wl2_27_ wl2_28_ wl2_29_ wl2_30_ wl2_31_ wl2_32_ wl2_33_ wl2_34_ wl2_35_ wl2_36_ wl2_37_ wl2_38_ wl2_39_ wl2_40_ wl2_41_ wl2_42_ wl2_43_ wl2_44_ wl2_45_ wl2_46_ wl2_47_ wl2_48_ wl2_49_ wl2_50_ wl2_51_ wl2_52_ wl2_53_ wl2_54_ wl2_55_ wl2_56_ wl2_57_ wl2_58_ wl2_59_ wl2_60_ wl2_61_ wl2_62_ wl2_63_ wl2_64_ wl2_65_ wl2_66_ wl2_67_ wl2_68_ wl2_69_ wl2_70_ wl2_71_ wl2_72_ wl2_73_ wl2_74_ wl2_75_ wl2_76_ wl2_77_ wl2_78_ wl2_79_ wl2_80_ wl2_81_ wl2_82_ wl2_83_ wl2_84_ wl2_85_ wl2_86_ wl2_87_ wl2_88_ wl2_89_ wl2_90_ wl2_91_ wl2_92_ wl2_93_ wl2_94_ wl2_95_ wl2_96_ wl2_97_ wl2_98_ wl2_99_ wl2_100_ wl2_101_ wl2_102_ wl2_103_ wl2_104_ wl2_105_ wl2_106_ wl2_107_ wl2_108_ wl2_109_ wl2_110_ wl2_111_ wl2_112_ wl2_113_ wl2_114_ wl2_115_ wl2_116_ wl2_117_ wl2_118_ wl2_119_ wl2_120_ wl2_121_ wl2_122_ wl2_123_ wl2_124_ wl2_125_ wl2_126_ wl2_127_ mux1_0_ mux1_1_ mux1_2_ mux1_3_ mux2_0_ mux2_1_ mux2_2_ mux2_3_ we1_0_ we2_0_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_)
-xcolumn_0_ (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_ we1_0_ clk1 we_en1 precharge1_n we2_0_ clk2 we_en2 precharge2_n mux1_0_ mux2_0_ mux1_1_ mux2_1_ mux1_2_ mux2_2_ mux1_3_ mux2_3_) DP8TColumn_128R8B4M 
+xcolumn_0_ (vss vdd wl1_0_ wl2_0_ wl1_1_ wl2_1_ wl1_2_ wl2_2_ wl1_3_ wl2_3_ wl1_4_ wl2_4_ wl1_5_ wl2_5_ wl1_6_ wl2_6_ wl1_7_ wl2_7_ wl1_8_ wl2_8_ wl1_9_ wl2_9_ wl1_10_ wl2_10_ wl1_11_ wl2_11_ wl1_12_ wl2_12_ wl1_13_ wl2_13_ wl1_14_ wl2_14_ wl1_15_ wl2_15_ wl1_16_ wl2_16_ wl1_17_ wl2_17_ wl1_18_ wl2_18_ wl1_19_ wl2_19_ wl1_20_ wl2_20_ wl1_21_ wl2_21_ wl1_22_ wl2_22_ wl1_23_ wl2_23_ wl1_24_ wl2_24_ wl1_25_ wl2_25_ wl1_26_ wl2_26_ wl1_27_ wl2_27_ wl1_28_ wl2_28_ wl1_29_ wl2_29_ wl1_30_ wl2_30_ wl1_31_ wl2_31_ wl1_32_ wl2_32_ wl1_33_ wl2_33_ wl1_34_ wl2_34_ wl1_35_ wl2_35_ wl1_36_ wl2_36_ wl1_37_ wl2_37_ wl1_38_ wl2_38_ wl1_39_ wl2_39_ wl1_40_ wl2_40_ wl1_41_ wl2_41_ wl1_42_ wl2_42_ wl1_43_ wl2_43_ wl1_44_ wl2_44_ wl1_45_ wl2_45_ wl1_46_ wl2_46_ wl1_47_ wl2_47_ wl1_48_ wl2_48_ wl1_49_ wl2_49_ wl1_50_ wl2_50_ wl1_51_ wl2_51_ wl1_52_ wl2_52_ wl1_53_ wl2_53_ wl1_54_ wl2_54_ wl1_55_ wl2_55_ wl1_56_ wl2_56_ wl1_57_ wl2_57_ wl1_58_ wl2_58_ wl1_59_ wl2_59_ wl1_60_ wl2_60_ wl1_61_ wl2_61_ wl1_62_ wl2_62_ wl1_63_ wl2_63_ wl1_64_ wl2_64_ wl1_65_ wl2_65_ wl1_66_ wl2_66_ wl1_67_ wl2_67_ wl1_68_ wl2_68_ wl1_69_ wl2_69_ wl1_70_ wl2_70_ wl1_71_ wl2_71_ wl1_72_ wl2_72_ wl1_73_ wl2_73_ wl1_74_ wl2_74_ wl1_75_ wl2_75_ wl1_76_ wl2_76_ wl1_77_ wl2_77_ wl1_78_ wl2_78_ wl1_79_ wl2_79_ wl1_80_ wl2_80_ wl1_81_ wl2_81_ wl1_82_ wl2_82_ wl1_83_ wl2_83_ wl1_84_ wl2_84_ wl1_85_ wl2_85_ wl1_86_ wl2_86_ wl1_87_ wl2_87_ wl1_88_ wl2_88_ wl1_89_ wl2_89_ wl1_90_ wl2_90_ wl1_91_ wl2_91_ wl1_92_ wl2_92_ wl1_93_ wl2_93_ wl1_94_ wl2_94_ wl1_95_ wl2_95_ wl1_96_ wl2_96_ wl1_97_ wl2_97_ wl1_98_ wl2_98_ wl1_99_ wl2_99_ wl1_100_ wl2_100_ wl1_101_ wl2_101_ wl1_102_ wl2_102_ wl1_103_ wl2_103_ wl1_104_ wl2_104_ wl1_105_ wl2_105_ wl1_106_ wl2_106_ wl1_107_ wl2_107_ wl1_108_ wl2_108_ wl1_109_ wl2_109_ wl1_110_ wl2_110_ wl1_111_ wl2_111_ wl1_112_ wl2_112_ wl1_113_ wl2_113_ wl1_114_ wl2_114_ wl1_115_ wl2_115_ wl1_116_ wl2_116_ wl1_117_ wl2_117_ wl1_118_ wl2_118_ wl1_119_ wl2_119_ wl1_120_ wl2_120_ wl1_121_ wl2_121_ wl1_122_ wl2_122_ wl1_123_ wl2_123_ wl1_124_ wl2_124_ wl1_125_ wl2_125_ wl1_126_ wl2_126_ wl1_127_ wl2_127_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_ we1_0_ clk1 we_en1 precharge1_n we2_0_ clk2 we_en2 precharge2_n mux1_0_ mux2_0_ mux1_1_ mux2_1_ mux1_2_ mux2_2_ mux1_3_ mux2_3_) dp8tcolumn_128r8b4m 
 ends
 
 subckt dp8tblock_512x8_342a1we(clk1 clk2 a1_0_ a2_0_ a1_1_ a2_1_ a1_2_ a2_2_ a1_3_ a2_3_ a1_4_ a2_4_ a1_5_ a2_5_ a1_6_ a2_6_ a1_7_ a2_7_ a1_8_ a2_8_ vss vdd q1_0_ q1_1_ q1_2_ q1_3_ q1_4_ q1_5_ q1_6_ q1_7_ q2_0_ q2_1_ q2_2_ q2_3_ q2_4_ q2_5_ q2_6_ q2_7_ d1_0_ d1_1_ d1_2_ d1_3_ d1_4_ d1_5_ d1_6_ d1_7_ d2_0_ d2_1_ d2_2_ d2_3_ d2_4_ d2_5_ d2_6_ d2_7_ we1_0_ we2_0_)
-xrowperiph1 (vss vdd clk1 a1_0_ a1_1_ a1_2_ a1_3_ a1_4_ a1_5_ a1_6_ a1_7_ a1_8_ wl1_0_ wl1_1_ wl1_2_ wl1_3_ wl1_4_ wl1_5_ wl1_6_ wl1_7_ wl1_8_ wl1_9_ wl1_10_ wl1_11_ wl1_12_ wl1_13_ wl1_14_ wl1_15_ wl1_16_ wl1_17_ wl1_18_ wl1_19_ wl1_20_ wl1_21_ wl1_22_ wl1_23_ wl1_24_ wl1_25_ wl1_26_ wl1_27_ wl1_28_ wl1_29_ wl1_30_ wl1_31_ wl1_32_ wl1_33_ wl1_34_ wl1_35_ wl1_36_ wl1_37_ wl1_38_ wl1_39_ wl1_40_ wl1_41_ wl1_42_ wl1_43_ wl1_44_ wl1_45_ wl1_46_ wl1_47_ wl1_48_ wl1_49_ wl1_50_ wl1_51_ wl1_52_ wl1_53_ wl1_54_ wl1_55_ wl1_56_ wl1_57_ wl1_58_ wl1_59_ wl1_60_ wl1_61_ wl1_62_ wl1_63_ wl1_64_ wl1_65_ wl1_66_ wl1_67_ wl1_68_ wl1_69_ wl1_70_ wl1_71_ wl1_72_ wl1_73_ wl1_74_ wl1_75_ wl1_76_ wl1_77_ wl1_78_ wl1_79_ wl1_80_ wl1_81_ wl1_82_ wl1_83_ wl1_84_ wl1_85_ wl1_86_ wl1_87_ wl1_88_ wl1_89_ wl1_90_ wl1_91_ wl1_92_ wl1_93_ wl1_94_ wl1_95_ wl1_96_ wl1_97_ wl1_98_ wl1_99_ wl1_100_ wl1_101_ wl1_102_ wl1_103_ wl1_104_ wl1_105_ wl1_106_ wl1_107_ wl1_108_ wl1_109_ wl1_110_ wl1_111_ wl1_112_ wl1_113_ wl1_114_ wl1_115_ wl1_116_ wl1_117_ wl1_118_ wl1_119_ wl1_120_ wl1_121_ wl1_122_ wl1_123_ wl1_124_ wl1_125_ wl1_126_ wl1_127_ mux1_0_ mux1_1_ mux1_2_ mux1_3_ columnclk1 precharge1_n we_en1) DP8TRowPeriphery_3_4_2_wl1 
-xrowperiph2 (vss vdd clk2 a2_0_ a2_1_ a2_2_ a2_3_ a2_4_ a2_5_ a2_6_ a2_7_ a2_8_ wl2_0_ wl2_1_ wl2_2_ wl2_3_ wl2_4_ wl2_5_ wl2_6_ wl2_7_ wl2_8_ wl2_9_ wl2_10_ wl2_11_ wl2_12_ wl2_13_ wl2_14_ wl2_15_ wl2_16_ wl2_17_ wl2_18_ wl2_19_ wl2_20_ wl2_21_ wl2_22_ wl2_23_ wl2_24_ wl2_25_ wl2_26_ wl2_27_ wl2_28_ wl2_29_ wl2_30_ wl2_31_ wl2_32_ wl2_33_ wl2_34_ wl2_35_ wl2_36_ wl2_37_ wl2_38_ wl2_39_ wl2_40_ wl2_41_ wl2_42_ wl2_43_ wl2_44_ wl2_45_ wl2_46_ wl2_47_ wl2_48_ wl2_49_ wl2_50_ wl2_51_ wl2_52_ wl2_53_ wl2_54_ wl2_55_ wl2_56_ wl2_57_ wl2_58_ wl2_59_ wl2_60_ wl2_61_ wl2_62_ wl2_63_ wl2_64_ wl2_65_ wl2_66_ wl2_67_ wl2_68_ wl2_69_ wl2_70_ wl2_71_ wl2_72_ wl2_73_ wl2_74_ wl2_75_ wl2_76_ wl2_77_ wl2_78_ wl2_79_ wl2_80_ wl2_81_ wl2_82_ wl2_83_ wl2_84_ wl2_85_ wl2_86_ wl2_87_ wl2_88_ wl2_89_ wl2_90_ wl2_91_ wl2_92_ wl2_93_ wl2_94_ wl2_95_ wl2_96_ wl2_97_ wl2_98_ wl2_99_ wl2_100_ wl2_101_ wl2_102_ wl2_103_ wl2_104_ wl2_105_ wl2_106_ wl2_107_ wl2_108_ wl2_109_ wl2_110_ wl2_111_ wl2_112_ wl2_113_ wl2_114_ wl2_115_ wl2_116_ wl2_117_ wl2_118_ wl2_119_ wl2_120_ wl2_121_ wl2_122_ wl2_123_ wl2_124_ wl2_125_ wl2_126_ wl2_127_ mux2_0_ mux2_1_ mux2_2_ mux2_3_ columnclk2 precharge2_n we_en2) DP8TRowPeriphery_3_4_2_wl2 
-xcolumnblock (vss vdd columnclk1 columnclk2 precharge1_n precharge2_n we_en1 we_en2 wl1_0_ wl1_1_ wl1_2_ wl1_3_ wl1_4_ wl1_5_ wl1_6_ wl1_7_ wl1_8_ wl1_9_ wl1_10_ wl1_11_ wl1_12_ wl1_13_ wl1_14_ wl1_15_ wl1_16_ wl1_17_ wl1_18_ wl1_19_ wl1_20_ wl1_21_ wl1_22_ wl1_23_ wl1_24_ wl1_25_ wl1_26_ wl1_27_ wl1_28_ wl1_29_ wl1_30_ wl1_31_ wl1_32_ wl1_33_ wl1_34_ wl1_35_ wl1_36_ wl1_37_ wl1_38_ wl1_39_ wl1_40_ wl1_41_ wl1_42_ wl1_43_ wl1_44_ wl1_45_ wl1_46_ wl1_47_ wl1_48_ wl1_49_ wl1_50_ wl1_51_ wl1_52_ wl1_53_ wl1_54_ wl1_55_ wl1_56_ wl1_57_ wl1_58_ wl1_59_ wl1_60_ wl1_61_ wl1_62_ wl1_63_ wl1_64_ wl1_65_ wl1_66_ wl1_67_ wl1_68_ wl1_69_ wl1_70_ wl1_71_ wl1_72_ wl1_73_ wl1_74_ wl1_75_ wl1_76_ wl1_77_ wl1_78_ wl1_79_ wl1_80_ wl1_81_ wl1_82_ wl1_83_ wl1_84_ wl1_85_ wl1_86_ wl1_87_ wl1_88_ wl1_89_ wl1_90_ wl1_91_ wl1_92_ wl1_93_ wl1_94_ wl1_95_ wl1_96_ wl1_97_ wl1_98_ wl1_99_ wl1_100_ wl1_101_ wl1_102_ wl1_103_ wl1_104_ wl1_105_ wl1_106_ wl1_107_ wl1_108_ wl1_109_ wl1_110_ wl1_111_ wl1_112_ wl1_113_ wl1_114_ wl1_115_ wl1_116_ wl1_117_ wl1_118_ wl1_119_ wl1_120_ wl1_121_ wl1_122_ wl1_123_ wl1_124_ wl1_125_ wl1_126_ wl1_127_ wl2_0_ wl2_1_ wl2_2_ wl2_3_ wl2_4_ wl2_5_ wl2_6_ wl2_7_ wl2_8_ wl2_9_ wl2_10_ wl2_11_ wl2_12_ wl2_13_ wl2_14_ wl2_15_ wl2_16_ wl2_17_ wl2_18_ wl2_19_ wl2_20_ wl2_21_ wl2_22_ wl2_23_ wl2_24_ wl2_25_ wl2_26_ wl2_27_ wl2_28_ wl2_29_ wl2_30_ wl2_31_ wl2_32_ wl2_33_ wl2_34_ wl2_35_ wl2_36_ wl2_37_ wl2_38_ wl2_39_ wl2_40_ wl2_41_ wl2_42_ wl2_43_ wl2_44_ wl2_45_ wl2_46_ wl2_47_ wl2_48_ wl2_49_ wl2_50_ wl2_51_ wl2_52_ wl2_53_ wl2_54_ wl2_55_ wl2_56_ wl2_57_ wl2_58_ wl2_59_ wl2_60_ wl2_61_ wl2_62_ wl2_63_ wl2_64_ wl2_65_ wl2_66_ wl2_67_ wl2_68_ wl2_69_ wl2_70_ wl2_71_ wl2_72_ wl2_73_ wl2_74_ wl2_75_ wl2_76_ wl2_77_ wl2_78_ wl2_79_ wl2_80_ wl2_81_ wl2_82_ wl2_83_ wl2_84_ wl2_85_ wl2_86_ wl2_87_ wl2_88_ wl2_89_ wl2_90_ wl2_91_ wl2_92_ wl2_93_ wl2_94_ wl2_95_ wl2_96_ wl2_97_ wl2_98_ wl2_99_ wl2_100_ wl2_101_ wl2_102_ wl2_103_ wl2_104_ wl2_105_ wl2_106_ wl2_107_ wl2_108_ wl2_109_ wl2_110_ wl2_111_ wl2_112_ wl2_113_ wl2_114_ wl2_115_ wl2_116_ wl2_117_ wl2_118_ wl2_119_ wl2_120_ wl2_121_ wl2_122_ wl2_123_ wl2_124_ wl2_125_ wl2_126_ wl2_127_ mux1_0_ mux1_1_ mux1_2_ mux1_3_ mux2_0_ mux2_1_ mux2_2_ mux2_3_ we1_0_ we2_0_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_) DP8TColumnBlock_128R8B4M1W 
+xrowperiph1 (vss vdd clk1 a1_0_ a1_1_ a1_2_ a1_3_ a1_4_ a1_5_ a1_6_ a1_7_ a1_8_ wl1_0_ wl1_1_ wl1_2_ wl1_3_ wl1_4_ wl1_5_ wl1_6_ wl1_7_ wl1_8_ wl1_9_ wl1_10_ wl1_11_ wl1_12_ wl1_13_ wl1_14_ wl1_15_ wl1_16_ wl1_17_ wl1_18_ wl1_19_ wl1_20_ wl1_21_ wl1_22_ wl1_23_ wl1_24_ wl1_25_ wl1_26_ wl1_27_ wl1_28_ wl1_29_ wl1_30_ wl1_31_ wl1_32_ wl1_33_ wl1_34_ wl1_35_ wl1_36_ wl1_37_ wl1_38_ wl1_39_ wl1_40_ wl1_41_ wl1_42_ wl1_43_ wl1_44_ wl1_45_ wl1_46_ wl1_47_ wl1_48_ wl1_49_ wl1_50_ wl1_51_ wl1_52_ wl1_53_ wl1_54_ wl1_55_ wl1_56_ wl1_57_ wl1_58_ wl1_59_ wl1_60_ wl1_61_ wl1_62_ wl1_63_ wl1_64_ wl1_65_ wl1_66_ wl1_67_ wl1_68_ wl1_69_ wl1_70_ wl1_71_ wl1_72_ wl1_73_ wl1_74_ wl1_75_ wl1_76_ wl1_77_ wl1_78_ wl1_79_ wl1_80_ wl1_81_ wl1_82_ wl1_83_ wl1_84_ wl1_85_ wl1_86_ wl1_87_ wl1_88_ wl1_89_ wl1_90_ wl1_91_ wl1_92_ wl1_93_ wl1_94_ wl1_95_ wl1_96_ wl1_97_ wl1_98_ wl1_99_ wl1_100_ wl1_101_ wl1_102_ wl1_103_ wl1_104_ wl1_105_ wl1_106_ wl1_107_ wl1_108_ wl1_109_ wl1_110_ wl1_111_ wl1_112_ wl1_113_ wl1_114_ wl1_115_ wl1_116_ wl1_117_ wl1_118_ wl1_119_ wl1_120_ wl1_121_ wl1_122_ wl1_123_ wl1_124_ wl1_125_ wl1_126_ wl1_127_ mux1_0_ mux1_1_ mux1_2_ mux1_3_ columnclk1 precharge1_n we_en1) dp8trowperiphery_3_4_2_wl1 
+xrowperiph2 (vss vdd clk2 a2_0_ a2_1_ a2_2_ a2_3_ a2_4_ a2_5_ a2_6_ a2_7_ a2_8_ wl2_0_ wl2_1_ wl2_2_ wl2_3_ wl2_4_ wl2_5_ wl2_6_ wl2_7_ wl2_8_ wl2_9_ wl2_10_ wl2_11_ wl2_12_ wl2_13_ wl2_14_ wl2_15_ wl2_16_ wl2_17_ wl2_18_ wl2_19_ wl2_20_ wl2_21_ wl2_22_ wl2_23_ wl2_24_ wl2_25_ wl2_26_ wl2_27_ wl2_28_ wl2_29_ wl2_30_ wl2_31_ wl2_32_ wl2_33_ wl2_34_ wl2_35_ wl2_36_ wl2_37_ wl2_38_ wl2_39_ wl2_40_ wl2_41_ wl2_42_ wl2_43_ wl2_44_ wl2_45_ wl2_46_ wl2_47_ wl2_48_ wl2_49_ wl2_50_ wl2_51_ wl2_52_ wl2_53_ wl2_54_ wl2_55_ wl2_56_ wl2_57_ wl2_58_ wl2_59_ wl2_60_ wl2_61_ wl2_62_ wl2_63_ wl2_64_ wl2_65_ wl2_66_ wl2_67_ wl2_68_ wl2_69_ wl2_70_ wl2_71_ wl2_72_ wl2_73_ wl2_74_ wl2_75_ wl2_76_ wl2_77_ wl2_78_ wl2_79_ wl2_80_ wl2_81_ wl2_82_ wl2_83_ wl2_84_ wl2_85_ wl2_86_ wl2_87_ wl2_88_ wl2_89_ wl2_90_ wl2_91_ wl2_92_ wl2_93_ wl2_94_ wl2_95_ wl2_96_ wl2_97_ wl2_98_ wl2_99_ wl2_100_ wl2_101_ wl2_102_ wl2_103_ wl2_104_ wl2_105_ wl2_106_ wl2_107_ wl2_108_ wl2_109_ wl2_110_ wl2_111_ wl2_112_ wl2_113_ wl2_114_ wl2_115_ wl2_116_ wl2_117_ wl2_118_ wl2_119_ wl2_120_ wl2_121_ wl2_122_ wl2_123_ wl2_124_ wl2_125_ wl2_126_ wl2_127_ mux2_0_ mux2_1_ mux2_2_ mux2_3_ columnclk2 precharge2_n we_en2) dp8trowperiphery_3_4_2_wl2 
+xcolumnblock (vss vdd columnclk1 columnclk2 precharge1_n precharge2_n we_en1 we_en2 wl1_0_ wl1_1_ wl1_2_ wl1_3_ wl1_4_ wl1_5_ wl1_6_ wl1_7_ wl1_8_ wl1_9_ wl1_10_ wl1_11_ wl1_12_ wl1_13_ wl1_14_ wl1_15_ wl1_16_ wl1_17_ wl1_18_ wl1_19_ wl1_20_ wl1_21_ wl1_22_ wl1_23_ wl1_24_ wl1_25_ wl1_26_ wl1_27_ wl1_28_ wl1_29_ wl1_30_ wl1_31_ wl1_32_ wl1_33_ wl1_34_ wl1_35_ wl1_36_ wl1_37_ wl1_38_ wl1_39_ wl1_40_ wl1_41_ wl1_42_ wl1_43_ wl1_44_ wl1_45_ wl1_46_ wl1_47_ wl1_48_ wl1_49_ wl1_50_ wl1_51_ wl1_52_ wl1_53_ wl1_54_ wl1_55_ wl1_56_ wl1_57_ wl1_58_ wl1_59_ wl1_60_ wl1_61_ wl1_62_ wl1_63_ wl1_64_ wl1_65_ wl1_66_ wl1_67_ wl1_68_ wl1_69_ wl1_70_ wl1_71_ wl1_72_ wl1_73_ wl1_74_ wl1_75_ wl1_76_ wl1_77_ wl1_78_ wl1_79_ wl1_80_ wl1_81_ wl1_82_ wl1_83_ wl1_84_ wl1_85_ wl1_86_ wl1_87_ wl1_88_ wl1_89_ wl1_90_ wl1_91_ wl1_92_ wl1_93_ wl1_94_ wl1_95_ wl1_96_ wl1_97_ wl1_98_ wl1_99_ wl1_100_ wl1_101_ wl1_102_ wl1_103_ wl1_104_ wl1_105_ wl1_106_ wl1_107_ wl1_108_ wl1_109_ wl1_110_ wl1_111_ wl1_112_ wl1_113_ wl1_114_ wl1_115_ wl1_116_ wl1_117_ wl1_118_ wl1_119_ wl1_120_ wl1_121_ wl1_122_ wl1_123_ wl1_124_ wl1_125_ wl1_126_ wl1_127_ wl2_0_ wl2_1_ wl2_2_ wl2_3_ wl2_4_ wl2_5_ wl2_6_ wl2_7_ wl2_8_ wl2_9_ wl2_10_ wl2_11_ wl2_12_ wl2_13_ wl2_14_ wl2_15_ wl2_16_ wl2_17_ wl2_18_ wl2_19_ wl2_20_ wl2_21_ wl2_22_ wl2_23_ wl2_24_ wl2_25_ wl2_26_ wl2_27_ wl2_28_ wl2_29_ wl2_30_ wl2_31_ wl2_32_ wl2_33_ wl2_34_ wl2_35_ wl2_36_ wl2_37_ wl2_38_ wl2_39_ wl2_40_ wl2_41_ wl2_42_ wl2_43_ wl2_44_ wl2_45_ wl2_46_ wl2_47_ wl2_48_ wl2_49_ wl2_50_ wl2_51_ wl2_52_ wl2_53_ wl2_54_ wl2_55_ wl2_56_ wl2_57_ wl2_58_ wl2_59_ wl2_60_ wl2_61_ wl2_62_ wl2_63_ wl2_64_ wl2_65_ wl2_66_ wl2_67_ wl2_68_ wl2_69_ wl2_70_ wl2_71_ wl2_72_ wl2_73_ wl2_74_ wl2_75_ wl2_76_ wl2_77_ wl2_78_ wl2_79_ wl2_80_ wl2_81_ wl2_82_ wl2_83_ wl2_84_ wl2_85_ wl2_86_ wl2_87_ wl2_88_ wl2_89_ wl2_90_ wl2_91_ wl2_92_ wl2_93_ wl2_94_ wl2_95_ wl2_96_ wl2_97_ wl2_98_ wl2_99_ wl2_100_ wl2_101_ wl2_102_ wl2_103_ wl2_104_ wl2_105_ wl2_106_ wl2_107_ wl2_108_ wl2_109_ wl2_110_ wl2_111_ wl2_112_ wl2_113_ wl2_114_ wl2_115_ wl2_116_ wl2_117_ wl2_118_ wl2_119_ wl2_120_ wl2_121_ wl2_122_ wl2_123_ wl2_124_ wl2_125_ wl2_126_ wl2_127_ mux1_0_ mux1_1_ mux1_2_ mux1_3_ mux2_0_ mux2_1_ mux2_2_ mux2_3_ we1_0_ we2_0_ q1_0_ q2_0_ d1_0_ d2_0_ q1_1_ q2_1_ d1_1_ d2_1_ q1_2_ q2_2_ d1_2_ d2_2_ q1_3_ q2_3_ d1_3_ d2_3_ q1_4_ q2_4_ d1_4_ d2_4_ q1_5_ q2_5_ d1_5_ d2_5_ q1_6_ q2_6_ d1_6_ d2_6_ q1_7_ q2_7_ d1_7_ d2_7_) dp8tcolumnblock_128r8b4m1w 
 ends
-xtop (clk1 clk2 a1_0_ a2_0_ a1_1_ a2_1_ a1_2_ a2_2_ a1_3_ a2_3_ a1_4_ a2_4_ a1_5_ a2_5_ a1_6_ a2_6_ a1_7_ a2_7_ a1_8_ a2_8_ vss vdd q1_0_ q1_1_ q1_2_ q1_3_ q1_4_ q1_5_ q1_6_ q1_7_ q2_0_ q2_1_ q2_2_ q2_3_ q2_4_ q2_5_ q2_6_ q2_7_ d1_0_ d1_1_ d1_2_ d1_3_ d1_4_ d1_5_ d1_6_ d1_7_ d2_0_ d2_1_ d2_2_ d2_3_ d2_4_ d2_5_ d2_6_ d2_7_ we1_0_ we2_0_) DP8TBlock_512x8_342A1WE 
+xtop (clk1 clk2 a1_0_ a2_0_ a1_1_ a2_1_ a1_2_ a2_2_ a1_3_ a2_3_ a1_4_ a2_4_ a1_5_ a2_5_ a1_6_ a2_6_ a1_7_ a2_7_ a1_8_ a2_8_ vss vdd q1_0_ q1_1_ q1_2_ q1_3_ q1_4_ q1_5_ q1_6_ q1_7_ q2_0_ q2_1_ q2_2_ q2_3_ q2_4_ q2_5_ q2_6_ q2_7_ d1_0_ d1_1_ d1_2_ d1_3_ d1_4_ d1_5_ d1_6_ d1_7_ d2_0_ d2_1_ d2_2_ d2_3_ d2_4_ d2_5_ d2_6_ d2_7_ we1_0_ we2_0_) dp8tblock_512x8_342a1we 
 vvss (vss 0) vsource dc=0.0
 cq1_0_ (q1_0_ 0) defmod_c  c=1e-14
 cq2_0_ (q2_0_ 0) defmod_c  c=1e-14
@@ -1283,45 +1282,45 @@ cq1_31_ (q1_31_ 0) defmod_c  c=1e-14
 cq2_31_ (q2_31_ 0) defmod_c  c=1e-14
 vvdd (vdd_i 0) vsource dc=1.3
 rvdd (vdd_i vdd) defmod_r 
-vclk1 (clk1_i 0) vsource pwl=_(0.0, 0.0), (1e-08, 0.0), (1.02e-08, 1.3), (1.5000000000000002e-08, 1.3), (1.52e-08, 0.0), (2e-08, 0.0), (2.02e-08, 1.3), (2.5e-08, 1.3), (2.5199999999999997e-08, 0.0)_
+vclk1 (clk1_i 0) vsource type="pwl" wave=[0.0, 0.0, 1e-08, 0.0, 1.02e-08, 1.3, 1.5000000000000002e-08, 1.3, 1.52e-08, 0.0, 2e-08, 0.0, 2.02e-08, 1.3, 2.5e-08, 1.3, 2.5199999999999997e-08, 0.0]
 rclk1 (clk1_i clk1) defmod_r 
-vclk2 (clk2_i 0) vsource pwl=_(0.0, 0.0), (1e-08, 0.0), (1.02e-08, 1.3), (1.5000000000000002e-08, 1.3), (1.52e-08, 0.0), (2e-08, 0.0), (2.02e-08, 1.3), (2.5e-08, 1.3), (2.5199999999999997e-08, 0.0)_
+vclk2 (clk2_i 0) vsource type="pwl" wave=[0.0, 0.0, 1e-08, 0.0, 1.02e-08, 1.3, 1.5000000000000002e-08, 1.3, 1.52e-08, 0.0, 2e-08, 0.0, 2.02e-08, 1.3, 2.5e-08, 1.3, 2.5199999999999997e-08, 0.0]
 rclk2 (clk2_i clk2) defmod_r 
-va1_0_ (a1_0__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_0_ (a1_0__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_0_ (a1_0__i a1_0_) defmod_r 
-va1_1_ (a1_1__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_1_ (a1_1__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_1_ (a1_1__i a1_1_) defmod_r 
-va1_2_ (a1_2__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_2_ (a1_2__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_2_ (a1_2__i a1_2_) defmod_r 
-va1_3_ (a1_3__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_3_ (a1_3__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_3_ (a1_3__i a1_3_) defmod_r 
-va1_4_ (a1_4__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_4_ (a1_4__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_4_ (a1_4__i a1_4_) defmod_r 
-va1_5_ (a1_5__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_5_ (a1_5__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_5_ (a1_5__i a1_5_) defmod_r 
-va1_6_ (a1_6__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_6_ (a1_6__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_6_ (a1_6__i a1_6_) defmod_r 
-va1_7_ (a1_7__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_7_ (a1_7__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_7_ (a1_7__i a1_7_) defmod_r 
-va1_8_ (a1_8__i 0) vsource pwl=_(0.0, 0.0), (1.75e-08, 0.0), (1.77e-08, 1.3)_
+va1_8_ (a1_8__i 0) vsource type="pwl" wave=[0.0, 0.0, 1.75e-08, 0.0, 1.77e-08, 1.3]
 ra1_8_ (a1_8__i a1_8_) defmod_r 
-va2_0_ (a2_0__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_0_ (a2_0__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_0_ (a2_0__i a2_0_) defmod_r 
-va2_1_ (a2_1__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_1_ (a2_1__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_1_ (a2_1__i a2_1_) defmod_r 
-va2_2_ (a2_2__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_2_ (a2_2__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_2_ (a2_2__i a2_2_) defmod_r 
-va2_3_ (a2_3__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_3_ (a2_3__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_3_ (a2_3__i a2_3_) defmod_r 
-va2_4_ (a2_4__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_4_ (a2_4__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_4_ (a2_4__i a2_4_) defmod_r 
-va2_5_ (a2_5__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_5_ (a2_5__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_5_ (a2_5__i a2_5_) defmod_r 
-va2_6_ (a2_6__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_6_ (a2_6__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_6_ (a2_6__i a2_6_) defmod_r 
-va2_7_ (a2_7__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_7_ (a2_7__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_7_ (a2_7__i a2_7_) defmod_r 
-va2_8_ (a2_8__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+va2_8_ (a2_8__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 ra2_8_ (a2_8__i a2_8_) defmod_r 
 vd1_0_ (d1_0__i 0) vsource dc=1.3
 rd1_0_ (d1_0__i d1_0_) defmod_r 
@@ -1451,21 +1450,21 @@ vd2_30_ (d2_30__i 0) vsource dc=0.0
 rd2_30_ (d2_30__i d2_30_) defmod_r 
 vd2_31_ (d2_31__i 0) vsource dc=0.0
 rd2_31_ (d2_31__i d2_31_) defmod_r 
-vwe1_0_ (we1_0__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe1_0_ (we1_0__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe1_0_ (we1_0__i we1_0_) defmod_r 
-vwe1_1_ (we1_1__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe1_1_ (we1_1__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe1_1_ (we1_1__i we1_1_) defmod_r 
-vwe1_2_ (we1_2__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe1_2_ (we1_2__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe1_2_ (we1_2__i we1_2_) defmod_r 
-vwe1_3_ (we1_3__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe1_3_ (we1_3__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe1_3_ (we1_3__i we1_3_) defmod_r 
-vwe2_0_ (we2_0__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe2_0_ (we2_0__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe2_0_ (we2_0__i we2_0_) defmod_r 
-vwe2_1_ (we2_1__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe2_1_ (we2_1__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe2_1_ (we2_1__i we2_1_) defmod_r 
-vwe2_2_ (we2_2__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe2_2_ (we2_2__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe2_2_ (we2_2__i we2_2_) defmod_r 
-vwe2_3_ (we2_3__i 0) vsource pwl=_(0.0, 1.3), (1.75e-08, 1.3), (1.77e-08, 0.0)_
+vwe2_3_ (we2_3__i 0) vsource type="pwl" wave=[0.0, 1.3, 1.75e-08, 1.3, 1.77e-08, 0.0]
 rwe2_3_ (we2_3__i we2_3_) defmod_r 
 
 //* Node initialization
@@ -1473,32 +1472,17 @@ rwe2_3_ (we2_3__i we2_3_) defmod_r
 //* take quarter of clock period as max time step
 
 // Modules
-load "../ihp_sg13g2/psp103_ihp.osdi"
-load "spice/resistor.osdi"
-load "spice/capacitor.osdi"
+load"spice/resistor.osdi"
+load"./psp103_ihp.osdi"
+load"spice/capacitor.osdi"
 
 // Default models
 model defmod_r sp_resistor
 model defmod_c sp_capacitor
+model vsource vsource
 
-// Control block - simple OP analysis for initial test
+// Control block
 control
-  abort always
-  analysis op1 op
-  postprocess(PYTHON, "runme.py")
+  analysis tran1 tran step=1e-9 stop=1e-9
+  save all
 endc
-
-embed "runme.py" <<<FILE
-from runtest import *
-import sys
-
-tests=__
-
-# Just verify we get here - circuit parsed and OP solved
-status = True
-tests.append(status)
-print("Circuit parsed successfully:", status)
-
-if isTest():
-    sys.exit(not all(tests))
->>>FILE

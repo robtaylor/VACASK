@@ -14,10 +14,15 @@ class InstanceVMixin:
 
         VACASK format:
             vname (n+ n-) vsource dc=value
-            vname (n+ n-) vsource pwl=[(t1,v1), (t2,v2), ...]
+            vname (n+ n-) vsource type="pwl" wave=[t1, v1, t2, v2, ...]
         """
         name = annot["name"]
         parts = annot["words"]
+
+        # Track that vsource builtin model is needed
+        if "builtin_models_needed" not in self.data:
+            self.data["builtin_models_needed"] = set()
+        self.data["builtin_models_needed"].add("vsource")
 
         terminals = self.process_terminals(parts[:2])
 
@@ -51,7 +56,8 @@ class InstanceVMixin:
                     pwl_content = pwl_content[:-1]
 
                 pwl_data = self.parse_pwl(pwl_content)
-                params.append(("pwl", pwl_data))
+                params.append(("type", '"pwl"'))
+                params.append(("wave", pwl_data))
             elif rest_str.lower().startswith("dc="):
                 params.append(("dc", self.format_value(rest_str[3:])))
             elif rest_str.lower().startswith("dc "):
@@ -78,7 +84,10 @@ class InstanceVMixin:
         return txt
 
     def parse_pwl(self, pwl_str):
-        """Parse PWL data string and return VACASK format."""
+        """Parse PWL data string and return VACASK format.
+
+        Returns a flat list [t1, v1, t2, v2, ...] for VACASK wave parameter.
+        """
         # The preprocessor removes spaces from inside parentheses,
         # so input may be like: "0.0s0.0v1e-08s0.0v1.02e-08s1.3v"
         # We need to split on 's' and 'v' unit suffixes.
@@ -93,11 +102,8 @@ class InstanceVMixin:
             pwl_str_clean = re.sub(r'(\d+\.?\d*[eE]?[+-]?\d*)[sS]', r'\1', pwl_str)
             pwl_str_clean = re.sub(r'(\d+\.?\d*[eE]?[+-]?\d*)[vV]', r'\1', pwl_str_clean)
             tokens = pwl_str_clean.split()
-            pairs = []
-            for i in range(0, len(tokens), 2):
-                if i + 1 < len(tokens):
-                    pairs.append(f"({tokens[i]}, {tokens[i + 1]})")
-            return "[" + ", ".join(pairs) + "]"
+            # Return flat list of alternating time, value pairs
+            return "[" + ", ".join(tokens) + "]"
 
         # Spaces were removed - need to parse more carefully
         # Pattern: time value pairs where time ends in 's' and value ends in 'v'
@@ -105,10 +111,10 @@ class InstanceVMixin:
         number_pattern = r'[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?'
         pair_pattern = f'({number_pattern})[sS]({number_pattern})[vV]'
 
-        pairs = []
+        values = []
         for match in re.finditer(pair_pattern, pwl_str):
             t = match.group(1)
             v = match.group(2)
-            pairs.append(f"({t}, {v})")
+            values.extend([t, v])
 
-        return "[" + ", ".join(pairs) + "]"
+        return "[" + ", ".join(values) + "]"

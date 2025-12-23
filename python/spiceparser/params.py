@@ -228,7 +228,9 @@ def process_instance_params(
 def process_terminals(terminals: list[str]) -> list[str]:
     """Process terminal/node names for VACASK output.
 
-    Replaces characters that are invalid in VACASK identifiers.
+    Replaces characters that are invalid in VACASK identifiers:
+    - ! -> _
+    - [N] -> _N_ (array indices not allowed in VACASK identifiers)
 
     Args:
         terminals: List of terminal names
@@ -236,7 +238,33 @@ def process_terminals(terminals: list[str]) -> list[str]:
     Returns:
         Processed terminal names
     """
-    return [t.replace("!", "_") for t in terminals]
+    result = []
+    for t in terminals:
+        t = t.replace("!", "_")
+        # Replace [N] with _N_ (array indices not allowed in VACASK)
+        t = re.sub(r'\[(\d+)\]', r'_\1_', t)
+        result.append(t)
+    return result
+
+
+def sanitize_identifier(name: str | None) -> str | None:
+    """Sanitize an identifier for VACASK compatibility.
+
+    Replaces characters that are invalid in VACASK identifiers:
+    - ! -> _
+    - [N] -> _N_ (array indices not allowed in VACASK identifiers)
+
+    Args:
+        name: Identifier string, or None
+
+    Returns:
+        Sanitized identifier, or None if input was None
+    """
+    if name is None:
+        return None
+    name = name.replace("!", "_")
+    name = re.sub(r'\[(\d+)\]', r'_\1_', name)
+    return name
 
 
 def format_params_line(

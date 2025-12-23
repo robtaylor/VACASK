@@ -38,11 +38,18 @@ class DevicesMixin:
             # Add load
             model_lines.append((inst_letter, module))
 
-        # Generate text
-        return [
-            "model "+self.cfg["default_model_prefix"]+inst_letter+" "+module 
+        # Generate text for OSDI-based default models
+        result = [
+            "model "+self.cfg["default_model_prefix"]+inst_letter+" "+module
             for inst_letter, module in model_lines
         ]
+
+        # Add builtin model declarations (vsource, isource, etc.)
+        if "builtin_models_needed" in self.data:
+            for model in self.data["builtin_models_needed"]:
+                result.append(f"model {model} {model}")
+
+        return result
 
 
 

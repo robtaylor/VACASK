@@ -42,6 +42,9 @@ class OutputMixin:
                     out.append(self.data["title"])
                     if "signature" in self.cfg:
                         out.append(self.cfg["signature"])
+                    # Add ground definition for VACASK
+                    out.append("ground 0")
+                    out.append("")
                     continue
                 else:
                     if "signature" in self.cfg:
