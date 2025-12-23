@@ -1,3 +1,14 @@
+# SPDX-FileCopyrightText: 2025 ChipFlow
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+"""SPICE to VACASK netlist converter.
+
+This module provides the Converter class for converting SPICE netlists
+to VACASK format. It supports multiple SPICE dialects through the
+spiceparser.dialect system.
+"""
+
 from .m_file import FileLoaderMixin
 from .m_masters import MastersMixin
 from .m_output import OutputMixin
@@ -15,6 +26,10 @@ from . import dfl
 
 import os
 
+# Import dialect support from spiceparser
+from spiceparser.dialect import get_dialect, SpiceDialect
+
+
 class Converter(
     FileLoaderMixin,
     MastersMixin,
@@ -27,93 +42,72 @@ class Converter(
     InstanceVMixin,
     InstanceXMixin,
     DevicesMixin,
-    ParamsMixin
+    ParamsMixin,
 ):
+    """SPICE to VACASK netlist converter.
+
+    Supports multiple SPICE dialects (Ngspice, HSPICE, LTSpice) through the
+    dialect parameter.
+
+    Args:
+        cfg: Configuration dictionary (see below for keys)
+        dialect: SPICE dialect name ("ngspice", "hspice", "ltspice") or
+                 SpiceDialect instance. Default is "ngspice".
+        indent: Debug indentation level
+        debug: Debug verbosity level
+
+    Configuration dictionary keys:
+        sourcepath: List of directories for .include and .lib files
+        type_map: Model type definitions (SPICE name -> params, family, etc.)
+        family_map: Device family to OSDI module mapping
+        default_models: Default models for passive elements
+        default_model_prefix: Prefix for default model names
+        as_toplevel: How to treat input file ("auto", "yes", "no")
+        all_models: If True, write all models (not just used ones)
+        original_case_subckt: Preserve case of subcircuit names
+        original_case_model: Preserve case of model names
+        original_case_instance: Preserve case of instance names
+        read_depth: Max depth for reading includes (None = unlimited)
+        process_depth: Max depth for processing (None = unlimited)
+        output_depth: Max depth for output (None = unlimited)
+        patch: Dictionary of file patches
+        columns: Max columns per line
+
+    Data dictionary (populated during conversion):
+        title: First line of toplevel file
+        control: Control block lines
+        models: Available models by subcircuit
+        model_usage: Where models are used
+        default_models_needed: Set of device letters needing defaults
+        osdi_loads: OSDI files loaded via pre_osdi
+        subckts: Subcircuit definitions
+        is_toplevel: Whether input is a toplevel netlist
     """
-    Ngspice to VACASK netlist converter. 
-    *cfg* is the configuration dictionary with the following keys: 
-    * sourcepath .. a list of directories where .include and .lib files
-      are located
-    * type_map .. a list of model types (tuples) with entries
-      * SPICE name (npn, pnp, nmos, pmos, ...)
-      * parameters to add when converting to VACASK
-      * family (used as key in other tables)
-      * remove_level .. True if level parameter should be removed 
-      * remove_version .. True if version parameter should be removed
-    * family_map .. maps tuples of the form
-      * family
-      * level (integer, None is default)
-      * version (string, None is default)
-      into tuples of the form
-      * osdi file to load
-      * module name
-    * default_models .. maps device letters to default models
-      Values are tuples holding
-      * osdi file name
-      * module name
-    * default_model_prefix .. prefix for default model names
-    * as_toplevel .. treat input file as toiplevel netlist. Possible values 
-      * auto .. detect automatically based on .end
-      * no .. treat as toplevel
-      * yes .. do not treat as toplevel
-    * all_models .. if True writes all models to the output, 
-      otherwise ony used models are written
-    * original_case_subckt .. True if you want to keep the original case of 
-      subcircuit definition names 
-    * original_case_model .. True if you want to keep the original case of 
-      model names
-    * original_case_instance .. True if you want to keep the original case of 
-      instance names
-    * read_depth .. include/lib depth up to which the files are read.
-      Default (None) is equivalent to no depth limit. 
-    * process_depth .. include/lib depth up to which the files are processed. 
-      Default (None) is equivalent to no depth limit. 
-    * output_depth .. include/lib depth up to which the files are written
-      to a VACASK netlist. Default (None) is equivalent to no depth limit. 
-    * patch .. a dictionary of patches with file name for key. Files are 
-      matched to this key with the last part of their name. 
-      Values are lists of pairs of the form (old, new). If the old string is 
-      found in the beginning of a line the whole line is replaced with the 
-      new string. 
-    * columns .. number of columns per line
-    
-    The data member dictionary holds the following keys:
-    * title .. unprocessed first line of toplevel file
-    * control .. control block lines
-    * models .. a dictionary of available models, key is subcircuit name
-      where None represents the toplevel circuit. values are dictionaries
-      with model name as key holding tuples of the form
-      holding elements:
-      * builtin .. is it a SPICE builtin
-      * model type (npn, pnp, nmos, pmos, ...)
-      * model family
-      * level (integer)
-      * version (string)
-      * params .. list of (name, value) pairs. 
-    * model_usage .. a dictionary tracking where individual models are used. 
-      Key is a pair of the form (model name, subcircuit where model is defined). 
-      Value is a set of subcircuit names (None for toplevel circuit) 
-      where this model is used. 
-    * default_models_needed .. set of device letters
-    * osdi_loads .. set of files loaded by pre_osdi in control block
-    * subckts .. a dictionary of subcircuit definitions with name for key
-      and values that are tuples holding
-      * terminals .. list of terminals
-      * parameters .. list of (name, value) pairs for parameters
-    * is_toplevel .. True if input file is a toplevel netlist
-    """
-    def __init__(self, cfg=None, indent=4, debug=0):
+
+    def __init__(self, cfg=None, dialect="ngspice", indent=4, debug=0):
         # If no config is given, use default config
         if cfg is None:
-          cfg = dfl.default_config()
+            cfg = dfl.default_config()
         self.cfg = cfg
+
+        # Set up dialect
+        if isinstance(dialect, str):
+            self.dialect = get_dialect(dialect)
+        elif isinstance(dialect, SpiceDialect):
+            self.dialect = dialect
+        else:
+            raise ValueError(f"Invalid dialect: {dialect}")
+
+        # Store dialect name in config for reference
+        self.cfg["dialect"] = self.dialect.name
+
         self.data = {
-            "control": [], 
-            "models": {}, 
-            "subckts": {}, 
-            "model_usage": {}, 
-            "default_models_needed": set(), 
-            "osdi_loads": set(), 
+            "control": [],
+            "models": {},
+            "subckts": {},
+            "model_usage": {},
+            "default_models_needed": set(),
+            "osdi_loads": set(),
         }
         self.dbgindent = indent
         self.debug = debug
