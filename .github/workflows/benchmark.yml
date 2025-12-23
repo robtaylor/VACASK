@@ -1,0 +1,136 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main, feature/*]
+  pull_request:
+    branches: [main, feature/*]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libboost-filesystem-dev \
+            libboost-system-dev \
+            libsuitesparse-dev \
+            flex \
+            bison
+
+      - name: Install toml++ (header-only)
+        run: |
+          git clone --depth 1 --branch v3.4.0 https://github.com/marzer/tomlplusplus.git /tmp/tomlplusplus
+          sudo cp -r /tmp/tomlplusplus/include/toml++ /usr/local/include/
+
+      - name: Cache OpenVAF-reloaded
+        id: cache-openvaf
+        uses: actions/cache@v4
+        with:
+          path: ~/openvaf-r
+          key: openvaf-r-${{ runner.os }}-v1
+
+      - name: Build OpenVAF-reloaded
+        if: steps.cache-openvaf.outputs.cache-hit != 'true'
+        run: |
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          # shellcheck source=/dev/null
+          source ~/.cargo/env
+
+          # Clone and build OpenVAF-reloaded
+          git clone --depth 1 https://github.com/pascalkuthe/OpenVAF.git ~/openvaf-src
+          cd ~/openvaf-src
+          cargo build --release --bin openvaf
+
+          # Install to ~/openvaf-r
+          mkdir -p ~/openvaf-r/bin
+          cp target/release/openvaf ~/openvaf-r/bin/openvaf-r
+
+      - name: Add OpenVAF to PATH
+        run: echo "$HOME/openvaf-r/bin" >> "$GITHUB_PATH"
+
+      - name: Configure VACASK
+        run: |
+          cmake -G Ninja -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENVAF_DIR="$HOME/openvaf-r"
+
+      - name: Build VACASK
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Cache IHP PDK
+        id: cache-ihp-pdk
+        uses: actions/cache@v4
+        with:
+          path: ~/ihp-pdk
+          key: ihp-pdk-v1
+
+      - name: Download IHP PDK
+        if: steps.cache-ihp-pdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git ~/ihp-pdk
+
+      - name: Compile PSP103 model for IHP
+        run: |
+          cd test/tb_dp
+          # Compile PSP103 with IHP parameters
+          openvaf-r -I../../devices ~/ihp-pdk/ihp-sg13g2/libs.tech/ngspice/models/PSP103VA/psp103.va -o psp103_ihp.osdi
+
+      - name: Convert tb_dp512x8_klu test
+        env:
+          IHP_PDK_ROOT: ~/ihp-pdk/ihp-sg13g2
+        run: |
+          cd python
+          uv sync
+          cd ../test/tb_dp
+          uv run python runme.py tb_dp512x8_klu
+
+      - name: Run tb_dp512x8_klu simulation
+        run: |
+          cd test/tb_dp
+          timeout 1800 ../../build/simulator/vacask tb_dp512x8_klu.sim || true
+          ls -la ./*.raw 2>/dev/null || echo "No raw files generated yet"
+
+      - name: Generate plots
+        if: always()
+        run: |
+          cd test/tb_dp
+          if [ -f tb_dp512x8_klu.raw ]; then
+            uv run plot.py tb_dp512x8_klu.raw --save
+            echo "Plots generated successfully"
+          else
+            echo "No simulation results to plot"
+          fi
+
+      - name: Upload simulation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            test/tb_dp/*.raw
+            test/tb_dp/*.png
+            test/tb_dp/*.log
+          if-no-files-found: warn
+          retention-days: 30
