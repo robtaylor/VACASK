@@ -28,42 +28,22 @@ jobs:
             libboost-system-dev \
             libsuitesparse-dev \
             flex \
-            bison \
-            llvm-15 \
-            llvm-15-dev \
-            clang-15 \
-            libclang-15-dev
+            bison
 
       - name: Install toml++ (header-only)
         run: |
           git clone --depth 1 --branch v3.4.0 https://github.com/marzer/tomlplusplus.git /tmp/tomlplusplus
           sudo cp -r /tmp/tomlplusplus/include/toml++ /usr/local/include/
 
-      - name: Cache OpenVAF-reloaded
-        id: cache-openvaf
-        uses: actions/cache@v4
-        with:
-          path: ~/openvaf-r
-          key: openvaf-r-${{ runner.os }}-llvm15-v1
-
-      - name: Build OpenVAF-reloaded
-        if: steps.cache-openvaf.outputs.cache-hit != 'true'
-        env:
-          LLVM_CONFIG: /usr/bin/llvm-config-15
+      - name: Download OpenVAF
         run: |
-          # Install Rust
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          # shellcheck source=/dev/null
-          source ~/.cargo/env
-
-          # Clone and build OpenVAF-reloaded
-          git clone --depth 1 https://github.com/pascalkuthe/OpenVAF.git ~/openvaf-src
-          cd ~/openvaf-src
-          cargo build --release --bin openvaf
-
-          # Install to ~/openvaf-r
           mkdir -p ~/openvaf-r/bin
-          cp target/release/openvaf ~/openvaf-r/bin/openvaf-r
+          cd ~/openvaf-r/bin
+          curl -sSL https://github.com/pascalkuthe/OpenVAF/releases/download/OpenVAF-v23.5.0/openvaf_23_5_0_linux_amd64.tar.gz | tar xz
+          chmod +x openvaf
+          # Create symlink for compatibility
+          ln -sf openvaf openvaf-r
+          ./openvaf --version
 
       - name: Add OpenVAF to PATH
         run: echo "$HOME/openvaf-r/bin" >> "$GITHUB_PATH"
