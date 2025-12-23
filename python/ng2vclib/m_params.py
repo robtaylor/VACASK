@@ -1,47 +1,49 @@
-import re
+# SPDX-FileCopyrightText: 2025 ChipFlow
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+"""Parameter handling mixin for ng2vc converter.
+
+This module uses shared functions from spiceparser.params where possible,
+providing a backward-compatible interface for the ng2vclib converter.
+"""
+
+# Import shared parameter utilities
+from spiceparser.params import (
+    convert_si_prefixes as si_replace,
+)
+from spiceparser.params import (
+    format_value as _format_value,
+)
+from spiceparser.params import (
+    merge_vector_params,
+)
+from spiceparser.params import (
+    process_expressions as _process_expressions,
+)
+from spiceparser.params import (
+    process_terminals as _process_terminals,
+)
+from spiceparser.params import (
+    split_params as _split_params,
+)
 
 from .exc import ConverterError
 
-pat_siprefix = re.compile(r'\b(\d+\.\d*|\.\d+|\d+\.|\d+)(meg|g|t|mil)\b')
-
-pat_temper = re.compile(r"\btemper\b")
-
-prefix_map = {
-    "meg": "M", 
-    "g": "G", 
-    "t": "T"
-}
-
-def si_replace_worker(match):
-    """
-    Converts SI prefixes based on a rexexp match. 
-    xmeg -> xM
-    xg -> xG
-    xt -> xT
-    xmil -> (x*25.4e-6)
-    """
-    num = match.group(1)
-    prefix = match.group(2)
-    if prefix=="mil":
-        return "("+num+"*25.4e-6)"
-    else:
-        return num+prefix_map[prefix]
-
-def si_replace(expr):
-    """
-    Converts SI prefixes to VACASK syntax. 
-    """
-    return pat_siprefix.sub(si_replace_worker, expr)
-
 
 class ParamsMixin:
-    def format_extra_params(self, extras, lws, indent):
-        """
-        Format extra parameters.
+    """Mixin providing parameter handling methods for the Converter.
 
-        For now, we do not care about line length. 
+    These methods delegate to shared functions from spiceparser.params
+    while maintaining backward compatibility with existing ng2vclib code.
+    """
+
+    def format_extra_params(self, extras, lws, indent):
+        """Format extra parameters.
+
+        For now, we do not care about line length.
         """
-        intxt = lws + (" "*indent)
+        intxt = lws + (" " * indent)
 
         txt = ""
         first = True
@@ -49,33 +51,26 @@ class ParamsMixin:
             if not first:
                 txt += " "
             first = False
-            txt += name+"="+value
-        
-        return intxt+txt
-    
+            txt += name + "=" + value
+
+        return intxt + txt
+
     def format_value(self, valuestr):
+        """Format a value. Removes curly braces. Changes SI prefixes.
+
+        Delegates to spiceparser.params.format_value().
         """
-        Formats a value. Removes curly braces. Changes SI prefixes. 
-        """
-        if valuestr[0]=="{":
-            valuestr = valuestr[1:-1]
-        
-        # Handle SI prefixes
-        return si_replace(valuestr)
+        return _format_value(valuestr)
 
     def format_params(self, params, atcol=0, indent=2):
-        """
-        Format parameters, indent them, make sure lines are not too long. 
+        """Format parameters, indent them, make sure lines are not too long.
 
-        *lws* is the leading whitespace string. 
+        *atcol* is the column number where we start to dump parameters.
 
-        *atcol* is the column number where we start to dump parameters. 
+        Does not indent. Uses *indent* for computing when to split a line.
 
-        Does not indent. Uses *indent* for computing when to split a line. 
-
-        Returns a string, a flag indicating string has multiple lines, 
-        and a flag indicating that the formatted output has more then one 
-        line. 
+        Returns a string, a flag indicating string has multiple lines,
+        and a flag indicating that the formatted output has more than one line.
         """
         # Strip braces from parameter values, replace SI units
         # Compute full size
@@ -84,12 +79,11 @@ class ParamsMixin:
         for name, value in params:
             value = self.format_value(value)
             newpar.append((name, value))
-
-            full_size += len(name)+1+len(value)+1
+            full_size += len(name) + 1 + len(value) + 1
         params = newpar
 
-        # Do we need to split the line 
-        need_split = atcol+full_size>self.cfg["columns"]
+        # Do we need to split the line
+        need_split = atcol + full_size > self.cfg["columns"]
 
         split = False
         line = ""
@@ -100,7 +94,7 @@ class ParamsMixin:
             value = si_replace(value)
 
             # Do we need to start a new line
-            if indent+len(fragment)+len(name)+1+len(value)>self.cfg["columns"]:
+            if indent + len(fragment) + len(name) + 1 + len(value) > self.cfg["columns"]:
                 # New line
                 if not first:
                     line += "\n"
@@ -109,35 +103,32 @@ class ParamsMixin:
                     first = False
                 line += fragment
                 fragment = ""
-            
+
             # Space as separator
-            if len(fragment)>0:
+            if len(fragment) > 0:
                 fragment += " "
-            
+
             # Add parameter
             fragment += name + "=" + value
-        
+
         # Flush last fragment
-        if len(fragment)>0:
+        if len(fragment) > 0:
             if not first:
                 line += "\n"
                 split = True
             line += fragment
-        
+
         return line, need_split, split
 
     def indent(self, txt, indent):
-        """
-        Indents text by *indent* spaces. 
-        """
-        istr = " "*indent
-        return "\n".join([istr+l for l in txt.split("\n")])
+        """Indent text by *indent* spaces."""
+        istr = " " * indent
+        return "\n".join([istr + line for line in txt.split("\n")])
 
     def format_subckt_params(self, params, lws):
-        """
-        Format subcircuit parameters. 
+        """Format subcircuit parameters.
 
-        One parameter per line. 
+        One parameter per line.
         """
         txt = ""
         first = True
@@ -146,96 +137,66 @@ class ParamsMixin:
             if not first:
                 txt += "\n"
             first = False
-            txt += lws + "parameters "+name+"="+value
+            txt += lws + "parameters " + name + "=" + value
 
         return txt
 
     def split_params(self, params, handle_m=False):
-        """
-        Splits a list of parameter assignments into a list of 
-        (names, value) pairs. 
+        """Split a list of parameter assignments into (name, value) pairs.
 
-        Treats boolean parameters as <param>=1. 
+        Treats boolean parameters as <param>=1.
+        If requested, renames m parameter.
 
-        If requested, renames m parameter. 
+        Delegates to spiceparser.params.split_params() with error handling.
         """
-        psplit = []
-        for p in params:
-            split = p.split("=")
-            if len(split)==1:
-                # Handle booleans
-                split = (split[0], "1")
-            elif len(split)!=2:
-                raise ConverterError("Malformed parameter '"+p+"'.")
-            
-            # Handle mfactor
-            if handle_m:
-                if split[0]=="m" or split[0]=="_mfactor":
-                    split = ( "$mfactor", split[1] )
-            
-            psplit.append(split)
-        
-        return psplit
+        try:
+            return _split_params(params, handle_m=handle_m)
+        except ValueError as e:
+            raise ConverterError(str(e)) from e
 
-    def remove_params(self, params, to_remove=set()):
+    def remove_params(self, params, to_remove=None):
+        """Remove all parameters listed in set *to_remove*.
+
+        Can handle unsplit and split parameters.
         """
-        Removes all parameters listed in set *to_remove*. 
-        Can handle unsplit and split parameters. 
-        """
+        if to_remove is None:
+            to_remove = set()
+
+        # Handle mixed unsplit/split params (original behavior)
         out = []
         for part in params:
-            if isinstance(part, list) or isinstance(part, tuple):
+            if isinstance(part, (list, tuple)):
                 if part[0] in to_remove:
                     continue
             elif part in to_remove:
-                    continue
+                continue
             out.append(part)
         return out
-    
-    def merge_vectors(self, params, vecnames=set()):
-        """
-        Merges vector parameters into one string. 
 
-        Assumes *params* is a list of unsplit parameters. 
+    def merge_vectors(self, params, vecnames=None):
+        """Merge vector parameters into one string.
+
+        Assumes *params* is a list of unsplit parameters.
+        Delegates to spiceparser.params.merge_vector_params().
         """
-        out = []
-        for ndx in range(len(params)):
-            part = params[ndx]
-            sp = part.split("=", 1)
-            if len(sp)>1 and sp[0] in vecnames:
-                # Start merging
-                merged = ""
-                while ndx<len(params): 
-                    merged += params[ndx]
-                    if params[ndx].strip()[-1]!=",":
-                        break
-                out.append(merged)
-            else:
-                out.append(part)
-        
-        return out
+        if vecnames is None:
+            vecnames = set()
+        return merge_vector_params(params, vecnames)
 
     def process_expressions(self, params):
+        """Process expressions, replace temper -> $temp.
+
+        Delegates to spiceparser.params.process_expressions().
         """
-        Processes expressions, replace 
-          temper -> $temp
-        """
-        pout = []
-        for p, e in params:
-            e = re.sub(pat_temper, "$temp", e)
-            pout.append((p, e))
-        
-        return pout
+        return _process_expressions(params)
 
     def process_instance_params(self, params, insttype, handle_m=False):
-        """
-        Processes instance parameters. 
+        """Process instance parameters.
 
-        Merges vectors, removes unneeded parameters. 
+        Merges vectors, removes unneeded parameters.
+        If requested, renames m parameter.
 
-        If requested, renames m parameter. 
-
-        Returns split parameters. 
+        Returns split parameters.
         """
         # Merge vector parameters
         vecnames = self.cfg["merge_vector_instance_params"].get(insttype, None)
@@ -246,17 +207,18 @@ class ParamsMixin:
         psplit = self.split_params(params, handle_m=handle_m)
 
         # Remove unneeded parameters
-        vecnames = self.cfg["remove_instance_params"].get(insttype, None)
-        if vecnames is not None:
-            psplit = self.remove_params(psplit, vecnames)
-        
+        to_remove = self.cfg["remove_instance_params"].get(insttype, None)
+        if to_remove is not None:
+            psplit = self.remove_params(psplit, to_remove)
+
         # Process expressions
         psplit = self.process_expressions(psplit)
 
         return psplit
-    
+
     def process_terminals(self, terminals):
+        """Process terminals. Replaces ! with _.
+
+        Delegates to spiceparser.params.process_terminals().
         """
-        Processes terminals. For now replaces ! with _. 
-        """
-        return [ t.replace("!", "_") for t in terminals]
+        return _process_terminals(terminals)

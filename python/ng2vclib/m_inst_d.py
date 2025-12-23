@@ -1,5 +1,6 @@
 from .exc import ConverterError
 
+
 class InstanceDMixin:
     def process_instance_d(self, lws, line, eol, annot, in_sub):
         """

@@ -1,5 +1,6 @@
 from .exc import ConverterError
 
+
 class InstancePassiveMixin:
     def process_instance_r(self, lws, line, eol, annot, in_sub):
         """

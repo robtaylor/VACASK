@@ -121,7 +121,8 @@ class NetlistParser:
             self.netlist.title = self.lines[0].strip()
 
         # Parse remaining lines
-        for self.line_no, line in enumerate(self.lines[1:], start=2):
+        for line_no, line in enumerate(self.lines[1:], start=2):
+            self.line_no = line_no
             line = line.strip()
 
             # Skip empty lines and comments
@@ -161,9 +162,78 @@ class NetlistParser:
         # Check for directives (start with '.')
         if line.startswith("."):
             self._parse_directive(line, lower)
+        # Check for Spectre-style keywords (no dot prefix)
+        elif self._is_spectre_keyword(line):
+            self._parse_spectre_keyword(line, lower)
         else:
             # Instance line
             self._parse_instance(line)
+
+    def _is_spectre_keyword(self, line: str) -> bool:
+        """Check if line starts with a Spectre keyword (no dot prefix)."""
+        # Only check for Spectre dialects
+        if hasattr(self.dialect, "is_spectre_keyword"):
+            return self.dialect.is_spectre_keyword(line) is not None
+        return False
+
+    def _parse_spectre_keyword(self, line: str, lower: str) -> None:
+        """Parse a Spectre-style keyword line (no dot prefix)."""
+        # Include directive
+        include = self.dialect.parse_include(line)
+        if include:
+            filepath, section = include
+            self._handle_include(filepath, section)
+            return
+
+        # Library/section blocks (Spectre structural syntax)
+        if hasattr(self.dialect, "parse_library_block"):
+            lib_block = self.dialect.parse_library_block(line)
+            if lib_block:
+                directive_type, name = lib_block
+                if directive_type == "library":
+                    self._start_lib_section(name)
+                elif directive_type == "endlibrary":
+                    self._end_lib_section()
+                return
+
+        if hasattr(self.dialect, "parse_section_block"):
+            section_block = self.dialect.parse_section_block(line)
+            if section_block:
+                directive_type, name = section_block
+                if directive_type == "section":
+                    self._start_lib_section(name)
+                elif directive_type == "endsection":
+                    self._end_lib_section()
+                return
+
+        # Model definition: model name type params
+        if lower.startswith("model "):
+            model = self._parse_spectre_model(line)
+            if model:
+                self._add_model(model)
+            return
+
+        # Subcircuit start: subckt name (ports) parameters ...
+        if lower.startswith("subckt ") or lower.startswith("inline subckt "):
+            subckt = self._parse_spectre_subckt_header(line)
+            if subckt:
+                self._start_subckt(subckt)
+            return
+
+        # Subcircuit end: ends [name]
+        if lower.startswith("ends"):
+            self._end_subckt()
+            return
+
+        # simulator lang= directive (for mixed-mode files)
+        if hasattr(self.dialect, "parse_simulator_lang"):
+            lang = self.dialect.parse_simulator_lang(line)
+            if lang:
+                # Track language switch but don't change parser behavior for now
+                # In future, could switch dialect dynamically
+                return
+
+        # Ignore other Spectre keywords for now (parameters, global, etc.)
 
     def _parse_directive(self, line: str, lower: str) -> None:
         """Parse a directive line (starting with '.')."""
@@ -224,11 +294,88 @@ class NetlistParser:
         # Other directives - ignore for now
         # (.param, .option, .control, etc.)
 
+    def _parse_spectre_model(self, line: str) -> ModelDef | None:
+        """Parse a Spectre-style model definition (no dot prefix).
+
+        Spectre syntax: model name type (params) or model name type param=val
+        """
+        # Remove 'model ' prefix
+        rest = line[6:].strip()
+        return self._parse_model_content(rest)
+
+    def _parse_spectre_subckt_header(self, line: str) -> Subcircuit | None:
+        """Parse a Spectre-style subckt header (no dot prefix).
+
+        Spectre syntax: subckt name (port1 port2) parameters p1=v1 ...
+        Or: inline subckt name (port1 port2) ...
+        """
+        # Handle 'inline subckt' prefix
+        lower = line.lower()
+        if lower.startswith("inline subckt "):
+            rest = line[14:].strip()
+        else:
+            rest = line[7:].strip()  # Remove 'subckt ' prefix
+
+        tokens = self._tokenize(rest)
+        if not tokens:
+            return None
+
+        name = tokens[0]
+        ports = []
+        params = {}
+
+        # In Spectre, ports are often in parentheses: subckt name (p1 p2 p3)
+        i = 1
+        if i < len(tokens) and tokens[i].startswith("("):
+            # Extract ports from parenthesized group
+            port_token = tokens[i]
+            if port_token.startswith("(") and port_token.endswith(")"):
+                # Ports are in a single token like "(a b c)"
+                port_str = port_token[1:-1].strip()
+                if port_str:
+                    ports = port_str.split()
+            i += 1
+
+        # Look for 'parameters' keyword or param=value
+        while i < len(tokens):
+            token = tokens[i]
+            token_lower = token.lower()
+
+            # Check for 'parameters' keyword
+            if token_lower == "parameters":
+                i += 1
+                params = self._parse_params(tokens[i:])
+                break
+            # Check for combined format (name=value)
+            elif "=" in token and token != "=":
+                params = self._parse_params(tokens[i:])
+                break
+            # Check for spaced format (name = value)
+            elif i + 1 < len(tokens) and tokens[i + 1] == "=":
+                params = self._parse_params(tokens[i:])
+                break
+            # Otherwise it's a port (for cases without parentheses)
+            elif not ports:
+                ports.append(token)
+            i += 1
+
+        return Subcircuit(
+            name=name,
+            ports=ports,
+            parameters=params,
+            source_file=self.source_file,
+            line_number=self.line_no,
+        )
+
     def _parse_model(self, line: str) -> ModelDef | None:
         """Parse a .model definition line."""
         # .model name type [(]params[)]
         # Remove the .model prefix
         rest = line[7:].strip()
+        return self._parse_model_content(rest)
+
+    def _parse_model_content(self, rest: str) -> ModelDef | None:
+        """Parse model content (shared between SPICE and Spectre styles)."""
 
         # Split into tokens, respecting parentheses and quotes
         tokens = self._tokenize(rest)
@@ -277,11 +424,16 @@ class NetlistParser:
         params = {}
 
         # Separate ports from parameters
+        # Look for either "name=value" or "name = value" pattern
         i = 1
         while i < len(tokens):
             token = tokens[i]
-            if "=" in token:
-                # Start of parameters
+            # Check for combined format (name=value)
+            if "=" in token and token != "=":
+                params = self._parse_params(tokens[i:])
+                break
+            # Check for spaced format (name = value)
+            if i + 1 < len(tokens) and tokens[i + 1] == "=":
                 params = self._parse_params(tokens[i:])
                 break
             ports.append(token)
@@ -328,14 +480,27 @@ class NetlistParser:
     def _parse_instance_tokens(self, instance: Instance, tokens: list[str]) -> None:
         """Parse instance nodes and parameters from tokens."""
         # Simplified parsing - nodes first, then parameters
-        for token in tokens:
-            if "=" in token:
-                # Parameter
+        # Handle both "name=value" and "name = value" formats
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+
+            # Check for combined parameter format (name=value)
+            if "=" in token and token != "=":
                 key, _, value = token.partition("=")
                 instance.parameters[key.lower()] = self.dialect.parse_parameter_value(
                     value
                 )
-            elif instance.model_name is None and not token[0].isdigit():
+                i += 1
+            # Check for spaced parameter format (name = value)
+            elif i + 2 < len(tokens) and tokens[i + 1] == "=":
+                key = token
+                value = tokens[i + 2]
+                instance.parameters[key.lower()] = self.dialect.parse_parameter_value(
+                    value
+                )
+                i += 3
+            elif instance.model_name is None and token and not token[0].isdigit():
                 # Could be model name or node
                 # Heuristic: if it looks like a node name, add as node
                 # Otherwise treat as model name
@@ -349,8 +514,10 @@ class NetlistParser:
                     # Might be model name - check if we have enough nodes
                     # This is device-type dependent
                     instance.nodes.append(token)  # Simplified: just add as node
+                i += 1
             else:
                 instance.nodes.append(token)
+                i += 1
 
     def _tokenize(self, text: str) -> list[str]:
         """Tokenize a line respecting quotes and parentheses."""
@@ -390,12 +557,36 @@ class NetlistParser:
         return tokens
 
     def _parse_params(self, tokens: list[str]) -> dict[str, any]:
-        """Parse parameter tokens into a dictionary."""
+        """Parse parameter tokens into a dictionary.
+
+        Handles both formats:
+        - name=value (Ngspice style, single token)
+        - name = value (HSPICE style, three separate tokens)
+        """
         params = {}
-        for token in tokens:
-            if "=" in token:
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+
+            if "=" in token and token != "=":
+                # Combined format: name=value
                 key, _, value = token.partition("=")
                 params[key.lower()] = self.dialect.parse_parameter_value(value)
+                i += 1
+            elif (
+                i + 2 < len(tokens)
+                and tokens[i + 1] == "="
+                and "=" not in token
+            ):
+                # Spaced format: name = value
+                key = token
+                value = tokens[i + 2]
+                params[key.lower()] = self.dialect.parse_parameter_value(value)
+                i += 3
+            else:
+                # Skip non-parameter tokens
+                i += 1
+
         return params
 
     def _handle_include(self, filepath: str, section: str | None) -> None:
