@@ -9,15 +9,37 @@ different simulators (Ngspice, HSPICE, LTSpice), extracting models and
 subcircuits for conversion to Verilog-A.
 
 Supported dialects:
-    - ngspice: Ngspice simulator netlists
-    - hspice: Synopsys HSPICE netlists (priority)
-    - ltspice: LTSpice netlists
+    - ngspice: Ngspice simulator netlists (default)
+    - hspice: Synopsys HSPICE netlists with .if/.endif, .ALTER support
+    - ltspice: LTSpice netlists with Rser/Lser/Rpar/Cpar parameters
 
-Usage:
+Features:
+    - Multi-dialect parsing with automatic dialect detection
+    - Device type mapping (NMOS, PMOS, NPN, PNP, etc.)
+    - OSDI module resolution for Verilog-A conversion
+    - SI prefix conversion (k, meg, m, u, n, p, f)
+    - Parameter expression handling
+    - Include/library directive processing
+
+Basic usage:
     from spiceparser import parse_netlist
-    from spiceparser.dialects import NgspiceDialect
 
-    netlist = parse_netlist("circuit.sp", dialect=NgspiceDialect())
+    netlist = parse_netlist("circuit.sp", dialect="ngspice")
+
+Auto-detection:
+    from spiceparser import detect_dialect_from_file, parse_netlist
+
+    dialect = detect_dialect_from_file("circuit.sp")
+    netlist = parse_netlist("circuit.sp", dialect=dialect)
+
+Device type lookup:
+    from spiceparser import get_device_type_info, get_osdi_module
+
+    info = get_device_type_info("nmos")
+    # DeviceTypeInfo(family='mos', remove_level=True, remove_version=True, ...)
+
+    osdi = get_osdi_module("mos", level=54)
+    # OsdiModuleInfo(osdi_file='bsim4.osdi', module_name='bsim4', ...)
 """
 
 from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect, detect_dialect, detect_dialect_from_file
