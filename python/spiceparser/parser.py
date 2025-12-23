@@ -277,11 +277,16 @@ class NetlistParser:
         params = {}
 
         # Separate ports from parameters
+        # Look for either "name=value" or "name = value" pattern
         i = 1
         while i < len(tokens):
             token = tokens[i]
-            if "=" in token:
-                # Start of parameters
+            # Check for combined format (name=value)
+            if "=" in token and token != "=":
+                params = self._parse_params(tokens[i:])
+                break
+            # Check for spaced format (name = value)
+            if i + 1 < len(tokens) and tokens[i + 1] == "=":
                 params = self._parse_params(tokens[i:])
                 break
             ports.append(token)
@@ -328,14 +333,27 @@ class NetlistParser:
     def _parse_instance_tokens(self, instance: Instance, tokens: list[str]) -> None:
         """Parse instance nodes and parameters from tokens."""
         # Simplified parsing - nodes first, then parameters
-        for token in tokens:
-            if "=" in token:
-                # Parameter
+        # Handle both "name=value" and "name = value" formats
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+
+            # Check for combined parameter format (name=value)
+            if "=" in token and token != "=":
                 key, _, value = token.partition("=")
                 instance.parameters[key.lower()] = self.dialect.parse_parameter_value(
                     value
                 )
-            elif instance.model_name is None and not token[0].isdigit():
+                i += 1
+            # Check for spaced parameter format (name = value)
+            elif i + 2 < len(tokens) and tokens[i + 1] == "=":
+                key = token
+                value = tokens[i + 2]
+                instance.parameters[key.lower()] = self.dialect.parse_parameter_value(
+                    value
+                )
+                i += 3
+            elif instance.model_name is None and token and not token[0].isdigit():
                 # Could be model name or node
                 # Heuristic: if it looks like a node name, add as node
                 # Otherwise treat as model name
@@ -349,8 +367,10 @@ class NetlistParser:
                     # Might be model name - check if we have enough nodes
                     # This is device-type dependent
                     instance.nodes.append(token)  # Simplified: just add as node
+                i += 1
             else:
                 instance.nodes.append(token)
+                i += 1
 
     def _tokenize(self, text: str) -> list[str]:
         """Tokenize a line respecting quotes and parentheses."""
@@ -390,12 +410,36 @@ class NetlistParser:
         return tokens
 
     def _parse_params(self, tokens: list[str]) -> dict[str, any]:
-        """Parse parameter tokens into a dictionary."""
+        """Parse parameter tokens into a dictionary.
+
+        Handles both formats:
+        - name=value (Ngspice style, single token)
+        - name = value (HSPICE style, three separate tokens)
+        """
         params = {}
-        for token in tokens:
-            if "=" in token:
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+
+            if "=" in token and token != "=":
+                # Combined format: name=value
                 key, _, value = token.partition("=")
                 params[key.lower()] = self.dialect.parse_parameter_value(value)
+                i += 1
+            elif (
+                i + 2 < len(tokens)
+                and tokens[i + 1] == "="
+                and "=" not in token
+            ):
+                # Spaced format: name = value
+                key = token
+                value = tokens[i + 2]
+                params[key.lower()] = self.dialect.parse_parameter_value(value)
+                i += 3
+            else:
+                # Skip non-parameter tokens
+                i += 1
+
         return params
 
     def _handle_include(self, filepath: str, section: str | None) -> None:
