@@ -23,6 +23,15 @@ Usage:
 from spiceparser.dialect import SpiceDialect, get_dialect, register_dialect
 from spiceparser.netlist import ModelDef, Subcircuit, Instance, Netlist
 from spiceparser.parser import parse_netlist
+from spiceparser.elements import (
+    DeviceTypeInfo,
+    OsdiModuleInfo,
+    get_device_type_info,
+    get_osdi_module,
+    get_default_model,
+    DEVICE_TYPES,
+    OSDI_MODULES,
+)
 
 # Import dialects to register them
 from spiceparser.dialects import ngspice as _ngspice  # noqa: F401
@@ -36,4 +45,11 @@ __all__ = [
     "Instance",
     "Netlist",
     "parse_netlist",
+    "DeviceTypeInfo",
+    "OsdiModuleInfo",
+    "get_device_type_info",
+    "get_osdi_module",
+    "get_default_model",
+    "DEVICE_TYPES",
+    "OSDI_MODULES",
 ]
