@@ -1,107 +1,140 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
-# Ngspice to VACASK netlist converter
-# Use as module, i.e. python3 -m ng2vc ...
-# or edit hashbang line and make it executable. 
+# SPDX-FileCopyrightText: 2025 ChipFlow
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+"""SPICE to VACASK netlist converter.
+
+Supports multiple SPICE dialects: Ngspice (default), HSPICE, LTSpice.
+
+Usage:
+    python3 -m ng2vc [<args>] <input file> [<output file>]
+    python3 -m ng2vc --dialect hspice input.hspice output.vc
+
+If no output file is provided, the converted netlist is printed to stdout.
+"""
 
 import sys
-from pprint import pprint
 from ng2vclib.converter import Converter
 from ng2vclib import dfl
 
-if __name__ == "__main__":
-    help="""Ngspice to VACASK netlist converter.")
+HELP_TEXT = """\
+SPICE to VACASK netlist converter.
+
 Usage: python3 -m ng2vc [<args>] <input file> [<output file>]
 
-If no output file is provided, the converted netlist is printed to 
-the standard output. 
+If no output file is provided, the converted netlist is printed to
+the standard output.
 
-If output file is a relative path it is considered relative to 
-the input file. 
+If output file is a relative path it is considered relative to
+the input file.
 
-Creates destination directory, if needed. 
+Creates destination directory, if needed.
 
 Arguments:
   -h --help           print help
+  -d  --dialect       SPICE dialect: ngspice (default), hspice, ltspice
   -dr --read-depth    maximal depth to which sources are loaded
                       (infinite by default)
   -dp --process-depth maximal depth to which sources are processed
                       (infinite by default)
   -do --output-depth  maximal depth to which sources are output
-                      (infinite ba default)
+                      (infinite by default)
   -sp --sourcepath    add a directory to the sourcepath where
-                      .include and .lib files are found. By default 
-                      sourcepath already contains the current directory. 
+                      .include and .lib files are found. By default
+                      sourcepath already contains the current directory.
   -am --all-models    dumps all models, not just those that are used
                       (disabled by default)
 """
+
+
+def main():
+    """Main entry point for ng2vc converter."""
     ndx = 1
-    fromFile = None
-    toFile = None
+    from_file = None
+    to_file = None
+    dialect = "ngspice"
     read_depth = None
     process_depth = None
     output_depth = None
-    sourcepath = [ "." ]
+    sourcepath = ["."]
     all_models = False
-    while ndx<len(sys.argv):
+
+    while ndx < len(sys.argv):
         arg = sys.argv[ndx]
-        if arg[0]=="-":
-            if arg == "--help" or arg == "-h":
-                # Print help and exit
-                print(help)
-                sys.exit(0)
-            elif arg == "-dr" or arg == "--read-depth":
-                if ndx+1>=len(sys.argv):
-                    print("Too few arguments.")
-                    sys.exit(1)
+        if arg.startswith("-"):
+            if arg in ("--help", "-h"):
+                print(HELP_TEXT)
+                return 0
+            elif arg in ("-d", "--dialect"):
+                if ndx + 1 >= len(sys.argv):
+                    print("Too few arguments.", file=sys.stderr)
+                    return 1
+                ndx += 1
+                dialect = sys.argv[ndx].lower()
+                if dialect not in ("ngspice", "hspice", "ltspice"):
+                    print(f"Unknown dialect: {dialect}", file=sys.stderr)
+                    print("Valid dialects: ngspice, hspice, ltspice", file=sys.stderr)
+                    return 1
+            elif arg in ("-dr", "--read-depth"):
+                if ndx + 1 >= len(sys.argv):
+                    print("Too few arguments.", file=sys.stderr)
+                    return 1
                 ndx += 1
                 read_depth = int(sys.argv[ndx])
-            elif arg == "-dp" or arg == "--process-depth":
-                if ndx+1>=len(sys.argv):
-                    print("Too few arguments.")
-                    sys.exit(1)
+            elif arg in ("-dp", "--process-depth"):
+                if ndx + 1 >= len(sys.argv):
+                    print("Too few arguments.", file=sys.stderr)
+                    return 1
                 ndx += 1
                 process_depth = int(sys.argv[ndx])
-            elif arg == "-do" or arg == "--output-depth":
-                if ndx+1>=len(sys.argv):
-                    print("Too few arguments.")
-                    sys.exit(1)
+            elif arg in ("-do", "--output-depth"):
+                if ndx + 1 >= len(sys.argv):
+                    print("Too few arguments.", file=sys.stderr)
+                    return 1
                 ndx += 1
                 output_depth = int(sys.argv[ndx])
-            elif arg == "-sp" or arg == "--sourcepath":
-                if ndx+1>=len(sys.argv):
-                    print("Too few arguments.")
-                    sys.exit(1)
+            elif arg in ("-sp", "--sourcepath"):
+                if ndx + 1 >= len(sys.argv):
+                    print("Too few arguments.", file=sys.stderr)
+                    return 1
                 ndx += 1
                 sourcepath.append(sys.argv[ndx])
-            elif arg == "-am" or arg == "--all-models":
+            elif arg in ("-am", "--all-models"):
                 all_models = True
             else:
-                print("Unknown argument:", arg)
-                print(help)
-                sys.exit(1)
+                print(f"Unknown argument: {arg}", file=sys.stderr)
+                print(HELP_TEXT, file=sys.stderr)
+                return 1
         else:
-            # Need 1 or 2 more args
-            if ndx+1>len(sys.argv):
-                print("Need input file.")
-                print(help)
-                sys.exit(1)
-            
-            fromFile = arg
+            # Positional argument: input file
+            if ndx + 1 > len(sys.argv):
+                print("Need input file.", file=sys.stderr)
+                print(HELP_TEXT, file=sys.stderr)
+                return 1
 
-            if ndx+2<len(sys.argv):
-                print("Too many arguments.")
-                print(help)
-                sys.exit(1)
-            
-            if ndx+2==len(sys.argv):
-                toFile = sys.argv[ndx+1]
+            from_file = arg
+
+            if ndx + 2 < len(sys.argv):
+                print("Too many arguments.", file=sys.stderr)
+                print(HELP_TEXT, file=sys.stderr)
+                return 1
+
+            if ndx + 2 == len(sys.argv):
+                to_file = sys.argv[ndx + 1]
             else:
-                toFile = None
+                to_file = None
             break
-        
+
         ndx += 1
-    
+
+    if from_file is None:
+        print("Need input file.", file=sys.stderr)
+        print(HELP_TEXT, file=sys.stderr)
+        return 1
+
+    # Build configuration
     cfg = dfl.default_config()
     cfg["sourcepath"] = sourcepath
     cfg["read_depth"] = read_depth
@@ -109,6 +142,13 @@ Arguments:
     cfg["output_depth"] = output_depth
     cfg["all_models"] = all_models
 
-    converter = Converter(cfg)
-    converter.convert(fromFile, toFile)
+    # Create converter with specified dialect
+    converter = Converter(cfg, dialect=dialect)
+    converter.convert(from_file, to_file)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
     
