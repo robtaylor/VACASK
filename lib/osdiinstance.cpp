@@ -176,7 +176,7 @@ bool OsdiInstance::getOutvar(ParameterIndex ndx, Value& v, Status& s) const {
         s.set(Status::Range, std::string("Output variable index id=")+std::to_string(ndx)+" out of range.");
         return false;
     }
-    auto osdiId = model()->device()->instanceOsdiParameterId(ndx);
+    auto osdiId = model()->device()->outvarOsdiParameterId(ndx);
     return model()->device()->readParameter(osdiId, const_cast<void*>(model()->core()), core_, v, s);
 }
 
@@ -1551,6 +1551,18 @@ void OsdiInstance::dump(int indent, const Circuit& circuit, std::ostream& os) co
                 os << " (not given)";
             }
             os << "\n";
+        }
+    }
+    // Output variables (opvars) - computed values from instance setup
+    if (outvarCount()>0) {
+        os << pfx << "  Output variables:\n";
+        auto nop = outvarCount();
+        for(decltype(nop) i=0; i<nop; i++) {
+            Value v;
+            Status s;
+            if (getOutvar(i, v, s)) {
+                os << pfx << "    " << std::string(outvarName(i)) << " = " << v << " (" << v.typeName() << ")\n";
+            }
         }
     }
 }
