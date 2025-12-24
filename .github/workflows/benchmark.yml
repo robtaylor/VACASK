@@ -147,3 +147,44 @@ jobs:
             test/tb_dp/*.log
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Create job summary with plots
+        if: always()
+        run: |
+          echo "## Dual-Port SRAM Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f test/tb_dp/tb_dp512x8_klu.raw ]; then
+            echo "### Simulation completed successfully" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+
+            # Get simulation stats
+            if [ -f test/tb_dp/tb_dp512x8_klu.log ]; then
+              echo "<details><summary>Simulation Log</summary>" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              tail -50 test/tb_dp/tb_dp512x8_klu.log >> "$GITHUB_STEP_SUMMARY" || true
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            # List generated plots
+            echo "### Generated Plots" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The following plots were generated and are available in the artifacts:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            for png in test/tb_dp/*.png; do
+              if [ -f "$png" ]; then
+                basename "$png" >> "$GITHUB_STEP_SUMMARY"
+                echo "" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "> Download the **benchmark-results** artifact to view the plots." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Simulation did not complete" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No .raw output file was generated. Check the simulation logs for errors." >> "$GITHUB_STEP_SUMMARY"
+          fi
