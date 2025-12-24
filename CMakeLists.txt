@@ -183,6 +183,7 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
 elseif (${SIM_PLATFORM} STREQUAL "Linux")
 	# Flex on Linux typically installs headers to /usr/include
 	set(FLEX_INCLUDE_DIR "/usr/include" CACHE STRING "Flex include dir" FORCE)
+	set(FLEX_INCLUDE_DIRS "/usr/include" CACHE STRING "Flex include dirs" FORCE)
 endif()
 message(STATUS "FLEX_INCLUDE_DIR: ${FLEX_INCLUDE_DIR}")
 
