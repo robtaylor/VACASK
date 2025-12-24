@@ -70,8 +70,6 @@ else()
     set(SIM_PLATFORM "Linux")
     set(SIM_ARCH "x86_64")
     set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
-    # Flex include dir (system path on Linux)
-    set(FLEX_INCLUDE_DIR "/usr/include")
     # SuiteSparse from apt installs to /usr/include/suitesparse
     set(SuiteSparse_DIR "/usr")
 endif()
@@ -182,7 +180,11 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
 	get_filename_component(tmp "${FLEX_EXECUTABLE}" DIRECTORY)
 	set(FLEX_INCLUDE_DIRS "${tmp}/../include" CACHE STRING "Flex include dir" FORCE)
 	set(FL_LIBRARY "${tmp}/../lib/libfl.a" CACHE STRING "Flex library" FORCE)
+elseif (${SIM_PLATFORM} STREQUAL "Linux")
+	# Flex on Linux typically installs headers to /usr/include
+	set(FLEX_INCLUDE_DIR "/usr/include" CACHE STRING "Flex include dir" FORCE)
 endif()
+message(STATUS "FLEX_INCLUDE_DIR: ${FLEX_INCLUDE_DIR}")
 
 #
 # Custom build types
