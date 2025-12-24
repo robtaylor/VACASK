@@ -79,7 +79,7 @@ jobs:
         run: |
           cmake -G Ninja -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DOPENVAF_DIR="$HOME/openvaf-r"
+            -DOPENVAF_DIR="$HOME/openvaf-r/bin"
 
       - name: Build VACASK
         run: cmake --build build -j "$(nproc)"
