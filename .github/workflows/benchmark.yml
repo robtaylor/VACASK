@@ -26,6 +26,7 @@ jobs:
             ninja-build \
             libsuitesparse-dev \
             flex \
+            libfl-dev \
             bison \
             llvm-14 \
             llvm-14-dev \
@@ -35,6 +36,8 @@ jobs:
           # Create symlinks for clang-cl and llvm-lib that OpenVAF expects
           sudo ln -sf /usr/bin/clang-14 /usr/bin/clang-cl
           sudo ln -sf /usr/bin/llvm-ar-14 /usr/bin/llvm-lib
+          # Verify FlexLexer.h is installed
+          ls -la /usr/include/FlexLexer.h || echo "FlexLexer.h not found in /usr/include"
 
       - name: Cache Boost 1.88
         id: cache-boost
