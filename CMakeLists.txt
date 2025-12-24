@@ -70,6 +70,8 @@ else()
     set(SIM_PLATFORM "Linux")
     set(SIM_ARCH "x86_64")
     set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
+    # Flex include dir (system path on Linux)
+    set(FLEX_INCLUDE_DIR "/usr/include")
 endif()
 message(STATUS "Platform: ${SIM_PLATFORM}")
 
