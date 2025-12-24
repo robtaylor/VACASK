@@ -130,8 +130,8 @@ jobs:
       - name: Compile PSP103 model for IHP
         run: |
           cd test/tb_dp
-          # Compile PSP103 with IHP parameters
-          openvaf-r -I../../devices ~/ihp-pdk/ihp-sg13g2/libs.tech/ngspice/models/PSP103VA/psp103.va -o psp103_ihp.osdi
+          # Compile PSP103 (from VACASK's devices/psp103v4) - IHP PDK provides parameters via .lib files
+          openvaf-r -I../../devices ../../devices/psp103v4/psp103.va -o psp103_ihp.osdi
 
       - name: Convert tb_dp512x8_klu test
         env:
