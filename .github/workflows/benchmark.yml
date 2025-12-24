@@ -135,7 +135,7 @@ jobs:
 
       - name: Convert tb_dp512x8_klu test
         env:
-          IHP_PDK_ROOT: ~/ihp-pdk/ihp-sg13g2
+          IHP_PDK_ROOT: /home/runner/ihp-pdk/ihp-sg13g2
         run: |
           cd python
           uv sync
