@@ -8,7 +8,9 @@ if(POLICY CMP0177)
 endif()
 
 if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
+    # Use OLD to enable legacy FindBoost module since Boost built from source
+    # doesn't include CMake config files (BoostConfig.cmake)
+    cmake_policy(SET CMP0167 OLD)
 endif()
 
 enable_testing()
