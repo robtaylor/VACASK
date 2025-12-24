@@ -27,14 +27,14 @@ jobs:
             libsuitesparse-dev \
             flex \
             bison \
-            llvm-15 \
-            llvm-15-dev \
-            clang-15 \
-            lld-15 \
-            libpolly-15-dev
+            llvm-14 \
+            llvm-14-dev \
+            clang-14 \
+            lld-14 \
+            libpolly-14-dev
           # Create symlinks for clang-cl and llvm-lib that OpenVAF expects
-          sudo ln -sf /usr/bin/clang-15 /usr/bin/clang-cl
-          sudo ln -sf /usr/bin/llvm-ar-15 /usr/bin/llvm-lib
+          sudo ln -sf /usr/bin/clang-14 /usr/bin/clang-cl
+          sudo ln -sf /usr/bin/llvm-ar-14 /usr/bin/llvm-lib
 
       - name: Cache Boost 1.88
         id: cache-boost
@@ -64,12 +64,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/openvaf-r
-          key: openvaf-${{ runner.os }}-llvm15-v4
+          key: openvaf-${{ runner.os }}-llvm14-v1
 
       - name: Build OpenVAF
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
         env:
-          LLVM_CONFIG: /usr/bin/llvm-config-15
+          LLVM_CONFIG: /usr/bin/llvm-config-14
         run: |
           # Install Rust
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
