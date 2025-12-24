@@ -184,6 +184,8 @@ elseif (${SIM_PLATFORM} STREQUAL "Linux")
 	# Flex on Linux typically installs headers to /usr/include
 	set(FLEX_INCLUDE_DIR "/usr/include" CACHE STRING "Flex include dir" FORCE)
 	set(FLEX_INCLUDE_DIRS "/usr/include" CACHE STRING "Flex include dirs" FORCE)
+	# Also add to global includes since target_include_directories doesn't pick up the cache var
+	include_directories("/usr/include")
 endif()
 message(STATUS "FLEX_INCLUDE_DIR: ${FLEX_INCLUDE_DIR}")
 
