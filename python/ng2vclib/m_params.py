@@ -217,7 +217,11 @@ class ParamsMixin:
         return psplit
 
     def process_terminals(self, terminals):
-        """Process terminals. Replaces ! with _.
+        """Process terminals for VACASK output.
+
+        Replaces invalid VACASK identifier characters:
+        - ! -> _
+        - [N] -> _N_ (array indices not allowed in VACASK identifiers)
 
         Delegates to spiceparser.params.process_terminals().
         """

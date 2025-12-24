@@ -8,7 +8,9 @@ if(POLICY CMP0177)
 endif()
 
 if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
+    # Use OLD to enable legacy FindBoost module since Boost built from source
+    # doesn't include CMake config files (BoostConfig.cmake)
+    cmake_policy(SET CMP0167 OLD)
 endif()
 
 enable_testing()
@@ -68,6 +70,8 @@ else()
     set(SIM_PLATFORM "Linux")
     set(SIM_ARCH "x86_64")
     set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
+    # SuiteSparse from apt installs to /usr/include/suitesparse
+    set(SuiteSparse_DIR "/usr")
 endif()
 message(STATUS "Platform: ${SIM_PLATFORM}")
 
@@ -143,12 +147,22 @@ else()
 
     # For 1.88 installed manually by user
     set(Boost_NO_SYSTEM_PATHS TRUE)
+    set(Boost_NO_BOOST_CMAKE ON)  # Use FindBoost module, not BoostConfig.cmake
     find_package(Boost 1.88 REQUIRED COMPONENTS filesystem process system)
     include_directories("${Boost_INCLUDE_DIRS}")
-    set(Boost_EXTRA_LINK_DIR "${Boost_INCLUDE_DIRS}/stage/lib")
+    # For installed Boost (./b2 install), libs are in ${prefix}/lib not stage/lib
+    if (DEFINED BOOST_LIBRARYDIR)
+        set(Boost_EXTRA_LINK_DIR "${BOOST_LIBRARYDIR}")
+    elseif (Boost_LIBRARY_DIRS)
+        set(Boost_EXTRA_LINK_DIR "${Boost_LIBRARY_DIRS}")
+    else()
+        # Fallback: derive from include dir (include -> lib)
+        get_filename_component(Boost_PREFIX "${Boost_INCLUDE_DIRS}" DIRECTORY)
+        set(Boost_EXTRA_LINK_DIR "${Boost_PREFIX}/lib")
+    endif()
     link_directories(${Boost_EXTRA_LINK_DIR})
     message(STATUS "Boost include: ${Boost_INCLUDE_DIRS}")
-    message(STATUS "Boost extra link directory: ${Boost_EXTRA_LINK_DIR}")
+    message(STATUS "Boost library: ${Boost_EXTRA_LINK_DIR}")
 
     # toml++ for Linux (passed via -DTOMLPP_DIR=...)
     if (DEFINED TOMLPP_DIR)
@@ -175,7 +189,14 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
 	get_filename_component(tmp "${FLEX_EXECUTABLE}" DIRECTORY)
 	set(FLEX_INCLUDE_DIRS "${tmp}/../include" CACHE STRING "Flex include dir" FORCE)
 	set(FL_LIBRARY "${tmp}/../lib/libfl.a" CACHE STRING "Flex library" FORCE)
+elseif (${SIM_PLATFORM} STREQUAL "Linux")
+	# Flex on Linux typically installs headers to /usr/include
+	set(FLEX_INCLUDE_DIR "/usr/include" CACHE STRING "Flex include dir" FORCE)
+	set(FLEX_INCLUDE_DIRS "/usr/include" CACHE STRING "Flex include dirs" FORCE)
+	# Also add to global includes since target_include_directories doesn't pick up the cache var
+	include_directories("/usr/include")
 endif()
+message(STATUS "FLEX_INCLUDE_DIR: ${FLEX_INCLUDE_DIR}")
 
 #
 # Custom build types

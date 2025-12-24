@@ -1,0 +1,220 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [main, feature/*]
+  pull_request:
+    branches: [main, feature/*]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libsuitesparse-dev \
+            flex \
+            libfl-dev \
+            bison \
+            llvm-14 \
+            llvm-14-dev \
+            clang-14 \
+            lld-14 \
+            libpolly-14-dev
+          # Create symlinks for clang-cl and llvm-lib that OpenVAF expects
+          sudo ln -sf /usr/bin/clang-14 /usr/bin/clang-cl
+          sudo ln -sf /usr/bin/llvm-ar-14 /usr/bin/llvm-lib
+          # Verify FlexLexer.h is installed
+          ls -la /usr/include/FlexLexer.h || echo "FlexLexer.h not found in /usr/include"
+
+      - name: Cache Boost 1.88
+        id: cache-boost
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/boost_1_88_0
+            ~/boost_1_88_0_install
+          key: boost-1.88.0-${{ runner.os }}-v2
+
+      - name: Build Boost 1.88
+        if: steps.cache-boost.outputs.cache-hit != 'true'
+        run: |
+          cd ~
+          curl -sSL https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz | tar xz
+          cd boost_1_88_0
+          ./bootstrap.sh --with-libraries=filesystem,process,system --prefix="$HOME/boost_1_88_0_install"
+          ./b2 -j"$(nproc)" link=static threading=multi install
+
+      - name: Install toml++ (header-only)
+        run: |
+          git clone --depth 1 --branch v3.4.0 https://github.com/marzer/tomlplusplus.git /tmp/tomlplusplus
+          sudo cp -r /tmp/tomlplusplus/include/toml++ /usr/local/include/
+
+      - name: Cache OpenVAF build
+        id: cache-openvaf
+        uses: actions/cache@v4
+        with:
+          path: ~/openvaf-r
+          key: openvaf-arpadbuermen-${{ runner.os }}-llvm14-v1
+
+      - name: Build OpenVAF
+        if: steps.cache-openvaf.outputs.cache-hit != 'true'
+        env:
+          LLVM_CONFIG: /usr/bin/llvm-config-14
+        run: |
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          # shellcheck source=/dev/null
+          source ~/.cargo/env
+
+          # Clone OpenVAF (arpadbuermen fork, compatible with VACASK)
+          git clone --depth 1 https://github.com/arpadbuermen/OpenVAF.git ~/openvaf-src
+          cd ~/openvaf-src
+
+          # Build OpenVAF-reloaded
+          cargo build --release --bin openvaf-r
+
+          # Install
+          mkdir -p ~/openvaf-r/bin
+          cp target/release/openvaf-r ~/openvaf-r/bin/openvaf-r
+          ~/openvaf-r/bin/openvaf-r --version
+
+      - name: Add OpenVAF to PATH
+        run: echo "$HOME/openvaf-r/bin" >> "$GITHUB_PATH"
+
+      - name: Configure VACASK
+        run: |
+          cmake -G Ninja -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENVAF_DIR="$HOME/openvaf-r/bin" \
+            -DBOOST_ROOT="$HOME/boost_1_88_0_install" \
+            -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0_install/include" \
+            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0_install/lib" \
+            -DTOMLPP_DIR="/usr/local"
+
+      - name: Build VACASK
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Cache IHP PDK
+        id: cache-ihp-pdk
+        uses: actions/cache@v4
+        with:
+          path: ~/ihp-pdk
+          key: ihp-pdk-v1
+
+      - name: Download IHP PDK
+        if: steps.cache-ihp-pdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git ~/ihp-pdk
+
+      - name: Download PSP103.6 model
+        run: |
+          # IHP PDK requires PSP103.6.0 - fetch from dwarning/VA-Models
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/dwarning/VA-Models.git ~/va-models
+          cd ~/va-models
+          git sparse-checkout set code/psp103/vacode103p6
+
+      - name: Compile PSP103.6 model for IHP
+        run: |
+          cd test/tb_dp
+          # Compile PSP103.6.0 (required by IHP PDK parameters)
+          openvaf-r ~/va-models/code/psp103/vacode103p6/psp103.va -o psp103_ihp.osdi
+
+      - name: Convert tb_dp512x8_klu test
+        env:
+          IHP_PDK_ROOT: /home/runner/ihp-pdk/ihp-sg13g2
+        run: |
+          cd python
+          uv sync
+          cd ../test/tb_dp
+          uv run python runme.py tb_dp512x8_klu
+
+      - name: Run tb_dp512x8_klu simulation
+        run: |
+          cd test/tb_dp
+          timeout 1800 ../../build/simulator/vacask tb_dp512x8_klu.sim || true
+          ls -la ./*.raw 2>/dev/null || echo "No raw files generated yet"
+
+      - name: Generate plots
+        if: always()
+        run: |
+          cd test/tb_dp
+          if [ -f tb_dp512x8_klu.raw ]; then
+            uv run plot.py tb_dp512x8_klu.raw --save
+            echo "Plots generated successfully"
+          else
+            echo "No simulation results to plot"
+          fi
+
+      - name: Upload simulation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            test/tb_dp/*.raw
+            test/tb_dp/*.png
+            test/tb_dp/*.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Create job summary with plots
+        if: always()
+        run: |
+          echo "## Dual-Port SRAM Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f test/tb_dp/tb_dp512x8_klu.raw ]; then
+            echo "### Simulation completed successfully" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+
+            # Get simulation stats
+            if [ -f test/tb_dp/tb_dp512x8_klu.log ]; then
+              echo "<details><summary>Simulation Log</summary>" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              tail -50 test/tb_dp/tb_dp512x8_klu.log >> "$GITHUB_STEP_SUMMARY" || true
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            # List generated plots
+            echo "### Generated Plots" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The following plots were generated and are available in the artifacts:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            for png in test/tb_dp/*.png; do
+              if [ -f "$png" ]; then
+                basename "$png" >> "$GITHUB_STEP_SUMMARY"
+                echo "" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "> Download the **benchmark-results** artifact to view the plots." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Simulation did not complete" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No .raw output file was generated. Check the simulation logs for errors." >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -1,5 +1,10 @@
+# SPDX-FileCopyrightText: 2025 ChipFlow
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
 
 import re
+
+from spiceparser.params import sanitize_identifier as _sanitize_identifier
 
 from .exc import ConverterError
 from .generators import traverse
@@ -8,6 +13,17 @@ from .patterns import *
 
 class MastersMixin:
     pat_paramassign = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=')
+
+    def sanitize_identifier(self, name):
+        """Sanitize an identifier for VACASK compatibility.
+
+        Replaces characters that are invalid in VACASK identifiers:
+        - ! -> _
+        - [N] -> _N_ (array indices not allowed in VACASK identifiers)
+
+        Delegates to spiceparser.params.sanitize_identifier().
+        """
+        return _sanitize_identifier(name)
 
     def split_instance(self, line, orig_line, in_sub=None):
         """
@@ -109,15 +125,15 @@ class MastersMixin:
 
         # Instance name for output
         if self.cfg.get("original_case_instance", False):
-            annot["output_name"] = annot["orig_name"]
+            annot["output_name"] = self.sanitize_identifier(annot["orig_name"])
         else:
-            annot["output_name"] = annot["name"]
+            annot["output_name"] = self.sanitize_identifier(annot["name"])
 
         # Model name for output (for instances)
         if self.cfg.get("original_case_model", False):
-            annot["output_mod_name"] = annot["orig_mod_name"]
+            annot["output_mod_name"] = self.sanitize_identifier(annot["orig_mod_name"])
         else:
-            annot["output_mod_name"] = annot["mod_name"]
+            annot["output_mod_name"] = self.sanitize_identifier(annot["mod_name"])
 
     def collect_masters(self):
         """
@@ -166,15 +182,16 @@ class MastersMixin:
                             if self.pat_paramassign.match(s):
                                 first_param = ndx
                                 break
-                        
-                        # Get terminals
-                        terminals = parts[2:first_param]
+
+                        # Get terminals and sanitize for VACASK
+                        terminals = [self.sanitize_identifier(t) for t in parts[2:first_param]]
 
                         # Get parameters, split into name and value
                         sub_params = [ p.split("=") for p in parts[first_param:]]
 
-                        # Store
-                        self.data["subckts"][in_sub] = (terminals, sub_params)
+                        # Store with sanitized subcircuit name
+                        sanitized_sub = self.sanitize_identifier(in_sub)
+                        self.data["subckts"][sanitized_sub] = (terminals, sub_params)
                 elif pat_cidotends.match(l):
                     # End of subcircuit
                     in_sub = None
