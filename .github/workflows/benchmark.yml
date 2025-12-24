@@ -80,12 +80,12 @@ jobs:
           git clone --depth 1 https://github.com/arpadbuermen/OpenVAF.git ~/openvaf-src
           cd ~/openvaf-src
 
-          # Build OpenVAF
-          cargo build --release --bin openvaf
+          # Build OpenVAF-reloaded
+          cargo build --release --bin openvaf-r
 
           # Install
           mkdir -p ~/openvaf-r/bin
-          cp target/release/openvaf ~/openvaf-r/bin/openvaf-r
+          cp target/release/openvaf-r ~/openvaf-r/bin/openvaf-r
           ~/openvaf-r/bin/openvaf-r --version
 
       - name: Add OpenVAF to PATH
