@@ -143,6 +143,7 @@ else()
 
     # For 1.88 installed manually by user
     set(Boost_NO_SYSTEM_PATHS TRUE)
+    set(Boost_NO_BOOST_CMAKE ON)  # Use FindBoost module, not BoostConfig.cmake
     find_package(Boost 1.88 REQUIRED COMPONENTS filesystem process system)
     include_directories("${Boost_INCLUDE_DIRS}")
     set(Boost_EXTRA_LINK_DIR "${Boost_INCLUDE_DIRS}/stage/lib")

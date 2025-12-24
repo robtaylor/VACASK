@@ -96,7 +96,7 @@ jobs:
           cmake -G Ninja -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DOPENVAF_DIR="$HOME/openvaf-r/bin" \
-            -DBoost_NO_BOOST_CMAKE=TRUE \
+            -DBOOST_ROOT="$HOME/boost_1_88_0_install" \
             -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0_install/include" \
             -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0_install/lib"
 
