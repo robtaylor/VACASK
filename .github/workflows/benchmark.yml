@@ -94,7 +94,8 @@ jobs:
           cmake -G Ninja -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DOPENVAF_DIR="$HOME/openvaf-r/bin" \
-            -DBoost_ROOT="$HOME/boost_1_88_0"
+            -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0" \
+            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0/stage/lib"
 
       - name: Build VACASK
         run: cmake --build build -j "$(nproc)"
