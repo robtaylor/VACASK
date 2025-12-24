@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/openvaf-r
-          key: openvaf-${{ runner.os }}-llvm14-v1
+          key: openvaf-arpadbuermen-${{ runner.os }}-llvm14-v1
 
       - name: Build OpenVAF
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
@@ -76,8 +76,8 @@ jobs:
           # shellcheck source=/dev/null
           source ~/.cargo/env
 
-          # Clone OpenVAF
-          git clone --depth 1 https://github.com/pascalkuthe/OpenVAF.git ~/openvaf-src
+          # Clone OpenVAF (arpadbuermen fork, compatible with VACASK)
+          git clone --depth 1 https://github.com/arpadbuermen/OpenVAF.git ~/openvaf-src
           cd ~/openvaf-src
 
           # Build OpenVAF
