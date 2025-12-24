@@ -98,7 +98,8 @@ jobs:
             -DOPENVAF_DIR="$HOME/openvaf-r/bin" \
             -DBOOST_ROOT="$HOME/boost_1_88_0_install" \
             -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0_install/include" \
-            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0_install/lib"
+            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0_install/lib" \
+            -DTOMLPP_DIR="/usr/local"
 
       - name: Build VACASK
         run: cmake --build build -j "$(nproc)"

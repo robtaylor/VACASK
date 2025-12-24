@@ -72,6 +72,8 @@ else()
     set(PROGRAM_LIB_DIR "lib/${PROGRAM_NAME}")
     # Flex include dir (system path on Linux)
     set(FLEX_INCLUDE_DIR "/usr/include")
+    # SuiteSparse from apt installs to /usr/include/suitesparse
+    set(SuiteSparse_DIR "/usr")
 endif()
 message(STATUS "Platform: ${SIM_PLATFORM}")
 
