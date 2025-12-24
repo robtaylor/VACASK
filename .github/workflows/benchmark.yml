@@ -40,8 +40,10 @@ jobs:
         id: cache-boost
         uses: actions/cache@v4
         with:
-          path: ~/boost_1_88_0
-          key: boost-1.88.0-${{ runner.os }}-v1
+          path: |
+            ~/boost_1_88_0
+            ~/boost_1_88_0_install
+          key: boost-1.88.0-${{ runner.os }}-v2
 
       - name: Build Boost 1.88
         if: steps.cache-boost.outputs.cache-hit != 'true'
@@ -49,8 +51,8 @@ jobs:
           cd ~
           curl -sSL https://archives.boost.io/release/1.88.0/source/boost_1_88_0.tar.gz | tar xz
           cd boost_1_88_0
-          ./bootstrap.sh --with-libraries=filesystem,process,system
-          ./b2 -j"$(nproc)" link=static threading=multi
+          ./bootstrap.sh --with-libraries=filesystem,process,system --prefix="$HOME/boost_1_88_0_install"
+          ./b2 -j"$(nproc)" link=static threading=multi install
 
       - name: Install toml++ (header-only)
         run: |
@@ -94,8 +96,9 @@ jobs:
           cmake -G Ninja -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DOPENVAF_DIR="$HOME/openvaf-r/bin" \
-            -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0" \
-            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0/stage/lib"
+            -DBoost_NO_BOOST_CMAKE=TRUE \
+            -DBOOST_INCLUDEDIR="$HOME/boost_1_88_0_install/include" \
+            -DBOOST_LIBRARYDIR="$HOME/boost_1_88_0_install/lib"
 
       - name: Build VACASK
         run: cmake --build build -j "$(nproc)"
