@@ -127,11 +127,18 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/IHP-GmbH/IHP-Open-PDK.git ~/ihp-pdk
 
-      - name: Compile PSP103 model for IHP
+      - name: Download PSP103.6 model
+        run: |
+          # IHP PDK requires PSP103.6.0 - fetch from dwarning/VA-Models
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/dwarning/VA-Models.git ~/va-models
+          cd ~/va-models
+          git sparse-checkout set code/psp103/vacode103p6
+
+      - name: Compile PSP103.6 model for IHP
         run: |
           cd test/tb_dp
-          # Compile PSP103 (from VACASK's devices/psp103v4) - IHP PDK provides parameters via .lib files
-          openvaf-r -I../../devices ../../devices/psp103v4/psp103.va -o psp103_ihp.osdi
+          # Compile PSP103.6.0 (required by IHP PDK parameters)
+          openvaf-r ~/va-models/code/psp103/vacode103p6/psp103.va -o psp103_ihp.osdi
 
       - name: Convert tb_dp512x8_klu test
         env:
