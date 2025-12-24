@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/openvaf-r
-          key: openvaf-${{ runner.os }}-llvm15-v3
+          key: openvaf-${{ runner.os }}-llvm15-v4
 
       - name: Build OpenVAF
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
