@@ -56,6 +56,7 @@ jobs:
             bison \
             flex \
             suite-sparse \
+            boost \
             tomlplusplus \
             llvm@18 \
             python3
@@ -68,9 +69,10 @@ jobs:
           curl -L -o boost.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz
           tar xzf boost.tar.gz
           cd boost-1.88.0
-          ./bootstrap.sh --with-libraries=filesystem,process,system
-          ./b2 "-j$(nproc)" variant=release link=static,shared threading=multi
-          echo "BOOST_ROOT=/tmp/boost-1.88.0" >> "$GITHUB_ENV"
+          ./bootstrap.sh --with-libraries=filesystem,process,system --prefix=/tmp/boost-install
+          ./b2 "-j$(nproc)" variant=release link=static,shared threading=multi install
+          echo "BOOST_ROOT=/tmp/boost-install" >> "$GITHUB_ENV"
+          echo "CMAKE_PREFIX_PATH=/tmp/boost-install" >> "$GITHUB_ENV"
 
       - name: Cache OpenVAF build (macOS)
         if: runner.os == 'macOS'
@@ -132,11 +134,18 @@ jobs:
             BREW_PREFIX="$(brew --prefix)"
             CMAKE_ARGS+=("-DSuiteSparse_DIR=$BREW_PREFIX/opt/suite-sparse")
             CMAKE_ARGS+=("-DTOMLPP_DIR=$BREW_PREFIX/opt/tomlplusplus")
+            # Find Boost cmake config directory
+            BOOST_CMAKE_DIR="$(find "$BREW_PREFIX/opt/boost/lib/cmake" -maxdepth 1 -name 'boost_*' -o -name 'Boost*' 2>/dev/null | head -1)"
+            if [ -z "$BOOST_CMAKE_DIR" ]; then
+              BOOST_CMAKE_DIR="$BREW_PREFIX/opt/boost/lib/cmake"
+            fi
             CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$BREW_PREFIX/opt/boost")
+            CMAKE_ARGS+=("-DBoost_DIR=$BOOST_CMAKE_DIR")
             CMAKE_ARGS+=("-DBISON_EXECUTABLE=$BREW_PREFIX/opt/bison/bin/bison")
             CMAKE_ARGS+=("-DFLEX_INCLUDE_DIR=$BREW_PREFIX/opt/flex/include")
           else
             CMAKE_ARGS+=("-DBoost_ROOT=$BOOST_ROOT")
+            CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH")
             CMAKE_ARGS+=("-DSuiteSparse_DIR=/usr")
             CMAKE_ARGS+=("-DTOMLPP_DIR=$TOMLPP_DIR")
           fi
