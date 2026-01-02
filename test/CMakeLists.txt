@@ -73,3 +73,31 @@ prepare_netlist_test(test_mutual.sim)
 prepare_netlist_test(test_diode.sim)
 prepare_netlist_test(test_inverter.sim)
 prepare_netlist_test(test_optpar.sim)
+
+# Xyce regression tests (optional)
+option(ENABLE_XYCE_TESTS "Enable Xyce regression tests" OFF)
+
+if(ENABLE_XYCE_TESTS)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+    set(XYCE_TEST_RUNNER "${CMAKE_CURRENT_SOURCE_DIR}/run_xyce_tests.py")
+    set(XYCE_TEST_WORKDIR "${CMAKE_CURRENT_BINARY_DIR}/xyce_tests")
+
+    file(MAKE_DIRECTORY ${XYCE_TEST_WORKDIR})
+
+    # Add Xyce BSIM4 regression tests
+    add_test(
+        NAME xyce_regression_bsim4
+        COMMAND ${Python3_EXECUTABLE} ${XYCE_TEST_RUNNER}
+            --test-dir BSIM4
+            --vacask $<TARGET_FILE:sim>
+            --work-dir ${XYCE_TEST_WORKDIR}
+            --verbose
+    )
+    set_tests_properties(xyce_regression_bsim4 PROPERTIES
+        LABELS "xyce;bsim4;regression"
+        TIMEOUT 300
+    )
+
+    message(STATUS "Xyce regression tests enabled")
+endif()

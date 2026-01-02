@@ -1,0 +1,3 @@
+[submodule "test/Xyce_Regression"]
+	path = test/Xyce_Regression
+	url = https://github.com/Xyce/Xyce_Regression.git
