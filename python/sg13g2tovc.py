@@ -12,8 +12,8 @@ import subprocess
 import sys
 
 import xschem2vc
-from ng2vclib.converter import Converter
-from ng2vclib.dfl import default_config
+from netlist_converter.converter import Converter
+from netlist_converter.dfl import default_config
 
 tech_files = [
     # file  read&process depth  output depth  destination (relative path)

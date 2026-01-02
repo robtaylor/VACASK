@@ -24,7 +24,7 @@ from spiceparser.params import format_value, process_terminals
 def write_vacask(
     netlist: Netlist,
     output: str | Path | TextIO,
-    signature: str = "// Converted by ng2vc converter\n",
+    signature: str = "// Converted by netlist_converter converter\n",
     columns: int = 80,
 ) -> None:
     """Write a netlist in VACASK format.
@@ -56,7 +56,7 @@ class VacaskWriter:
 
     def __init__(
         self,
-        signature: str = "// Converted by ng2vc converter\n",
+        signature: str = "// Converted by netlist_converter converter\n",
         columns: int = 80,
         default_model_prefix: str = "defmod_",
     ):
