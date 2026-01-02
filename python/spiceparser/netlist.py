@@ -168,6 +168,7 @@ class Netlist:
 
     Attributes:
         title: First line of netlist (title comment)
+        parameters: Global parameter definitions (.param)
         models: Top-level model definitions
         subcircuits: Top-level subcircuit definitions
         instances: Top-level instances (for testbenches)
@@ -178,6 +179,7 @@ class Netlist:
     """
 
     title: str = ""
+    parameters: dict[str, Any] = field(default_factory=dict)
     models: list[ModelDef] = field(default_factory=list)
     subcircuits: list[Subcircuit] = field(default_factory=list)
     instances: list[Instance] = field(default_factory=list)

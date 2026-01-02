@@ -77,15 +77,22 @@ class VacaskWriter:
         # Model name -> OSDI module mapping for instances
         self._model_modules: dict[str, OsdiModuleInfo] = {}
 
+        # Default models needed for passive elements (r, c, l)
+        self._default_models_needed: set[str] = set()
+
     def write(self, netlist: Netlist) -> str:
         """Write netlist to VACASK format string."""
         buf = StringIO()
+
+        # Write title if present
+        if netlist.title:
+            buf.write(f"// {netlist.title}\n")
 
         # Write signature
         buf.write(self.signature)
         buf.write("\n")
 
-        # Collect required OSDI modules from models
+        # Collect required OSDI modules from models and instances
         self._collect_osdi_modules(netlist)
 
         # Write load statements
@@ -94,6 +101,16 @@ class VacaskWriter:
 
         if self._osdi_modules:
             buf.write("\n")
+
+        # Write global parameters
+        if netlist.parameters:
+            for name, value in netlist.parameters.items():
+                formatted_value = format_value(str(value))
+                buf.write(f"parameters {name}={formatted_value}\n")
+            buf.write("\n")
+
+        # Write default models for passive elements
+        self._write_default_models(buf)
 
         # Write models
         for model in netlist.models:
@@ -113,6 +130,10 @@ class VacaskWriter:
             for subckt in section.subcircuits:
                 self._write_subcircuit(buf, subckt)
 
+        # Write top-level instances
+        for inst in netlist.instances:
+            self._write_instance(buf, inst)
+
         # Write statistics blocks (for MC variation)
         for stats_block in netlist.statistics_blocks:
             self._write_statistics_block(buf, stats_block)
@@ -120,9 +141,10 @@ class VacaskWriter:
         return buf.getvalue()
 
     def _collect_osdi_modules(self, netlist: Netlist) -> None:
-        """Collect required OSDI modules from netlist models."""
+        """Collect required OSDI modules from netlist models and instances."""
         self._osdi_modules.clear()
         self._model_modules.clear()
+        self._default_models_needed.clear()
 
         # Process all models
         all_models = list(netlist.models)
@@ -134,6 +156,24 @@ class VacaskWriter:
             if osdi_info:
                 self._osdi_modules[osdi_info.osdi_file] = osdi_info
                 self._model_modules[model.name.lower()] = osdi_info
+
+        # Collect all instances to check for default model needs
+        all_instances: list[Instance] = list(netlist.instances)
+        for subckt in netlist.subcircuits:
+            all_instances.extend(subckt.instances)
+        for section in netlist.library_sections.values():
+            for subckt in section.subcircuits:
+                all_instances.extend(subckt.instances)
+
+        # Check instances for default model needs
+        for inst in all_instances:
+            prefix_char = inst.name[0].lower() if inst.name else ""
+            # If instance has no model and is a passive element, need default model
+            if not inst.model_name and prefix_char in ("r", "c", "l"):
+                default_osdi = get_default_model(prefix_char)
+                if default_osdi:
+                    self._default_models_needed.add(prefix_char)
+                    self._osdi_modules[default_osdi.osdi_file] = default_osdi
 
     def _get_osdi_for_model(self, model: ModelDef) -> OsdiModuleInfo | None:
         """Get OSDI module info for a model definition."""
@@ -147,6 +187,23 @@ class VacaskWriter:
 
         # Get OSDI module for family/level/version
         return get_osdi_module(family, model.level, model.version)
+
+    def _write_default_models(self, buf: TextIO) -> None:
+        """Write default model definitions for passive elements.
+
+        Generates 'model defmod_X sp_X' for each passive element type
+        (r, c, l) that needs a default model.
+        """
+        if not self._default_models_needed:
+            return
+
+        for prefix_char in sorted(self._default_models_needed):
+            default_osdi = get_default_model(prefix_char)
+            if default_osdi:
+                model_name = f"{self.default_model_prefix}{prefix_char}"
+                buf.write(f"model {default_osdi.module_name} {model_name}\n")
+
+        buf.write("\n")
 
     def _write_model(self, buf: TextIO, model: ModelDef, indent: int = 0) -> None:
         """Write a model definition."""
