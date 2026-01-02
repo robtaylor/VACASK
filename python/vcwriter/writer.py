@@ -151,7 +151,7 @@ class VacaskWriter:
         content_items.sort(key=lambda x: x[0])
 
         # Write content in order
-        for line_no, item_type, item in content_items:
+        for _line_no, item_type, item in content_items:
             if item_type == "comment":
                 buf.write(f"// {item.text}\n")
             elif item_type == "model":
