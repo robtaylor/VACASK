@@ -4,24 +4,24 @@ set(python_files
     sg13g2tovc.py
     xschem2vc.py
     sg13g2xschem.tcl
-    ng2vc.py 
-    ng2vclib/__init__.py 
-    ng2vclib/converter.py 
-    ng2vclib/dfl.py 
-    ng2vclib/exc.py 
-    ng2vclib/generators.py 
-    ng2vclib/patterns.py
-    ng2vclib/m_devices.py 
-    ng2vclib/m_file.py 
-    ng2vclib/m_inst_d.py 
-    ng2vclib/m_inst_n.py 
-    ng2vclib/m_inst_passive.py 
-    ng2vclib/m_inst_q.py 
-    ng2vclib/m_inst_x.py 
-    ng2vclib/m_masters.py 
-    ng2vclib/m_params.py
-    ng2vclib/m_model.py 
-    ng2vclib/m_output.py 
+    netlist_converter.py 
+    netlist_converter/__init__.py 
+    netlist_converter/converter.py 
+    netlist_converter/dfl.py 
+    netlist_converter/exc.py 
+    netlist_converter/generators.py 
+    netlist_converter/patterns.py
+    netlist_converter/m_devices.py 
+    netlist_converter/m_file.py 
+    netlist_converter/m_inst_d.py 
+    netlist_converter/m_inst_n.py 
+    netlist_converter/m_inst_passive.py 
+    netlist_converter/m_inst_q.py 
+    netlist_converter/m_inst_x.py 
+    netlist_converter/m_masters.py 
+    netlist_converter/m_params.py
+    netlist_converter/m_model.py 
+    netlist_converter/m_output.py 
 )
 
 # Prepare directory for staging the osdi library
