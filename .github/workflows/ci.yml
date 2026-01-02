@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install LLVM 18 (Ubuntu 22.04)
         if: matrix.os == 'ubuntu-22.04'
@@ -154,6 +156,7 @@ jobs:
         run: |
           CMAKE_ARGS=(-G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release)
           CMAKE_ARGS+=("-DOPENVAF_DIR=$OPENVAF_DIR")
+          CMAKE_ARGS+=("-DENABLE_XYCE_TESTS=ON")
 
           if [ "$RUNNER_OS" == "macOS" ]; then
             BREW_PREFIX="$(brew --prefix)"
@@ -185,7 +188,13 @@ jobs:
       - name: Run tests
         run: |
           cd build
-          ctest --output-on-failure --timeout 60
+          ctest --output-on-failure --timeout 60 -E xyce
+
+      - name: Run Xyce regression tests
+        run: |
+          cd build
+          ctest --output-on-failure --timeout 600 -L xyce
+        continue-on-error: true  # Don't fail build on Xyce test failures initially
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
