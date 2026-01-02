@@ -36,7 +36,8 @@ jobs:
             libfl-dev \
             libsuitesparse-dev \
             python3 \
-            python3-numpy
+            python3-numpy \
+            python3-scipy
 
       - name: Install toml++ (Linux)
         if: runner.os == 'Linux'
@@ -62,20 +63,23 @@ jobs:
             tomlplusplus \
             llvm@18 \
             python3 \
-            numpy
+            numpy \
+            scipy
 
       - name: Build Boost 1.88 (Linux)
         if: runner.os == 'Linux'
         run: |
           # VACASK requires Boost 1.88 with process component
+          # Use staged build (not install) to match VACASK's expected layout
           cd /tmp
           curl -L -o boost.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz
           tar xzf boost.tar.gz
           cd boost-1.88.0
-          ./bootstrap.sh --with-libraries=filesystem,process,system --prefix=/tmp/boost-install
-          ./b2 "-j$(nproc)" variant=release link=static,shared threading=multi install
-          echo "BOOST_ROOT=/tmp/boost-install" >> "$GITHUB_ENV"
-          echo "CMAKE_PREFIX_PATH=/tmp/boost-install" >> "$GITHUB_ENV"
+          ./bootstrap.sh --with-libraries=filesystem,process,system
+          ./b2 "-j$(nproc)" variant=release link=static,shared threading=multi stage
+          # Set Boost_INCLUDE_DIR so VACASK finds libraries at include_dir/stage/lib
+          echo "BOOST_ROOT=/tmp/boost-1.88.0" >> "$GITHUB_ENV"
+          echo "CMAKE_PREFIX_PATH=/tmp/boost-1.88.0" >> "$GITHUB_ENV"
 
       - name: Cache OpenVAF build (macOS)
         if: runner.os == 'macOS'
