@@ -115,3 +115,106 @@ def fixtures_dir() -> Path:
     """Path to test fixtures directory."""
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
     return FIXTURES_DIR
+
+
+# Spectre fixtures
+
+
+@pytest.fixture
+def simple_spectre_netlist() -> str:
+    """A simple Spectre netlist for basic parsing tests."""
+    return """\
+// Simple Spectre RC circuit
+simulator lang=spectre
+
+subckt rc_filter (in out vss) parameters r=1k c=1u
+    R1 (in out) resistor r=r
+    C1 (out vss) capacitor c=c
+ends rc_filter
+
+model resistor resistor
+model capacitor capacitor
+"""
+
+
+@pytest.fixture
+def spectre_subcircuit() -> str:
+    """Spectre netlist with subcircuit and parameters."""
+    return """\
+// Spectre inverter subcircuit
+simulator lang=spectre
+
+subckt inverter (in out vdd vss) parameters wp=1u wn=500n l=100n
+    M1 (out in vdd vdd) pch w=wp l=l
+    M2 (out in vss vss) nch w=wn l=l
+ends inverter
+
+model pch pmos type=p
+model nch nmos type=n
+
+// Top-level instantiation
+I0 (input output VDD VSS) inverter wp=2u wn=1u
+"""
+
+
+@pytest.fixture
+def spectre_library_section() -> str:
+    """Spectre library with section definitions."""
+    return """\
+simulator lang=spectre
+
+library device_lib
+
+section tt
+model nch nmos type=n \\
+    toxe=1.8e-9 vth0=0.4 \\
+    k1=0.5 k2=0.0
+model pch pmos type=p \\
+    toxe=1.8e-9 vth0=-0.4 \\
+    k1=0.5 k2=0.0
+endsection tt
+
+section ff
+model nch nmos type=n \\
+    toxe=1.7e-9 vth0=0.35
+model pch pmos type=p \\
+    toxe=1.7e-9 vth0=-0.35
+endsection ff
+
+section ss
+model nch nmos type=n \\
+    toxe=1.9e-9 vth0=0.45
+model pch pmos type=p \\
+    toxe=1.9e-9 vth0=-0.45
+endsection ss
+
+endlibrary device_lib
+"""
+
+
+@pytest.fixture
+def spectre_mixed_dialect() -> str:
+    """Spectre file with simulator lang switching."""
+    return """\
+// Start in Spectre mode
+simulator lang=spectre
+
+subckt inv_spectre (in out vdd vss)
+    M1 (out in vdd vdd) pch w=1u l=100n
+    M2 (out in vss vss) nch w=500n l=100n
+ends inv_spectre
+
+// Switch to SPICE mode for legacy content
+simulator lang=spice
+
+.subckt inv_spice in out vdd vss
+M1 out in vdd vdd pch w=1u l=100n
+M2 out in vss vss nch w=500n l=100n
+.ends inv_spice
+
+// Back to Spectre
+simulator lang=spectre
+
+model pch pmos type=p
+model nch nmos type=n
+"""
