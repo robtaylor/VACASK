@@ -121,8 +121,8 @@ jobs:
           export LLVM_SYS_181_PREFIX="$BREW_PREFIX/opt/llvm@18"
           export PATH="$BREW_PREFIX/opt/llvm@18/bin:$PATH"
 
-          # Build openvaf-r
-          cargo build --release --bin openvaf-r
+          # Build openvaf-r with LLVM 21 support (matches Homebrew llvm@18)
+          cargo build --release --features llvm21 --bin openvaf-r
 
           # Install to cache location
           mkdir -p ~/.openvaf
