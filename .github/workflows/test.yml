@@ -68,5 +68,5 @@ jobs:
       - name: Run converter tests
         run: uv run pytest tests/test_converter.py -v --tb=short
 
-      - name: Test ng2vc CLI help
-        run: uv run python -m ng2vc --help
+      - name: Test netlist_converter CLI help
+        run: uv run python -m netlist_converter --help

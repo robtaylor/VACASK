@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Tests for ng2vclib converter."""
+"""Tests for netlist_converter converter."""
 
 from pathlib import Path
 
 import pytest
 
-from ng2vclib import dfl
-from ng2vclib.converter import Converter
+from netlist_converter import dfl
+from netlist_converter.converter import Converter
 from spiceparser.dialect import get_dialect
 
 

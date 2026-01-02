@@ -9,22 +9,22 @@
 Supports multiple SPICE dialects: Ngspice (default), HSPICE, LTSpice.
 
 Usage:
-    python3 -m ng2vc [<args>] <input file> [<output file>]
-    python3 -m ng2vc --dialect hspice input.hspice output.vc
+    python3 -m netlist_converter [<args>] <input file> [<output file>]
+    python3 -m netlist_converter --dialect hspice input.hspice output.vc
 
 If no output file is provided, the converted netlist is printed to stdout.
 """
 
 import sys
 
-from ng2vclib import dfl
-from ng2vclib.converter import Converter
+from netlist_converter import dfl
+from netlist_converter.converter import Converter
 from spiceparser.dialect import detect_dialect_from_file
 
 HELP_TEXT = """\
 SPICE to VACASK netlist converter.
 
-Usage: python3 -m ng2vc [<args>] <input file> [<output file>]
+Usage: python3 -m netlist_converter [<args>] <input file> [<output file>]
 
 If no output file is provided, the converted netlist is printed to
 the standard output.
@@ -53,7 +53,7 @@ Arguments:
 
 
 def main():
-    """Main entry point for ng2vc converter."""
+    """Main entry point for netlist_converter converter."""
     ndx = 1
     from_file = None
     to_file = None

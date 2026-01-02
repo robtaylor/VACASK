@@ -14,7 +14,7 @@ This package provides a multi-dialect SPICE netlist parser for VACASK, supportin
   - `parser.py` - Main parser
   - `netlist.py` - Data structures
 - `vcwriter/` - VACASK output generation
-- `ng2vclib/` - Original ng2vc library (being refactored)
+- `netlist_converter/` - Original netlist_converter library (being refactored)
 
 ## Usage
 

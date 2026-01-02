@@ -41,7 +41,7 @@ The parser supports three SPICE dialects: **Ngspice**, **HSPICE**, and **LTSpice
 - `elements.py` - `DEVICE_TYPES` and `OSDI_MODULES` registries for device type info and OSDI module mappings
 
 **Dialect Implementations** (`dialects/`):
-- `ngspice.py` - Reference implementation based on original ng2vclib
+- `ngspice.py` - Reference implementation based on original netlist_converter
 - `hspice.py` - HSPICE with `.if/.endif` conditionals, `.ALTER`, single-quoted expressions
 - `ltspice.py` - LTSpice with `Rser`/`Lser`/`Rpar`/`Cpar` parasitic parameters
 
@@ -58,13 +58,13 @@ netlist = parse_netlist("circuit.sp", dialect=dialect)
 - `writer.py` - `VacaskWriter` class converts parsed netlists to VACASK format (Spectre-like syntax)
 - Generates `load` directives for OSDI modules and converts model/subcircuit definitions
 
-### Legacy Code (`ng2vclib/`)
+### Legacy Code (`netlist_converter/`)
 
 Original Ngspice-specific converter being refactored into the multi-dialect architecture. The new `spiceparser` and `vcwriter` packages are the modern replacement.
 
 ### Converter Scripts
 
-- `ng2vc.py` - Ngspice to VACASK converter (uses legacy ng2vclib)
+- `netlist_converter.py` - Ngspice to VACASK converter (uses legacy netlist_converter)
 - `hspice2vc.py` - HSPICE to VACASK converter
 - `ltspice2vc.py` - LTSpice to VACASK converter
 - `sg13g2tovc.py` - IHP SG13G2 PDK converter
