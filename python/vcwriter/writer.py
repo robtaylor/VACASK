@@ -17,7 +17,14 @@ from spiceparser.elements import (
     get_device_type_info,
     get_osdi_module,
 )
-from spiceparser.netlist import Instance, ModelDef, Netlist, Subcircuit
+from spiceparser.netlist import (
+    Instance,
+    ModelDef,
+    Netlist,
+    StatisticsBlock,
+    Subcircuit,
+    VariationSpec,
+)
 from spiceparser.params import format_value, process_terminals
 
 
@@ -105,6 +112,10 @@ class VacaskWriter:
         for section in netlist.library_sections.values():
             for subckt in section.subcircuits:
                 self._write_subcircuit(buf, subckt)
+
+        # Write statistics blocks (for MC variation)
+        for stats_block in netlist.statistics_blocks:
+            self._write_statistics_block(buf, stats_block)
 
         return buf.getvalue()
 
@@ -248,3 +259,58 @@ class VacaskWriter:
                 formatted = format_value(str(value))
                 parts.append(f"{name}={formatted}")
         return " ".join(parts)
+
+    def _write_statistics_block(
+        self, buf: TextIO, block: StatisticsBlock, indent: int = 0
+    ) -> None:
+        """Write a statistics block in VACASK format.
+
+        VACASK can process Spectre-style statistics blocks,
+        so we output them in a compatible format.
+
+        Args:
+            buf: Output buffer
+            block: StatisticsBlock to write
+            indent: Current indentation level
+        """
+        prefix = " " * indent
+
+        buf.write(f"{prefix}statistics {{\n")
+
+        # Write process variations
+        if block.process_variations:
+            buf.write(f"{prefix}    process {{\n")
+            for var in block.process_variations:
+                self._write_vary_directive(buf, var, indent + 8)
+            buf.write(f"{prefix}    }}\n")
+
+        # Write mismatch variations
+        if block.mismatch_variations:
+            buf.write(f"{prefix}    mismatch {{\n")
+            for var in block.mismatch_variations:
+                self._write_vary_directive(buf, var, indent + 8)
+            buf.write(f"{prefix}    }}\n")
+
+        buf.write(f"{prefix}}}\n\n")
+
+    def _write_vary_directive(
+        self, buf: TextIO, var: VariationSpec, indent: int = 0
+    ) -> None:
+        """Write a single vary directive.
+
+        Args:
+            buf: Output buffer
+            var: VariationSpec to write
+            indent: Current indentation level
+        """
+        prefix = " " * indent
+        line = f"{prefix}vary {var.parameter}"
+
+        if var.distribution:
+            line += f" dist={var.distribution}"
+        if var.std is not None:
+            line += f" std={var.std}"
+        if var.mean is not None:
+            line += f" mean={var.mean}"
+
+        buf.write(line + "\n")

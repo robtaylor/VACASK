@@ -21,9 +21,12 @@ This module provides two dialects:
 """
 
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from spiceparser.dialect import SpiceDialect, register_dialect
+
+if TYPE_CHECKING:
+    from spiceparser.netlist import StatisticsBlock, VariationSpec
 
 # SI prefix patterns - same as Ngspice but Spectre is case-sensitive for some
 # In Spectre: M = 1e6 (mega), m = 1e-3 (milli) - case matters!
@@ -330,6 +333,116 @@ class SpectreDialect(SpiceDialect):
         if match:
             return match.group(1).lower()
         return None
+
+    # -------------------------------------------------------------------------
+    # Statistics block parsing (for MC variation)
+    # -------------------------------------------------------------------------
+
+    def parse_statistics_block_start(self, line: str) -> bool:
+        """Check if line starts a statistics block.
+
+        Spectre statistics block syntax:
+            statistics {
+                process { vary param dist=gauss std=value }
+                mismatch { vary param dist=gauss std=value }
+            }
+        """
+        lower = line.lower().strip()
+        return lower.startswith("statistics") and "{" in line
+
+    def parse_statistics_content(self, lines: list[str]) -> "StatisticsBlock":
+        """Parse a statistics block from its content lines.
+
+        Args:
+            lines: All lines from statistics block (including braces)
+
+        Returns:
+            StatisticsBlock with parsed variations
+        """
+        from spiceparser.netlist import StatisticsBlock
+
+        block = StatisticsBlock(raw_content=lines)
+        current_section: str | None = None  # "process" or "mismatch"
+
+        for line in lines:
+            stripped = line.strip()
+            lower = stripped.lower()
+
+            # Skip empty lines and opening/closing braces
+            if not stripped or stripped in ("{", "}"):
+                continue
+
+            # Check for section start (process/mismatch)
+            # Handle inline format: process { vary vth0 dist=gauss std=0.01 }
+            if lower.startswith("process"):
+                current_section = "process"
+                # Check for inline vary directive
+                if "vary " in lower:
+                    vary_idx = lower.find("vary ")
+                    vary_content = stripped[vary_idx + 5 :]
+                    # Remove trailing brace if present
+                    vary_content = vary_content.rstrip().rstrip("}")
+                    variation = self._parse_vary_directive(vary_content)
+                    if variation:
+                        variation.variation_type = "process"
+                        block.process_variations.append(variation)
+                continue
+            elif lower.startswith("mismatch"):
+                current_section = "mismatch"
+                # Check for inline vary directive
+                if "vary " in lower:
+                    vary_idx = lower.find("vary ")
+                    vary_content = stripped[vary_idx + 5 :]
+                    vary_content = vary_content.rstrip().rstrip("}")
+                    variation = self._parse_vary_directive(vary_content)
+                    if variation:
+                        variation.variation_type = "mismatch"
+                        block.mismatch_variations.append(variation)
+                continue
+
+            # Check for standalone vary directive
+            if lower.startswith("vary "):
+                variation = self._parse_vary_directive(stripped[5:])
+                if variation:
+                    variation.variation_type = current_section or "process"
+                    if current_section == "mismatch":
+                        block.mismatch_variations.append(variation)
+                    else:
+                        block.process_variations.append(variation)
+
+        return block
+
+    def _parse_vary_directive(self, content: str) -> "VariationSpec | None":
+        """Parse a 'vary param dist=gauss std=value' directive.
+
+        Args:
+            content: Text after 'vary ' keyword
+
+        Returns:
+            VariationSpec or None if parsing fails
+        """
+        from spiceparser.netlist import VariationSpec
+
+        parts = content.split()
+        if not parts:
+            return None
+
+        param_name = parts[0]
+        spec = VariationSpec(parameter=param_name)
+
+        # Parse key=value pairs
+        for part in parts[1:]:
+            if "=" in part:
+                key, value = part.split("=", 1)
+                key_lower = key.lower()
+                if key_lower == "dist":
+                    spec.distribution = value
+                elif key_lower == "std":
+                    spec.std = value
+                elif key_lower == "mean":
+                    spec.mean = value
+
+        return spec
 
 
 @register_dialect("spectre-spice")

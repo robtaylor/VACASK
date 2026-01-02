@@ -18,6 +18,7 @@ from spiceparser.netlist import (
     LibrarySection,
     ModelDef,
     Netlist,
+    StatisticsBlock,
     Subcircuit,
 )
 
@@ -231,6 +232,14 @@ class NetlistParser:
             if lang:
                 # Track language switch but don't change parser behavior for now
                 # In future, could switch dialect dynamically
+                return
+
+        # Statistics block (for MC variation)
+        if hasattr(self.dialect, "parse_statistics_block_start"):
+            if self.dialect.parse_statistics_block_start(line):
+                stats_block = self._parse_statistics_block(line)
+                if stats_block:
+                    self.netlist.statistics_blocks.append(stats_block)
                 return
 
         # Ignore other Spectre keywords for now (parameters, global, etc.)
@@ -660,3 +669,42 @@ class NetlistParser:
             self._current_lib_section.models.append(model)
         else:
             self.netlist.models.append(model)
+
+    def _parse_statistics_block(self, first_line: str) -> StatisticsBlock | None:
+        """Parse a complete statistics block, reading until closing brace.
+
+        Spectre statistics block syntax:
+            statistics {
+                process { vary param dist=gauss std=value }
+                mismatch { vary param dist=gauss std=value }
+            }
+
+        Args:
+            first_line: The first line containing 'statistics {'
+
+        Returns:
+            StatisticsBlock with parsed variations, or None if parsing fails
+        """
+        lines = [first_line]
+        brace_depth = first_line.count("{") - first_line.count("}")
+
+        # Read lines until we close all braces
+        # Note: self.line_no is 1-based from enumerate(start=2) over lines[1:]
+        # So the actual array index is (self.line_no - 1) for the current line
+        current_idx = self.line_no - 1  # Convert to 0-based array index
+        while brace_depth > 0 and current_idx < len(self.lines) - 1:
+            current_idx += 1
+            line = self.lines[current_idx].strip()
+            lines.append(line)
+            brace_depth += line.count("{") - line.count("}")
+
+        # Update line number to skip the lines we consumed
+        # Convert back to the line_no format used by main loop
+        self.line_no = current_idx + 1
+
+        # Parse the block content using dialect method
+        if hasattr(self.dialect, "parse_statistics_content"):
+            return self.dialect.parse_statistics_content(lines)
+
+        # Fallback: just store raw content
+        return StatisticsBlock(raw_content=lines)

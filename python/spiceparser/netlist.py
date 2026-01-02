@@ -118,6 +118,51 @@ class LibrarySection:
 
 
 @dataclass
+class VariationSpec:
+    """A single variation specification in a statistics block.
+
+    Used to represent Spectre-style variation directives like:
+        vary vth0 dist=gauss std=0.01
+
+    Attributes:
+        parameter: Parameter name being varied
+        distribution: Distribution type ("gauss", "uniform", etc.)
+        std: Standard deviation (for Gaussian distributions)
+        mean: Mean value (optional, defaults to parameter's nominal value)
+        variation_type: "process" or "mismatch"
+    """
+
+    parameter: str
+    distribution: str = "gauss"
+    std: str | float | None = None
+    mean: str | float | None = None
+    variation_type: str = "process"
+
+
+@dataclass
+class StatisticsBlock:
+    """A Spectre statistics block for Monte Carlo variation.
+
+    Represents a statistics block containing process and mismatch variations:
+        statistics {
+            process { vary vth0 dist=gauss std=0.01 }
+            mismatch { vary delvto dist=gauss std=0.05 }
+        }
+
+    Attributes:
+        name: Optional block name
+        process_variations: List of process-level variations
+        mismatch_variations: List of mismatch (instance-level) variations
+        raw_content: Original text for pass-through preservation
+    """
+
+    name: str | None = None
+    process_variations: list[VariationSpec] = field(default_factory=list)
+    mismatch_variations: list[VariationSpec] = field(default_factory=list)
+    raw_content: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Netlist:
     """A complete parsed SPICE netlist.
 
@@ -128,6 +173,7 @@ class Netlist:
         instances: Top-level instances (for testbenches)
         library_sections: Named library sections (.lib name ... .endl)
         includes: List of included files
+        statistics_blocks: Spectre statistics blocks for MC variation
         source_file: Path to main source file
     """
 
@@ -137,6 +183,7 @@ class Netlist:
     instances: list[Instance] = field(default_factory=list)
     library_sections: dict[str, LibrarySection] = field(default_factory=dict)
     includes: list[Path] = field(default_factory=list)
+    statistics_blocks: list[StatisticsBlock] = field(default_factory=list)
     source_file: Path | None = None
 
     def get_model(self, name: str) -> ModelDef | None:
