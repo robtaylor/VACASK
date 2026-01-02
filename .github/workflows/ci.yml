@@ -34,10 +34,13 @@ jobs:
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
           echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" | sudo tee /etc/apt/sources.list.d/llvm-18.list
           sudo apt-get update
-          sudo apt-get install -y llvm-18-dev libclang-18-dev clang-18
-          # Set up alternatives so llvm-config points to version 18
+          sudo apt-get install -y llvm-18-dev libclang-18-dev clang-18 lld-18
+          # Set up alternatives so llvm tools point to version 18
           sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-18 100
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          # Add LLVM 18 bin directory to PATH for tools like llvm-lib
+          echo "/usr/lib/llvm-18/bin" >> "$GITHUB_PATH"
+          echo "LLVM_SYS_180_PREFIX=/usr/lib/llvm-18" >> "$GITHUB_ENV"
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
@@ -107,7 +110,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.openvaf
-          key: openvaf-${{ matrix.os }}-${{ runner.arch }}-v2
+          key: openvaf-${{ matrix.os }}-${{ runner.arch }}-v3
 
       - name: Build OpenVAF-reloaded
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
