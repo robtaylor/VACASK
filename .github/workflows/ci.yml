@@ -37,6 +37,9 @@ jobs:
             flex \
             libfl-dev \
             libsuitesparse-dev \
+            llvm-dev \
+            libclang-dev \
+            clang \
             python3 \
             python3-numpy \
             python3-scipy
@@ -85,32 +88,18 @@ jobs:
           echo "BOOST_ROOT=/tmp/boost-install" >> "$GITHUB_ENV"
           echo "CMAKE_PREFIX_PATH=/tmp/boost-install" >> "$GITHUB_ENV"
 
-      - name: Cache OpenVAF build (macOS)
-        if: runner.os == 'macOS'
-        id: cache-openvaf-macos
+      - name: Cache OpenVAF build
+        id: cache-openvaf
         uses: actions/cache@v4
         with:
           path: ~/.openvaf
-          key: openvaf-macos-${{ runner.arch }}-v3-llvm21
+          key: openvaf-${{ matrix.os }}-${{ runner.arch }}-v1
 
-      - name: Download OpenVAF-reloaded (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p ~/.openvaf
-          cd ~/.openvaf
-          # Download the latest Linux build
-          curl -L -o openvaf.tar.gz "https://fides.fe.uni-lj.si/openvaf/download/openvaf-reloaded-osdi_0.4-136-gbfe3f34f-linux_x64.tar.gz"
-          tar xzf openvaf.tar.gz
-          # Find the openvaf-r binary
-          find . -name "openvaf-r" -type f -exec chmod +x {} \;
-          OPENVAF_BIN="$(find . -name "openvaf-r" -type f | head -1)"
-          echo "OPENVAF_DIR=$(dirname "$(realpath "$OPENVAF_BIN")")" >> "$GITHUB_ENV"
-
-      - name: Build OpenVAF-reloaded (macOS)
-        if: runner.os == 'macOS' && steps.cache-openvaf-macos.outputs.cache-hit != 'true'
+      - name: Build OpenVAF-reloaded
+        if: steps.cache-openvaf.outputs.cache-hit != 'true'
         run: |
           # Install Rust
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile complete
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           # shellcheck source=/dev/null
           source ~/.cargo/env
 
@@ -118,20 +107,35 @@ jobs:
           git clone --branch branches/macos-patches-v3 https://github.com/arpadbuermen/OpenVAF.git /tmp/openvaf
           cd /tmp/openvaf
 
-          # Set LLVM environment for Rust bindings (LLVM 21 from Homebrew)
-          BREW_PREFIX="$(brew --prefix)"
-          export LLVM_SYS_210_PREFIX="$BREW_PREFIX/opt/llvm"
-          export PATH="$BREW_PREFIX/opt/llvm/bin:$PATH"
+          # Set LLVM environment based on OS
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            BREW_PREFIX="$(brew --prefix)"
+            export LLVM_SYS_210_PREFIX="$BREW_PREFIX/opt/llvm"
+            export PATH="$BREW_PREFIX/opt/llvm/bin:$PATH"
+            LLVM_FEATURE="llvm21"
+          else
+            # Linux: use system LLVM (version varies by Ubuntu version)
+            LLVM_VERSION=$(llvm-config --version | cut -d. -f1)
+            echo "Detected LLVM version: $LLVM_VERSION"
+            # Map LLVM version to feature flag
+            case "$LLVM_VERSION" in
+              18) LLVM_FEATURE="llvm18" ;;
+              17) LLVM_FEATURE="llvm17" ;;
+              16) LLVM_FEATURE="llvm16" ;;
+              15) LLVM_FEATURE="llvm15" ;;
+              14) LLVM_FEATURE="llvm14" ;;
+              *)  LLVM_FEATURE="llvm${LLVM_VERSION}" ;;
+            esac
+          fi
 
-          # Build openvaf-r with LLVM 21 support
-          cargo build --release --features llvm21 --bin openvaf-r
+          echo "Building with feature: $LLVM_FEATURE"
+          cargo build --release --features "$LLVM_FEATURE" --bin openvaf-r
 
           # Install to cache location
           mkdir -p ~/.openvaf
           cp target/release/openvaf-r ~/.openvaf/
 
-      - name: Setup OpenVAF path (macOS)
-        if: runner.os == 'macOS'
+      - name: Setup OpenVAF path
         run: |
           chmod +x "$HOME/.openvaf/openvaf-r"
           echo "OPENVAF_DIR=$HOME/.openvaf" >> "$GITHUB_ENV"
