@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [main, macos-fixes]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Linux
+          - os: macos-14
+            name: macOS
+
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            bison \
+            flex \
+            libsuitesparse-dev \
+            libtoml++-dev \
+            python3
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            ninja \
+            bison \
+            flex \
+            suite-sparse \
+            tomlplusplus \
+            llvm@18 \
+            python3
+
+      - name: Build Boost 1.88 (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          # VACASK requires Boost 1.88 with process component
+          cd /tmp
+          curl -L -o boost.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-b2-nodocs.tar.gz
+          tar xzf boost.tar.gz
+          cd boost-1.88.0
+          ./bootstrap.sh --with-libraries=filesystem,process,system
+          ./b2 "-j$(nproc)" variant=release link=static,shared threading=multi
+          echo "BOOST_ROOT=/tmp/boost-1.88.0" >> "$GITHUB_ENV"
+
+      - name: Cache OpenVAF build (macOS)
+        if: runner.os == 'macOS'
+        id: cache-openvaf-macos
+        uses: actions/cache@v4
+        with:
+          path: ~/.openvaf
+          key: openvaf-macos-${{ runner.arch }}-v1
+
+      - name: Download OpenVAF-reloaded (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p ~/.openvaf
+          cd ~/.openvaf
+          # Download the latest Linux build
+          curl -L -o openvaf.tar.gz "https://fides.fe.uni-lj.si/openvaf/download/openvaf-reloaded-osdi_0.4-136-gbfe3f34f-linux_x64.tar.gz"
+          tar xzf openvaf.tar.gz
+          # Find the openvaf-r binary
+          find . -name "openvaf-r" -type f -exec chmod +x {} \;
+          OPENVAF_BIN="$(find . -name "openvaf-r" -type f | head -1)"
+          echo "OPENVAF_DIR=$(dirname "$(realpath "$OPENVAF_BIN")")" >> "$GITHUB_ENV"
+
+      - name: Build OpenVAF-reloaded (macOS)
+        if: runner.os == 'macOS' && steps.cache-openvaf-macos.outputs.cache-hit != 'true'
+        run: |
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile complete
+          # shellcheck source=/dev/null
+          source ~/.cargo/env
+
+          # Clone OpenVAF-reloaded
+          git clone https://github.com/OpenVAF/OpenVAF-Reloaded.git /tmp/openvaf
+          cd /tmp/openvaf
+
+          # Set LLVM environment for Rust bindings
+          BREW_PREFIX="$(brew --prefix)"
+          export LLVM_SYS_181_PREFIX="$BREW_PREFIX/opt/llvm@18"
+          export PATH="$BREW_PREFIX/opt/llvm@18/bin:$PATH"
+
+          # Build openvaf-r
+          cargo build --release --bin openvaf-r
+
+          # Install to cache location
+          mkdir -p ~/.openvaf
+          cp target/release/openvaf-r ~/.openvaf/
+
+      - name: Setup OpenVAF path (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          chmod +x "$HOME/.openvaf/openvaf-r"
+          echo "OPENVAF_DIR=$HOME/.openvaf" >> "$GITHUB_ENV"
+
+      - name: Configure VACASK
+        run: |
+          CMAKE_ARGS=(-G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release)
+          CMAKE_ARGS+=("-DOPENVAF_DIR=$OPENVAF_DIR")
+
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            BREW_PREFIX="$(brew --prefix)"
+            CMAKE_ARGS+=("-DSuiteSparse_DIR=$BREW_PREFIX/opt/suite-sparse")
+            CMAKE_ARGS+=("-DTOMLPP_DIR=$BREW_PREFIX/opt/tomlplusplus")
+            CMAKE_ARGS+=("-DBoost_ROOT=$BREW_PREFIX/opt/boost")
+            CMAKE_ARGS+=("-DBISON_EXECUTABLE=$BREW_PREFIX/opt/bison/bin/bison")
+            CMAKE_ARGS+=("-DFLEX_INCLUDE_DIR=$BREW_PREFIX/opt/flex/include")
+          else
+            CMAKE_ARGS+=("-DBoost_ROOT=$BOOST_ROOT")
+            CMAKE_ARGS+=("-DSuiteSparse_DIR=/usr")
+          fi
+
+          echo "Running: cmake ${CMAKE_ARGS[*]}"
+          cmake "${CMAKE_ARGS[@]}"
+
+      - name: Build VACASK
+        run: |
+          cmake --build build "-j$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
+
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure --timeout 60
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vacask-${{ matrix.name }}
+          path: |
+            build/simulator/vacask
+            build/lib/*.osdi
+          if-no-files-found: warn
