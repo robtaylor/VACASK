@@ -188,11 +188,67 @@ cmake --build <build directory>
 
 After the build process is finished the binary can be found in `<build directory>/simulator`. 
 
-The .tar.gz and .deb packages can be built by changing the current directory to `<build directory>` and typing 
+The .tar.gz and .deb packages can be built by changing the current directory to `<build directory>` and typing
 ```
 cpack
 ```
-The packages are created in the `<build directory>`. 
+The packages are created in the `<build directory>`.
+
+## macOS
+
+### Prerequisites
+Install the required dependencies using [Homebrew](https://brew.sh/):
+```
+brew install llvm@18 cmake ninja suitesparse tomlplusplus
+```
+
+You will also need to build Boost 1.88 from source. Download the sources from [https://www.boost.org/users/download/](https://www.boost.org/users/download/). Unpack it and build with:
+```
+cd boost_1_88_0
+cd tools/build
+./bootstrap.sh
+cd ../..
+tools/build/b2 --with-filesystem --with-process --with-asio link=static toolset=clang
+```
+The Boost libraries will be in `boost_1_88_0/stage`.
+
+### Building OpenVAF-reloaded
+You need to build the OpenVAF-reloaded compiler. First, install Rust:
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source ~/.cargo/env
+```
+
+Clone and build OpenVAF-reloaded:
+```
+git clone https://github.com/arpadbuermen/OpenVAF.git
+cd OpenVAF
+cargo build --release -p openvaf
+```
+The compiler binary will be at `target/release/openvaf`.
+
+### Building the simulator
+Create a build directory and configure with CMake. You need to specify the Homebrew prefix for finding dependencies:
+```
+HOMEBREW_PREFIX=$(brew --prefix)
+cmake -G Ninja -S <sources directory> -B <build directory> -DCMAKE_BUILD_TYPE=Release \
+    -DOPENVAF_DIR=<path to OpenVAF directory>/target/release \
+    -DBoost_ROOT=<path to boost_1_88_0>/stage \
+    -DSuiteSparse_DIR=$HOMEBREW_PREFIX \
+    -DTOMLPP_DIR=$HOMEBREW_PREFIX
+```
+
+Build the simulator:
+```
+cmake --build <build directory>
+```
+
+After the build process is finished the binary can be found in `<build directory>/simulator`.
+
+To create a .tar.gz package, change to `<build directory>` and type:
+```
+cpack
+```
 
 ## Windows
 Building for Windows is performed with the Mingw64 compiler. Unfortunately you will have to build all of the prerequisites manually. 

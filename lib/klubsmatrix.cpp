@@ -82,7 +82,7 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     KluMatrixCore<IndexType, ValueType>::clearError();
     
     this->~KluBlockSparseMatrixCore();
-    this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
+    static_cast<KluMatrixCore<IndexType, ValueType>*>(this)->~KluMatrixCore();
 
     n_ = n;
     nbRow_ = nbRow;
@@ -104,7 +104,7 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     blockColumnStride = new IndexType[n];
     if (!AP || !AI || !denseColumnBegin || !blockColumnOrigin || !blockColumnStride) {
         this->~KluBlockSparseMatrixCore();
-        this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
+        static_cast<KluMatrixCore<IndexType, ValueType>*>(this)->~KluMatrixCore();
         lastError = Error:: Memory;
         return false;
     }
@@ -215,7 +215,7 @@ bool KluBlockSparseMatrixCore<IndexType, ValueType>::rebuild(SparsityMap& m, Equ
     }
     if (!Ax || (largeBucket_ && !blockBucket_)) {
         this->~KluBlockSparseMatrixCore();
-        this->KluMatrixCore<IndexType, ValueType>::~KluMatrixCore();
+        static_cast<KluMatrixCore<IndexType, ValueType>*>(this)->~KluMatrixCore();
         lastError = Error::Memory;
         return false;
     }

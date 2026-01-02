@@ -206,8 +206,8 @@ bool OsdiDevice::readParameter(OsdiFile::OsdiParameterId osdiId, void* coreMod, 
         return false;
     }
 
-    if (coreInst && !isInstanceParameter(osdiId)) {
-        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not an instance parameter.");
+    if (coreInst && !(isInstanceParameter(osdiId) || isOutvar(osdiId))) {
+        s.set(Status::NotFound, std::string("OSDI parameter id=")+std::to_string(osdiId)+" is not an instance parameter or output variable.");
         return false;
     }
 
