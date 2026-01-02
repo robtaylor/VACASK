@@ -61,7 +61,7 @@ jobs:
             suite-sparse \
             boost \
             tomlplusplus \
-            llvm@18 \
+            llvm \
             python3 \
             numpy \
             scipy
@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.openvaf
-          key: openvaf-macos-${{ runner.arch }}-v2-macos-patches-v3
+          key: openvaf-macos-${{ runner.arch }}-v3-llvm21
 
       - name: Download OpenVAF-reloaded (Linux)
         if: runner.os == 'Linux'
@@ -116,12 +116,12 @@ jobs:
           git clone --branch branches/macos-patches-v3 https://github.com/arpadbuermen/OpenVAF.git /tmp/openvaf
           cd /tmp/openvaf
 
-          # Set LLVM environment for Rust bindings
+          # Set LLVM environment for Rust bindings (LLVM 21 from Homebrew)
           BREW_PREFIX="$(brew --prefix)"
-          export LLVM_SYS_181_PREFIX="$BREW_PREFIX/opt/llvm@18"
-          export PATH="$BREW_PREFIX/opt/llvm@18/bin:$PATH"
+          export LLVM_SYS_210_PREFIX="$BREW_PREFIX/opt/llvm"
+          export PATH="$BREW_PREFIX/opt/llvm/bin:$PATH"
 
-          # Build openvaf-r with LLVM 21 support (matches Homebrew llvm@18)
+          # Build openvaf-r with LLVM 21 support
           cargo build --release --features llvm21 --bin openvaf-r
 
           # Install to cache location
