@@ -27,6 +27,19 @@ _SI_PREFIX_PATTERN = re.compile(
 # Pattern to match 'temper' variable (replaced with $temp in VACASK)
 _TEMPER_PATTERN = re.compile(r"\btemper\b")
 
+# Pattern to match gauss/agauss function calls
+# Matches: gauss(mean, sigma) or gauss(mean, sigma, n) or agauss(...)
+# Examples: gauss(1k, 0.1, 3), agauss(0, 0.05, 3), GAUSS(vth0, sigma)
+_GAUSS_PATTERN = re.compile(
+    r"\b(a?gauss)\s*\(\s*"  # function name with open paren
+    r"([^,]+)"  # mean/nominal value (first arg)
+    r"\s*,\s*"  # comma separator
+    r"([^,)]+)"  # std deviation (second arg)
+    r"(?:\s*,\s*([^)]+))?"  # optional num_sigma (third arg)
+    r"\s*\)",  # close paren
+    re.IGNORECASE,
+)
+
 
 # SI prefix conversion map for VACASK output
 _SI_OUTPUT_MAP = {
@@ -65,11 +78,57 @@ def convert_si_prefixes(expr: str) -> str:
     return _SI_PREFIX_PATTERN.sub(_si_replace_worker, expr)
 
 
+def contains_gauss_function(expr: str) -> bool:
+    """Check if expression contains a gauss or agauss function call.
+
+    Used to detect Monte Carlo variation expressions that should be
+    preserved as-is in output (pass-through for VACASK).
+
+    Args:
+        expr: Expression string to check
+
+    Returns:
+        True if expression contains gauss() or agauss() function call
+    """
+    return bool(_GAUSS_PATTERN.search(expr))
+
+
+def extract_gauss_calls(expr: str) -> list[dict]:
+    """Extract all gauss/agauss function calls from an expression.
+
+    Parses gauss/agauss calls and returns their components for analysis
+    or transformation. The raw expression is preserved for pass-through.
+
+    Args:
+        expr: Expression string potentially containing gauss calls
+
+    Returns:
+        List of dicts with keys: function, mean, std_dev, num_sigma, raw
+    """
+    calls = []
+    for match in _GAUSS_PATTERN.finditer(expr):
+        func_name = match.group(1).lower()
+        mean = match.group(2).strip()
+        std_dev = match.group(3).strip()
+        num_sigma_str = match.group(4)
+        num_sigma = float(num_sigma_str.strip()) if num_sigma_str else None
+
+        calls.append({
+            "function": func_name,
+            "mean": mean,
+            "std_dev": std_dev,
+            "num_sigma": num_sigma,
+            "raw": match.group(0),
+        })
+    return calls
+
+
 def format_value(value_str: str) -> str:
     """Format a parameter value for VACASK output.
 
     - Removes curly braces from expressions
     - Converts SI prefixes to VACASK format
+    - Preserves gauss/agauss expressions as-is for VACASK pass-through
 
     Args:
         value_str: Raw parameter value string
@@ -79,6 +138,10 @@ def format_value(value_str: str) -> str:
     """
     if value_str.startswith("{") and value_str.endswith("}"):
         value_str = value_str[1:-1]
+    # Preserve gauss expressions without SI prefix conversion
+    # to avoid mangling the function arguments
+    if contains_gauss_function(value_str):
+        return value_str
     return convert_si_prefixes(value_str)
 
 
