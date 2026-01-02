@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.openvaf
-          key: openvaf-macos-${{ runner.arch }}-v1
+          key: openvaf-macos-${{ runner.arch }}-v2-macos-patches-v3
 
       - name: Download OpenVAF-reloaded (Linux)
         if: runner.os == 'Linux'
@@ -112,8 +112,8 @@ jobs:
           # shellcheck source=/dev/null
           source ~/.cargo/env
 
-          # Clone OpenVAF-reloaded
-          git clone https://github.com/OpenVAF/OpenVAF-Reloaded.git /tmp/openvaf
+          # Clone OpenVAF from arpadbuermen fork with macOS patches
+          git clone --branch branches/macos-patches-v3 https://github.com/arpadbuermen/OpenVAF.git /tmp/openvaf
           cd /tmp/openvaf
 
           # Set LLVM environment for Rust bindings
