@@ -34,8 +34,18 @@ jobs:
             bison \
             flex \
             libsuitesparse-dev \
-            libtoml++-dev \
             python3
+
+      - name: Install toml++ (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          # toml++ is header-only, install from source
+          cd /tmp
+          curl -L -o tomlplusplus.tar.gz https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz
+          tar xzf tomlplusplus.tar.gz
+          sudo mkdir -p /usr/local/include
+          sudo cp -r tomlplusplus-3.4.0/include/toml++ /usr/local/include/
+          echo "TOMLPP_DIR=/usr/local" >> "$GITHUB_ENV"
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
@@ -122,12 +132,13 @@ jobs:
             BREW_PREFIX="$(brew --prefix)"
             CMAKE_ARGS+=("-DSuiteSparse_DIR=$BREW_PREFIX/opt/suite-sparse")
             CMAKE_ARGS+=("-DTOMLPP_DIR=$BREW_PREFIX/opt/tomlplusplus")
-            CMAKE_ARGS+=("-DBoost_ROOT=$BREW_PREFIX/opt/boost")
+            CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=$BREW_PREFIX/opt/boost")
             CMAKE_ARGS+=("-DBISON_EXECUTABLE=$BREW_PREFIX/opt/bison/bin/bison")
             CMAKE_ARGS+=("-DFLEX_INCLUDE_DIR=$BREW_PREFIX/opt/flex/include")
           else
             CMAKE_ARGS+=("-DBoost_ROOT=$BOOST_ROOT")
             CMAKE_ARGS+=("-DSuiteSparse_DIR=/usr")
+            CMAKE_ARGS+=("-DTOMLPP_DIR=$TOMLPP_DIR")
           fi
 
           echo "Running: cmake ${CMAKE_ARGS[*]}"
