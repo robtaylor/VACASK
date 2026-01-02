@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Parameter handling mixin for ng2vc converter.
+"""Parameter handling mixin for netlist_converter converter.
 
 This module uses shared functions from spiceparser.params where possible,
-providing a backward-compatible interface for the ng2vclib converter.
+providing a backward-compatible interface for the netlist_converter converter.
 """
 
 # Import shared parameter utilities
@@ -35,7 +35,7 @@ class ParamsMixin:
     """Mixin providing parameter handling methods for the Converter.
 
     These methods delegate to shared functions from spiceparser.params
-    while maintaining backward compatibility with existing ng2vclib code.
+    while maintaining backward compatibility with existing netlist_converter code.
     """
 
     def format_extra_params(self, extras, lws, indent):

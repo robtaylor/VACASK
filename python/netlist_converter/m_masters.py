@@ -208,11 +208,13 @@ class MastersMixin:
                             pnew = []
                             for pname, pval in params:
                                 if pname=="level":
-                                    level = int(pval)
+                                    level = int(float(pval))  # Handle "54.0"
                                     if remove_level:
                                         continue
                                 elif pname=="version":
-                                    version = int(pval)
+                                    # Version is stored as string for family_map lookup
+                                    # E.g., "4.5", "4.80", "3.3.0"
+                                    version = str(pval)
                                     if remove_version:
                                         continue
                                 else:

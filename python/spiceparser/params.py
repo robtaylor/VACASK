@@ -7,7 +7,7 @@
 This module provides functions for parsing, formatting, and transforming
 SPICE parameters, including SI prefix handling and expression processing.
 
-Extracted from ng2vclib/m_params.py to provide shared parameter handling.
+Extracted from netlist_converter/m_params.py to provide shared parameter handling.
 """
 
 import re

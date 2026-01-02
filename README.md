@@ -51,7 +51,7 @@ If you want to find out more, there is [a page dedicated to benchmarks](benchmar
 - a growing [library of Verilog-A models](devices/) (diode, BSIM3, BSIM4, BSIMBULK, ...)
 - simulator library that can be linked to 3rd party software (see API demo in  [demo/api](demo/api))
 - netlist parser with Spectre-like syntax
-- Ngspice netlist converter (under development, see [python/ng2vc.py](python/ng2vc.py))
+- Ngspice netlist converter (under development, see [python/netlist_converter.py](python/netlist_converter.py))
 - [Xschem](https://xschem.sourceforge.io/stefan/index.html) schematic entry, analysis setup, and results display (use the latest development release). See [demo/xschem](demo/xschem) for more information. 
 - [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK) support. See [demo/ihp-sg13g2](demo/ihp-sg13g2) for more information. 
 - Verilog-A natures and disciplines for setting absolute tolerances on unknowns and residuals (see [demo/natures](demo/natures)). 
