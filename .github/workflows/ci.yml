@@ -26,6 +26,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install LLVM 18 (Ubuntu 22.04)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          # Ubuntu 22.04 has LLVM 14 by default, but OpenVAF requires LLVM 18+
+          # Install LLVM 18 from official apt.llvm.org repository
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          echo "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main" | sudo tee /etc/apt/sources.list.d/llvm-18.list
+          sudo apt-get update
+          sudo apt-get install -y llvm-18-dev libclang-18-dev clang-18
+          # Set up alternatives so llvm-config points to version 18
+          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-18 100
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -37,12 +50,13 @@ jobs:
             flex \
             libfl-dev \
             libsuitesparse-dev \
-            llvm-dev \
-            libclang-dev \
-            clang \
             python3 \
             python3-numpy \
             python3-scipy
+          # Install default LLVM on Ubuntu 24.04 (which has LLVM 18+)
+          if [ "${{ matrix.os }}" != "ubuntu-22.04" ]; then
+            sudo apt-get install -y llvm-dev libclang-dev clang
+          fi
 
       - name: Install toml++ (Linux)
         if: runner.os == 'Linux'
@@ -93,7 +107,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.openvaf
-          key: openvaf-${{ matrix.os }}-${{ runner.arch }}-v1
+          key: openvaf-${{ matrix.os }}-${{ runner.arch }}-v2
 
       - name: Build OpenVAF-reloaded
         if: steps.cache-openvaf.outputs.cache-hit != 'true'
@@ -115,17 +129,10 @@ jobs:
             LLVM_FEATURE="llvm21"
           else
             # Linux: use system LLVM (version varies by Ubuntu version)
+            # OpenVAF requires LLVM 18+ (supported features: llvm18, llvm19, llvm20, llvm21)
             LLVM_VERSION=$(llvm-config --version | cut -d. -f1)
             echo "Detected LLVM version: $LLVM_VERSION"
-            # Map LLVM version to feature flag
-            case "$LLVM_VERSION" in
-              18) LLVM_FEATURE="llvm18" ;;
-              17) LLVM_FEATURE="llvm17" ;;
-              16) LLVM_FEATURE="llvm16" ;;
-              15) LLVM_FEATURE="llvm15" ;;
-              14) LLVM_FEATURE="llvm14" ;;
-              *)  LLVM_FEATURE="llvm${LLVM_VERSION}" ;;
-            esac
+            LLVM_FEATURE="llvm${LLVM_VERSION}"
           fi
 
           echo "Building with feature: $LLVM_FEATURE"
