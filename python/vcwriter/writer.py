@@ -102,12 +102,8 @@ class VacaskWriter:
         if self._osdi_modules:
             buf.write("\n")
 
-        # Write top-level comments
-        for comment in netlist.comments:
-            buf.write(f"// {comment.text}\n")
-
-        if netlist.comments:
-            buf.write("\n")
+        # Write default models for passive elements
+        self._write_default_models(buf)
 
         # Write global parameters
         if netlist.parameters:
@@ -116,30 +112,54 @@ class VacaskWriter:
                 buf.write(f"parameters {name}={formatted_value}\n")
             buf.write("\n")
 
-        # Write default models for passive elements
-        self._write_default_models(buf)
+        # Collect all top-level content with line numbers for ordered output
+        content_items: list[tuple[int, str, any]] = []
 
-        # Write models
+        # Add comments
+        for comment in netlist.comments:
+            line_no = comment.line_number or 0
+            content_items.append((line_no, "comment", comment))
+
+        # Add models
         for model in netlist.models:
-            self._write_model(buf, model)
+            line_no = model.line_number or 0
+            content_items.append((line_no, "model", model))
 
-        # Write models from library sections
+        # Add models from library sections
         for section in netlist.library_sections.values():
             for model in section.models:
-                self._write_model(buf, model)
+                line_no = model.line_number or 0
+                content_items.append((line_no, "model", model))
 
-        # Write subcircuits
+        # Add subcircuits
         for subckt in netlist.subcircuits:
-            self._write_subcircuit(buf, subckt)
+            line_no = subckt.line_number or 0
+            content_items.append((line_no, "subcircuit", subckt))
 
-        # Write subcircuits from library sections
+        # Add subcircuits from library sections
         for section in netlist.library_sections.values():
             for subckt in section.subcircuits:
-                self._write_subcircuit(buf, subckt)
+                line_no = subckt.line_number or 0
+                content_items.append((line_no, "subcircuit", subckt))
 
-        # Write top-level instances
+        # Add top-level instances
         for inst in netlist.instances:
-            self._write_instance(buf, inst)
+            line_no = inst.line_number or 0
+            content_items.append((line_no, "instance", inst))
+
+        # Sort by line number
+        content_items.sort(key=lambda x: x[0])
+
+        # Write content in order
+        for line_no, item_type, item in content_items:
+            if item_type == "comment":
+                buf.write(f"// {item.text}\n")
+            elif item_type == "model":
+                self._write_model(buf, item)
+            elif item_type == "subcircuit":
+                self._write_subcircuit(buf, item)
+            elif item_type == "instance":
+                self._write_instance(buf, item)
 
         # Write statistics blocks (for MC variation)
         for stats_block in netlist.statistics_blocks:
