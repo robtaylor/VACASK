@@ -251,9 +251,68 @@ cpack
 ```
 
 ## Windows
-Building for Windows is performed with the Mingw64 compiler. Unfortunately you will have to build all of the prerequisites manually. 
 
-### Building the prerequisites
+There are two ways to build VACASK on Windows: using MSYS2 packages (recommended, simpler) or building all prerequisites manually.
+
+### Using MSYS2 packages (recommended)
+
+This method uses pre-built packages from MSYS2, which is much simpler than building everything manually.
+
+#### Prerequisites
+
+1. Install [MSYS2](https://www.msys2.org/) and open the MINGW64 shell (not the MSYS shell).
+
+2. Install the required packages:
+```bash
+pacman -S git bison flex
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja \
+          mingw-w64-x86_64-boost mingw-w64-x86_64-suitesparse \
+          mingw-w64-x86_64-tomlplusplus mingw-w64-x86_64-python \
+          mingw-w64-x86_64-python-numpy mingw-w64-x86_64-python-scipy
+```
+
+3. Install Rust and build OpenVAF-reloaded:
+```bash
+pacman -S mingw-w64-x86_64-rust mingw-w64-x86_64-llvm mingw-w64-x86_64-clang mingw-w64-x86_64-lld
+
+git clone --branch branches/macos-patches-v3 https://github.com/arpadbuermen/OpenVAF.git
+cd OpenVAF
+
+# Check LLVM version and build with appropriate feature
+LLVM_VERSION=$(llvm-config --version | cut -d. -f1)
+cargo build --release --features "llvm${LLVM_VERSION}" --bin openvaf-r
+```
+
+The compiler binary will be at `target/release/openvaf-r.exe`.
+
+#### Building the simulator
+
+From the MINGW64 shell:
+```bash
+cmake -G Ninja -S <sources directory> -B build -DCMAKE_BUILD_TYPE=Release \
+    -DOPENVAF_DIR=<path to OpenVAF>/target/release \
+    -DSuiteSparse_DIR=/mingw64 \
+    -DTOMLPP_DIR=/mingw64 \
+    -DBoost_ROOT=/mingw64 \
+    -DBISON_EXECUTABLE=/usr/bin/bison \
+    -DFLEX_EXECUTABLE=/usr/bin/flex \
+    -DFLEX_INCLUDE_DIR=/usr/include
+
+cmake --build build
+```
+
+The simulator binary will be at `build/simulator/vacask.exe`.
+
+To run tests:
+```bash
+cd build
+ctest --output-on-failure
+```
+
+### Building prerequisites manually
+
+Alternatively, you can build all prerequisites manually with the standalone Mingw64 compiler. This gives you more control but requires more effort.
+
 First, install the compiler and the tools. We will assume everything will be unpacked and built in `e:\`. Adjust the paths accordingly if you are going to use a different drive. Download Msys2 from [https://www.msys2.org/](https://www.msys2.org/) and install it to `e:\msys64`. Start the MSYS prompt and install bison, flex, and binutils. 
 ```
 pacman -S bison
