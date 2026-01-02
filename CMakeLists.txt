@@ -273,7 +273,7 @@ if (${SIM_PLATFORM} STREQUAL "Windows")
             ${SuiteSparse_DIR}/lib/libklu_cholmod.a
             ${SuiteSparse_DIR}/lib/libsuitesparseconfig.a
             ${SuiteSparse_DIR}/lib/libopenblas.a
-            m dl gomp wsock32
+            gomp wsock32
         CACHE STRING "External libraries for creating an executable."
         FORCE
     )
