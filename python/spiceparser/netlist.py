@@ -30,6 +30,21 @@ class Parameter:
 
 
 @dataclass
+class Comment:
+    """A comment line from the netlist.
+
+    Attributes:
+        text: Comment text (without the comment character prefix)
+        line_number: Line number in source file
+        inline: True if this was an inline comment (// style)
+    """
+
+    text: str
+    line_number: int | None = None
+    inline: bool = False
+
+
+@dataclass
 class ModelDef:
     """A SPICE .model definition.
 
@@ -86,6 +101,7 @@ class Subcircuit:
         instances: Device instances within the subcircuit
         models: Model definitions local to this subcircuit
         subcircuits: Nested subcircuit definitions
+        comments: Comments within this subcircuit
         source_file: Path to source file
         line_number: Line number in source file
     """
@@ -96,6 +112,7 @@ class Subcircuit:
     instances: list[Instance] = field(default_factory=list)
     models: list[ModelDef] = field(default_factory=list)
     subcircuits: list["Subcircuit"] = field(default_factory=list)
+    comments: list[Comment] = field(default_factory=list)
     source_file: Path | None = None
     line_number: int | None = None
 
@@ -168,6 +185,7 @@ class Netlist:
 
     Attributes:
         title: First line of netlist (title comment)
+        comments: Top-level comments (outside subcircuits)
         parameters: Global parameter definitions (.param)
         models: Top-level model definitions
         subcircuits: Top-level subcircuit definitions
@@ -179,6 +197,7 @@ class Netlist:
     """
 
     title: str = ""
+    comments: list[Comment] = field(default_factory=list)
     parameters: dict[str, Any] = field(default_factory=dict)
     models: list[ModelDef] = field(default_factory=list)
     subcircuits: list[Subcircuit] = field(default_factory=list)

@@ -14,6 +14,7 @@ from typing import TextIO
 
 from spiceparser.dialect import SpiceDialect, get_dialect
 from spiceparser.netlist import (
+    Comment,
     Instance,
     LibrarySection,
     ModelDef,
@@ -158,8 +159,26 @@ class NetlistParser:
             self.line_no = line_no
             line = line.strip()
 
-            # Skip empty lines and comments
-            if not line or any(line.startswith(c) for c in self.dialect.comment_chars):
+            # Skip empty lines
+            if not line:
+                continue
+
+            # Check for comments
+            is_comment = False
+            for comment_char in self.dialect.comment_chars:
+                if line.startswith(comment_char):
+                    # Store comment (strip comment character prefix)
+                    text = line[len(comment_char) :].strip()
+                    comment = Comment(
+                        text=text,
+                        line_number=line_no,
+                        inline=(comment_char == "//"),
+                    )
+                    self._add_comment(comment)
+                    is_comment = True
+                    break
+
+            if is_comment:
                 continue
 
             # Parse line
@@ -187,6 +206,13 @@ class NetlistParser:
             result.append(current)
 
         return result
+
+    def _add_comment(self, comment: Comment) -> None:
+        """Add a comment to the current context (subcircuit or netlist)."""
+        if self._current_subckt:
+            self._current_subckt.comments.append(comment)
+        else:
+            self.netlist.comments.append(comment)
 
     def _parse_line(self, line: str) -> None:
         """Parse a single line and update state."""

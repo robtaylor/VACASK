@@ -102,6 +102,13 @@ class VacaskWriter:
         if self._osdi_modules:
             buf.write("\n")
 
+        # Write top-level comments
+        for comment in netlist.comments:
+            buf.write(f"// {comment.text}\n")
+
+        if netlist.comments:
+            buf.write("\n")
+
         # Write global parameters
         if netlist.parameters:
             for name, value in netlist.parameters.items():
@@ -260,6 +267,10 @@ class VacaskWriter:
 
         # Subcircuit header: subckt name (port1 port2 ...)
         buf.write(f"{prefix}subckt {subckt.name} ({ports_str})\n")
+
+        # Comments within subcircuit
+        for comment in subckt.comments:
+            buf.write(f"{prefix}    // {comment.text}\n")
 
         # Default parameters
         if subckt.parameters:
