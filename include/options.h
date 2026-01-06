@@ -55,7 +55,8 @@ typedef struct SimulatorOptions  {
     Real homotopy_srcscale;
     Real homotopy_minsrcstep;
     Real homotopy_sourcefactor;
-    Int op_debug; 
+    Int op_debug;
+    Int q_debug;  // Debug reactive residual (charge) values
     Int op_itl;
     Int op_itlcont;
     Int op_skipinitial;

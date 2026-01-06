@@ -149,6 +149,9 @@ protected:
 
     // Internal structure for max residual contribution
     Vector<double> maxResidualContribution_; // maximal residual contributionm at this evaluation for each equation
+
+    // Internal structure for reactive residual (charge) debugging
+    Vector<double> reactiveResidual_; // reactive residual (Q values) for q_debug
     
     // What kind of tolerance reference to use
     bool historicSolRef;

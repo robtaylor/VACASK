@@ -170,25 +170,32 @@ OpNRSolver::OpNRSolver(
     // For constructing the linearized system in NR loop
     evalSetup_ = EvalSetup {
         // Inputs
-        .solution = &solution, 
-        .states = &states, 
+        .solution = &solution,
+        .states = &states,
 
         // Signal this is static and DC analysis
-        .staticAnalysis = true, 
-        .dcAnalysis = true, 
+        .staticAnalysis = true,
+        .dcAnalysis = true,
 
-        // Evaluation 
-        .enableLimiting = true, 
-        .evaluateResistiveJacobian = true, 
-        .evaluateResistiveResidual = true, 
-        .evaluateLinearizedResistiveRhsResidual = true, 
-        .evaluateOutvars = true, 
+        // Evaluation
+        .enableLimiting = true,
+        .evaluateResistiveJacobian = true,
+        .evaluateResistiveResidual = true,
+        .evaluateLinearizedResistiveRhsResidual = true,
+        .evaluateOutvars = true,
     };
 
     loadSetup_ = LoadSetup {
-        .states = &states, 
-        .loadResistiveJacobian = true, 
+        .states = &states,
+        .loadResistiveJacobian = true,
     };
+
+    // Enable reactive residual evaluation if q_debug is set
+    auto q_debug = circuit.simulatorOptions().core().q_debug;
+    if (q_debug > 0) {
+        evalSetup_.evaluateReactiveResidual = true;
+        evalSetup_.evaluateReactiveJacobian = true;
+    }
 }
 
 bool OpNRSolver::setForces(Int ndx, const AnnotatedSolution& solution, bool abortOnError) {
@@ -482,8 +489,16 @@ bool OpNRSolver::initialize(bool continuePrevious) {
     loadSetup_.linearizedResistiveRhsResidual = delta.data();
     loadSetup_.maxResistiveResidualContribution = computeMaxResidualContribution ? maxResidualContribution_.data() : nullptr;
 
-    // Set up tolerance reference value for solution
+    // Set up reactive residual (Q values) debugging
     auto& options = circuit.simulatorOptions().core();
+    if (options.q_debug > 0) {
+        auto n = circuit.unknownCount();
+        reactiveResidual_.resize(n+1);
+        std::fill(reactiveResidual_.begin(), reactiveResidual_.end(), 0.0);
+        loadSetup_.reactiveResidual = reactiveResidual_.data();
+    }
+
+    // Set up tolerance reference value for solution
     if (options.relrefsol==SimulatorOptions::relrefPointLocal) {
         globalSolRef = false;
         historicSolRef = false;
@@ -727,6 +742,21 @@ std::tuple<bool, bool> OpNRSolver::buildSystem(bool continuePrevious) {
         return std::make_tuple(false, evalSetup_.limitingApplied);
     }
     delta[0] = 0.0;
+
+    // Dump reactive residual (Q values) if q_debug >= 2
+    auto q_debug = circuit.simulatorOptions().core().q_debug;
+    if (q_debug >= 2 && loadSetup_.reactiveResidual) {
+        Simulator::dbg() << "Reactive residual (Q values) at iteration " << iteration << "\n";
+        auto n = circuit.unknownCount();
+        for (decltype(n) i = 1; i <= n; i++) {
+            auto* node = circuit.reprNode(i);
+            double q = reactiveResidual_[i];
+            if (q != 0.0) {
+                Simulator::dbg() << "  " << std::string(node->name()) << " : " << std::scientific << std::setprecision(6) << q << "\n";
+            }
+        }
+        Simulator::dbg() << "\n";
+    }
 
     // Now load gshunt if it is greater than 0.0
     auto gshunt = commons.gshunt;

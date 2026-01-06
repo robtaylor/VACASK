@@ -118,6 +118,9 @@ SimulatorOptions::SimulatorOptions() {
     op_debug = 0; // >0 enables op analysis debugging
                   // >=1 print iteration type, homotopy information, convergence report
                   // >=2 print continuation mode information
+    q_debug = 0;  // >0 enables reactive residual (charge) debugging
+                  // >=1 dump Q values after OP convergence
+                  // >=2 dump Q values at each NR iteration
     op_itl = 100;  // >0, maximal number of iterations in non-continuation mode
     op_itlcont = 50; // >0, maximal number of iterations in continuation mode
 
@@ -261,6 +264,7 @@ template<> int Introspection<SimulatorOptions>::setup() {
     registerMember(homotopy_sourcefactor);
     
     registerMember(op_debug);
+    registerMember(q_debug);
     registerMember(op_itl);
     registerMember(op_itlcont);
     registerMember(op_skipinitial);
