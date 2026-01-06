@@ -15,7 +15,20 @@ The following benchmark results were obtained on the [C6288 16x16 multiplier cir
 |Ngspice    |  71.81         |1020       |1        |3474       |
 |VACASK     |  57.98         |1021       |7        |3487       |
 
-If you want to find out more, there is [a page dedicated to benchmarks](benchmark).
+If you want to find out more, there is [a page dedicated to benchmarks](benchmark). 
+
+# What about memory usage? 
+
+The following results were obtained on the above-mentioned [C6288 16x16 multiplier circuit](benchmark/c6288). Results storage in Ngspice was minimized to only two vectors (approximately 16kB of data). The table lists the memory usage of the simulator process reported by the OS during simulation. 
+
+|Simulator  |Sparse matrix library |Total memory usage during simulation [MB] |
+|-----------|----------------------|------------------------------------------|
+|Xyce       |KLU                   |775.7 |
+|Ngspice    |SPARSE                |135.3 |
+|Ngspice    |KLU                   |200.5 |
+|VACASK     |KLU                   |138.5 |
+
+The increased Ngspice memory usage when KLU is used as the solver is probably due to the extra data structures Ngspice uses for setting up the sparse matrix for KLU. 
 
 # What does VACASK offer? 
 
