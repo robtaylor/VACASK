@@ -508,6 +508,21 @@ CoreCoroutine OperatingPointCore::coroutine(bool continuePrevious) {
             if (outfile && params.write) {
                 outfile->addPoint();
             }
+            // Dump reactive residual (Q values) if q_debug >= 1
+            auto q_debug = options.q_debug;
+            if (q_debug >= 1 && nrSolver.loadSetup().reactiveResidual) {
+                Simulator::dbg() << "Reactive residual (Q values) at DC operating point:\n";
+                auto n = circuit.unknownCount();
+                auto* reactiveResidual = nrSolver.loadSetup().reactiveResidual;
+                for (decltype(n) i = 1; i <= n; i++) {
+                    auto* node = circuit.reprNode(i);
+                    double q = reactiveResidual[i];
+                    if (q != 0.0) {
+                        Simulator::dbg() << "  " << std::string(node->name()) << " : " << std::scientific << std::setprecision(6) << q << " C\n";
+                    }
+                }
+                Simulator::dbg() << "\n";
+            }
         }
     } else {
         // Leaving early, did not converge
