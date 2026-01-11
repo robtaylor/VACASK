@@ -1,10 +1,19 @@
-# settings.json should be copied from 
+# settings.json should be copied from
 #   settings-windows.json or
 #   settings-linux.json
 settings.json
 __pycache__
 bug
 benchmark/rundir
+
+# Documentation build output
+site/
+
+# Python virtual environment
+.venv/
+
+# uv lock file (optional: remove if you want to track it)
+uv.lock
 
 
 

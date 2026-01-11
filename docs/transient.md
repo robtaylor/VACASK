@@ -40,6 +40,62 @@ Defined in `TranParameters` (`include/coretran.h:40-56`):
 | `store` | "" | Name to store final solution |
 | `write` | 1 | Whether to write output file |
 
+## High-Level Data Flow
+
+```mermaid
+flowchart TB
+    subgraph Phase1["Phase 1: Initialization"]
+        VALIDATE["Validate parameters<br/>(step, stop, start)"]
+        METHOD["Set integration method<br/>(AM, BDF, Trap, Euler)"]
+        ALLOC["Allocate history buffers<br/>(solution, states, timesteps)"]
+        VALIDATE --> METHOD --> ALLOC
+    end
+
+    subgraph Phase2["Phase 2: Initial Conditions (t=0)"]
+        ICMODE{icmode?}
+        OP["Run OP analysis<br/>DC-consistent state"]
+        UIC["Set values directly<br/>May be inconsistent"]
+        EVALQ["Evaluate reactive residual<br/>Compute breakpoints"]
+        INITDT["Calculate initial timestep"]
+        ICMODE -->|op| OP
+        ICMODE -->|uic| UIC
+        OP --> EVALQ
+        UIC --> EVALQ
+        EVALQ --> INITDT
+    end
+
+    subgraph Phase3["Phase 3: Time-Stepping Loop"]
+        COEF["Compute integrator coefficients"]
+        PREDICT["Predict solution<br/>(polynomial extrapolation)"]
+        NR["Newton-Raphson solve"]
+        LTE["Estimate LTE<br/>(corrector - predictor)"]
+        DECISION{Accept?}
+        ADVANCE["Advance time & history"]
+        REJECT["Reduce timestep & order"]
+        COEF --> PREDICT --> NR --> LTE --> DECISION
+        DECISION -->|Yes| ADVANCE
+        DECISION -->|No| REJECT
+        ADVANCE --> CHECK{t ≥ stop?}
+        REJECT --> COEF
+        CHECK -->|No| COEF
+    end
+
+    subgraph Phase4["Phase 4: Finalization"]
+        OUTPUT["Write output epilogue"]
+        STORE["Store final solution"]
+        CLEANUP["Clean up"]
+        OUTPUT --> STORE --> CLEANUP
+    end
+
+    Phase1 --> Phase2 --> Phase3
+    CHECK -->|Yes| Phase4
+
+    style Phase1 fill:#e3f2fd
+    style Phase2 fill:#e8f5e9
+    style Phase3 fill:#fff3e0
+    style Phase4 fill:#fce4ec
+```
+
 ## Step-by-Step Algorithm
 
 ### Phase 1: Initialization
@@ -156,6 +212,26 @@ Otherwise:
 #### 3.3 Newton-Raphson Iteration
 Location: `coretran.cpp:920-935`
 
+```mermaid
+flowchart TB
+    INIT["Initialize with predicted solution"]
+    EVAL["Evaluate devices:<br/>f(x), q(x), Jacobians"]
+    FORM["Form linear system:<br/>[J_res + α×J_react]Δx = -RHS"]
+    SOLVE["Solve with KLU sparse solver"]
+    UPDATE["Update: x^(j+1) = x^j + Δx"]
+    CHECK{Converged?}
+    ITLIM{Iteration limit?}
+
+    INIT --> EVAL --> FORM --> SOLVE --> UPDATE --> CHECK
+    CHECK -->|No| ITLIM
+    ITLIM -->|No| EVAL
+    CHECK -->|Yes| SUCCESS["Success"]
+    ITLIM -->|Yes| FAIL["Failure"]
+
+    style SUCCESS fill:#c8e6c9
+    style FAIL fill:#ffcdd2
+```
+
 The `TranNRSolver` solves the nonlinear system at each timepoint:
 
 1. **Initialize** with predicted (or previous) solution
@@ -184,6 +260,24 @@ When using trapezoidal integration (`tran_trapltefilter` enabled):
 #### 3.5 Local Truncation Error (LTE) Estimation
 Location: `coretran.cpp:1061-1222`
 
+```mermaid
+flowchart TB
+    COMPUTE["Compute LTE = factor × (corrector - predictor)"]
+    TOLREF["Compute tolerance reference<br/>(global/local/pointlocal)"]
+    RATIO["Compute ratio = |LTE| / (tol × lteratio)"]
+    NEWDT["Calculate h_new = h_k × ratio^(-1/(order+1))"]
+    DECIDE{h_k/h_new > redofactor?}
+    REJECT["Reject timepoint<br/>Use smaller step"]
+    ACCEPT["Accept timepoint<br/>Possibly increase order"]
+
+    COMPUTE --> TOLREF --> RATIO --> NEWDT --> DECIDE
+    DECIDE -->|Yes| REJECT
+    DECIDE -->|No| ACCEPT
+
+    style REJECT fill:#ffcdd2
+    style ACCEPT fill:#c8e6c9
+```
+
 LTE control determines whether to accept/reject the timepoint and calculates the next timestep:
 
 1. **Compute LTE** = factor × (corrector - predictor)
@@ -208,6 +302,24 @@ LTE control determines whether to accept/reject the timepoint and calculates the
 
 #### 3.6 Timestep Adjustment and Breakpoint Handling
 Location: `coretran.cpp:1229-1343`
+
+```mermaid
+flowchart TB
+    START["After accept/reject decision"]
+    UPDATEBP["Update breakpoints if at/past one"]
+    LIMIT["Limit timestep by:<br/>• hmax<br/>• boundStep<br/>• tran_fbr × breakpoint_distance"]
+    CROSS{Next step crosses breakpoint?}
+    CUT["Cut step to exactly hit breakpoint"]
+    CLOSE{Very close to breakpoint?}
+    SHORTEN["Shorten step by half"]
+    DONE["Set new timestep"]
+
+    START --> UPDATEBP --> LIMIT --> CROSS
+    CROSS -->|Yes| CUT --> DONE
+    CROSS -->|No| CLOSE
+    CLOSE -->|Yes| SHORTEN --> DONE
+    CLOSE -->|No| DONE
+```
 
 After accept/reject decision:
 
@@ -295,6 +407,50 @@ Used only for prediction, not as corrector:
 x_{k+1,predicted} = Σ a_i × x_{k-i}
 ```
 
+## Newton-Raphson Iteration Detail
+
+At each NR iteration, the linearized system is:
+
+```
+[J_resistive + α × J_reactive] × Δx = -RHS
+```
+
+Where:
+- `J_resistive = ∂f/∂x` — resistive Jacobian from devices
+- `J_reactive = ∂q/∂x` — reactive Jacobian from devices
+- `α = 1/(h_k × b_{-1})` — integrator leading coefficient
+- `RHS = f(x^j) + q̇(x^j)` — combined residual
+
+The reactive derivative `q̇(x^j)` is computed using the integration formula with past history.
+
+## History Buffer Management
+
+```mermaid
+flowchart LR
+    subgraph Slots["Solution/State Slots"]
+        FUTURE["Slot -1<br/>Future (NR working)"]
+        CURRENT["Slot 0<br/>Current iteration"]
+        T_K["Slot 1<br/>t_k (last accepted)"]
+        T_K1["Slot 2<br/>t_{k-1}"]
+        T_K2["Slot 3<br/>t_{k-2}"]
+        MORE["..."]
+    end
+
+    FUTURE --> CURRENT --> T_K --> T_K1 --> T_K2 --> MORE
+
+    style FUTURE fill:#fff3e0
+    style CURRENT fill:#e8f5e9
+    style T_K fill:#e3f2fd
+    style T_K1 fill:#e3f2fd
+    style T_K2 fill:#e3f2fd
+```
+
+- **Slot -1**: Future solution being computed by NR
+- **Slot 0**: Previous NR iteration result
+- **Slots 1, 2, 3, ...**: Past accepted timepoints (t_k, t_{k-1}, ...)
+
+When a timepoint is accepted, buffers are advanced so current becomes past.
+
 ## Simulator Options Affecting Transient
 
 | Option | Description |
@@ -315,81 +471,6 @@ x_{k+1,predicted} = Σ a_i × x_{k-i}
 | `tran_trapltefilter` | Enable trapezoidal ringing filter |
 | `tran_spicelte` | Use SPICE-style LTE calculation |
 | `tran_debug` | Debug output level |
-
-## Data Flow Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Tran Analysis Entry                          │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 1: Initialization                                         │
-│  • Validate parameters                                           │
-│  • Set integration method & order                                │
-│  • Allocate history buffers                                      │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 2: Initial Conditions (t=0)                               │
-│  ┌─────────────────┐    ┌─────────────────┐                     │
-│  │  icmode="op"    │ OR │  icmode="uic"   │                     │
-│  │  Run OP analysis│    │  Set directly   │                     │
-│  └─────────────────┘    └─────────────────┘                     │
-│  • Evaluate reactive residual                                    │
-│  • Compute initial breakpoints                                   │
-│  • Calculate initial timestep                                    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3: Time-Stepping Loop                                     │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  For each timestep:                                         ││
-│  │                                                             ││
-│  │  1. Compute integrator coefficients                         ││
-│  │  2. Predict solution (polynomial extrapolation)             ││
-│  │  3. Newton-Raphson solve:                                   ││
-│  │     • Evaluate f(x), q(x), Jacobians                        ││
-│  │     • Form: J_res + α×J_react = -RHS                        ││
-│  │     • Solve for Δx, update x                                ││
-│  │     • Check convergence                                     ││
-│  │  4. Estimate LTE (corrector - predictor)                    ││
-│  │  5. Accept/reject decision                                  ││
-│  │  6. Calculate next timestep                                 ││
-│  │  7. Handle breakpoints                                      ││
-│  │  8. Advance time, update history                            ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│                    Loop until t ≥ stop                           │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 4: Finalization                                           │
-│  • Write output epilogue                                         │
-│  • Store final solution (optional)                               │
-│  • Clean up                                                      │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Newton-Raphson Iteration Detail
-
-At each NR iteration, the linearized system is:
-
-```
-[J_resistive + α × J_reactive] × Δx = -RHS
-```
-
-Where:
-- `J_resistive = ∂f/∂x` — resistive Jacobian from devices
-- `J_reactive = ∂q/∂x` — reactive Jacobian from devices
-- `α = 1/(h_k × b_{-1})` — integrator leading coefficient
-- `RHS = f(x^j) + q̇(x^j)` — combined residual
-
-The reactive derivative `q̇(x^j)` is computed using the integration formula with past history.
 
 ## References
 
