@@ -1,0 +1,2019 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for VACASK - Verilog-A Circuit Analysis Kernel">
+      
+      
+      
+        <link rel="canonical" href="https://robtaylor.github.io/VACASK/transient/">
+      
+      
+        <link rel="prev" href="../operating_point/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Transient - VACASK Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#vacask-transient-analysis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="VACASK Documentation" class="md-header__button md-logo" aria-label="VACASK Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VACASK Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Transient
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/robtaylor/VACASK" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    robtaylor/VACASK
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="VACASK Documentation" class="md-nav__button md-logo" aria-label="VACASK Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VACASK Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/robtaylor/VACASK" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    robtaylor/VACASK
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis Types
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Analysis Types
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../analysis_types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating_point/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operating Point
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transient
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transient
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Classes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysis Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Level Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Algorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Algorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-initialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Initialization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: Initialization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-parameter-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Parameter Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-integration-method-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Integration Method Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-history-buffer-allocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 History Buffer Allocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-initial-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Initial Conditions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Initial Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-operating-point-mode-icmodeop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Operating Point Mode (icmode="op")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-uic-mode-icmodeuic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 UIC Mode (icmode="uic")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-initial-state-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Initial State Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-initial-timestep-calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Initial Timestep Calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-time-stepping-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Time-Stepping Loop
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Time-Stepping Loop">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-coefficient-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Coefficient Computation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-prediction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Prediction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-newton-raphson-iteration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Newton-Raphson Iteration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-trapezoidal-ringing-filter-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Trapezoidal Ringing Filter (Optional)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-local-truncation-error-lte-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Local Truncation Error (LTE) Estimation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-timestep-adjustment-and-breakpoint-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 Timestep Adjustment and Breakpoint Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-accept-timepoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Accept Timepoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-reject-timepoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8 Reject Timepoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-termination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Termination
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Termination">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-normal-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Normal Completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-error-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Error Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-output-finalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Output Finalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-formulas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Formulas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Formulas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adams-moulton-am" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adams-Moulton (AM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-differentiation-formula-bdfgear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward Differentiation Formula (BDF/Gear)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#polynomial-extrapolation-predictor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polynomial Extrapolation (Predictor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#newton-raphson-iteration-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Newton-Raphson Iteration Detail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#history-buffer-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        History Buffer Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulator-options-affecting-transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simulator Options Affecting Transient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Classes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysis Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Level Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Algorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Algorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-initialization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Initialization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: Initialization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-parameter-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Parameter Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-integration-method-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Integration Method Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-history-buffer-allocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 History Buffer Allocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-initial-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Initial Conditions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Initial Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-operating-point-mode-icmodeop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Operating Point Mode (icmode="op")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-uic-mode-icmodeuic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 UIC Mode (icmode="uic")
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-initial-state-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Initial State Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-initial-timestep-calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Initial Timestep Calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-time-stepping-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Time-Stepping Loop
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Time-Stepping Loop">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-coefficient-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Coefficient Computation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-prediction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Prediction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-newton-raphson-iteration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Newton-Raphson Iteration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-trapezoidal-ringing-filter-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Trapezoidal Ringing Filter (Optional)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-local-truncation-error-lte-estimation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Local Truncation Error (LTE) Estimation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-timestep-adjustment-and-breakpoint-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 Timestep Adjustment and Breakpoint Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-accept-timepoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Accept Timepoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-reject-timepoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8 Reject Timepoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-termination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Termination
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Termination">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-normal-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Normal Completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-error-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Error Conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-output-finalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Output Finalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-formulas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration Formulas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Formulas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adams-moulton-am" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adams-Moulton (AM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-differentiation-formula-bdfgear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward Differentiation Formula (BDF/Gear)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#polynomial-extrapolation-predictor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polynomial Extrapolation (Predictor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#newton-raphson-iteration-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Newton-Raphson Iteration Detail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#history-buffer-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        History Buffer Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulator-options-affecting-transient" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simulator Options Affecting Transient
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="vacask-transient-analysis">VACASK Transient Analysis<a class="headerlink" href="#vacask-transient-analysis" title="Permanent link">&para;</a></h1>
+<p>This document describes the steps VACASK takes when performing transient (time-domain) analysis.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Transient analysis solves the circuit's differential-algebraic equations (DAE) over time:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>f(x(t)) + d/dt q(x(t)) = 0
+</span></code></pre></div>
+<p>Where:
+- <code>x(t)</code> — circuit unknowns (node voltages, branch currents)
+- <code>f(x)</code> — resistive residual (conductance contributions)
+- <code>q(x)</code> — reactive residual (charge/flux contributions)</p>
+<h2 id="key-classes">Key Classes<a class="headerlink" href="#key-classes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tran</code></td>
+<td><code>lib/antran.cpp</code></td>
+<td>High-level analysis wrapper</td>
+</tr>
+<tr>
+<td><code>TranCore</code></td>
+<td><code>lib/coretran.cpp</code></td>
+<td>Core transient algorithm</td>
+</tr>
+<tr>
+<td><code>TranNRSolver</code></td>
+<td><code>lib/coretrannr.cpp</code></td>
+<td>Newton-Raphson solver for transient</td>
+</tr>
+<tr>
+<td><code>IntegratorCoeffs</code></td>
+<td><code>lib/coretrancoef.cpp</code></td>
+<td>Integration formula coefficients</td>
+</tr>
+<tr>
+<td><code>OperatingPointCore</code></td>
+<td><code>lib/coreop.cpp</code></td>
+<td>Operating point for initial conditions</td>
+</tr>
+</tbody>
+</table>
+<h2 id="analysis-parameters">Analysis Parameters<a class="headerlink" href="#analysis-parameters" title="Permanent link">&para;</a></h2>
+<p>Defined in <code>TranParameters</code> (<code>include/coretran.h:40-56</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>step</code></td>
+<td>0.0</td>
+<td>Initial/output timestep</td>
+</tr>
+<tr>
+<td><code>stop</code></td>
+<td>0.0</td>
+<td>Simulation end time</td>
+</tr>
+<tr>
+<td><code>start</code></td>
+<td>0.0</td>
+<td>Time at which output recording begins</td>
+</tr>
+<tr>
+<td><code>maxstep</code></td>
+<td>0.0</td>
+<td>Maximum timestep (0 = unlimited)</td>
+</tr>
+<tr>
+<td><code>icmode</code></td>
+<td>"op"</td>
+<td>Initial condition mode: <code>op</code> or <code>uic</code></td>
+</tr>
+<tr>
+<td><code>ic</code></td>
+<td>""</td>
+<td>Initial conditions (solution name or list)</td>
+</tr>
+<tr>
+<td><code>store</code></td>
+<td>""</td>
+<td>Name to store final solution</td>
+</tr>
+<tr>
+<td><code>write</code></td>
+<td>1</td>
+<td>Whether to write output file</td>
+</tr>
+</tbody>
+</table>
+<h2 id="high-level-data-flow">High-Level Data Flow<a class="headerlink" href="#high-level-data-flow" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart TB
+    subgraph Phase1["Phase 1: Initialization"]
+        VALIDATE["Validate parameters&lt;br/&gt;(step, stop, start)"]
+        METHOD["Set integration method&lt;br/&gt;(AM, BDF, Trap, Euler)"]
+        ALLOC["Allocate history buffers&lt;br/&gt;(solution, states, timesteps)"]
+        VALIDATE --&gt; METHOD --&gt; ALLOC
+    end
+
+    subgraph Phase2["Phase 2: Initial Conditions (t=0)"]
+        ICMODE{icmode?}
+        OP["Run OP analysis&lt;br/&gt;DC-consistent state"]
+        UIC["Set values directly&lt;br/&gt;May be inconsistent"]
+        EVALQ["Evaluate reactive residual&lt;br/&gt;Compute breakpoints"]
+        INITDT["Calculate initial timestep"]
+        ICMODE --&gt;|op| OP
+        ICMODE --&gt;|uic| UIC
+        OP --&gt; EVALQ
+        UIC --&gt; EVALQ
+        EVALQ --&gt; INITDT
+    end
+
+    subgraph Phase3["Phase 3: Time-Stepping Loop"]
+        COEF["Compute integrator coefficients"]
+        PREDICT["Predict solution&lt;br/&gt;(polynomial extrapolation)"]
+        NR["Newton-Raphson solve"]
+        LTE["Estimate LTE&lt;br/&gt;(corrector - predictor)"]
+        DECISION{Accept?}
+        ADVANCE["Advance time &amp; history"]
+        REJECT["Reduce timestep &amp; order"]
+        COEF --&gt; PREDICT --&gt; NR --&gt; LTE --&gt; DECISION
+        DECISION --&gt;|Yes| ADVANCE
+        DECISION --&gt;|No| REJECT
+        ADVANCE --&gt; CHECK{t ≥ stop?}
+        REJECT --&gt; COEF
+        CHECK --&gt;|No| COEF
+    end
+
+    subgraph Phase4["Phase 4: Finalization"]
+        OUTPUT["Write output epilogue"]
+        STORE["Store final solution"]
+        CLEANUP["Clean up"]
+        OUTPUT --&gt; STORE --&gt; CLEANUP
+    end
+
+    Phase1 --&gt; Phase2 --&gt; Phase3
+    CHECK --&gt;|Yes| Phase4
+
+    style Phase1 fill:#e3f2fd
+    style Phase2 fill:#e8f5e9
+    style Phase3 fill:#fff3e0
+    style Phase4 fill:#fce4ec</code></pre>
+<h2 id="step-by-step-algorithm">Step-by-Step Algorithm<a class="headerlink" href="#step-by-step-algorithm" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-initialization">Phase 1: Initialization<a class="headerlink" href="#phase-1-initialization" title="Permanent link">&para;</a></h3>
+<h4 id="11-parameter-validation">1.1 Parameter Validation<a class="headerlink" href="#11-parameter-validation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:559-573</code></p>
+<ul>
+<li>Verify <code>step &gt; 0</code></li>
+<li>Verify <code>stop &gt; 0</code></li>
+<li>Verify <code>start &lt; stop</code></li>
+</ul>
+<h4 id="12-integration-method-setup">1.2 Integration Method Setup<a class="headerlink" href="#12-integration-method-setup" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:576-595</code></p>
+<p>VACASK supports multiple integration methods configured via <code>tran_method</code> option:</p>
+<table>
+<thead>
+<tr>
+<th>Method ID</th>
+<th>Description</th>
+<th>Max Order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>am</code></td>
+<td>Adams-Moulton (general)</td>
+<td>configurable</td>
+</tr>
+<tr>
+<td><code>bdf</code> / <code>gear</code></td>
+<td>Backward Differentiation Formula</td>
+<td>configurable</td>
+</tr>
+<tr>
+<td><code>euler</code></td>
+<td>Backward Euler</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>trap</code></td>
+<td>Trapezoidal</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>bdf2</code> / <code>gear2</code></td>
+<td>BDF order 2</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>The integration method determines how the time derivative <code>dq/dt</code> is approximated.</p>
+<h4 id="13-history-buffer-allocation">1.3 History Buffer Allocation<a class="headerlink" href="#13-history-buffer-allocation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:604-626</code></p>
+<p>Three history buffers are allocated:</p>
+<ol>
+<li><strong>Solution history</strong> — past circuit solutions for the predictor</li>
+<li><strong>State history</strong> — past reactive states (charges/fluxes) for the integrator</li>
+<li><strong>Filtered solution</strong> (optional) — for trapezoidal ringing filter</li>
+</ol>
+<p>Also allocated:
+- Predicted solution vector
+- Scaled LTE (Local Truncation Error) vector
+- Past timesteps circular buffer
+- Breakpoint circular buffer</p>
+<h3 id="phase-2-initial-conditions">Phase 2: Initial Conditions<a class="headerlink" href="#phase-2-initial-conditions" title="Permanent link">&para;</a></h3>
+<h4 id="21-operating-point-mode-icmodeop">2.1 Operating Point Mode (<code>icmode="op"</code>)<a class="headerlink" href="#21-operating-point-mode-icmodeop" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:636-651</code></p>
+<ol>
+<li>Enable IC forces in OP solver (slot 2)</li>
+<li>Run full operating point analysis at t=0</li>
+<li>This establishes a DC-consistent initial state</li>
+</ol>
+<h4 id="22-uic-mode-icmodeuic">2.2 UIC Mode (<code>icmode="uic"</code>)<a class="headerlink" href="#22-uic-mode-icmodeuic" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:652-673</code></p>
+<ol>
+<li>Set initial values directly from user-specified conditions</li>
+<li>Skip operating point analysis</li>
+<li>May result in inconsistent initial state (like SPICE3 <code>uic</code>)</li>
+</ol>
+<h4 id="23-initial-state-evaluation">2.3 Initial State Evaluation<a class="headerlink" href="#23-initial-state-evaluation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:688-721</code></p>
+<p>After initial solution:
+1. Compute reactive residuals (<code>q</code> values)
+2. Compute initial breakpoints from sources
+3. Compute maximum frequency in circuit
+4. Store reactive state in history</p>
+<h4 id="24-initial-timestep-calculation">2.4 Initial Timestep Calculation<a class="headerlink" href="#24-initial-timestep-calculation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:771-800</code></p>
+<p>The initial timestep <code>h0</code> is the minimum of:
+- User-specified <code>step</code> parameter
+- User-specified <code>maxstep</code> parameter
+- Frequency-based limit: <code>tran_ffmax / (2 × maxFreq)</code>
+- Breakpoint fraction: <code>tran_fbr × (next_breakpoint - t0)</code>
+- Instance-requested <code>boundStep</code>
+- Scaled by <code>tran_fs</code> factor</p>
+<h3 id="phase-3-time-stepping-loop">Phase 3: Time-Stepping Loop<a class="headerlink" href="#phase-3-time-stepping-loop" title="Permanent link">&para;</a></h3>
+<p>The main loop (<code>coretran.cpp:848-1459</code>) advances time from t=0 to t=stop.</p>
+<h4 id="31-coefficient-computation">3.1 Coefficient Computation<a class="headerlink" href="#31-coefficient-computation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:867-879</code></p>
+<p>For each timestep:</p>
+<ol>
+<li><strong>Predictor coefficients</strong> — compute polynomial extrapolation coefficients</li>
+<li><strong>Integrator coefficients</strong> — compute and scale differentiation coefficients</li>
+</ol>
+<p>The integrator formula (from <code>coretran.cpp:18-40</code>):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>qdot(t_{k+1}) =
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    1/(h_k × b_{-1}) × q(t_{k+1})                    // future reactive
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  - Σ a_i/(h_k × b_{-1}) × q_{k-i}                   // past reactive values
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  - Σ b_i/b_{-1} × qdot_{k-i}                        // past derivatives
+</span></code></pre></div>
+<p>Where coefficients <code>a_i</code>, <code>b_i</code>, <code>b_{-1}</code> are computed based on:
+- Integration method (AM, BDF, etc.)
+- Current order
+- Past timestep values (for variable-step methods)</p>
+<h4 id="32-prediction">3.2 Prediction<a class="headerlink" href="#32-prediction" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:882-905</code></p>
+<p>If sufficient history exists:
+- Use polynomial extrapolation to predict solution at t_{k+1}
+- This provides a better starting point for Newton-Raphson</p>
+<p>Otherwise:
+- Use previous solution as initial guess</p>
+<h4 id="33-newton-raphson-iteration">3.3 Newton-Raphson Iteration<a class="headerlink" href="#33-newton-raphson-iteration" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:920-935</code></p>
+<pre class="mermaid"><code>flowchart TB
+    INIT["Initialize with predicted solution"]
+    EVAL["Evaluate devices:&lt;br/&gt;f(x), q(x), Jacobians"]
+    FORM["Form linear system:&lt;br/&gt;[J_res + α×J_react]Δx = -RHS"]
+    SOLVE["Solve with KLU sparse solver"]
+    UPDATE["Update: x^(j+1) = x^j + Δx"]
+    CHECK{Converged?}
+    ITLIM{Iteration limit?}
+
+    INIT --&gt; EVAL --&gt; FORM --&gt; SOLVE --&gt; UPDATE --&gt; CHECK
+    CHECK --&gt;|No| ITLIM
+    ITLIM --&gt;|No| EVAL
+    CHECK --&gt;|Yes| SUCCESS["Success"]
+    ITLIM --&gt;|Yes| FAIL["Failure"]
+
+    style SUCCESS fill:#c8e6c9
+    style FAIL fill:#ffcdd2</code></pre>
+<p>The <code>TranNRSolver</code> solves the nonlinear system at each timepoint:</p>
+<ol>
+<li><strong>Initialize</strong> with predicted (or previous) solution</li>
+<li><strong>Evaluate</strong> devices to get residuals and Jacobian</li>
+<li><strong>Form linear system</strong>:</li>
+<li>Resistive Jacobian: ∂f/∂x</li>
+<li>Reactive Jacobian scaled by integrator: (1/h_k×b_{-1}) × ∂q/∂x</li>
+<li>Combined into transient Jacobian</li>
+<li><strong>Solve</strong> linear system using KLU sparse solver</li>
+<li><strong>Update</strong> solution: x^{j+1} = x^j + Δx</li>
+<li><strong>Check convergence</strong> on both resistive and reactive residuals</li>
+<li>Repeat until converged or iteration limit</li>
+</ol>
+<p>The Jacobian contribution from reactive terms:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>di/dx|_{t_{k+1}} = 1/(h_k × b_{-1}) × dq/dx|_{t_{k+1}}
+</span></code></pre></div></p>
+<h4 id="34-trapezoidal-ringing-filter-optional">3.4 Trapezoidal Ringing Filter (Optional)<a class="headerlink" href="#34-trapezoidal-ringing-filter-optional" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:937-996</code></p>
+<p>When using trapezoidal integration (<code>tran_trapltefilter</code> enabled):
+- Detect and filter oscillations caused by trapezoidal method
+- Uses envelope-based correction on past 3+ points</p>
+<h4 id="35-local-truncation-error-lte-estimation">3.5 Local Truncation Error (LTE) Estimation<a class="headerlink" href="#35-local-truncation-error-lte-estimation" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:1061-1222</code></p>
+<pre class="mermaid"><code>flowchart TB
+    COMPUTE["Compute LTE = factor × (corrector - predictor)"]
+    TOLREF["Compute tolerance reference&lt;br/&gt;(global/local/pointlocal)"]
+    RATIO["Compute ratio = |LTE| / (tol × lteratio)"]
+    NEWDT["Calculate h_new = h_k × ratio^(-1/(order+1))"]
+    DECIDE{h_k/h_new &gt; redofactor?}
+    REJECT["Reject timepoint&lt;br/&gt;Use smaller step"]
+    ACCEPT["Accept timepoint&lt;br/&gt;Possibly increase order"]
+
+    COMPUTE --&gt; TOLREF --&gt; RATIO --&gt; NEWDT --&gt; DECIDE
+    DECIDE --&gt;|Yes| REJECT
+    DECIDE --&gt;|No| ACCEPT
+
+    style REJECT fill:#ffcdd2
+    style ACCEPT fill:#c8e6c9</code></pre>
+<p>LTE control determines whether to accept/reject the timepoint and calculates the next timestep:</p>
+<ol>
+<li><strong>Compute LTE</strong> = factor × (corrector - predictor)</li>
+<li>
+<p>Factor accounts for error coefficients of both methods</p>
+</li>
+<li>
+<p><strong>Compute tolerance reference</strong> based on <code>relreflte</code> option:</p>
+</li>
+<li><code>global</code> — max over all unknowns and time</li>
+<li><code>pointglobal</code> — max over all unknowns at this point</li>
+<li><code>local</code> — max over time for each unknown</li>
+<li>
+<p><code>pointlocal</code> — current value for each unknown</p>
+</li>
+<li>
+<p><strong>Compute ratio</strong> = |LTE| / (tolerance × <code>tran_lteratio</code>)</p>
+</li>
+<li>
+<p><strong>Determine new timestep</strong>:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>h_{new} = h_k × ratio^{-1/(order+1)}
+</span></code></pre></div></p>
+</li>
+<li>
+<p><strong>Accept/Reject decision</strong>:</p>
+</li>
+<li>If <code>h_k / h_{new} &gt; tran_redofactor</code> → reject timepoint</li>
+<li>Otherwise → accept and possibly increase order</li>
+</ol>
+<h4 id="36-timestep-adjustment-and-breakpoint-handling">3.6 Timestep Adjustment and Breakpoint Handling<a class="headerlink" href="#36-timestep-adjustment-and-breakpoint-handling" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:1229-1343</code></p>
+<pre class="mermaid"><code>flowchart TB
+    START["After accept/reject decision"]
+    UPDATEBP["Update breakpoints if at/past one"]
+    LIMIT["Limit timestep by:&lt;br/&gt;• hmax&lt;br/&gt;• boundStep&lt;br/&gt;• tran_fbr × breakpoint_distance"]
+    CROSS{Next step crosses breakpoint?}
+    CUT["Cut step to exactly hit breakpoint"]
+    CLOSE{Very close to breakpoint?}
+    SHORTEN["Shorten step by half"]
+    DONE["Set new timestep"]
+
+    START --&gt; UPDATEBP --&gt; LIMIT --&gt; CROSS
+    CROSS --&gt;|Yes| CUT --&gt; DONE
+    CROSS --&gt;|No| CLOSE
+    CLOSE --&gt;|Yes| SHORTEN --&gt; DONE
+    CLOSE --&gt;|No| DONE</code></pre>
+<p>After accept/reject decision:</p>
+<ol>
+<li><strong>Update breakpoints</strong> if at or past a breakpoint</li>
+<li><strong>Limit timestep</strong> by:</li>
+<li>Maximum timestep (<code>hmax</code>)</li>
+<li>Instance-requested bound (<code>boundStep</code>)</li>
+<li>Breakpoint fraction (<code>tran_fbr × breakpoint_distance</code>)</li>
+<li><strong>Handle breakpoint crossing</strong>:</li>
+<li>If next step would cross breakpoint → cut to exactly hit breakpoint</li>
+<li>If very close to breakpoint → shorten step to avoid tiny final step</li>
+</ol>
+<h4 id="37-accept-timepoint">3.7 Accept Timepoint<a class="headerlink" href="#37-accept-timepoint" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:1359-1429</code></p>
+<p>When accepting a timepoint:</p>
+<ol>
+<li>Increment point counter</li>
+<li>Handle discontinuity (reset order to 1 if at breakpoint)</li>
+<li>Write output if <code>t ≥ start</code></li>
+<li>Update progress indicator</li>
+<li>Check for stop/finish requests from Verilog-A <code>$stop</code>/<code>$finish</code></li>
+<li>Store timestep in history</li>
+<li>Advance solution/state history buffers</li>
+</ol>
+<h4 id="38-reject-timepoint">3.8 Reject Timepoint<a class="headerlink" href="#38-reject-timepoint" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:1430-1440</code></p>
+<p>When rejecting a timepoint:</p>
+<ol>
+<li>Keep solution at previous accepted point</li>
+<li>Reduce timestep (already calculated in step 3.5)</li>
+<li>Reduce order to 1</li>
+<li>Retry with smaller step</li>
+</ol>
+<h3 id="phase-4-termination">Phase 4: Termination<a class="headerlink" href="#phase-4-termination" title="Permanent link">&para;</a></h3>
+<h4 id="41-normal-completion">4.1 Normal Completion<a class="headerlink" href="#41-normal-completion" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:1396-1400</code></p>
+<p>Analysis completes when:
+- <code>tSolve ≥ stop</code> (within relative tolerance)
+- <code>$finish</code> called from Verilog-A device</p>
+<h4 id="42-error-conditions">4.2 Error Conditions<a class="headerlink" href="#42-error-conditions" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Timestep too small (<code>coretran.cpp:1448-1451</code>)</li>
+<li>Solver failed to converge</li>
+<li>Abort requested from device</li>
+<li>Breakpoint handling panic</li>
+</ul>
+<h4 id="43-output-finalization">4.3 Output Finalization<a class="headerlink" href="#43-output-finalization" title="Permanent link">&para;</a></h4>
+<p>Location: <code>coretran.cpp:481-496</code></p>
+<ol>
+<li>Write epilogue to raw file</li>
+<li>Optionally store final solution to repository</li>
+</ol>
+<h2 id="integration-formulas">Integration Formulas<a class="headerlink" href="#integration-formulas" title="Permanent link">&para;</a></h2>
+<h3 id="adams-moulton-am">Adams-Moulton (AM)<a class="headerlink" href="#adams-moulton-am" title="Permanent link">&para;</a></h3>
+<p>Implicit multistep method using past derivative values.</p>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Name</th>
+<th>Formula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Backward Euler</td>
+<td>q̇<em k_1="k+1">{k+1} = (q</em> - q_k) / h</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Trapezoidal</td>
+<td>q̇<em k_1="k+1">{k+1} = 2(q</em> - q_k)/h - q̇_k</td>
+</tr>
+</tbody>
+</table>
+<p>Trapezoidal with xmu parameter (<code>coretran.cpp:164-173</code>):
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>b_0 = xmu       (past derivative weight)
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>b_{-1} = 1-xmu  (future derivative weight)
+</span></code></pre></div>
+Where xmu=0.5 gives pure trapezoidal, xmu=0 gives backward Euler.</p>
+<h3 id="backward-differentiation-formula-bdfgear">Backward Differentiation Formula (BDF/Gear)<a class="headerlink" href="#backward-differentiation-formula-bdfgear" title="Permanent link">&para;</a></h3>
+<p>Implicit multistep using only past values (no past derivatives).</p>
+<p>More stable for stiff systems but lower accuracy per order.</p>
+<h3 id="polynomial-extrapolation-predictor">Polynomial Extrapolation (Predictor)<a class="headerlink" href="#polynomial-extrapolation-predictor" title="Permanent link">&para;</a></h3>
+<p>Used only for prediction, not as corrector:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>x_{k+1,predicted} = Σ a_i × x_{k-i}
+</span></code></pre></div></p>
+<h2 id="newton-raphson-iteration-detail">Newton-Raphson Iteration Detail<a class="headerlink" href="#newton-raphson-iteration-detail" title="Permanent link">&para;</a></h2>
+<p>At each NR iteration, the linearized system is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>[J_resistive + α × J_reactive] × Δx = -RHS
+</span></code></pre></div>
+<p>Where:
+- <code>J_resistive = ∂f/∂x</code> — resistive Jacobian from devices
+- <code>J_reactive = ∂q/∂x</code> — reactive Jacobian from devices
+- <code>α = 1/(h_k × b_{-1})</code> — integrator leading coefficient
+- <code>RHS = f(x^j) + q̇(x^j)</code> — combined residual</p>
+<p>The reactive derivative <code>q̇(x^j)</code> is computed using the integration formula with past history.</p>
+<h2 id="history-buffer-management">History Buffer Management<a class="headerlink" href="#history-buffer-management" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    subgraph Slots["Solution/State Slots"]
+        FUTURE["Slot -1&lt;br/&gt;Future (NR working)"]
+        CURRENT["Slot 0&lt;br/&gt;Current iteration"]
+        T_K["Slot 1&lt;br/&gt;t_k (last accepted)"]
+        T_K1["Slot 2&lt;br/&gt;t_{k-1}"]
+        T_K2["Slot 3&lt;br/&gt;t_{k-2}"]
+        MORE["..."]
+    end
+
+    FUTURE --&gt; CURRENT --&gt; T_K --&gt; T_K1 --&gt; T_K2 --&gt; MORE
+
+    style FUTURE fill:#fff3e0
+    style CURRENT fill:#e8f5e9
+    style T_K fill:#e3f2fd
+    style T_K1 fill:#e3f2fd
+    style T_K2 fill:#e3f2fd</code></pre>
+<ul>
+<li><strong>Slot -1</strong>: Future solution being computed by NR</li>
+<li><strong>Slot 0</strong>: Previous NR iteration result</li>
+<li><strong>Slots 1, 2, 3, ...</strong>: Past accepted timepoints (t_k, t_{k-1}, ...)</li>
+</ul>
+<p>When a timepoint is accepted, buffers are advanced so current becomes past.</p>
+<h2 id="simulator-options-affecting-transient">Simulator Options Affecting Transient<a class="headerlink" href="#simulator-options-affecting-transient" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tran_method</code></td>
+<td>Integration method</td>
+</tr>
+<tr>
+<td><code>tran_maxord</code></td>
+<td>Maximum integration order</td>
+</tr>
+<tr>
+<td><code>tran_xmu</code></td>
+<td>Trapezoidal damping (0-0.5)</td>
+</tr>
+<tr>
+<td><code>tran_itl</code></td>
+<td>NR iteration limit</td>
+</tr>
+<tr>
+<td><code>tran_lteratio</code></td>
+<td>LTE tolerance multiplier</td>
+</tr>
+<tr>
+<td><code>tran_redofactor</code></td>
+<td>Threshold for rejecting timepoint</td>
+</tr>
+<tr>
+<td><code>tran_fbr</code></td>
+<td>Breakpoint fraction for timestep limit</td>
+</tr>
+<tr>
+<td><code>tran_ffmax</code></td>
+<td>Frequency-based timestep factor</td>
+</tr>
+<tr>
+<td><code>tran_fs</code></td>
+<td>Initial timestep scale factor</td>
+</tr>
+<tr>
+<td><code>tran_ft</code></td>
+<td>Timestep reduction on failure</td>
+</tr>
+<tr>
+<td><code>tran_rmax</code></td>
+<td>Max timestep as multiple of step</td>
+</tr>
+<tr>
+<td><code>tran_minpts</code></td>
+<td>Minimum points in simulation</td>
+</tr>
+<tr>
+<td><code>tran_predictor</code></td>
+<td>Enable/disable predictor</td>
+</tr>
+<tr>
+<td><code>tran_trapltefilter</code></td>
+<td>Enable trapezoidal ringing filter</td>
+</tr>
+<tr>
+<td><code>tran_spicelte</code></td>
+<td>Use SPICE-style LTE calculation</td>
+</tr>
+<tr>
+<td><code>tran_debug</code></td>
+<td>Debug output level</td>
+</tr>
+</tbody>
+</table>
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>lib/coretran.cpp</code> — Main transient algorithm implementation</li>
+<li><code>lib/coretrannr.cpp</code> — Transient Newton-Raphson solver</li>
+<li><code>lib/coretrancoef.cpp</code> — Integration coefficient computation</li>
+<li><code>include/coretran.h</code> — TranCore class and TranParameters</li>
+<li><code>include/coretrancoef.h</code> — IntegratorCoeffs class</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/chipflow/vacask" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
