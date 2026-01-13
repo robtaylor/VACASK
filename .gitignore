@@ -16,4 +16,8 @@ site/
 # uv lock file (optional: remove if you want to track it)
 uv.lock
 
+**/*.osdi
 
+.pdm-python
+build/
+rundir/
