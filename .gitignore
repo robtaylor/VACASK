@@ -15,5 +15,27 @@ site/
 # uv lock file (optional: remove if you want to track it)
 uv.lock
 
+**/*.osdi
 
-
+.pdm-python
+benchmark/c6288/vacask/runme.py
+benchmark/c6288/vacask/runme.py.origin
+benchmark/c6288/vacask/tranmul.raw
+benchmark/graetz/vacask/runme.py
+benchmark/graetz/vacask/runme.py.origin
+benchmark/mul/vacask/runme.py
+benchmark/mul/vacask/runme.py.origin
+benchmark/rc/vacask/runme.py
+benchmark/rc/vacask/runme.py.origin
+benchmark/ring/vacask/jax-spice/
+benchmark/ring/vacask/op1.raw
+benchmark/ring/vacask/runme.py
+benchmark/ring/vacask/runme.py.origin
+benchmark/ring/vacask/simple_nmos.sim
+benchmark/ring/vacask/test_nmos.sim
+benchmark/ring/vacask/tran1.raw
+build/
+rundir/
+runme.py
+runme.py.origin
+tran1.raw
