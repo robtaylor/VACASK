@@ -34,6 +34,7 @@ benchmark/ring/vacask/runme.py.origin
 benchmark/ring/vacask/simple_nmos.sim
 benchmark/ring/vacask/test_nmos.sim
 benchmark/ring/vacask/tran1.raw
+benchmark/ring/ngspice/*.raw
 build/
 rundir/
 runme.py
