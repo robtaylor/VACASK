@@ -1,0 +1,26 @@
+Full-wave rectifier with LTE debug
+
+load "spice/resistor.osdi"
+load "spice/capacitor.osdi"
+load "spice/sn/diode.osdi"
+
+model r sp_resistor
+model c sp_capacitor
+model vsource vsource
+model d1n4007 sp_diode ( is=76.9p rs=42.0m bv=1.00k ibv=5.00u cjo=26.5p  m=0.333 n=1.45 )
+
+vs (inp inn) vsource dc=0 type="sine" sinedc=0.0 ampl=20 freq=50.0
+
+d1 (inp outp) d1n4007
+d2 (outn inp) d1n4007
+d3 (inn outp) d1n4007
+d4 (outn inn) d1n4007
+cl (outp outn) c c=100u
+rl (outp outn) r r=1k
+rgnd1 (inn 0) r r=1G
+rgnd2 (outn 0) r r=1G
+
+control
+  options tran_method="gear2" nr_bypass=0 nr_contbypass=1 tran_debug=2
+  analysis tran1 tran step=1u stop=100u maxstep=1u 
+endc

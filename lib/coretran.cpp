@@ -1072,11 +1072,19 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             // We have a predicted value because havePredicotr==false was handled in previous else if. 
             accept = true;
             // Compute (corrector - predictor) and scale to obtain LTE
-            // factor is always<1 because errorCoeff() of polynomial predictor is negative while 
+            // factor is always<1 because errorCoeff() of polynomial predictor is negative while
             // the errorCoeff() of integrator is positive
             double factor = integCoeffs.errorCoeff() / (integCoeffs.errorCoeff()-predictorCoeffs.errorCoeff());
             // Assume 2*hk as new timestep
             hkNew = 2*hk;
+
+            if (debug>1) {
+                Simulator::dbg() << "  LTE calculation: order=" << order
+                    << " integErrCoeff=" << integCoeffs.errorCoeff()
+                    << " predErrCoeff=" << predictorCoeffs.errorCoeff()
+                    << " factor=" << factor
+                    << " lteratio=" << options.tran_lteratio << "\n";
+            }
 
             // Spectre reference value for reltol
             // (from Designer's guide to Spice and Spectre)
@@ -1106,6 +1114,9 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             // Go through all unknowns, except for the ground
             bool haveRatio = false;
             double maxRatio = 0.0;
+            decltype(n) maxRatioNode = 0;
+            double maxRatioLte = 0.0;
+            double maxRatioTol = 0.0;
             for(decltype(n) i=1; i<=n; i++) {
                 // Get unknown nature index
                 auto ndx = commons.unknown_natureIndex[i];
@@ -1160,11 +1171,6 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                     co_yield CoreState::Aborted;
                 }
 
-                // std::cout << i << " predicted=" << predictedSolution[i] 
-                //     << " obtained=" << solution.vector()[i]
-                //     << " delta=" << (solution.vector()[i] - predictedSolution[i])
-                //     << " lte=" << lte << " tol=" << tol << "\n";// ratio>1 means we need to decrease timestep
-                
                 double ratio;
                 if (options.tran_spicelte) {
                     // SPICE forgets to divide tol by (order+1)!
@@ -1172,15 +1178,27 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                 } else {
                     ratio = std::abs(lte)/(tol*options.tran_lteratio);
                 }
+
+                // Detailed LTE tracing at debug level 3
+                if (debug>2) {
+                    Simulator::dbg() << "    LTE[" << i << "]: predicted=" << predictedSolution[i]
+                        << " solution=" << solution.vector()[i]
+                        << " lte=" << lte << " tol=" << tol
+                        << " ratio=" << ratio << "\n";
+                }
+
                 // Looking for largest ratio (worst LTE)
                 if (ratio>maxRatio) {
                     maxRatio = ratio;
+                    maxRatioNode = i;
+                    maxRatioLte = lte;
+                    maxRatioTol = tol;
                 }
             }
             // Update timestep only if maxRatio>0 (0 means no LTE, so step can become infinite)
             // LTE grows with (order+1)-th power of the timestep
+            double hkFactor = 2.0;  // Default: allow doubling
             if (maxRatio>0) {
-                double hkFactor;
                 if (options.tran_spicelte) {
                     hkFactor = std::pow(maxRatio, -1.0/order);
                 } else {
@@ -1194,6 +1212,12 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                 Simulator::dbg() << "  Maximal LTE/tol="+ss.str();
                 ss.str(""); ss << hkNew;
                 Simulator::dbg() << " suggests dt="+ss.str()+".\n";
+            }
+            // Show worst LTE node at debug level 2
+            if (debug>1 && maxRatioNode>0) {
+                Simulator::dbg() << "  Worst LTE node: " << maxRatioNode
+                    << " lte=" << maxRatioLte << " tol=" << maxRatioTol
+                    << " ratio=" << maxRatio << " hkFactor=" << hkFactor << "\n";
             }
             
             // hkNew is now the smallest of these two
