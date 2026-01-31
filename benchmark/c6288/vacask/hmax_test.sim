@@ -1,0 +1,76 @@
+C6288 hmax test
+
+load "psp103v4.osdi"
+load "spice/resistor.osdi"
+
+include "models.inc"
+include "multiplier.inc"
+model v vsource
+model r sp_resistor
+
+parameters vdd=1.2
+
+subckt drv(out)
+  parameters v0=0 v1=1
+  parameters rs=1 delay=0.1n rise=0.1n
+  vdrv (int 0) v type="pulse" val0=v0*vdd val1=v1*vdd delay=delay rise=rise
+  rdrv (int out) r r=rs
+ends
+
+vdd (vdd 0) v dc=vdd
+vss (vss 0) v dc=0
+
+subckt c6288_test() 
+  u1 (
+    a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15
+    b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
+    p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15
+    p16 p17 p18 p19 p20 p21 p22 p23 p24 p25 p26 p27 p28 p29 p30 p31
+  ) c6288
+  
+  da0  (a0)  drv v0=0 v1=1 
+  da1  (a1)  drv v0=0 v1=1
+  da2  (a2)  drv v0=0 v1=1
+  da3  (a3)  drv v0=0 v1=1
+  da4  (a4)  drv v0=0 v1=1
+  da5  (a5)  drv v0=0 v1=1
+  da6  (a6)  drv v0=0 v1=1
+  da7  (a7)  drv v0=0 v1=1
+  da8  (a8)  drv v0=0 v1=1
+  da9  (a9)  drv v0=0 v1=1
+  da10 (a10) drv v0=0 v1=1 
+  da11 (a11) drv v0=0 v1=1
+  da12 (a12) drv v0=0 v1=1
+  da13 (a13) drv v0=0 v1=1
+  da14 (a14) drv v0=0 v1=1
+  da15 (a15) drv v0=0 v1=1
+
+  db0  (b0)  drv v0=0 v1=1 
+  db1  (b1)  drv v0=0 v1=1
+  db2  (b2)  drv v0=0 v1=1
+  db3  (b3)  drv v0=0 v1=1
+  db4  (b4)  drv v0=0 v1=1
+  db5  (b5)  drv v0=0 v1=1
+  db6  (b6)  drv v0=0 v1=1
+  db7  (b7)  drv v0=0 v1=1
+  db8  (b8)  drv v0=0 v1=1
+  db9  (b9)  drv v0=0 v1=1
+  db10 (b10) drv v0=0 v1=1 
+  db11 (b11) drv v0=0 v1=1
+  db12 (b12) drv v0=0 v1=1
+  db13 (b13) drv v0=0 v1=1
+  db14 (b14) drv v0=0 v1=1
+  db15 (b15) drv v0=0 v1=1
+ends
+
+control
+  options nr_convtol=1 nr_bypasstol=1 nr_bypass=0 nr_contbypass=1 
+  options tran_lteratio=1.5
+  options tran_debug=2
+  
+  elaborate circuit("c6288_test")
+  
+  analysis tranmul tran stop=2n step=2p icmode="uic"
+  
+  print stats
+endc
