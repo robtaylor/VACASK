@@ -3,21 +3,25 @@
 #   settings-linux.json
 settings.json
 __pycache__
+.pdm-python
 bug
 benchmark/rundir
-*.osdi
 
 # Documentation build output
 site/
 
-# Python virtual environment
+# Python
 .venv/
+.pdm-python
 
 # uv lock file (optional: remove if you want to track it)
 uv.lock
 
-**/*.osdi
+# LLM agents
+.claude
 
-.pdm-python
-build/
 rundir/
+
+# Build
+**/*.osdi
+build/
