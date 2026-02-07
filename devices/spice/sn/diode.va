@@ -413,10 +413,12 @@ module sp_diode(a, c);
         if(vold > 0) begin
           arg = (vnew - vold) / vt;
           if(arg > 0) begin
-            limited = vold + vt * (2+ln(arg-2));
+            // Fixed: VACASK uses log(1+arg) instead of ngspice's log(arg-2)
+            // which can produce negative values when |vnew-vold| < 3*vt
+            limited = vold + vt * ln(1+arg);
             limiting_applied = 1;
           end else begin
-            limited = vold - vt * (2+ln(2-arg));
+            limited = vold - vt * ln(1-arg);
             limiting_applied = 1;
           end
         end else begin
