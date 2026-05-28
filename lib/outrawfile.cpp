@@ -30,11 +30,19 @@ bool OutputRawfile::prologue(Status& s) {
         return false;
     }
     
-    // Thread-safe local timestamp; asctime/localtime use shared static buffers.
-    // floor<seconds> drops sub-second digits so %S matches asctime's layout.
+    // Thread-safe local timestamp
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L && !defined(__APPLE__)
     auto now = std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now());
     auto localTime = std::chrono::zoned_time{std::chrono::current_zone(), now};
     outStream << "Date: " << std::format("{:%a %b %e %H:%M:%S %Y}", localTime) << "\n";
+#else
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    struct tm buf;
+    localtime_r(&now, &buf);
+    char timebuf[64];
+    std::strftime(timebuf, sizeof(timebuf), "%a %b %e %H:%M:%S %Y", &buf);
+    outStream << "Date: " << timebuf << "\n";
+#endif
 
     outStream << "Plotname: " << plotname_ << "\n";
     outStream << "Flags: " << (checkFlags(Flags::Complex) ? "complex" : "real" ) 
