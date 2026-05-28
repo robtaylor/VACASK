@@ -104,6 +104,27 @@ backends**. MSL backend for Metal (this machine); the same frontend gives
 (not just the linear solve) — vajax needed f64 residuals + refinement; Q2/Q3 must
 measure eval accuracy in f32 against the CPU OSDI reference.
 
+#### FP64-where-needed: Ozaki scheme — scope (2026-05-28)
+
+The **Ozaki scheme** (error-free transformation: scale FP64 by a shared
+power-of-two, slice into INT8, do multiple INT8 GEMMs on tensor cores, recombine
+exactly; cuBLAS picks slice count via Automatic Dynamic Precision) is a candidate
+for FP64-accurate **linear algebra**, but its scope is narrow here:
+
+- **Applies to GEMM / dense linear algebra only** → relevant to the **solver**:
+  dense sub-blocks of a supernodal sparse factorization and refinement matvecs.
+  *Not* the device-eval kernel.
+- **Does NOT help the device-eval kernel** (the 90% hotspot): PSP103 eval is
+  straight-line transcendental scalar math per instance, no GEMM structure.
+  Eval f32-accuracy must still be handled with f32 + selective compensated
+  arithmetic (Kahan / double-single) where needed.
+- **Hardware: cuBLAS ADP is NVIDIA-only** (real tensor cores). On the M4 Pro the
+  analogue is Metal `simdgroup_matrix` INT8, hand-rolled. So Ozaki most naturally
+  serves a **future CUDA solver backend**, not the Metal-first path.
+
+Recorded as the FP64 strategy for the solver's GEMM-shaped work; orthogonal to the
+eval-kernel accuracy question Q2 measures.
+
 ### Prior-art results (vajax — all GPU wins are Tesla T4 / CUDA; Metal has no published NR win)
 
 | Circuit | Metric | GPU | CPU (JAX) | VACASK CPU | Note |
