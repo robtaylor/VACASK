@@ -1174,6 +1174,19 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
         integCoeffs.prepareDifferentiatorHistory(states, 1);
 
         // Solve
+        auto& stepAcct = circuit.tables().accounting().acctNew;
+        auto stepNriter0    = stepAcct.nriter;
+        auto stepTevalload0 = stepAcct.tevalload;
+        auto stepTfactor0   = stepAcct.tfactor;
+        auto stepTrefactor0 = stepAcct.trefactor;
+        auto stepTsolve0    = stepAcct.tsolve;
+        // Per-step timing breakdown (tran_debug>=2); deltas since this snapshot
+        auto dumpStepTiming = [&]() {
+            Simulator::dbg() << "  timing: nr_iter=" << (stepAcct.nriter - stepNriter0)
+                << " eval=" << (stepAcct.tevalload - stepTevalload0)
+                << " factor=" << ((stepAcct.tfactor - stepTfactor0) + (stepAcct.trefactor - stepTrefactor0))
+                << " solve=" << (stepAcct.tsolve - stepTsolve0) << "\n";
+        };
         auto solutionOk = nrSolver.run(true);
         // Simulator::out() << "  Solver iterations: " << nrSolver.iterations() << "\n";
         if (!solutionOk) {
@@ -1707,7 +1720,10 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                 Simulator::dbg() << ss.str();
                 Simulator::dbg() << ", order=" << newOrder << ".\n";
             }
-            
+            if (debug>1) {
+                dumpStepTiming();
+            }
+
             // Write results, starting at tSolve=params.start
             if (tSolve>=params.start-timeRelativeTolerance*tk) {
                 if (params.write && !Simulator::noOutput() && outfile) {
@@ -1769,7 +1785,10 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
                 Simulator::dbg() << ss.str();
                 Simulator::dbg() << ", order=" << newOrder << ".\n";
             }
-            
+            if (debug>1) {
+                dumpStepTiming();
+            }
+
             // Nothing to do, t_k slot (1) remains at the same place
 
             // Revert transient noise generators

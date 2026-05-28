@@ -8,7 +8,7 @@
 namespace NAMESPACE {
 
 // Master device-based accounting switch
-constexpr bool devacct = false;
+constexpr bool devacct = true;
     
 class Circuit;
 
