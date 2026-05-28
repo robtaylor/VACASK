@@ -74,6 +74,36 @@ On the M4 Pro the route is **Strategy B → MSL** (or SPIR-V via Vulkan/MoltenVK
 **f64 is the hard wall**: MSL `double` is constrained on Apple GPUs → vajax used
 **f32 factor + f64 iterative refinement** (Sprux pattern). Budget for f32 numerics.
 
+#### LLVM→Metal trawl (2026-05-28) — why MIR→MSL, not the SPIR-V bridge
+
+A GitHub/web trawl tested whether we could reuse OpenVAF's whole LLVM pipeline to
+reach Metal (Strategy A for Metal) instead of hand-writing MIR→MSL:
+
+- **No open LLVM→AIR backend exists.** Apple's Metal compiler is a closed LLVM
+  fork emitting AIR; `gzorin/LLAIR` and `philipturner/llvm-metal` only shell out
+  to Xcode's `metal` on MSL *source* or repackage `.metallib` — neither lowers
+  arbitrary IR. Refuted.
+- **The real bridge is LLVM IR → SPIR-V → SPIRV-Cross/naga → MSL.** All pieces
+  mature for int/f32 OpenCL compute. The in-tree LLVM SPIR-V backend is official
+  as of **LLVM 20**; our openvaf-r is on the **LLVM 21** branch, so version is
+  fine.
+- **It collapses at f64.** SPIRV-Cross `spirv_msl.cpp` hard-throws *"double types
+  are not supported in buffers in MSL"*; Metal/MSL has no `double`; MoltenVK
+  `shaderFloat64 = false`; fp64 emulation on Apple GPUs is documented-hard
+  (`philipturner/metal-float64`, archived — compiler optimizes away double-single).
+- **Decisive:** f64→f32 + iterative refinement must be done *by us on every path*
+  (only IREE has a turnkey demote pass, = adopt MLIR wholesale). Once we own type
+  lowering, the SPIR-V chain's only advantage (free codegen) is neutralized, so
+  **hand-writing MIR→MSL is competitive and simpler** — we control f32/compensated
+  arithmetic directly.
+
+**Design implication:** build a **MIR-walking codegen frontend with pluggable
+backends**. MSL backend for Metal (this machine); the same frontend gives
+**NVPTX/CUDA nearly free via LLVM retarget (Strategy A), where f64 is native**.
+**New open risk surfaced:** f32 accuracy for **PSP103 device physics itself**
+(not just the linear solve) — vajax needed f64 residuals + refinement; Q2/Q3 must
+measure eval accuracy in f32 against the CPU OSDI reference.
+
 ### Prior-art results (vajax — all GPU wins are Tesla T4 / CUDA; Metal has no published NR win)
 
 | Circuit | Metric | GPU | CPU (JAX) | VACASK CPU | Note |
@@ -134,6 +164,11 @@ On the M4 Pro the route is **Strategy B → MSL** (or SPIR-V via Vulkan/MoltenVK
 - 2026-05-28: vajax CUDA c6288 ≈ 3–5× over VACASK CPU on T4; **Metal has no
   published NR win** — only bottleneck data (host-sync ~80 ms/step is the killer,
   motivating the resident-loop architecture).
+- 2026-05-28: LLVM→Metal trawl — no open LLVM→AIR backend; the LLVM→SPIR-V→MSL
+  bridge is mature but **hard-fails at f64** (SPIRV-Cross throws on double buffers;
+  Metal has no double). We must own f64→f32 + refinement on every path, so
+  **MIR→MSL (Strategy B) is confirmed**, with a pluggable backend giving NVPTX/CUDA
+  near-free. New risk: **f32 accuracy of PSP103 physics** must be measured in Q2/Q3.
 
 ## Outcome
 
