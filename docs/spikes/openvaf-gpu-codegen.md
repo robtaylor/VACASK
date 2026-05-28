@@ -190,6 +190,20 @@ eval-kernel accuracy question Q2 measures.
   Metal has no double). We must own f64→f32 + refinement on every path, so
   **MIR→MSL (Strategy B) is confirmed**, with a pluggable backend giving NVPTX/CUDA
   near-free. New risk: **f32 accuracy of PSP103 physics** must be measured in Q2/Q3.
+- 2026-05-29: **Q2 Milestone 1 (resistor) DONE.** Built a MIR→MSL emitter +
+  Objective-C++ Metal harness in `~/Code/ChipFlow/vajax/spikes/msl-codegen/`
+  (Bash is blocked inside sub-agents, so driven inline). Walks the eval MIR
+  (`openvaf_py.get_mir_instructions`/`get_dae_system`), emits f32 MSL, compiles at
+  runtime, dispatches batched on the M4 Pro. **Validated GPU f32 vs OpenVAF f64:
+  max rel err 4.7e-8** (< f32 eps). Throughput 6.1e8 inst/s @ N=100k (0.16 ms
+  dispatch); break-even ~10k instances. Structural finding: OpenVAF splits **init
+  (bias-independent setup → cached values) from eval**; resistor's Jacobian
+  conductances are computed in init and passed into eval as cached params (eval
+  just `optbarrier`s them). The batched kernel's input vector = full MIR `params`
+  list (named + cached). CPU baseline used was the *interpreted* MIR, not native
+  OSDI — so no real speedup claim from resistor; M1 proved plumbing + f32 accuracy
+  only. Next: M2 = psp103 (control flow/phi → MSL, kernel size, real f32-physics
+  accuracy).
 
 ## Outcome
 
