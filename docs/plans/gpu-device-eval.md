@@ -20,16 +20,32 @@ Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by 
 
 ## Where things stand (2026-05-28)
 
-- Phase 0 (Instrumentation): not started -- aggregate profiling done via acct.h, per-step timing not yet added
+- Phase 0 (Instrumentation): WS0.1 + WS0.2 done (per-step timing under `tran_debug>=2`, per-device times via `devacct`). WS0.3 (full baseline data) pending.
 - Phase 1 (Abstract eval interface): not started
 - Phase 2 (CUDA backend): not started
 - Phase 3 (Metal backend): not started
+
+### Build note (macOS / Apple Silicon)
+
+The `~/.local/bin/openvaf-r` was built against old LLVM and crashes with
+"Unsupported stack probing method" on `.va` compilation. A clean `openvaf-r`
+built from the OpenVAF `llvm21` branch (which carries the ARM64 correctness
+fixes) against Homebrew `llvm@21` works. Configure VACASK with:
+
+```sh
+cmake -S . -B <build> -DCMAKE_BUILD_TYPE=Release \
+  -DFLEX_INCLUDE_DIR=/opt/homebrew/opt/flex/include \
+  -DOPENVAF_DIR=<openvaf>/target/release -UOPENVAF_COMPILER
+```
+
+(`-UOPENVAF_COMPILER` clears the cached `find_program` result; `FLEX_INCLUDE_DIR`
+satisfies FindFLEX's singular var.)
 
 ## Workstreams
 
 ### WS0 -- Instrumentation & baseline (1-2 weeks)
 
-**Status:** Not started.
+**Status:** In flight -- WS0.1 + WS0.2 shipped commit `6d6378c`; WS0.3 pending.
 
 Add per-timestep timing breakdown and per-device-type eval profiling. Establishes the baseline that all subsequent work is measured against.
 
