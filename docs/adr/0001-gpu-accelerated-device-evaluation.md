@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted (2026-05-28).
 
 ## Date
 
@@ -120,6 +120,12 @@ VACASK C++ simulation loop (unchanged)
 - CUDA graphs with dynamic control flow (variable NR iterations) need care
 - Maintaining C++/Rust FFI boundary adds build complexity
 - GPU memory limits may constrain maximum circuit size
+
+## Walk-back options
+
+- **If GPU kernel launch overhead exceeds eval savings for all practical circuits** -- fall back to CPU-only batched eval (WS1 still has value for cache locality). The gather/scatter refactor is useful regardless.
+- **If OpenVAF GPU codegen proves infeasible** -- use OSDI-to-CUDA translation (Option B in plan WS2) as a pragmatic alternative.
+- **If Rust FFI complexity becomes unmanageable** -- write GPU dispatch layer in pure C++ with CUDA/Metal APIs directly, avoiding the FFI boundary.
 
 ### What this does NOT change
 - NR convergence algorithms (pnjlim, fetlim)
