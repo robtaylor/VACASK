@@ -20,7 +20,7 @@ Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by 
 
 ## Where things stand (2026-05-28)
 
-- Phase 0 (Instrumentation): WS0.1 + WS0.2 done (per-step timing under `tran_debug>=2`, per-device times via `devacct`). WS0.3 (full baseline data) pending.
+- Phase 0 (Instrumentation): **done.** WS0.1 + WS0.2 shipped (per-step timing under `tran_debug>=2`, per-device times via `devacct`); WS0.3 baseline collected across all 5 benchmarks (results below).
 - Phase 1 (Abstract eval interface): not started
 - Phase 2 (CUDA backend): not started
 - Phase 3 (Metal backend): not started
@@ -45,7 +45,7 @@ satisfies FindFLEX's singular var.)
 
 ### WS0 -- Instrumentation & baseline (1-2 weeks)
 
-**Status:** In flight -- WS0.1 + WS0.2 shipped commit `6d6378c`; WS0.3 pending.
+**Status:** Done -- WS0.1 + WS0.2 shipped commit `6d6378c`; WS0.3 baseline collected 2026-05-28 (results below).
 
 Add per-timestep timing breakdown and per-device-type eval profiling. Establishes the baseline that all subsequent work is measured against.
 
@@ -64,6 +64,60 @@ Add per-timestep timing breakdown and per-device-type eval profiling. Establishe
 
 - Can produce per-step eval/factor/solve breakdown for any benchmark
 - Per-device-type eval times available
+
+#### WS0.3 baseline results (2026-05-28)
+
+Methodology: clean run per benchmark (`vacask --skip-embed --skip-postprocess
+--no-output runme.sim`, `print stats`), Release build on Apple M-series, single
+run. Per-step distribution from a second run with `options tran_debug=2`; the
+1e6-step cases (rc, graetz, mul) truncated to a ~2000-step representative sample
+to avoid 100 MB logs (noted below). Times in seconds. devacct compiled in.
+
+**Aggregate (clean runs -- authoritative):**
+
+| Benchmark | Unknowns | Wall (s) | Steps | NR iters | Eval (s) | Refactor (s) | Solve (s) | NR total (s) | Eval/NR | Dominant device, t/call |
+|-----------|----------|----------|-------|----------|----------|--------------|-----------|--------------|---------|-------------------------|
+| rc        | 3        | 1.05     | 1.005M| 2.01M    | 0.444    | 0.131        | 0.045     | 0.817        | 54%     | R/C, ~4.4e-8            |
+| mul       | --       | 1.06     | 500k  | 1.00M    | 0.566    | 0.176        | 0.089     | 0.932        | 61%     | diode, 2.4e-7          |
+| graetz    | 9        | 2.42     | 1.0M  | 2.0M     | 1.100    | 0.425        | 0.124     | 1.857        | 59%     | diode, 2.5e-7          |
+| ring      | 47       | 1.43     | 26070 | 81878    | 1.001    | 0.070        | 0.024     | 1.115        | **90%** | psp103, 1.2e-5         |
+| c6288     | 25380    | 145.1    | 1024  | 3506     | 37.08    | 3.093        | 0.508     | 40.95        | **90.6%** | psp103, 1.06e-2      |
+
+**Per-step distribution (`tran_debug=2`; % of eval+factor+solve):**
+
+| Benchmark | Sample steps | Eval % | Factor % | Solve % | Eval/step mean | Eval/step max |
+|-----------|--------------|--------|----------|---------|----------------|---------------|
+| rc        | 2016 (trunc) | 71.6   | 21.0     | 7.5     | 4.4e-7         | 1.1e-5        |
+| graetz    | 2003 (trunc) | 67.5   | 25.4     | 7.1     | 1.2e-6         | 2.8e-6        |
+| mul       | 2063 (trunc) | 65.9   | 23.6     | 10.5    | 1.2e-6         | 7.5e-6        |
+| ring      | 26071 (full) | 91.3   | 6.5      | 2.2     | 3.8e-5         | 1.5e-4        |
+| c6288     | 1033 (full)  | 90.4   | 8.2      | 1.4     | 5.2e-2         | 1.3e-1        |
+
+(Per-step % uses eval+factor+solve as denominator and so runs higher than the
+aggregate Eval/NR, which divides by full NR time including loop overhead.)
+
+**Findings:**
+
+1. **Eval dominance tracks device-model complexity, not unknown count.** ring
+   has only 47 unknowns yet is already 90% eval, because a PSP103 MOSFET eval
+   costs ~1.2e-5 s/call vs ~4e-8 for R/C and ~2.5e-7 for a diode -- 300-1000x
+   more. c6288 confirms the same 90% at 25k unknowns / 10k transistors.
+2. **For the GPU-target circuits (PSP-MOSFET-heavy: ring, c6288), device eval
+   is ~90% of NR and KLU factor+solve is only 8-10%.** Offloading eval addresses
+   the dominant cost; this confirms WS4 (GPU sparse solver) is correctly
+   deferred -- even a 10x eval speedup leaves the solver at a few seconds
+   absolute for c6288.
+3. **Simple-device circuits (rc/graetz/mul) sit at 54-65% eval** and are *not*
+   the target -- their factor/solve fraction is too large for eval offload to
+   pay off, and they are tiny in absolute terms (~1-2 s total).
+4. **Per-step eval cost on c6288 is 17.6-132 ms**, scaling with NR iterations
+   per step (2-6). This is the granularity a GPU dispatch must beat after
+   launch/transfer overhead -- comfortably above typical kernel-launch latency.
+
+These confirm ADR 0001's decision-time table (the load-bearing ring/c6288 rows
+match within rounding). The small-circuit rows differ from the ADR's original
+profiling (different options/run), which is expected and immaterial -- those
+circuits are not GPU targets.
 
 ### WS1 -- Abstract the device eval interface (2-3 weeks)
 
@@ -160,7 +214,7 @@ Multi-simulation batching (Monte Carlo/corners on GPU), CUDA graphs for full NR 
 
 When all of these are true, this plan closes:
 
-- [ ] WS0 baseline data collected
+- [x] WS0 baseline data collected (2026-05-28)
 - [ ] WS1 batched eval interface working with CPU reference
 - [ ] WS2 or WS3 GPU backend demonstrating speedup on c6288
 - [ ] All benchmarks pass with GPU path enabled
