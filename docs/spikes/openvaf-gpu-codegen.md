@@ -71,8 +71,21 @@ evidence.
 | C. Post-process compiled OSDI .so | LOW | LOW | — (ABI already baked) |
 
 On the M4 Pro the route is **Strategy B → MSL** (or SPIR-V via Vulkan/MoltenVK).
-**f64 is the hard wall**: MSL `double` is constrained on Apple GPUs → vajax used
-**f32 factor + f64 iterative refinement** (Sprux pattern). Budget for f32 numerics.
+**f64 is unavailable on Apple GPUs**: MSL has no `double`. Budget for f32 numerics.
+
+**Correction (2026-05-29, verified in vajax source):** vajax's NR *inner loop on
+Metal is pure f32* — `vajax/__init__.py:_backend_supports_x64()` returns False for
+Metal, so `configure_precision()` sets `jax_enable_x64=False`, forcing every jnp op
+(eval, assembly, solve, residual, convergence) to f32 and silently collapsing any
+`.astype(float64)` to f32. The f32-factor + **f64-iterative-refinement** I cited is
+*not* the Metal loop: it's (a) `solver_factories.py:factorize_f32` (default False,
+a **CUDA** VRAM-saving option) and (b) **Sprux** (`sprux_ffi.cpp`), whose `f64`
+refinement runs **host-side on CPU doubles** and was never wired into the JIT NR
+loop. **Implication:** pure-f32 NR (eval+solve) empirically *converges* on these
+circuits on Metal, so f64 emulation (Ozaki etc.) is **not a hard prerequisite** for
+the Metal path — though f32 needed convergence-management hacks (TRAP integration,
+voltage-step limits, stagnation detection), and f32 *accuracy* for c6288 (≠
+convergence) is still the open Q2 measurement.
 
 #### LLVM→Metal trawl (2026-05-28) — why MIR→MSL, not the SPIR-V bridge
 
@@ -91,8 +104,9 @@ reach Metal (Strategy A for Metal) instead of hand-writing MIR→MSL:
   are not supported in buffers in MSL"*; Metal/MSL has no `double`; MoltenVK
   `shaderFloat64 = false`; fp64 emulation on Apple GPUs is documented-hard
   (`philipturner/metal-float64`, archived — compiler optimizes away double-single).
-- **Decisive:** f64→f32 + iterative refinement must be done *by us on every path*
-  (only IREE has a turnkey demote pass, = adopt MLIR wholesale). Once we own type
+- **Decisive:** f64→f32 demotion must be done *by us on every path* (only IREE has
+  a turnkey demote pass, = adopt MLIR wholesale; refinement is *optional* — see the
+  2026-05-29 correction above: vajax ran pure f32 on Metal). Once we own type
   lowering, the SPIR-V chain's only advantage (free codegen) is neutralized, so
   **hand-writing MIR→MSL is competitive and simpler** — we control f32/compensated
   arithmetic directly.
@@ -101,8 +115,10 @@ reach Metal (Strategy A for Metal) instead of hand-writing MIR→MSL:
 backends**. MSL backend for Metal (this machine); the same frontend gives
 **NVPTX/CUDA nearly free via LLVM retarget (Strategy A), where f64 is native**.
 **New open risk surfaced:** f32 accuracy for **PSP103 device physics itself**
-(not just the linear solve) — vajax needed f64 residuals + refinement; Q2/Q3 must
-measure eval accuracy in f32 against the CPU OSDI reference.
+(not just the linear solve). vajax ran pure f32 on Metal and *converged* (with
+convergence-management hacks), so f64 is not strictly required — but Q2/Q3 must
+still measure eval *accuracy* in f32 against the f64 reference (convergence ≠
+accuracy).
 
 #### FP64-where-needed: Ozaki scheme — scope (2026-05-28)
 
@@ -187,9 +203,15 @@ eval-kernel accuracy question Q2 measures.
   motivating the resident-loop architecture).
 - 2026-05-28: LLVM→Metal trawl — no open LLVM→AIR backend; the LLVM→SPIR-V→MSL
   bridge is mature but **hard-fails at f64** (SPIRV-Cross throws on double buffers;
-  Metal has no double). We must own f64→f32 + refinement on every path, so
+  Metal has no double). We must own f64→f32 demotion on every path, so
   **MIR→MSL (Strategy B) is confirmed**, with a pluggable backend giving NVPTX/CUDA
   near-free. New risk: **f32 accuracy of PSP103 physics** must be measured in Q2/Q3.
+- 2026-05-29: **Correction — vajax's Metal NR inner loop is pure f32**, verified in
+  source (`__init__.py:_backend_supports_x64`→`jax_enable_x64=False`). The f64
+  iterative-refinement I'd cited is a CUDA option (`factorize_f32`, default off) and
+  an unintegrated host-side-f64 Sprux path — *not* the Metal loop. So pure-f32 NR
+  empirically converges on Metal; f64 emulation is not a hard prerequisite. f32
+  *accuracy* (≠ convergence) for c6288 still open.
 - 2026-05-29: **Q2 Milestone 1 (resistor) DONE.** Built a MIR→MSL emitter +
   Objective-C++ Metal harness in `~/Code/ChipFlow/vajax/spikes/msl-codegen/`
   (Bash is blocked inside sub-agents, so driven inline). Walks the eval MIR
