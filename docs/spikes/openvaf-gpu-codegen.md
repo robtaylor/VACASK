@@ -224,6 +224,19 @@ eval-kernel accuracy question Q2 measures.
     pressure / occupancy measurement on the M4 Pro.
   Spike code: `~/Code/ChipFlow/vajax/spikes/msl-codegen/` (`emit_msl2.py`,
   `dce_estimate.py`, `harness.mm`).
+- 2026-05-29: **v3 emitter plan — reuse vajax `mir/` SSA optimizations.** Mapped
+  vajax's optimization pipeline: `openvaf_jax/mir/{cfg.py,ssa.py,constprop.py}`
+  (`CFGAnalyzer`, `SSAAnalyzer`, `SCCP`) is **JAX-free and cleanly separable** —
+  zero imports from the ast/codegen layer. v3 seam: `parse_mir_function` →
+  `CFGAnalyzer` → `SCCP(known_values=param_values)` → `SSAAnalyzer(sccp=...)` →
+  walk `cfg.topological_order()`, skip `sccp.is_block_dead()`, `ssa.resolve_phi()`
+  → emit MSL. Wins: (a) **DCE** via SCCP dead-block elimination + dead-phi-operand
+  pruning (`_get_live_operands`) — the ~38%, collapses 4-way NMOS/PMOS phis to
+  `FALLBACK` single value; (b) **SCCP constant folding** (also resolves several
+  out-of-f32-range guard constants); (c) **dominator-based phi resolution**
+  (`PHIResolution.TWO_WAY` uses the actual branch-condition value, not naive
+  OR-of-edges). psp103 eval is loop-free so `LoopInfo`/`while_loop` machinery is
+  unneeded. This replaces `emit_msl2.py`'s naive flatten for v3.
 
 ## Outcome
 
