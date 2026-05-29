@@ -204,6 +204,26 @@ eval-kernel accuracy question Q2 measures.
   OSDI — so no real speedup claim from resistor; M1 proved plumbing + f32 accuracy
   only. Next: M2 = psp103 (control flow/phi → MSL, kernel size, real f32-physics
   accuracy).
+- 2026-05-29: **Q2 Milestone 2 (psp103) — codegen GENERATES + COMPILES.** psp103
+  eval = 940 blocks / 20,243 instrs, **DAG (0 loops)**, 1503 phi, 56 Jacobian
+  entries, 2868 params. Extended emitter to flatten the DAG (per-block
+  reachability predicates + phi→nested-select). Generated **26.8k lines of MSL**;
+  `xcrun metal -std=metal3.0` compiled to `.air` + linked `.metallib`, **0 errors**
+  (after fixing int-cast for `iand`/`ibcast`). So the codegen scales to c6288's
+  device. Caveats / next-step drivers:
+  - **6238 compile warnings**, dominated by **15 constants out of f32 range**
+    (`1e-100`,`1e+100`,`8.3e38`,…) — guard/clamp constants that flush to 0/inf in
+    f32 and can break their guard (`max(x,1e-100)`→`max(x,0)`). Needs per-constant
+    f32-safe lowering. This is the concrete f32-physics hazard.
+  - **Naive flatten is wasteful: ~38% of eval instrs (7251/19304) are dead** for
+    resistive-only output (they feed only the reactive path). Confirms the value of
+    **reusing vajax's SSA optimizations** (DCE + SCCP constprop + dominator-based
+    phi resolution) instead of the naive OR-of-all-edges flatten → v3 emitter.
+  - Not yet done: f32 **accuracy** validation vs f64 (needs init-cache via
+    `run_init_eval` + realistic c6288 bias points); reactive (ddt) part; register
+    pressure / occupancy measurement on the M4 Pro.
+  Spike code: `~/Code/ChipFlow/vajax/spikes/msl-codegen/` (`emit_msl2.py`,
+  `dce_estimate.py`, `harness.mm`).
 
 ## Outcome
 
