@@ -246,6 +246,19 @@ eval-kernel accuracy question Q2 measures.
     pressure / occupancy measurement on the M4 Pro.
   Spike code: `~/Code/ChipFlow/vajax/spikes/msl-codegen/` (`emit_msl2.py`,
   `dce_estimate.py`, `harness.mm`).
+- 2026-06-01: **psp103 f32-accuracy — first attempt INVALID; need solved bias
+  points.** Ran vajax's psp103 JAX eval at f64 vs f32 over a hand-built Vgs/Vds
+  sweep. Result is untrustworthy: PSP103 is an internal-node model (GP/SI/DI/BP…
+  solved by the NR), so hand-setting only `V(GP,SI)`/`V(DI,SI)` gives non-physical
+  points — the device stayed **off (resist[0]=0 everywhere)**. The "jacobian rel
+  err ≈ 840" is an artifact of near-zero f64 denominators, not real f32 loss.
+  Two real signals: (a) **residual** rel err stayed ~3e-5 even in degenerate
+  regimes (≈250× f32-eps, not catastrophic — weakly encouraging); (b) a concrete
+  **f32 overflow-in-cast** fired — the out-of-f32-range guard constants (`1e+100`,
+  from M2) hit inf in f32. **Correct method (next):** measure f32 vs f64 eval at
+  *converged* per-instance operating points — extract node voltages from a real
+  DC/transient solve (vajax c6288, or instrument VACASK OSDI eval to dump inputs),
+  then compare there.
 - 2026-05-29: **v3 emitter plan — reuse vajax `mir/` SSA optimizations.** Mapped
   vajax's optimization pipeline: `openvaf_jax/mir/{cfg.py,ssa.py,constprop.py}`
   (`CFGAnalyzer`, `SSAAnalyzer`, `SCCP`) is **JAX-free and cleanly separable** —
