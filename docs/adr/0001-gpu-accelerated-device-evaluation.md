@@ -2,7 +2,36 @@
 
 ## Status
 
-Accepted (2026-05-28).
+Accepted (2026-05-28). **Partially under revision (2026-06-01)** — see
+[Amendment 2026-06-01](#amendment-2026-06-01-revisions-under-spike-validation).
+
+## Amendment 2026-06-01 (revisions under spike validation)
+
+Work in [spike `openvaf-gpu-codegen`](../spikes/openvaf-gpu-codegen.md) has put
+four of this ADR's choices under active revision. They are **not yet re-decided**
+(the spike is Open); recorded here so the Accepted decision is not silently
+contradicted. At spike resolution these fold back into the sections below.
+
+1. **Design choice #1 (surgical eval-only replacement) → likely GPU-resident NR
+   loop.** vajax evidence shows the per-iteration host↔device sync, not compute,
+   dominates (`while_loop` ~80 ms/step vs fused ~0.2 ms/step on M-series).
+   Offloading *only* `evalAndLoad()` re-incurs that round-trip every NR iteration.
+   A resident loop (eval+assembly+solve+convergence on-device, sync at accepted
+   timepoints) avoids it.
+2. **"Does NOT change: NR convergence (pnjlim/fetlim), timestepping" → would move
+   to GPU** under a resident loop (the cost: porting those heuristics; vajax did
+   this in f32 with convergence-management hacks).
+3. **Design choice #6 (solver stays on CPU; GPU solver not a prerequisite) →
+   becomes a prerequisite** for a resident loop — an on-device sparse solver
+   (Sprux on Metal, cuDSS on CUDA) is needed to avoid the per-iter Jacobian
+   round-trip, not because solve is the compute bottleneck.
+4. **Design choice #2 (OpenVAF codegen: "extend or post-process") → specifically
+   MIR→MSL on Metal.** No open LLVM→AIR backend; the LLVM→SPIR-V→MSL bridge
+   hard-fails at f64; we own f32 lowering regardless, so a MIR-walking emitter
+   with pluggable backends (MSL now; NVPTX/CUDA near-free via LLVM retarget) is
+   simpler. **Metal runs pure f32** (verified in vajax) — f64 emulation is not a
+   prerequisite. Codegen feasibility confirmed: psp103 eval generates + compiles
+   to a `.metallib`.
 
 ## Date
 
