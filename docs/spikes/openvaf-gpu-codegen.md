@@ -259,6 +259,22 @@ eval-kernel accuracy question Q2 measures.
   *converged* per-instance operating points — extract node voltages from a real
   DC/transient solve (vajax c6288, or instrument VACASK OSDI eval to dump inputs),
   then compare there.
+- 2026-06-01: **Operating-point source found & confirmed (unblocks both validations).**
+  No VACASK C++ eval-dump patch exists (checked all origin branches + vendored
+  VACASK; `add-tb_dp512x8-test` OSDI diff is cleanup; c6288 `.raw` saves only
+  external nodes). Pivoted per the vajax comparison scripts
+  (`scripts/{extract_c6288_jacobian,capture_benchmark_matrices,plot_three_way_comparison}.py`):
+  the operating-point source is **vajax's own `CircuitEngine` + `FullMNAStrategy.run()`**,
+  which returns the **full solution trajectory including internal PSP103 nodes**,
+  in f64 on CPU (cross-validated vs VACASK on external nodes). Confirmed on `ring`:
+  59 converged node-voltage vectors, internal nodes at physical voltages
+  (rail 1.2V, mid-transition 0.66V). `build_system_fn(X, …)` (from
+  `engine._build_transient_setup` + `_make_mna_build_system_fn`) gathers per-instance
+  voltages and evaluates — eval it at a converged X in f64 vs f32 for the
+  system-level f32-accuracy answer; gather per-instance PSP103 inputs for v3 MSL
+  correctness. Spike code: `op_points.py` (saves `ring_Xtraj.npy`). **Next:** eval
+  build_system at a converged X in f64 vs f32 (f32 accuracy), and feed per-instance
+  inputs to the v2/v3 MSL kernels (correctness) — no VACASK instrumentation needed.
 - 2026-06-01: **Q2 v3 emitter BUILT — reuses vajax `mir/` SSA opts + backward DCE.**
   `emit_msl3.py`: `parse_mir_function` → `CFGAnalyzer` → `SCCP(model-card params)`
   → `SSAAnalyzer`; walks `topological_order()`, resolves phis via `resolve_phi`
