@@ -259,6 +259,30 @@ eval-kernel accuracy question Q2 measures.
   *converged* per-instance operating points — extract node voltages from a real
   DC/transient solve (vajax c6288, or instrument VACASK OSDI eval to dump inputs),
   then compare there.
+- 2026-06-01: **Q2 v3 emitter BUILT — reuses vajax `mir/` SSA opts + backward DCE.**
+  `emit_msl3.py`: `parse_mir_function` → `CFGAnalyzer` → `SCCP(model-card params)`
+  → `SSAAnalyzer`; walks `topological_order()`, resolves phis via `resolve_phi`
+  (real branch conditions, no reach predicates). Results vs v2 naive flatten on
+  psp103: **live instrs 11,415 (was 20,243) — 44% DCE**; **MSL 18,951 lines (was
+  26,800) — 29% smaller**; phis 980 (was 1503); compiles clean (0 errors).
+  Findings:
+  - **SCCP alone kills 0 blocks**: psp103 *eval* branches on **cached init values**
+    (runtime inputs), not model-card params — TYPE-style specialization happens in
+    *init*. So the DCE win is **backward liveness from the resistive outputs**
+    (reactive-only instrs are dead), which I added; SCCP only pruned ~20 dead phi
+    operands.
+  - **DCE is sound by construction**: inputs/consts declared unconditionally but
+    body/phi *results* emitted only if live → a dropped-but-needed value would be
+    an "undeclared identifier" compile error. 0 errors ⇒ liveness closure is
+    reference-consistent (semantics-preserving structure).
+  - **Numeric validation still BLOCKED on operating points.** v2-vs-v3 cross-check
+    on *random* inputs is inconclusive (~49% inf/NaN — non-physical inputs overflow
+    exp/log; v2 computes dead NaN-y instrs, v3 skips them → divergent NaN, plus
+    near-zero-denominator rel-err artifacts). Both v3 correctness AND f32 accuracy
+    need the same missing piece: **physically consistent eval input vectors**
+    (cached init values via `run_init_eval`/`get_cache_mapping` + reasonable bias,
+    or per-instance voltages dumped from a real VACASK/vajax solve). That harness
+    is the next investment — it unblocks both validations at once.
 - 2026-05-29: **v3 emitter plan — reuse vajax `mir/` SSA optimizations.** Mapped
   vajax's optimization pipeline: `openvaf_jax/mir/{cfg.py,ssa.py,constprop.py}`
   (`CFGAnalyzer`, `SSAAnalyzer`, `SCCP`) is **JAX-free and cleanly separable** —
