@@ -275,6 +275,21 @@ eval-kernel accuracy question Q2 measures.
   correctness. Spike code: `op_points.py` (saves `ring_Xtraj.npy`). **Next:** eval
   build_system at a converged X in f64 vs f32 (f32 accuracy), and feed per-instance
   inputs to the v2/v3 MSL kernels (correctness) — no VACASK instrumentation needed.
+- 2026-06-02: **Correction + build_system-harness status.** (a) **Correction:**
+  `FullMNAStrategy.run()` returns `V_out` of width 11 for ring, but ring's
+  `n_unknowns=46` — so V_out is the **external-node trajectory, not the full
+  internal solution**; the PSP103 internal-node voltages are solved but not
+  returned there. `build_system(X)` needs the full 46-dim X. (Earlier "V_out
+  includes internal PSP103 nodes" was wrong — the 0.66 V values were external
+  nodes.) (b) **build_system f64-vs-f32 harness** (`build_system_acc.py`) built on
+  the `extract_c6288_jacobian.py` pattern (eval at mid-rail init, non-degenerate,
+  in each precision, compare J/f). Blocked on `engine._get_dc_source_values(...)`
+  raising IndexError for **ring** — ring drives with `isource` (n_vsources=1 but
+  the source-value setup mismatches the c6288-derived call). **Next:** fix the
+  source-value call for an isource-driven bench (or run c6288, which is
+  vsource-driven like the proven extract script); then compare J/f f64 vs f32 for
+  the first real system-level f32-accuracy number. For per-instance/converged-X
+  validation, capture the full 46-dim X from the solver state (V_out is reduced).
 - 2026-06-01: **Q2 v3 emitter BUILT — reuses vajax `mir/` SSA opts + backward DCE.**
   `emit_msl3.py`: `parse_mir_function` → `CFGAnalyzer` → `SCCP(model-card params)`
   → `SSAAnalyzer`; walks `topological_order()`, resolves phis via `resolve_phi`
