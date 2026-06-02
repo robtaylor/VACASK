@@ -179,6 +179,15 @@ eval-kernel accuracy question Q2 measures.
     instance vs OSDI CPU eval (bit-ish within f32).
   - Step 2: batch over N instances; compare eval throughput vs CPU OSDI.
   - Step 3: attempt psp103; measure kernel size / register pressure / f64 impact.
+  - Step 4 (f32 accuracy, **VACASK ground truth**): validate the psp103 f32
+    kernel against **VACASK's own f64 OSDI eval**, not vajax/JAX. A flag-gated
+    dump pass in VACASK (`OsdiInstance::evalCore`) emits, per PSP103 instance at
+    several accepted transient timepoints, the OSDI input buffer (node voltages +
+    cached init params) and the f64 residual + Jacobian; the f32 MSL kernel —
+    generated from the **same** `devices/psp103v4/psp103.va` — is then fed those
+    exact inputs and compared. Small proxy circuit: **gilbert** (6 PSP103,
+    deterministic sinusoidal transient, same psp103v4 model as c6288, no
+    metastability); then c6288. Supersedes the vajax `build_system_acc.py` path.
 - **Q3 — Resident-loop slice.** Wire Sprux solve + the eval kernel + assembly
   into a minimal GPU-resident NR iteration for c6288; sync only at accepted
   timepoints; compare ms/step vs VACASK CPU (40.95 s NR baseline).
@@ -327,6 +336,34 @@ eval-kernel accuracy question Q2 measures.
   (`PHIResolution.TWO_WAY` uses the actual branch-condition value, not naive
   OR-of-edges). psp103 eval is loop-free so `LoopInfo`/`while_loop` machinery is
   unneeded. This replaces `emit_msl2.py`'s naive flatten for v3.
+
+- 2026-06-02: **Methodology reversal — VACASK becomes the f32-accuracy ground
+  truth (replaces the vajax/JAX oracle).** The 2026-06-01 pivot to vajax's
+  `CircuitEngine`/`build_system` was chosen for convenience ("no VACASK eval-dump
+  patch exists"), but it makes *vajax's separate JAX assembly* the reference —
+  a second implementation, not the simulator we're accelerating. Decision:
+  **build the VACASK eval-dump after all.** Rationale (strictly better, not just
+  preference): the MSL kernel is generated from the **OSDI-compiled psp103v4
+  model**, the exact artifact VACASK runs, so VACASK's per-instance cached init
+  buffer *is* OpenVAF's init output the kernel expects — tapping VACASK removes
+  the cross-implementation mismatch the JAX path introduced, and one mechanism
+  serves both validations (kernel f32 correctness + system f32 accuracy).
+  - **Tap point (verified):** `Circuit::evalAndLoad` (`lib/circuit.cpp:1373`) →
+    `OsdiDevice::evalAndLoad` (`lib/osdidevice.cpp:451`) →
+    `OsdiInstance::evalCore` (`lib/osdiinstance.cpp:1131`), OSDI eval at
+    `osdiinstance.cpp:1245`. Inputs in instance `core()`; f64 outputs via
+    `load_jacobian_resist`/`load_residual_resist` (already used for printing at
+    `osdidevice.cpp:731`). Design: a **flag-gated post-acceptance dump pass** at
+    selected accepted transient timepoints (keeps the hot NR loop clean,
+    guarantees converged inputs).
+  - **Circuit choice:** ring rejected as the small test — free-running oscillator
+    with a metastable initial state, so its "converged" points are
+    dynamics-sensitive. Use **gilbert** (`demo/gilbert/`, 6 PSP103, sinusoidal
+    RF+LO drive sweeps cutoff/linear/saturation, same `psp103v4.osdi` as c6288)
+    as the deterministic small proxy; c6288 as the real target.
+  - The `build_system_acc.py` isource `IndexError` (passes `n_isources=0`; ring
+    drives with isources → `.at[0].set` on a length-0 array, `sources.py:547`) is
+    now **moot** — that JAX harness is superseded.
 
 ## Outcome
 

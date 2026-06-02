@@ -16,14 +16,21 @@ Phase 0 baseline (WS0), then run the OpenVAF-GPU-codegen spike: prove we can
 generate Metal device-eval kernels from OpenVAF for c6288's PSP103, and start
 validating f32 accuracy and the GPU-resident-NR-loop direction.
 
-**Next session should pick up:** **fix the `build_system` f64-vs-f32 harness.**
-`~/Code/ChipFlow/vajax/spikes/msl-codegen/build_system_acc.py` is built (mid-rail
-eval, `extract_c6288_jacobian.py` pattern) but throws `IndexError` in
-`engine._get_dc_source_values()` for **ring** (ring is `isource`-driven; the
-c6288-derived call mismatches). Either fix the source-value call for an
-isource bench, **or just target c6288** (vsource-driven, matches the proven
-extract script). Then compare J and f → the first real *system-level* f32 error
-at a non-degenerate operating point. This unblocks the spike's open Q2.
+**Next session should pick up:** **build the VACASK f32-accuracy ground-truth
+dump** (decision 2026-06-02 — see spike Findings). Supersedes the abandoned
+vajax `build_system_acc.py` path (which made vajax's separate JAX assembly the
+reference rather than the simulator we're accelerating). Plan:
+1. Trace the transient accept path (`lib/coretran.cpp`/`coretrannr.cpp`) to find
+   where to hook a **post-acceptance dump pass**.
+2. Add a flag-gated dump in `OsdiInstance::evalCore` (`lib/osdiinstance.cpp:1131`,
+   OSDI eval at :1245): per PSP103 instance at several accepted tran timepoints,
+   write the OSDI input buffer (node voltages + cached init params) and f64
+   residual + Jacobian (via `load_jacobian_resist`/`load_residual_resist`).
+3. Build Release, run **gilbert** (`demo/gilbert/`, deterministic sinusoidal
+   transient, same `psp103v4` as c6288 — ring rejected: metastable oscillator).
+4. Generate the `emit_msl3.py` f32 kernel from the **same** `devices/psp103v4/psp103.va`,
+   feed it the dumped inputs, compare f32-vs-VACASK-f64 J/f across bias regimes.
+This is the spike's open Q2 (f32 accuracy) with VACASK as ground truth.
 
 **Verification command:**
 
@@ -63,11 +70,13 @@ $PY op_points.py                                   # expect ring V_out (timepoin
 
 ## Open follow-ups (priority-ordered)
 
-### 1. build_system f64-vs-f32 system accuracy (S, has a clear lead)
+### 1. VACASK f32-accuracy ground-truth dump (M, decided 2026-06-02)
 
-Fix `build_system_acc.py` (`_get_dc_source_values` IndexError for ring → use
-c6288 or fix isource path). Compare J/f f64 vs f32 at mid-rail → first real
-f32-accuracy number on the assembled NR system. The open Q2 question in the spike.
+Build a flag-gated post-acceptance dump pass in VACASK (`OsdiInstance::evalCore`)
+emitting per-PSP103-instance inputs + f64 residual/Jacobian at several accepted
+gilbert transient timepoints; feed those inputs to the `emit_msl3.py` f32 kernel
+(same `psp103v4.va`) and compare. Replaces the vajax `build_system_acc.py` path
+(superseded — see spike Findings 2026-06-02). The open Q2 question in the spike.
 
 ### 2. Per-instance / converged-X validation (M)
 
