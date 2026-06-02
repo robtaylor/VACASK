@@ -1,11 +1,14 @@
 #include <cstring>
 #include <cstddef>
 #include <new>
+#include <vector>
+#include <iomanip>
 #include "osdiinstance.h"
 #include "circuit.h"
 #include "simulator.h"
 #include "libplatform.h"
 #include "common.h"
+#include "evaldump.h"
 
 
 namespace NAMESPACE {
@@ -1365,7 +1368,92 @@ bool OsdiInstance::evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& 
         }
     }
 
+    // Spike instrumentation: dump per-instance f64 eval I/O for GPU-kernel
+    // f32-accuracy validation. Active only during the transient post-acceptance
+    // dump pass, which sets evalSetup.evalDump; the hot NR path sees nullptr.
+    if (evalSetup.evalDump) {
+        dumpEvalIO(evalSetup);
+    }
+
     return true;
+}
+
+void OsdiInstance::dumpEvalIO(EvalSetup& evalSetup) {
+    auto sink = evalSetup.evalDump;
+    auto descr = model()->device()->descriptor();
+    std::string mname = descr->name ? descr->name : "(unnamed)";
+    auto& os = sink->os();
+
+    // Emit the static MODEL structure block once per model.
+    if (sink->firstSeen(mname)) {
+        os << "MODEL " << mname
+           << " ninputs=" << descr->num_inputs
+           << " nnodes=" << descr->num_nodes
+           << " nresjac=" << descr->num_resistive_jacobian_entries << "\n";
+        // Input node-pair structure (local node indices; -1 == ground).
+        os << "INPUTNODES";
+        for (uint32_t i = 0; i < descr->num_inputs; i++) {
+            auto n1 = descr->inputs[i].node_1;
+            auto n2 = descr->inputs[i].node_2;
+            os << " " << (n1==UINT32_MAX ? -1L : (long)n1)
+               << ":" << (n2==UINT32_MAX ? -1L : (long)n2);
+        }
+        os << "\n";
+        // Resistive Jacobian entry node pairs, in write_jacobian_array_resist order.
+        os << "RESJACNODES";
+        for (uint32_t i = 0; i < descr->num_jacobian_entries; i++) {
+            auto& jac = descr->jacobian_entries[i];
+            if (jac.flags & JACOBIAN_ENTRY_RESIST) {
+                os << " " << (long)jac.nodes.node_1 << ":" << (long)jac.nodes.node_2;
+            }
+        }
+        os << "\n";
+        // Node names (index order).
+        os << "NODENAMES";
+        for (uint32_t i = 0; i < descr->num_nodes; i++) {
+            os << " " << std::string(nodeName(i));
+        }
+        os << "\n";
+    }
+
+    os << std::setprecision(17);
+    os << "INST " << std::string(name()) << " " << mname
+       << " t=" << sink->time() << " step=" << sink->step() << "\n";
+
+    // Input voltages V(n1)-V(n2) at the converged solution.
+    os << "V";
+    for (uint32_t i = 0; i < descr->num_inputs; i++) {
+        auto col1 = descr->inputs[i].node_1;
+        auto col2 = descr->inputs[i].node_2;
+        double v = 0.0;
+        if (col1 != UINT32_MAX) v += evalSetup.oldSolution[nodes_[col1]->unknownIndex()];
+        if (col2 != UINT32_MAX) v -= evalSetup.oldSolution[nodes_[col2]->unknownIndex()];
+        os << " " << v;
+    }
+    os << "\n";
+
+    // Resistive residual per node (nan where the model has no resistive residual).
+    os << "F";
+    for (uint32_t i = 0; i < descr->num_nodes; i++) {
+        auto off = descr->nodes[i].resist_residual_off;
+        if (off != UINT32_MAX) {
+            os << " " << *getDataPtr<double*>(core(), off);
+        } else {
+            os << " nan";
+        }
+    }
+    os << "\n";
+
+    // Resistive Jacobian values (same order as RESJACNODES).
+    std::vector<double> Jr(descr->num_resistive_jacobian_entries);
+    if (!Jr.empty()) {
+        descr->write_jacobian_array_resist(core(), model()->core(), Jr.data());
+    }
+    os << "J";
+    for (double v : Jr) {
+        os << " " << v;
+    }
+    os << "\n";
 }
 
 bool OsdiInstance::loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup) {

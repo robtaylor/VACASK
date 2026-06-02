@@ -98,6 +98,11 @@ public:
     bool outputBypassCheckCore(Circuit& circuit, CommonData& commons, EvalSetup& evalSetup);
     bool evalCore(Circuit& circuit, CommonData& commons, OsdiSimInfo& simInfo, EvalSetup& evalSetup);
     bool loadCore(Circuit& circuit, CommonData& commons, LoadSetup& loadSetup);
+
+    // Spike instrumentation: dump this instance's f64 eval I/O (input voltages,
+    // resistive residual + Jacobian) to evalSetup.evalDump. Side-effect-free:
+    // reads already-computed values, loads nothing into the matrix.
+    void dumpEvalIO(EvalSetup& evalSetup);
     
 protected:
     OsdiFile::OsdiCollapsedNodesIndex collapsedNodesPatternSize() const { return model()->device()->collapsedNodesPatternSize(); };

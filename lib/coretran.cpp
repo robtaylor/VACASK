@@ -8,6 +8,9 @@
 #include "common.h"
 #include <filesystem>
 #include <algorithm>
+#include <cstdlib>
+#include <memory>
+#include "evaldump.h"
 
 namespace NAMESPACE {
 
@@ -1090,14 +1093,39 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
 
     // Number of consecutive points computed with trapezoidal integration
     size_t trapHistory = 0;
-    
+
     // Initialize maximal past solution and residual contribution
     if (params.icmode==icmodeOp) {
         nrSolver.initializeMaxima(opCore_.solver());
     } else {
         nrSolver.resetMaxima();
     }
-    
+
+    // Spike instrumentation: optional per-instance f64 device-eval dump for
+    // GPU-kernel f32-accuracy validation (VACASK is the ground truth). Enabled
+    // by VACASK_EVAL_DUMP=<path>; VACASK_EVAL_DUMP_STRIDE=N dumps every Nth
+    // accepted timepoint (default 1). See docs/spikes/openvaf-gpu-codegen.md.
+    std::unique_ptr<EvalDumpSink> evalDump;
+    long evalDumpStride = 1;
+    Vector<double> dumpStates;
+    if (const char* dumpPath = std::getenv("VACASK_EVAL_DUMP"); dumpPath && dumpPath[0]) {
+        evalDump = std::make_unique<EvalDumpSink>(dumpPath);
+        if (!evalDump->good()) {
+            Simulator::out() << "Warning: could not open eval dump file '" << dumpPath << "'.\n";
+            evalDump.reset();
+        }
+    }
+    if (const char* strideEnv = std::getenv("VACASK_EVAL_DUMP_STRIDE"); strideEnv && strideEnv[0]) {
+        long v = std::atol(strideEnv);
+        if (v > 0) {
+            evalDumpStride = v;
+        }
+    }
+    if (evalDump) {
+        dumpStates.resize(circuit.statesCount());
+        zero(dumpStates);
+    }
+
     while (true) {
         // NR will be applied at tSolve
         nrSolver.evalSetup().time = tSolve;
@@ -1728,6 +1756,32 @@ CoreCoroutine TranCore::coroutine(bool continuePrevious) {
             if (tSolve>=params.start-timeRelativeTolerance*tk) {
                 if (params.write && !Simulator::noOutput() && outfile) {
                     outfile->addPoint();
+                }
+            }
+
+            // Spike instrumentation: dump f64 device-eval I/O at selected
+            // accepted timepoints. The converged solution is still in slot 0
+            // (advance happens below). Eval-only pass (loadSetup=nullptr): reads
+            // already-computed values, loads nothing into the matrix; state
+            // writes are diverted to dumpStates so step history is untouched.
+            // Note: forces a full eval (clears per-instance bypass flags), so a
+            // dump run may take a slightly different path than a non-dump run.
+            if (evalDump && (nPoints % evalDumpStride == 0)) {
+                evalDump->setPoint(tSolve, (long)nPoints);
+                EvalSetup esDump = {
+                    .solution = &solution,
+                    .states = &states,
+                    .dummyStates = &dumpStates,
+                    .evalDump = evalDump.get(),
+                    .tranAnalysis = true,
+                    .evaluateResistiveJacobian = true,
+                    .evaluateResistiveResidual = true,
+                };
+                esDump.initialize();
+                if (!circuit.evalAndLoad(commons, &esDump, nullptr, nullptr)) {
+                    if (debug>0) {
+                        Simulator::dbg() << "  Eval dump pass failed at t=" << tSolve << ".\n";
+                    }
                 }
             }
 

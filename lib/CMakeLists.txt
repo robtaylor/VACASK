@@ -105,8 +105,10 @@ add_library(simlib STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/tdnzohflicker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/tdnsdewhite.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/tdnsdeflicker.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/evaldump.h
     acct.cpp
-    libplatform.cpp 
+    evaldump.cpp
+    libplatform.cpp
     dynload.cpp 
     limitfunctions.cpp
     status.cpp

@@ -15,6 +15,9 @@ class Circuit;
 class Model;
 class Instance;
 
+// Spike instrumentation: per-instance device-eval I/O dump sink (see evaldump.h).
+class EvalDumpSink;
+
 typedef struct DeviceRequests {
     // Return information on what happened during evaluation
     // Verilog-A abort/finish/stop
@@ -41,7 +44,11 @@ typedef struct EvalSetup {
 
     // Data for instance bypass check (previous values)
     double* deviceStates {};
-    
+
+    // Spike instrumentation: when non-null, evalCore dumps per-instance f64
+    // eval I/O here (set only by the transient post-acceptance dump pass).
+    EvalDumpSink* evalDump {};
+
     // What mode are we running in - information for evaluator
     bool staticAnalysis {};
     bool dcAnalysis {};
