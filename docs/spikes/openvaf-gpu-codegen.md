@@ -392,14 +392,26 @@ eval-kernel accuracy question Q2 measures.
     can't match VACASK's gilbert operating point, and the f32 comparison can't be
     grounded yet. run_init_eval *does* conduct PSP103 at default card + strong
     bias (max|F|=1.16e-4), so the eval path itself is fine.
-  - **Next (resume point):** make init honor the model card/geometry. Options:
-    (a) check openvaf_py for a separate init-param API or a `run_init_eval`
-    variant that takes init params; (b) use `get_cache_mapping()` + a manual init
-    pass to compute cached values from the gilbert card, then feed eval; or
-    (c) dump the cached eval-input values directly from VACASK's OSDI instance
-    buffer (needs a MIR-vid→OSDI-offset map). Once openvaf-f64 matches VACASK-f64
-    at a gilbert point, run `psp103_v3.metal` (f32) on the same input vector and
-    report f32-vs-VACASK-f64 rel err across the 21×6 sampled points. Spike code:
+  - **The kernel needs 2090 live inputs = 19 V + 16 I + 1 sysfun + 2054 cached**
+    (1615 named `hidden_state` processed params + 439 unnamed cache slots =
+    `num_cached_values`). So the cached values are the bulk of the input vector.
+  - **Routes to supply the cached values (resume point):**
+    - *(C) emit init→eval kernel* — extend `emit_msl3` to also walk the init MIR
+      (`get_init_mir_instructions`) + wire init outputs→eval cache via
+      `get_cache_mapping()`, so the kernel takes only model-card+geometry+voltages
+      (all available: card from models.inc, voltages from the VACASK dump) and
+      computes cached values itself. **Production-aligned** (init runs on-GPU once
+      per instance) and removes openvaf_py from the *validation* loop. Bigger
+      codegen (init MIR is large). RECOMMENDED.
+    - *(B′) python init-interpreter shortcut* — interpret the init MIR with the
+      gilbert card to compute the 2054 cached values, splice in voltages, feed the
+      existing eval kernel. Fast, throwaway, openvaf_py-dependent.
+    - *literal (c) — dump cached from VACASK OSDI buffer:* **impractical** — 2054
+      internal values, no MIR-vid→OSDI-offset map (mostly not opvars).
+    - `run_init_eval` can't be fixed by a compile flag (`compile_va` has no
+      `propagate_constants`); it bakes init constants.
+    Validation gate either way: reconstructed-f64 ≈ VACASK-f64 at a gilbert point,
+    then `psp103_v3.metal` (f32) vs VACASK-f64 across the 21×6 points. Spike code:
     `spikes/msl-codegen/compare_vacask.py`.
 
 ## Outcome
