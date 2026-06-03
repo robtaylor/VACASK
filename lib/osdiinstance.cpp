@@ -1432,6 +1432,16 @@ void OsdiInstance::dumpEvalIO(EvalSetup& evalSetup) {
     }
     os << "\n";
 
+    // Absolute node voltages (one per node, index order matching NODENAMES).
+    // PSP103's intrinsic bias is built from absolute internal-node potentials
+    // (V(GP), V(SI), V(DI), V(BI)...), not just the branch differences, so the
+    // harness needs these to reconstruct the full eval input vector.
+    os << "A";
+    for (uint32_t i = 0; i < descr->num_nodes; i++) {
+        os << " " << evalSetup.oldSolution[nodes_[i]->unknownIndex()];
+    }
+    os << "\n";
+
     // Resistive residual per node (nan where the model has no resistive residual).
     os << "F";
     for (uint32_t i = 0; i < descr->num_nodes; i++) {
