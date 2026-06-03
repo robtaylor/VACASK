@@ -16,21 +16,24 @@ Phase 0 baseline (WS0), then run the OpenVAF-GPU-codegen spike: prove we can
 generate Metal device-eval kernels from OpenVAF for c6288's PSP103, and start
 validating f32 accuracy and the GPU-resident-NR-loop direction.
 
-**Next session should pick up:** **build the VACASK f32-accuracy ground-truth
-dump** (decision 2026-06-02 — see spike Findings). Supersedes the abandoned
-vajax `build_system_acc.py` path (which made vajax's separate JAX assembly the
-reference rather than the simulator we're accelerating). Plan:
-1. Trace the transient accept path (`lib/coretran.cpp`/`coretrannr.cpp`) to find
-   where to hook a **post-acceptance dump pass**.
-2. Add a flag-gated dump in `OsdiInstance::evalCore` (`lib/osdiinstance.cpp:1131`,
-   OSDI eval at :1245): per PSP103 instance at several accepted tran timepoints,
-   write the OSDI input buffer (node voltages + cached init params) and f64
-   residual + Jacobian (via `load_jacobian_resist`/`load_residual_resist`).
-3. Build Release, run **gilbert** (`demo/gilbert/`, deterministic sinusoidal
-   transient, same `psp103v4` as c6288 — ring rejected: metastable oscillator).
-4. Generate the `emit_msl3.py` f32 kernel from the **same** `devices/psp103v4/psp103.va`,
-   feed it the dumped inputs, compare f32-vs-VACASK-f64 J/f across bias regimes.
-This is the spike's open Q2 (f32 accuracy) with VACASK as ground truth.
+**Next session should pick up:** **unblock the openvaf-f64 reconstruction so it
+matches VACASK-f64 at a gilbert operating point** (see spike Finding 2026-06-03).
+The VACASK ground-truth dump is DONE + validated (commits `ee8e26e`, `35152fd`):
+gilbert tran emits per-PSP103-instance branch voltages, absolute node voltages
+(`A` line), and f64 residual/Jacobian at accepted timepoints. The cross-check
+harness `spikes/msl-codegen/compare_vacask.py` is built; the blocker is that
+`openvaf_py.run_init_eval(params)` **ignores init-function params** (verified:
+overriding VFBO/W changes nothing), so cached values use default card/geometry,
+not gilbert's → openvaf-f64 won't match VACASK-f64. Resume options (spike Finding):
+1. Find an openvaf_py init-param API, or use `get_cache_mapping()` + a manual init
+   pass to compute cached values from the gilbert card; OR dump cached eval inputs
+   directly from VACASK's OSDI instance buffer.
+2. Once openvaf-f64 ≈ VACASK-f64 at a gilbert point (the validation gate), run
+   `psp103_v3.metal` (f32) on the same input vector → report f32-vs-VACASK-f64
+   rel err across the 21×6 sampled points. This is the spike's open Q2.
+Verified-good so far: voltage mapping (13 OSDI inputs → `V(GP,SI)`..`V(NOI)`;
+absolutes from `A`), param case-sensitivity (UPPERCASE), run_init_eval conducts
+PSP103 at default card (max|F|=1.16e-4).
 
 **Verification command:**
 
@@ -70,13 +73,14 @@ $PY op_points.py                                   # expect ring V_out (timepoin
 
 ## Open follow-ups (priority-ordered)
 
-### 1. VACASK f32-accuracy ground-truth dump (M, decided 2026-06-02)
+### 1. f32-accuracy via VACASK ground truth (M, dump DONE; blocked on init-cache)
 
-Build a flag-gated post-acceptance dump pass in VACASK (`OsdiInstance::evalCore`)
-emitting per-PSP103-instance inputs + f64 residual/Jacobian at several accepted
-gilbert transient timepoints; feed those inputs to the `emit_msl3.py` f32 kernel
-(same `psp103v4.va`) and compare. Replaces the vajax `build_system_acc.py` path
-(superseded — see spike Findings 2026-06-02). The open Q2 question in the spike.
+VACASK dump DONE + validated (commits `ee8e26e`, `35152fd`). Remaining: make the
+openvaf-f64 reconstruction (`compare_vacask.py`) match VACASK-f64 at a gilbert
+point — blocked because `run_init_eval` ignores init params (cached values use
+default card, not gilbert's). See spike Finding 2026-06-03 for the precise
+diagnosis + resume options. Then run `psp103_v3.metal` f32 and report rel err.
+The open Q2 question in the spike.
 
 ### 2. Per-instance / converged-X validation (M)
 

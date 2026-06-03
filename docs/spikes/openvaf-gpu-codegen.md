@@ -365,6 +365,43 @@ eval-kernel accuracy question Q2 measures.
     drives with isources → `.at[0].set` on a length-0 array, `sources.py:547`) is
     now **moot** — that JAX harness is superseded.
 
+- 2026-06-03: **VACASK ground-truth dump BUILT + validated; f64-vs-f64 harness
+  cross-check exposes the real blocker (openvaf_py `run_init_eval` ignores init
+  params).** The flag-gated dump (`OsdiInstance::dumpEvalIO` + TranCore
+  post-acceptance pass, commits `ee8e26e`/`35152fd`) emits, per PSP103 instance
+  at accepted gilbert transient timepoints: branch-voltage inputs, **absolute
+  node voltages** (`A` line), and f64 resistive residual + Jacobian. Verified on
+  gilbert (6 PSP103, same `psp103v4` as c6288): physical bias, internal nodes,
+  collapsed parasitics read 0. Then built `compare_vacask.py` to cross-validate
+  openvaf_py f64 (`run_init_eval`) against the VACASK f64 dump at the same
+  operating point — the gate that must pass before any f32 number is trustworthy.
+  Findings while wiring it (all verified inline):
+  - **Voltage mapping is exact + positional.** VACASK's 13 OSDI `inputs[]`
+    node-pairs map 1:1 onto eval voltage params `V(GP,SI)`..`V(NOI)`; the 6
+    absolute-node voltage params (`V(GP)`,`V(SI)`,`V(DI)`,`V(BP)`,`V(BS)`,`V(BD)`)
+    are filled from the dumped `A` line. PSP103's conduction is driven by these
+    **absolute** internal-node potentials, not the branch differences — supplying
+    only branch diffs leaves the device off (this is why the `A` line was added).
+  - **param names are UPPERCASE** (`W`,`L`,`TYPE`,`VFBO`); models.inc card is
+    lowercase — must match case-insensitively or overrides silently miss.
+  - **BLOCKER — `run_init_eval(params)` ignores init-function params.** Verified:
+    overriding `VFBO` (flatband, big Vt shift) or `W` (×5 width) in the params
+    dict gives byte-identical output. So `run_init_eval` applies the dict only to
+    *eval* (voltages work) but runs *init* with built-in defaults → cached values
+    always reflect default model card/geometry, never gilbert's. Hence openvaf f64
+    can't match VACASK's gilbert operating point, and the f32 comparison can't be
+    grounded yet. run_init_eval *does* conduct PSP103 at default card + strong
+    bias (max|F|=1.16e-4), so the eval path itself is fine.
+  - **Next (resume point):** make init honor the model card/geometry. Options:
+    (a) check openvaf_py for a separate init-param API or a `run_init_eval`
+    variant that takes init params; (b) use `get_cache_mapping()` + a manual init
+    pass to compute cached values from the gilbert card, then feed eval; or
+    (c) dump the cached eval-input values directly from VACASK's OSDI instance
+    buffer (needs a MIR-vid→OSDI-offset map). Once openvaf-f64 matches VACASK-f64
+    at a gilbert point, run `psp103_v3.metal` (f32) on the same input vector and
+    report f32-vs-VACASK-f64 rel err across the 21×6 sampled points. Spike code:
+    `spikes/msl-codegen/compare_vacask.py`.
+
 ## Outcome
 
 (Filled at resolution.)
