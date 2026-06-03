@@ -16,24 +16,26 @@ Phase 0 baseline (WS0), then run the OpenVAF-GPU-codegen spike: prove we can
 generate Metal device-eval kernels from OpenVAF for c6288's PSP103, and start
 validating f32 accuracy and the GPU-resident-NR-loop direction.
 
-**Next session should pick up:** **unblock the openvaf-f64 reconstruction so it
-matches VACASK-f64 at a gilbert operating point** (see spike Finding 2026-06-03).
-The VACASK ground-truth dump is DONE + validated (commits `ee8e26e`, `35152fd`):
-gilbert tran emits per-PSP103-instance branch voltages, absolute node voltages
-(`A` line), and f64 residual/Jacobian at accepted timepoints. The cross-check
-harness `spikes/msl-codegen/compare_vacask.py` is built; the blocker is that
-`openvaf_py.run_init_eval(params)` **ignores init-function params** (verified:
-overriding VFBO/W changes nothing), so cached values use default card/geometry,
-not gilbert's → openvaf-f64 won't match VACASK-f64. Resume options (spike Finding):
-1. Find an openvaf_py init-param API, or use `get_cache_mapping()` + a manual init
-   pass to compute cached values from the gilbert card; OR dump cached eval inputs
-   directly from VACASK's OSDI instance buffer.
-2. Once openvaf-f64 ≈ VACASK-f64 at a gilbert point (the validation gate), run
-   `psp103_v3.metal` (f32) on the same input vector → report f32-vs-VACASK-f64
-   rel err across the 21×6 sampled points. This is the spike's open Q2.
-Verified-good so far: voltage mapping (13 OSDI inputs → `V(GP,SI)`..`V(NOI)`;
-absolutes from `A`), param case-sensitivity (UPPERCASE), run_init_eval conducts
-PSP103 at default card (max|F|=1.16e-4).
+**Q2 f32 accuracy is ANSWERED (see spike Outcome + Finding 2026-06-03).** With
+VACASK as validated ground truth: eval-only f32 gives accurate currents (residual
+~1e-5) but a lossy Jacobian (~1% mean, ~14% max); full f32 incl. init is
+catastrophic (~5e5). The validation gate passed (JAX-f64 ≈ VACASK-f64 to ~5e-6).
+
+**Next session could pick up (lower urgency now):**
+1. **Literal MSL-kernel f32 run** to confirm the proxy: `psp103_v3.metal` needs the
+   1615 named `hidden_state` cached values as inputs (JAX computes them internally
+   via init; emit_msl3 treats them as inputs). Source them from the JAX init cache
+   (`cm._default_init_fn`) mapped to the kernel `input_order`, or emit an init→eval
+   kernel (production-aligned). Expected to match the proxy's order of magnitude.
+2. **Q3 resident-loop slice** (the remaining open spike question): eval+assembly+
+   Sprux on Metal, ms/step vs c6288 CPU baseline (40.95 s NR).
+3. **Fold Q2 result into ADR 0001** (f32 numerics): currents f32-OK, Jacobian +
+   init need f64/compensated.
+Harnesses: `spikes/msl-codegen/compare_jax_vacask.py` (the f32 measurement, JAXMODE
+= f64|f32|f32eval), `compare_vacask.py` (run_init_eval cross-check, superseded).
+Verified-good: voltage mapping (13 OSDI inputs → `V(GP,SI)`..`V(NOI)`, absolutes
+from the `A` line), UPPERCASE param names, JAX init honors the card via
+`OpenVAFToJAX`+`translate_eval(propagate_constants=False)`.
 
 **Verification command:**
 

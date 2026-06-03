@@ -414,6 +414,43 @@ eval-kernel accuracy question Q2 measures.
     then `psp103_v3.metal` (f32) vs VACASK-f64 across the 21×6 points. Spike code:
     `spikes/msl-codegen/compare_vacask.py`.
 
+- 2026-06-03: **Q2 f32-accuracy ANSWERED (PSP103, VACASK ground truth).** Got the
+  JAX init+eval path to honor the gilbert model card (the `run_init_eval` blocker
+  is dodged: `OpenVAFToJAX` + `translate_eval(propagate_constants=False)` reads
+  params at runtime). Validation gate **passes**: JAX-f64 init+eval ≈ VACASK-f64
+  dump to **~5e-6 residual / ~9e-5 Jacobian** rel err across 126 gilbert operating
+  points (cross-impl floor — JAX-translated MIR vs OSDI-compiled — not bit-equal
+  but firmly the same operating point/physics). Then measured f32 at the two
+  regimes that matter (`spikes/msl-codegen/compare_jax_vacask.py`, JAXMODE):
+  - **Eval-only f32 (f64 init/cache, f32 eval) — what the MSL kernel does:**
+    residual rel err max **1.1e-5** (mean 2.9e-6, ~at the f64 floor → f32-SAFE);
+    Jacobian rel err max **0.14**, mean **1.1e-2**, p99 0.13 → **f32-LOSSY**
+    (~1% typical, ~14% worst on conductances; systemic, not an outlier — p99≈max).
+    Physically: residual is well-conditioned; Jacobian entries (gm/gds) suffer
+    f32 cancellation.
+  - **Full f32 (init in f32 too): CATASTROPHIC**, residual rel err ~**5e5** — PSP103
+    init has out-of-f32-range intermediates (the 15 `1e±100` guard constants from
+    M2). Init must be f64 / compensated; it cannot run naive f32.
+  - **Design implications (for ADR 0001 / resident loop):** an f32 device-eval
+    kernel yields accurate currents but a ~1% (worst ~14%) Jacobian, and **init
+    must not be f32**. A resident-NR f32 loop would need f64/compensated init and
+    likely f64/compensated Jacobian assembly (or accept that f32 Jacobian error
+    feeds NR — vajax's convergence-management hacks are consistent with this).
+    This refines the 2026-05-29 "Metal NR is pure f32 and converges" note:
+    convergence ≠ accuracy; the Jacobian is where f32 hurts.
+  - **Caveat / remaining:** numbers are the JAX eval at f32 as a faithful proxy
+    for `psp103_v3.metal` (same eval MIR). A literal MSL-kernel run still needs the
+    1615 named `hidden_state` cached values sourced as kernel inputs (JAX computes
+    them internally; emit_msl3 treats them as inputs) — expected to confirm the
+    same order of magnitude (Metal transcendental/op-order differences aside).
+
 ## Outcome
 
-(Filled at resolution.)
+**PARTIAL (2026-06-03).** Q1 codegen feasibility: YES (psp103 eval generates +
+compiles to `.metallib`). Q2 f32 accuracy: **ANSWERED** with VACASK as ground
+truth — f32 eval gives accurate currents (residual ~1e-5) but a lossy Jacobian
+(~1% mean, ~14% max), and init is catastrophic in f32 (must be f64/compensated).
+Q3 (resident-loop speed) and the literal MSL-kernel f32 run remain open. The
+load-bearing decision input for ADR 0001 is now available: **f32 is viable for
+device-eval currents but not for the Jacobian or init without higher-precision
+handling.**
