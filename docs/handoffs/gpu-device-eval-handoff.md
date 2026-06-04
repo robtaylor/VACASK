@@ -1,8 +1,8 @@
-# Handoff — GPU device-eval spike: OpenVAF→Metal codegen validated; f32-accuracy + correctness blocked on operating points
+# Handoff — GPU device-eval spike: Q2 f32-accuracy ANSWERED (currents f32-safe, Jacobian + init lossy), via VACASK ground-truth dump
 
-**Created:** 2026-06-02
-**Working tree:** clean (untracked `.claude/`, `.tldr/`, `.tldrignore` are tooling, not work)
-**Branch:** gpu-acceleration (pushed to origin)
+**Created:** 2026-06-02 · **Last updated:** 2026-06-04
+**Working tree:** clean except untracked tooling (`.claude/`, `.tldr/`, `.tldrignore`). 6 new commits this session on `gpu-acceleration`, **not yet pushed**.
+**Branch:** gpu-acceleration
 
 <!--
 Ephemeral. At resolution, load-bearing pieces migrate to the spike, the plan,
@@ -40,49 +40,65 @@ from the `A` line), UPPERCASE param names, JAX init honors the card via
 **Verification command:**
 
 ```sh
-# Spike code lives in the vajax tree, NOT the VACASK repo:
+# 1. VACASK dump still produces the gilbert operating points (VACASK repo):
+#    binary: ../build.VACASK/Release/simulator/vacask  (rebuild target `sim` if stale)
+cd /tmp/claude/gilbert_dump
+VACASK_EVAL_DUMP=/tmp/claude/gilbert_dump/eval_dump.txt VACASK_EVAL_DUMP_STRIDE=10 \
+  ~/Code/build.VACASK/Release/simulator/vacask --skip-embed --skip-postprocess gilbert.sim
+# expect: 767-line eval_dump.txt, 126 PSP103 INST blocks over 21 timepoints
+
+# 2. The f32-accuracy measurement (spike code in the vajax tree):
 cd ~/Code/ChipFlow/vajax/spikes/msl-codegen
 PY=~/Code/ChipFlow/vajax/.venv/bin/python
-
-# v3 emitter generates psp103 MSL that the Metal compiler accepts (the M2 result):
-$PY emit_msl3.py                                   # expect live_instr ~11415, MSL ~18951 lines
-xcrun -sdk macosx metal -std=metal3.0 -c psp103_v3.metal -o /tmp/psp103_v3.air   # expect exit 0
-
-# M1 resistor kernel validated vs OpenVAF f64 (rebuild + rerun harness):
-clang++ -std=c++17 -O2 -fobjc-arc harness.mm -o harness -framework Metal -framework Foundation -framework QuartzCore
-$PY bench.py                                       # expect max rel err ~4.7e-8
-
-# Operating-point source runs (returns external-node trajectory):
-$PY op_points.py                                   # expect ring V_out (timepoints, 11), 59 filled rows
+JAXMODE=f64     $PY compare_jax_vacask.py /tmp/claude/gilbert_dump/eval_dump.txt 999  # gate: resid ~5e-6, jac ~9e-5
+JAXMODE=f32eval $PY compare_jax_vacask.py /tmp/claude/gilbert_dump/eval_dump.txt 999  # answer: resid 1.1e-5, jac max 0.14
+JAXMODE=f32     $PY compare_jax_vacask.py /tmp/claude/gilbert_dump/eval_dump.txt 999  # catastrophic ~5e5 (init in f32)
 ```
+If `/tmp/claude/gilbert_dump/` is gone (it's `/tmp`): copy `demo/gilbert/{gilbert.sim,models.inc}`
+there, strip the control block to just `elaborate circuit("sintest")` + `analysis tran1 tran
+step=1n stop=4u maxstep=20n`. OSDI resolves from the staged `lib/vacask/mod/`.
 
-## Done this session
+## Done this session (2026-06-04; earlier-session commits are in `git log` + spike Findings)
+
+Pivoted f32-accuracy validation from a vajax/JAX oracle to **VACASK as ground truth**,
+built the VACASK f64 eval-dump, validated the operating-point reconstruction, and
+**answered Q2**. Commits on `gpu-acceleration` (not pushed):
 
 | Commit | Subject | Notes |
 |---|---|---|
-| `6d6378c` | Per-step transient timing instrumentation (Phase 0) | WS0.1+0.2; `devacct=true` still compiled in — **revert before merge** |
-| `d5b9b30` | WS0.3 baseline across all benchmarks | c6288 eval = 90.6% of NR; eval dominance tracks device-model complexity |
-| `29cf6ed` | Add GPU codegen spike | resident-loop direction; revises ADR 0001 |
-| `9f82192` | LLVM→Metal trawl | MIR→MSL confirmed (SPIR-V bridge hard-fails at f64) |
-| `3fd78ed` | Q2 M1 resistor MIR→MSL | validated GPU f32 vs f64 = 4.7e-8 rel err |
-| `9ef064b` | Q2 M2 psp103 generates+compiles | 940 blocks/20k instrs → `.metallib`, 0 errors |
-| `578e1bb` | Correct f32/f64 claim | **vajax Metal NR loop is pure f32**; f64 emulation not a prerequisite |
-| `b10e7b3` | Invalid psp103 f32-accuracy attempt | standalone bias non-physical; need solved operating points |
-| `40ab79c` | v3 emitter (vajax SSA opts + backward DCE) | psp103 −44% live instrs, −29% MSL, compiles; DCE sound by compile-consistency |
-| `4c6be85` | Operating-point source (vajax CircuitEngine) | `FullMNAStrategy.run` |
-| `6dfc0f8` | ADR 0001 amendment | flags 4 choices under spike revision |
-| `7ce5940` | Correct V_out claim + harness status | V_out is external-node trajectory (not full internal X) |
+| `8e19043` | docs: pivot f32-accuracy to VACASK ground truth | spike Q2 Step 4 + Finding; abandons vajax `build_system_acc.py` |
+| `ee8e26e` | feat(spike): VACASK f64 device-eval dump | `EvalDumpSink`, `OsdiInstance::dumpEvalIO`, TranCore post-acceptance pass; flag-gated, hot path = 1 branch; `/simplify`-clean |
+| `35152fd` | feat(spike): dump absolute node voltages (`A` line) | PSP103 bias needs absolute internal-node potentials, not just branch diffs |
+| `be1f31d` | docs: refine resume routes | literal OSDI cache-dump impractical (2054 values); init→eval kernel recommended |
+| `cfc2296` | docs: VACASK dump validated + run_init_eval blocker | recorded before the JAX-init workaround was found |
+| `575cfee` | docs: **Q2 f32-accuracy ANSWERED** | currents f32-safe, Jacobian+init lossy; spike Outcome → PARTIAL |
+
+**Headline result** (eval-only f32 = f64 init/cache + f32 eval, the MSL-kernel regime;
+126 gilbert operating points vs VACASK-f64): residual rel err max **1.1e-5** (f32-safe);
+Jacobian rel err mean **1.1e-2** / max **0.14** (f32-lossy); **full f32 incl. init =
+catastrophic ~5e5** (out-of-f32-range init intermediates). Validation gate passed:
+JAX-f64 ≈ VACASK-f64 to ~5e-6 residual / ~9e-5 Jacobian.
 
 ## Open follow-ups (priority-ordered)
 
-### 1. f32-accuracy via VACASK ground truth (M, dump DONE; blocked on init-cache)
+### 1. Q2 f32-accuracy — DONE (answered via faithful JAX-eval proxy)
 
-VACASK dump DONE + validated (commits `ee8e26e`, `35152fd`). Remaining: make the
-openvaf-f64 reconstruction (`compare_vacask.py`) match VACASK-f64 at a gilbert
-point — blocked because `run_init_eval` ignores init params (cached values use
-default card, not gilbert's). See spike Finding 2026-06-03 for the precise
-diagnosis + resume options. Then run `psp103_v3.metal` f32 and report rel err.
-The open Q2 question in the spike.
+Resolved this session. f32 device eval: currents f32-safe (~1e-5), Jacobian lossy
+(~1% mean / 14% max), init catastrophic in f32. See spike Outcome (PARTIAL) +
+Finding 2026-06-03. **Remaining confirmation (S, low urgency):** run the literal
+`psp103_v3.metal` Metal kernel — it needs the 1615 named `hidden_state` cached
+values as inputs (JAX computes them internally; emit_msl3 treats them as inputs).
+Source from the JAX init cache (`cm._default_init_fn`) mapped to the kernel
+`input_order` via `get_cache_mapping()` (439 unnamed) + the named-hidden_state
+wiring, or emit an init→eval kernel. Expect the same order of magnitude.
+
+### 1b. Push the 6 commits + fold Q2 into ADR 0001 (S)
+
+This session's commits are **not pushed**. Before/after push: fold the Q2 result
+into ADR 0001 §numerics (currents f32-OK; Jacobian + init need f64/compensated),
+per follow-up #5. `devacct=true` still compiled in (`include/acct.h`) — revert
+before any merge to main. The eval-dump scaffolding is removable spike code (gated
+by `VACASK_EVAL_DUMP`; cf. `devacct`).
 
 ### 2. Per-instance / converged-X validation (M)
 
@@ -111,17 +127,32 @@ Per the spike's decision matrix — see ADR 0001 §"Amendment 2026-06-01".
 
 ## Critical context
 
+- **VACASK eval-dump (this repo, committed):** `OsdiInstance::dumpEvalIO`
+  (`lib/osdiinstance.cpp`) + TranCore post-acceptance pass (`lib/coretran.cpp`) +
+  `EvalDumpSink` (`include/evaldump.h`). Env-gated: `VACASK_EVAL_DUMP=<path>`,
+  `VACASK_EVAL_DUMP_STRIDE=N`. Emits per-PSP103-instance branch voltages,
+  absolute node voltages (`A` line), f64 resistive residual + Jacobian at accepted
+  tran timepoints. Removable spike scaffolding (cf. `devacct`).
 - **Spike code is in the vajax tree**, not this repo: `~/Code/ChipFlow/vajax/spikes/msl-codegen/`
-  (`emit_msl.py`=M1 resistor, `emit_msl2.py`=v2 naive flatten, `emit_msl3.py`=v3
-  with vajax SSA opts, `harness.mm`=Metal runner, `op_points.py`, `build_system_acc.py`,
-  `psp103_acc.py`, `xcheck_v2_v3.py`). It uses `~/Code/ChipFlow/vajax/.venv` (has
-  `openvaf_py`, `osdi_py` built).
+  (`emit_msl3.py`=v3 emitter, `harness.mm`=Metal runner, **`compare_jax_vacask.py`**=the
+  f32 measurement [JAXMODE=f64|f32|f32eval], `compare_vacask.py`=run_init_eval cross-check
+  [superseded], plus `emit_msl{,2}.py`, `op_points.py`, `xcheck_v2_v3.py`). Uses
+  `~/Code/ChipFlow/vajax/.venv` (`openvaf_py`, `osdi_py` built). Whole dir is untracked
+  scratch by convention — persists on disk, not committed to vajax.
 - **Sub-agents cannot run Bash here** (sandbox) — all execute-and-verify work must
   run inline in the main session. Read-only investigation still delegates fine.
-- **Metal NR loop is pure f32** (verified: `vajax/__init__.py:_backend_supports_x64`
-  → `jax_enable_x64=False`). f64 iterative refinement is CUDA-only / host-side Sprux,
-  not the Metal loop. So **f64 emulation (Ozaki etc.) is NOT a prerequisite** — but
-  f32 *accuracy* (≠ convergence) is still unmeasured at real operating points.
+- **f32 accuracy is now MEASURED** (was the open question): currents f32-safe
+  (~1e-5), Jacobian lossy (~1% mean / 14% max), init catastrophic (~5e5). The
+  earlier "Metal NR is pure f32 and converges" note stands but **convergence ≠
+  accuracy** — the Jacobian and init are where f32 hurts; a resident f32 loop needs
+  f64/compensated init and likely Jacobian assembly.
+- **JAX-init reconstruction recipe** (the cache-computer; openvaf_py only, not
+  shipped): `openvaf_py.compile_va(...)` → pick max-`num_jacobian` module →
+  `OpenVAFToJAX(module)` → conftest `CompiledModel`. `run_init_eval(params)` IGNORES
+  init params (no `propagate_constants` flag); `translate_eval(propagate_constants=False)`
+  reads them at runtime. Param names are **UPPERCASE**; voltages map positionally
+  (13 OSDI inputs → eval `V(GP,SI)`..`V(NOI)`; 6 absolutes from `A`). JAX x64 is
+  sticky — force `jax.config.update("jax_enable_x64", ...)` AFTER all imports.
 - **psp103 eval is a loop-free DAG** (940 blocks, 0 back-edges) → flattens to
   straight-line MSL. v3 reuses `vajax/openvaf_jax/mir/{cfg,ssa,constprop}.py`
   (JAX-free, separable). SCCP kills 0 blocks (eval branches on cached *init* values,
