@@ -31,7 +31,29 @@ contradicted. At spike resolution these fold back into the sections below.
    with pluggable backends (MSL now; NVPTX/CUDA near-free via LLVM retarget) is
    simpler. **Metal runs pure f32** (verified in vajax) — f64 emulation is not a
    prerequisite. Codegen feasibility confirmed: psp103 eval generates + compiles
-   to a `.metallib`.
+   to a `.metallib`. **f32 *accuracy* now measured — see the Q2 addendum below.**
+
+### Q2 f32-numerics measurement (2026-06-03) — the accuracy input to choices #2/#4
+
+The spike measured f32 device-eval accuracy for PSP103 against VACASK's own f64
+OSDI eval (gilbert, 126 operating points; validation gate passed — JAX-f64 ≈
+VACASK-f64 to ~5e-6 residual / ~9e-5 Jacobian rel err). Result:
+
+- **Currents (residual) are f32-safe** — rel err max 1.1e-5, mean 2.9e-6, at the
+  f64 cross-impl floor.
+- **The Jacobian is f32-lossy** — rel err mean ~1% (1.1e-2), worst ~14% (0.14),
+  p99 ≈ max → systemic f32 cancellation in gm/gds conductances, not an outlier.
+- **init must NOT run in f32** — full-f32 (init included) is catastrophic
+  (residual rel err ~5e5); PSP103 init has out-of-f32-range intermediates (the
+  15 `1e±100` guard constants).
+
+**Refines amendment item #4's "Metal runs pure f32": convergence ≠ accuracy.**
+Pure f32 *converges* (vajax), but for accurate device physics a resident-NR f32
+loop needs **f64/compensated init** and **likely f64/compensated Jacobian
+assembly**; f32 is fine for the current/residual path. Full fold into the
+Decision / Consequences sections waits for spike resolution (Q3 resident-loop
+speed and the literal MSL-kernel confirmation are still open). Source: spike
+Finding + Outcome (PARTIAL), 2026-06-03.
 
 ## Date
 
