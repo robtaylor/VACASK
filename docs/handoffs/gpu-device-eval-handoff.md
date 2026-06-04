@@ -1,7 +1,7 @@
-# Handoff — GPU device-eval spike: Q2 f32-accuracy ANSWERED (currents f32-safe, Jacobian + init lossy), via VACASK ground-truth dump
+# Handoff — GPU device-eval spike: Q2 literal-kernel-confirmed (currents AND resistive Jacobian f32-safe; init still f64), via VACASK ground-truth dump
 
-**Created:** 2026-06-02 · **Last updated:** 2026-06-04
-**Working tree:** clean except untracked tooling (`.claude/`, `.tldr/`, `.tldrignore`). All session commits **pushed** to `gpu-acceleration` (through `2968436`), including the Q2-fold into ADR 0001.
+**Created:** 2026-06-02 · **Last updated:** 2026-06-04 (literal-kernel session)
+**Working tree:** doc updates to spike/ADR/handoff staged-or-uncommitted; untracked tooling (`.claude/`, `.tldr/`, `.tldrignore`). Prior session commits pushed to `gpu-acceleration` (through `661f431`). Spike code lives in the vajax tree (untracked scratch by convention).
 **Branch:** gpu-acceleration
 
 <!--
@@ -16,23 +16,27 @@ Phase 0 baseline (WS0), then run the OpenVAF-GPU-codegen spike: prove we can
 generate Metal device-eval kernels from OpenVAF for c6288's PSP103, and start
 validating f32 accuracy and the GPU-resident-NR-loop direction.
 
-**Q2 f32 accuracy is ANSWERED (see spike Outcome + Finding 2026-06-03).** With
-VACASK as validated ground truth: eval-only f32 gives accurate currents (residual
-~1e-5) but a lossy Jacobian (~1% mean, ~14% max); full f32 incl. init is
-catastrophic (~5e5). The validation gate passed (JAX-f64 ≈ VACASK-f64 to ~5e-6).
+**Q2 f32 accuracy is ANSWERED + literal-kernel-confirmed (spike Findings 2026-06-03 /
+2026-06-04 + Outcome).** With VACASK as validated ground truth: the *literal*
+`psp103_v3.metal` kernel on the M4 Pro gives accurate currents (residual ~1.3e-5)
+**and an accurate resistive Jacobian (~7.8e-5 max)** vs VACASK-f64 over 126 gilbert
+op-points. The earlier proxy "Jacobian f32-lossy ~14%" was a **JAX-CPU-f32 artifact**
+(corrected by the kernel run). Full f32 incl. init is still catastrophic (~5e5) →
+init must be f64/compensated. Validation gate passed (JAX-f64 ≈ VACASK-f64 ~5e-6).
 
-**Next session could pick up (lower urgency now):**
-1. **Literal MSL-kernel f32 run** to confirm the proxy: `psp103_v3.metal` needs the
-   1615 named `hidden_state` cached values as inputs (JAX computes them internally
-   via init; emit_msl3 treats them as inputs). Source them from the JAX init cache
-   (`cm._default_init_fn`) mapped to the kernel `input_order`, or emit an init→eval
-   kernel (production-aligned). Expected to match the proxy's order of magnitude.
-2. **Q3 resident-loop slice** (the remaining open spike question): eval+assembly+
-   Sprux on Metal, ms/step vs c6288 CPU baseline (40.95 s NR).
-3. ~~Fold Q2 result into ADR 0001~~ **DONE** (commit `2968436`): Q2-numerics
-   addendum added to ADR 0001's amendment (currents f32-OK; Jacobian + init need
-   f64/compensated). Full fold into Decision/Consequences still waits for spike
-   resolution.
+**Next session should pick up (Q2 tail now closed):**
+1. ~~Literal MSL-kernel f32 run~~ **DONE** (2026-06-04). Bridge wires the 439 unnamed
+   cache slots from the JAX f64 init cache via `get_cache_mapping()`
+   (`(init_value_id, eval_param_position)`; `cache[i]` → `mir_func.params[eval_param]`),
+   named hidden_state zeroed. Spike code: `spikes/msl-codegen/{build_kernel_inputs,
+   compare_kernel_out,diag_kernel}.py`. Result revised Q2 (resistive Jacobian f32-safe).
+2. **Q3 resident-loop slice** (the main remaining open spike question): eval+assembly+
+   Sprux on Metal, ms/step vs c6288 CPU baseline (40.95 s NR). Depends on follow-ups
+   2–3 below (per-instance/converged-X validation; reactive ddt).
+3. **Reactive (ddt) Jacobian** — v3 emits resistive only; the f32-safe Jacobian result
+   covers the resistive part. Add the ddt path before claiming transient-correct f32.
+4. ~~Fold Q2 into ADR 0001~~ **DONE** + revised this session: ADR Q2 addendum now
+   records the literal-kernel result (resistive Jacobian f32-safe; only init needs f64).
 Harnesses: `spikes/msl-codegen/compare_jax_vacask.py` (the f32 measurement, JAXMODE
 = f64|f32|f32eval), `compare_vacask.py` (run_init_eval cross-check, superseded).
 Verified-good: voltage mapping (13 OSDI inputs → `V(GP,SI)`..`V(NOI)`, absolutes
@@ -60,11 +64,24 @@ If `/tmp/claude/gilbert_dump/` is gone (it's `/tmp`): copy `demo/gilbert/{gilber
 there, strip the control block to just `elaborate circuit("sintest")` + `analysis tran1 tran
 step=1n stop=4u maxstep=20n`. OSDI resolves from the staged `lib/vacask/mod/`.
 
-## Done this session (2026-06-04; earlier-session commits are in `git log` + spike Findings)
+## Done this session (literal-kernel, 2026-06-04)
+
+Ran the **literal `psp103_v3.metal` kernel** on the M4 Pro vs the VACASK-f64 dump
+(126 gilbert op-points) — the Q2 confirmation the prior session left open. Built
+`build_kernel_inputs.py` (assembles the 2090-element `input_order` vector: voltages
+from the dump, 439 unnamed cache slots from the JAX f64 init cache via
+`get_cache_mapping()`, named hidden_state zeroed), `compare_kernel_out.py`,
+`diag_kernel.py`; rebuilt `harness`. **Result revised Q2:** kernel-f32 vs VACASK-f64
+= residual 1.3e-5, resistive Jacobian **7.8e-5** — the proxy's "14% lossy Jacobian"
+was a JAX-CPU-f32 artifact (on the worst proxy entries, kernel ≈ f64 to ~1e-6).
+Folded into the spike (Finding + Outcome 2026-06-04) and ADR 0001 (Q2 addendum
+revised). Spike code is untracked vajax scratch; this repo's change is docs-only.
+
+### Prior session (VACASK ground-truth dump, 2026-06-04 earlier — commits in `git log`)
 
 Pivoted f32-accuracy validation from a vajax/JAX oracle to **VACASK as ground truth**,
 built the VACASK f64 eval-dump, validated the operating-point reconstruction, and
-**answered Q2**. Commits on `gpu-acceleration` (not pushed):
+**answered Q2** (proxy-level). Commits on `gpu-acceleration` (pushed):
 
 | Commit | Subject | Notes |
 |---|---|---|
@@ -83,16 +100,14 @@ JAX-f64 ≈ VACASK-f64 to ~5e-6 residual / ~9e-5 Jacobian.
 
 ## Open follow-ups (priority-ordered)
 
-### 1. Q2 f32-accuracy — DONE (answered via faithful JAX-eval proxy)
+### 1. Q2 f32-accuracy — DONE + literal-kernel-confirmed
 
-Resolved this session. f32 device eval: currents f32-safe (~1e-5), Jacobian lossy
-(~1% mean / 14% max), init catastrophic in f32. See spike Outcome (PARTIAL) +
-Finding 2026-06-03. **Remaining confirmation (S, low urgency):** run the literal
-`psp103_v3.metal` Metal kernel — it needs the 1615 named `hidden_state` cached
-values as inputs (JAX computes them internally; emit_msl3 treats them as inputs).
-Source from the JAX init cache (`cm._default_init_fn`) mapped to the kernel
-`input_order` via `get_cache_mapping()` (439 unnamed) + the named-hidden_state
-wiring, or emit an init→eval kernel. Expect the same order of magnitude.
+Resolved across two sessions. Literal `psp103_v3.metal` kernel vs VACASK-f64 (126
+gilbert op-points): currents f32-safe (residual ~1.3e-5) AND **resistive Jacobian
+f32-safe (~7.8e-5 max)**; init still catastrophic in f32 (~5e5, must be
+f64/compensated). The proxy's "Jacobian lossy ~14%" was a JAX-CPU-f32 artifact,
+corrected here. See spike Findings 2026-06-03/2026-06-04 + Outcome (PARTIAL), and
+the revised ADR 0001 Q2 addendum. Remaining: reactive (ddt) Jacobian + c6288 (see #3/#4).
 
 ### 1b. Push + fold Q2 into ADR 0001 — DONE
 
@@ -143,11 +158,15 @@ Per the spike's decision matrix — see ADR 0001 §"Amendment 2026-06-01".
   scratch by convention — persists on disk, not committed to vajax.
 - **Sub-agents cannot run Bash here** (sandbox) — all execute-and-verify work must
   run inline in the main session. Read-only investigation still delegates fine.
-- **f32 accuracy is now MEASURED** (was the open question): currents f32-safe
-  (~1e-5), Jacobian lossy (~1% mean / 14% max), init catastrophic (~5e5). The
-  earlier "Metal NR is pure f32 and converges" note stands but **convergence ≠
-  accuracy** — the Jacobian and init are where f32 hurts; a resident f32 loop needs
-  f64/compensated init and likely Jacobian assembly.
+- **f32 accuracy is now MEASURED on the literal kernel** (was the open question):
+  currents f32-safe (~1.3e-5) AND resistive Jacobian f32-safe (~7.8e-5) vs VACASK-f64;
+  init catastrophic (~5e5). The proxy's "Jacobian lossy ~14%" was a JAX-CPU-f32
+  artifact (full eval in f32, overflow-in-cast, no DCE), **not** a property of the
+  generated MSL — corrected by the 2026-06-04 literal-kernel run. So a resident f32
+  loop needs f64/compensated **init** but **not** f64 resistive-Jacobian assembly.
+  Open: reactive (ddt) Jacobian (still stubbed) + c6288 (only gilbert measured).
+  "Metal NR is pure f32 and converges" stands; convergence ≠ accuracy, but here
+  the measured accuracy is good.
 - **JAX-init reconstruction recipe** (the cache-computer; openvaf_py only, not
   shipped): `openvaf_py.compile_va(...)` → pick max-`num_jacobian` module →
   `OpenVAFToJAX(module)` → conftest `CompiledModel`. `run_init_eval(params)` IGNORES

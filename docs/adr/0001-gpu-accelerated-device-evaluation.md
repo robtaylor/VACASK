@@ -33,27 +33,35 @@ contradicted. At spike resolution these fold back into the sections below.
    prerequisite. Codegen feasibility confirmed: psp103 eval generates + compiles
    to a `.metallib`. **f32 *accuracy* now measured — see the Q2 addendum below.**
 
-### Q2 f32-numerics measurement (2026-06-03) — the accuracy input to choices #2/#4
+### Q2 f32-numerics measurement (2026-06-03, literal-kernel-confirmed 2026-06-04) — the accuracy input to choices #2/#4
 
 The spike measured f32 device-eval accuracy for PSP103 against VACASK's own f64
 OSDI eval (gilbert, 126 operating points; validation gate passed — JAX-f64 ≈
-VACASK-f64 to ~5e-6 residual / ~9e-5 Jacobian rel err). Result:
+VACASK-f64 to ~5e-6 residual / ~9e-5 Jacobian rel err). The literal
+`psp103_v3.metal` kernel was then run on the M4 Pro and compared to the same f64
+dump (2026-06-04). Result:
 
-- **Currents (residual) are f32-safe** — rel err max 1.1e-5, mean 2.9e-6, at the
-  f64 cross-impl floor.
-- **The Jacobian is f32-lossy** — rel err mean ~1% (1.1e-2), worst ~14% (0.14),
-  p99 ≈ max → systemic f32 cancellation in gm/gds conductances, not an outlier.
+- **Currents (residual) are f32-safe** — rel err max ~1e-5 (kernel 1.3e-5, proxy
+  1.1e-5), at the f64 cross-impl floor.
+- **The resistive Jacobian is f32-safe** — the *literal kernel* gives rel err max
+  **7.8e-5** (mean 4.0e-6) vs VACASK-f64. The JAX proxy's earlier "f32-lossy ~1%
+  mean / 14% max" was a **JAX-CPU-f32 artifact** (full eval graph in f32:
+  overflow-in-cast on intermediates, no DCE → systematic gm/gds conductance bias).
+  On the exact entries the proxy flagged at ~14%, kernel-f32 ≈ VACASK-f64 to ~1e-6.
 - **init must NOT run in f32** — full-f32 (init included) is catastrophic
   (residual rel err ~5e5); PSP103 init has out-of-f32-range intermediates (the
-  15 `1e±100` guard constants).
+  15 `1e±100` guard constants). The kernel feeds an f64-computed cache.
 
-**Refines amendment item #4's "Metal runs pure f32": convergence ≠ accuracy.**
-Pure f32 *converges* (vajax), but for accurate device physics a resident-NR f32
-loop needs **f64/compensated init** and **likely f64/compensated Jacobian
-assembly**; f32 is fine for the current/residual path. Full fold into the
+**Refines amendment item #4's "Metal runs pure f32".** A generated f32 device-eval
+kernel is accurate for both currents AND the resistive Jacobian (~1e-5 / ~8e-5 vs
+f64) — so a resident-NR f32 loop does **not** need f64/compensated Jacobian
+assembly for the resistive part; only **init** needs f64/compensated. (Convergence
+≠ accuracy still holds as a general caution; here the measured accuracy is good.)
+Scope of the measurement: gilbert, resistive Jacobian only — the reactive (ddt)
+Jacobian (still stubbed) and c6288 are not yet covered. Full fold into the
 Decision / Consequences sections waits for spike resolution (Q3 resident-loop
-speed and the literal MSL-kernel confirmation are still open). Source: spike
-Finding + Outcome (PARTIAL), 2026-06-03.
+speed + reactive + c6288 still open). Source: spike Findings 2026-06-03 / 2026-06-04
++ Outcome (PARTIAL).
 
 ## Date
 

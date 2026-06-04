@@ -444,13 +444,47 @@ eval-kernel accuracy question Q2 measures.
     them internally; emit_msl3 treats them as inputs) — expected to confirm the
     same order of magnitude (Metal transcendental/op-order differences aside).
 
+- 2026-06-04: **Literal MSL-kernel f32 run — REVISES Q2: the resistive Jacobian
+  is f32-SAFE; the proxy's "14% lossy" was a JAX-CPU-f32 artifact.** Ran the actual
+  `psp103_v3.metal` on the M4 Pro (not the JAX proxy) across all 126 gilbert
+  operating points and compared f32 output to the VACASK-f64 dump. Built the
+  2090-element kernel input vector in `input_order`: voltages from the dump, the
+  439 unnamed cache slots wired from the JAX f64 init cache via
+  `get_cache_mapping()` (each entry = `(init_value_id, eval_param_position)`;
+  `cache[i]` fills `mir_func.params[eval_param]`), named hidden_state zeroed (the
+  cache carries the real init outputs — the gate passed with them 0). Spike code:
+  `spikes/msl-codegen/{build_kernel_inputs.py, compare_kernel_out.py, diag_kernel.py}`
+  + rebuilt `harness`.
+  - **kernel-f32 vs VACASK-f64:** residual rel err max **1.3e-5** (mean 2.6e-6);
+    resistive Jacobian rel err max **7.8e-5** (mean 4.0e-6, p99 6.8e-5). 0
+    non-finite kernel outputs; inputs clean (0 f32-overflow, max|x|=1.5e26).
+  - **The kernel is MORE accurate than the JAX f32eval proxy, not less.** On the
+    exact entries where the proxy showed ~14% Jacobian error (cols 25/33, the
+    gm/gds conductances), VACASK-f64 ≈ kernel-f32 ≈ -4.40e-5 to ~1e-6 rel err,
+    while JAX-f32eval gave -5.01e-5 (systematically ~14% high across instances).
+    The proxy ran the *full* eval graph in JAX-CPU f32 (overflow-in-cast on
+    intermediates, no DCE) → systematic conductance bias. The generated MSL —
+    `fconst`-clamped guard constants + backward-liveness DCE stripping dead/reactive
+    paths + f64-sourced cache fed cleanly — computes them at the f64 floor. My
+    `jax_f32eval.csv` reproduces the committed proxy's 0.14 max exactly, so this
+    is the same proxy being corrected, not a new harness.
+  - **Revised design implication:** an f32 device-eval kernel yields accurate
+    currents AND an accurate resistive Jacobian (~1e-5 / ~8e-5 vs f64). The earlier
+    "resident-NR f32 loop likely needs f64/compensated *Jacobian* assembly" caveat
+    is **contradicted** for the resistive part on gilbert; only **init** still
+    needs f64/compensated (the 2026-06-03 full-f32-init-catastrophic finding stands
+    — the kernel feeds an f64-computed cache). Remaining scope before generalizing:
+    reactive (ddt) Jacobian (still stubbed), and c6288 vs gilbert.
+
 ## Outcome
 
-**PARTIAL (2026-06-03).** Q1 codegen feasibility: YES (psp103 eval generates +
-compiles to `.metallib`). Q2 f32 accuracy: **ANSWERED** with VACASK as ground
-truth — f32 eval gives accurate currents (residual ~1e-5) but a lossy Jacobian
-(~1% mean, ~14% max), and init is catastrophic in f32 (must be f64/compensated).
-Q3 (resident-loop speed) and the literal MSL-kernel f32 run remain open. The
-load-bearing decision input for ADR 0001 is now available: **f32 is viable for
-device-eval currents but not for the Jacobian or init without higher-precision
-handling.**
+**PARTIAL (2026-06-04).** Q1 codegen feasibility: YES (psp103 eval generates +
+compiles to `.metallib`). Q2 f32 accuracy: **ANSWERED + literal-kernel-confirmed**
+with VACASK as ground truth — the generated MSL kernel gives accurate currents
+(residual ~1e-5) **and an accurate resistive Jacobian (~8e-5)**; init is
+catastrophic in f32 (must be f64/compensated). The JAX proxy's earlier "Jacobian
+f32-lossy ~14%" was a JAX-CPU-f32 artifact, corrected by the literal-kernel run
+(2026-06-04 Finding). Q3 (resident-loop speed), the reactive (ddt) Jacobian, and
+c6288 remain open. The load-bearing decision input for ADR 0001: **f32 is viable
+for device-eval currents AND the resistive Jacobian; only init needs
+higher-precision handling.**
