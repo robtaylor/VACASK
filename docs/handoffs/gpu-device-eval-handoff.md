@@ -1,7 +1,7 @@
 # Handoff — GPU device-eval spike: Q2 f32-accuracy ANSWERED (currents f32-safe, Jacobian + init lossy), via VACASK ground-truth dump
 
 **Created:** 2026-06-02 · **Last updated:** 2026-06-04
-**Working tree:** clean except untracked tooling (`.claude/`, `.tldr/`, `.tldrignore`). 6 new commits this session on `gpu-acceleration`, **not yet pushed**.
+**Working tree:** clean except untracked tooling (`.claude/`, `.tldr/`, `.tldrignore`). All session commits **pushed** to `gpu-acceleration` (through `2968436`), including the Q2-fold into ADR 0001.
 **Branch:** gpu-acceleration
 
 <!--
@@ -29,8 +29,10 @@ catastrophic (~5e5). The validation gate passed (JAX-f64 ≈ VACASK-f64 to ~5e-6
    kernel (production-aligned). Expected to match the proxy's order of magnitude.
 2. **Q3 resident-loop slice** (the remaining open spike question): eval+assembly+
    Sprux on Metal, ms/step vs c6288 CPU baseline (40.95 s NR).
-3. **Fold Q2 result into ADR 0001** (f32 numerics): currents f32-OK, Jacobian +
-   init need f64/compensated.
+3. ~~Fold Q2 result into ADR 0001~~ **DONE** (commit `2968436`): Q2-numerics
+   addendum added to ADR 0001's amendment (currents f32-OK; Jacobian + init need
+   f64/compensated). Full fold into Decision/Consequences still waits for spike
+   resolution.
 Harnesses: `spikes/msl-codegen/compare_jax_vacask.py` (the f32 measurement, JAXMODE
 = f64|f32|f32eval), `compare_vacask.py` (run_init_eval cross-check, superseded).
 Verified-good: voltage mapping (13 OSDI inputs → `V(GP,SI)`..`V(NOI)`, absolutes
@@ -92,13 +94,13 @@ Source from the JAX init cache (`cm._default_init_fn`) mapped to the kernel
 `input_order` via `get_cache_mapping()` (439 unnamed) + the named-hidden_state
 wiring, or emit an init→eval kernel. Expect the same order of magnitude.
 
-### 1b. Push the 6 commits + fold Q2 into ADR 0001 (S)
+### 1b. Push + fold Q2 into ADR 0001 — DONE
 
-This session's commits are **not pushed**. Before/after push: fold the Q2 result
-into ADR 0001 §numerics (currents f32-OK; Jacobian + init need f64/compensated),
-per follow-up #5. `devacct=true` still compiled in (`include/acct.h`) — revert
-before any merge to main. The eval-dump scaffolding is removable spike code (gated
-by `VACASK_EVAL_DUMP`; cf. `devacct`).
+Commits pushed through `2968436`; Q2 result folded into ADR 0001's amendment as a
+Q2-numerics addendum (commit `2968436`). **Still pending before any merge to main**
+(not pre-push): `devacct=true` compiled in (`include/acct.h`) — revert to `false`
+or runtime-gate; and the eval-dump scaffolding is removable spike code (gated by
+`VACASK_EVAL_DUMP`; cf. `devacct`). These stay in place while the spike is Open.
 
 ### 2. Per-instance / converged-X validation (M)
 
