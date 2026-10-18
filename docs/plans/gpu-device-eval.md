@@ -42,6 +42,32 @@ Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by 
 4. **Realistic dispatch statistics.** Report mean / p95 per-dispatch (one commit+wait per NR iteration), not best-of-N. Modify `harness.mm` to emit the distribution.
 5. **Whole-run wall clock.** With 1–4 in place, run the full transient and compare wall against the CPU baseline at the same run length — the only number a user actually experiences. Separate one-time (elaborate) from per-step (NR) in the report.
 
+#### Execution order and the decision each rung gates
+
+The rungs are not equal in cost or in what they settle. Climb them in this order:
+
+| Order | Rung | Cost | Needs | Decision it gates |
+|---|---|---|---|---|
+| 1st (cheap, now) | 1 run length + 4 dispatch stats | existing binary; ~5-line `harness.mm` change | nothing new | Is eval offload worth it for the target workloads at all? |
+| 2nd | 2 reactive (ddt) emit | codegen work (emit_msl) | — | Makes any eval number honest |
+| 3rd (long pole) | 3 gather + scatter-into-KLU | WS1 | rung 2 | **Go/no-go for a GPU backend (WS3)**: does the eval win survive assembly? |
+| 4th | 5 whole-run wall | WS3 backend | rungs 1–4 | The headline number to report |
+
+The two decisions that can **stop the project** are rung 1 (run length) and rung 3 (scatter). If scatter into KLU eats the win, redesign the assembly path or reconsider an on-device solver before WS3 — see Decision 0001's item #3 caveat.
+
+#### Rung 1 is mostly arithmetic, and cheap to confirm
+
+Elaboration is fixed at 103 s; NR scales roughly linearly with step count. From the 2 ns baseline (NR 39.9 s), the NR fraction of wall at longer runs estimates as:
+
+| `stop` | ~steps | est. NR | NR % of wall |
+|---|---|---|---|
+| 2 ns | 1k | 40 s | 28% |
+| 10 ns | 5k | 200 s | 66% |
+| 20 ns | 10k | 400 s | 80% |
+| 46 ns | 23k | 920 s | 90% |
+
+So eval offload only becomes wall-relevant somewhere past ~10 ns of c6288 transient. Confirm the linearity with **one** longer run (rejected steps can make it super-linear), then fix the representative `stop=` for rungs 3 and 5. This needs only the existing binary.
+
 **Baselines to beat, from the fresh 2026-07-15 c6288 run** (`tran stop=2n step=2p`): wall 144.3 s; elaborate 103.1 s; NR 39.9 s; PSP103 eval+load 36.1 s = **10.3 ms/NR-iter** (resistive+reactive, scatter included); refactor+solve 3.5 s. Verify via `vacask --skip-embed --skip-postprocess --no-output runme.sim` in `benchmark/c6288/vacask` + `print stats`.
 
 **Separately: elaboration (103 s, ~per-instance PSP103 init) is now the largest cost on short/medium runs and is unaddressed.** Not part of this plan's GPU-eval scope; flagged for a future decision record. Confirming it is init-dominated (vs KLU symbolic) needs a sub-timer in elaborate.
