@@ -11,7 +11,7 @@ but that is an *optimistic upper bound*, not a real-world speedup — it omits
 reactive/gather/scatter that the CPU number includes, and the one wall-clock
 datapoint is 71% one-time elaboration (2026-07-15 measurement audit). Grounding the
 real speedup is **implementation + measurement**, migrated to
-[the plan](../plans/gpu-device-eval.md) (WS1/WS3 + the real-world measurement ladder).
+[the plan](../../../plans/gpu-device-eval.md) (WS1/WS3 + the real-world measurement ladder).
 
 <!--
 Resolution states:
@@ -28,10 +28,10 @@ CPU NR — on this hardware (Apple M4 Pro, Metal 4, **no CUDA**)?
 
 ## Why this is in question
 
-This resolves **Open Question #1** in [the plan](../plans/gpu-device-eval.md) and
-**revises a load-bearing decision in [ADR 0001](../adr/0001-gpu-accelerated-device-evaluation.md)**:
+This resolves **Open Question #1** in [the plan](../../../plans/gpu-device-eval.md) and
+**revises a load-bearing decision in [Decision 0001](../0001-gpu-accelerated-device-evaluation.md)**:
 
-- ADR 0001 key design choice #1 is *"surgical replacement: only replace
+- Decision 0001 key design choice #1 is *"surgical replacement: only replace
   `evalAndLoad()`, keep the NR loop, timestep control, and convergence in C++."*
 - The vajax experience concluded the opposite is optimal: **full GPU-resident
   kernels for the whole NR loop**, because the per-iteration host↔device sync —
@@ -205,9 +205,9 @@ eval-kernel accuracy question Q2 measures.
 
 | Outcome | Means | Action |
 |---|---|---|
-| Q1: GPU loses to CPU even at c6288 on Metal | f32/host-sync overhead defeats Metal here | Revisit: CUDA-only target, or shelve GPU on Apple; record in ADR 0001 |
-| Q1 ok, Q2 fails (psp103 won't codegen/f64 unusable) | MSL path infeasible for big models | Pivot to SPIR-V/Vulkan or NVPTX-on-Linux; amend ADR scope |
-| Q1 ok, Q2 ok, Q3 wins | Resident Metal NR viable | **Amend ADR 0001**: resident NR loop replaces "surgical eval-only"; promote WS4 (GPU sparse solver) from deferred to prerequisite |
+| Q1: GPU loses to CPU even at c6288 on Metal | f32/host-sync overhead defeats Metal here | Revisit: CUDA-only target, or shelve GPU on Apple; record in Decision 0001 |
+| Q1 ok, Q2 fails (psp103 won't codegen/f64 unusable) | MSL path infeasible for big models | Pivot to SPIR-V/Vulkan or NVPTX-on-Linux; amend the decision scope |
+| Q1 ok, Q2 ok, Q3 wins | Resident Metal NR viable | **Amend Decision 0001**: resident NR loop replaces "surgical eval-only"; promote WS4 (GPU sparse solver) from deferred to prerequisite |
 | Q3 marginal | Resident helps but not enough | Hybrid: resident eval+assembly, CPU solve with batched sync; keep CPU heuristics |
 
 ## Findings
@@ -440,7 +440,7 @@ eval-kernel accuracy question Q2 measures.
   - **Full f32 (init in f32 too): CATASTROPHIC**, residual rel err ~**5e5** — PSP103
     init has out-of-f32-range intermediates (the 15 `1e±100` guard constants from
     M2). Init must be f64 / compensated; it cannot run naive f32.
-  - **Design implications (for ADR 0001 / resident loop):** an f32 device-eval
+  - **Design implications (for Decision 0001 / resident loop):** an f32 device-eval
     kernel yields accurate currents but a ~1% (worst ~14%) Jacobian, and **init
     must not be f32**. A resident-NR f32 loop would need f64/compensated init and
     likely f64/compensated Jacobian assembly (or accept that f32 Jacobian error
@@ -493,7 +493,7 @@ eval-kernel accuracy question Q2 measures.
   with `MTLResourceStorageModeShared` buffers — i.e. **every number below already
   includes the full synchronous host↔device round-trip** on unified memory.
   - **Pure sync floor (trivial kernel, N=10112): 0.083 ms.** This is the direct
-    measurement of the cost amendment item #1 of ADR 0001 asserts is prohibitive.
+    measurement of the cost amendment item #1 of Decision 0001 asserts is prohibitive.
     vajax's `lax.while_loop` figure was **~80 ms/step — ~1000× larger**. That gap is
     XLA's `kWhile` thunk (tracing/dispatch/thunk-scheduling), **not** Metal. VACASK's
     C++ NR loop has no XLA between it and Metal, so it never pays it.
@@ -513,7 +513,7 @@ eval-kernel accuracy question Q2 measures.
     amortising a per-iteration host↔device round-trip — does not exist on this path
     (0.083 ms). Going resident would cost porting pnjlim/fetlim + timestepping to GPU
     and promoting an on-device sparse solver to prerequisite, to buy back ≤0.083
-    ms/iter. ADR 0001's original design choice #1 stands; amendment items #1/#2/#3 are
+    ms/iter. Decision 0001's original design choice #1 stands; amendment items #1/#2/#3 are
     withdrawn. (A *different* argument — avoiding Jacobian scatter via on-device
     assembly — could re-open the GPU-solver question if WS1 shows scatter is costly;
     that is not the sync argument and is contingent on measurement.)
@@ -543,12 +543,12 @@ eval-kernel accuracy question Q2 measures.
     Elaboration amortises over run length, so a long transient returns NR to >90% of
     wall and eval offload approaches ~5× wall — i.e. **the benefit is real only on
     runs long enough to amortise elaboration, and the WS0.3 benchmark is the wrong
-    length to show it.** This reconciles the ADR Context "NR = 99.5%" (steady state)
+    length to show it.** This reconciles the decision's Context "NR = 99.5%" (steady state)
     with WS0.3 "NR = 28%" (elaboration-bound short run).
   - **Elaboration itself is a new, unaddressed cost center:** 103 s = ~10.2 ms ×
     10,112 instances, almost certainly per-instance PSP103 `init` (*? inferred* — no
     `telab` sub-timer), i.e. the f64 setup. Embarrassingly parallel like eval;
-    candidate for a separate optimisation, out of scope for ADR 0001.
+    candidate for a separate optimisation, out of scope for Decision 0001.
   - **best-of-N** (`harness.mm:79`) is optimistic vs the one-dispatch-per-iteration
     reality; third-order next to the two gaps above.
   - **What still stands, unchanged:** the 0.083 ms sync floor and therefore the
@@ -577,7 +577,7 @@ eval-kernel accuracy question Q2 measures.
   neither (2026-07-15 measurement audit). The eval-replacement speedup and any
   wall-clock claim await the measurement ladder.
 
-**The load-bearing outputs for ADR 0001:** (1) f32 is viable for device-eval
+**The load-bearing outputs for Decision 0001:** (1) f32 is viable for device-eval
 currents and the resistive Jacobian; only **init** needs higher precision — and the
 init/eval MIR split *is* that precision boundary. (2) **Design choice #1 (surgical
 eval-only replacement) is vindicated** (by the sync floor, not the speedup);
@@ -590,7 +590,7 @@ large, separate, unaddressed cost center.
 forward: the same error — *trusting a JAX/XLA proxy for a cost on a substrate JAX
 isn't running on* — produced **both** the phantom "14% lossy Jacobian" **and** the
 phantom "80 ms sync" that drove a 6-week architectural detour. Measure the literal
-artifact on the literal hardware before letting a proxy move an ADR. And the
+artifact on the literal hardware before letting a proxy move a decision. And the
 spike's own "cheapest first" Q1 (empirical Metal baseline) was **skipped** in favour
 of expensive codegen; it was the step that would have caught the 80 ms figure on day
 one, for about an hour's work.

@@ -15,7 +15,7 @@
 // timepoints. OsdiInstance::dumpEvalIO() writes, per instance, the input
 // voltages and the f64 resistive residual + Jacobian computed by the OSDI
 // model. Those f64 values are the ground truth the generated f32 Metal kernel
-// is validated against (see docs/spikes/openvaf-gpu-codegen.md, Q2 Step 4).
+// is validated against (see docs/architecture/decisions/spikes/openvaf-gpu-codegen.md, Q2 Step 4).
 //
 // Not part of normal simulation: the hot NR path only ever sees a null
 // EvalSetup::evalDump pointer (one branch). Gated by an env var so no options

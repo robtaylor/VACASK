@@ -6,15 +6,15 @@
 
 <!--
 Reminder: a handoff is ephemeral. At resolution, every load-bearing piece
-below migrates into a docs/adr/, docs/plans/, docs/spikes/, or design-doc
-home, and this file is then `git rm`'d in the same commit as the migration.
+below migrates into a docs/architecture/ (area doc, decision, spike) or
+docs/plans/ home, and this file is then `git rm`'d in the same commit as the migration.
 
 See docs/handoff-discipline.md for the migration table.
 -->
 
 ## Goal & next-up
 
-**Goal of this session:** <what you were trying to do, in 1-3 sentences>
+**Goal of this session:** <what you were trying to do, in 1–3 sentences>
 
 **Next session should pick up:** <the very next concrete action, by name. Reference the plan doc section if applicable.>
 
@@ -35,7 +35,7 @@ See docs/handoff-discipline.md for the migration table.
 
 ### 1. <Item name> (<rough size>)
 
-<Concrete scope. Enough detail to start cold. Link to existing plan/ADR/design-doc sections rather than reproducing them.>
+<Concrete scope. Enough detail to start cold. Link to existing plan / decision / area-doc sections rather than reproducing them.>
 
 ### 2. <Item name> (<rough size>)
 
@@ -49,16 +49,16 @@ Be honest about what's truly load-bearing — anything obvious from
 
 ## References
 
-- [`<predecessor-handoff if any>`](<path>) -- predecessor (rare; usually a smell)
-- [`<plan doc>`](<path>) -- current workstream state
-- [`<ADR>`](<path>) -- relevant decision
+- [`<predecessor-handoff if any>`](<topic>-handoff.md) — predecessor (rare; usually a smell)
+- [`<plan doc>`](../plans/<plan>.md) — current workstream state
+- [`<decision>`](../architecture/decisions/<NNNN-name>.md) — relevant decision
 
 ## Migration note
 
 <When this resolves, what migrates where. Helps the next session do the
 fold-and-delete cleanly. Example:
 
-- Open follow-up 1 -> docs/plans/<plan>.md as new WS-X.Y
-- Critical context bullet 2 -> code comment near <file:line>
-- Verification command -> docs/plans/<plan>.md verification block
+- Open follow-up 1 → docs/plans/<plan>.md as new WS-X.Y
+- Critical context bullet 2 → code comment near <file:line>
+- Verification command → docs/plans/<plan>.md verification block
 - Then `git rm docs/handoffs/<this-file>.md` in the migration commit>

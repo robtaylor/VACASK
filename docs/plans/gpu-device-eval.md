@@ -10,18 +10,18 @@ Update in place; don't stack past states.
 
 ## Goal
 
-Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by dispatching batched device eval to GPU, keeping VACASK's proven NR loop, timestep control, and convergence algorithms unchanged. Implements [ADR 0001](../adr/0001-gpu-accelerated-device-evaluation.md).
+Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by dispatching batched device eval to GPU, keeping VACASK's proven NR loop, timestep control, and convergence algorithms unchanged. Implements [Decision 0001](../architecture/decisions/0001-gpu-accelerated-device-evaluation.md).
 
 ## Prerequisites
 
-- ADR 0001 accepted
+- Decision 0001 accepted
 - VACASK builds and passes benchmarks on gpu-acceleration branch
-- Profiling data collected (done -- see findings in ADR 0001)
+- Profiling data collected (done -- see findings in Decision 0001)
 
 ## Where things stand (2026-07-15)
 
 - Phase 0 (Instrumentation): **done.** WS0.1 + WS0.2 shipped (per-step timing under `tran_debug>=2`, per-device times via `devacct`); WS0.3 baseline collected across all 5 benchmarks (results below).
-- **Spike `openvaf-gpu-codegen`: RESOLVED (2026-07-15)** — codegen works (OpenVAF MIR→MSL), f32 eval is accurate, and the **surgical eval-only architecture is vindicated**. The decider is the **sync floor: 0.083 ms**, not 80 ms — the GPU-resident-NR-loop's premise (~80 ms/step host sync) was a JAX/XLA artifact. ADR 0001's original architecture stands. Resolves open questions 1 and 2 below.
+- **Spike `openvaf-gpu-codegen`: RESOLVED (2026-07-15)** — codegen works (OpenVAF MIR→MSL), f32 eval is accurate, and the **surgical eval-only architecture is vindicated**. The decider is the **sync floor: 0.083 ms**, not 80 ms — the GPU-resident-NR-loop's premise (~80 ms/step host sync) was a JAX/XLA artifact. Decision 0001's original architecture stands. Resolves open questions 1 and 2 below.
 - **What is NOT yet known (the measurement audit, 2026-07-15):** the headline "~10× eval" is a *compute-only, resistive-only* microbenchmark vs the CPU's *full* eval+load (resistive+reactive, scatter included) — an optimistic upper bound, not an eval-replacement number. And the one wall-clock datapoint (WS0.3) is **71% one-time elaboration**, so it tops out at 1.33× wall; the GPU-eval win only converts to wall-clock on runs long enough to amortise c6288's 103 s elaboration. Grounding these is the **[real-world measurement ladder](#real-world-measurement-ladder-2026-07-15)** below.
 - Phase 1 (Abstract eval interface): **not started — now the critical path.** WS1's gather/scatter is the last unquantified cost between here and a real speedup.
 - Phase 2 / Phase 3 (GPU backends): not started. **Metal now leads** (see WS2/WS3).
@@ -44,7 +44,7 @@ Accelerate VACASK's device evaluation (89-90% of NR time for large circuits) by 
 
 **Baselines to beat, from the fresh 2026-07-15 c6288 run** (`tran stop=2n step=2p`): wall 144.3 s; elaborate 103.1 s; NR 39.9 s; PSP103 eval+load 36.1 s = **10.3 ms/NR-iter** (resistive+reactive, scatter included); refactor+solve 3.5 s. Verify via `vacask --skip-embed --skip-postprocess --no-output runme.sim` in `benchmark/c6288/vacask` + `print stats`.
 
-**Separately: elaboration (103 s, ~per-instance PSP103 init) is now the largest cost on short/medium runs and is unaddressed.** Not part of this plan's GPU-eval scope; flagged for a future decision (ADR). Confirming it is init-dominated (vs KLU symbolic) needs a sub-timer in elaborate.
+**Separately: elaboration (103 s, ~per-instance PSP103 init) is now the largest cost on short/medium runs and is unaddressed.** Not part of this plan's GPU-eval scope; flagged for a future decision record. Confirming it is init-dominated (vs KLU symbolic) needs a sub-timer in elaborate.
 
 ### Build note (macOS / Apple Silicon)
 
@@ -135,8 +135,8 @@ aggregate Eval/NR, which divides by full NR time including loop overhead.)
    per step (2-6). This is the granularity a GPU dispatch must beat after
    launch/transfer overhead -- comfortably above typical kernel-launch latency.
 
-These confirm ADR 0001's decision-time table (the load-bearing ring/c6288 rows
-match within rounding). The small-circuit rows differ from the ADR's original
+These confirm Decision 0001's decision-time table (the load-bearing ring/c6288 rows
+match within rounding). The small-circuit rows differ from the decision's original
 profiling (different options/run), which is expected and immaterial -- those
 circuits are not GPU targets.
 
@@ -170,7 +170,7 @@ struct BatchedDeviceEval {
 
 - All benchmarks produce identical results via batched CPU path
 - No performance regression on CPU path
-- **Gather/scatter cost measured on c6288** (added 2026-07-15). The GPU kernel is no longer the unknown — this is. Gather should be cheap by construction: only ~36 of each instance's 2090 kernel inputs change per NR iteration (the other 2054 are bias-independent cached init values, uploaded once), so it is a ~1.5 MB unified-memory write. **Scatter is the risk**: 566k f32 Jacobian entries into KLU compressed-column, every iteration. Report it against the 10.3 ms/iteration CPU eval+load it must fit inside — if scatter approaches a few ms, the compute-only ~10× win collapses and WS3 should not start until the assembly path is redesigned (see ADR 0001 Risks). This is rung 3 of the measurement ladder.
+- **Gather/scatter cost measured on c6288** (added 2026-07-15). The GPU kernel is no longer the unknown — this is. Gather should be cheap by construction: only ~36 of each instance's 2090 kernel inputs change per NR iteration (the other 2054 are bias-independent cached init values, uploaded once), so it is a ~1.5 MB unified-memory write. **Scatter is the risk**: 566k f32 Jacobian entries into KLU compressed-column, every iteration. Report it against the 10.3 ms/iteration CPU eval+load it must fit inside — if scatter approaches a few ms, the compute-only ~10× win collapses and WS3 should not start until the assembly path is redesigned (see Decision 0001 Risks). This is rung 3 of the measurement ladder.
 
 ### WS2 -- GPU backend: CUDA (3-4 weeks)
 
@@ -181,7 +181,7 @@ Wire GPU device eval into `OpNRSolver::buildSystem()` with CUDA backend, startin
 Three options for kernel generation (decision deferred to spike):
 - **Option A**: OpenVAF CUDA codegen (long-term right answer, significant compiler work)
 - **Option B**: Translate OSDI to CUDA (faster prototype)
-- **Option C**: CubeCL kernels (rejected per ADR 0001)
+- **Option C**: CubeCL kernels (rejected per Decision 0001)
 
 Memory: allocate at elaboration, pin host, double-buffer voltages, use CUDA graphs.
 
@@ -236,12 +236,12 @@ Multi-simulation batching (Monte Carlo/corners on GPU), CUDA graphs for full NR 
 
 Carried over from the resolved spike's handoff. None of this blocks WS1; all of it blocks **merging `gpu-acceleration` to `main`**:
 
-- **`devacct = true` is compiled into `include/acct.h:11`** (commit `6d6378c`) — always-on per-device timing overhead. Revert to `false` or runtime-gate it. This is also a suspect in the wall-clock-vs-NR gap flagged in ADR 0001's Risks (c6288 wall 145.1 s vs NR 40.95 s); triage that before assuming the overhead is benign.
+- **`devacct = true` is compiled into `include/acct.h:11`** (commit `6d6378c`) — always-on per-device timing overhead. Revert to `false` or runtime-gate it. This is also a suspect in the wall-clock-vs-NR gap flagged in Decision 0001's Risks (c6288 wall 145.1 s vs NR 40.95 s); triage that before assuming the overhead is benign.
 - **The f64 eval-dump is removable spike scaffolding**: `EvalDumpSink` (`include/evaldump.h`, `lib/evaldump.cpp`), `OsdiInstance::dumpEvalIO` (`lib/osdiinstance.cpp`), and the TranCore post-acceptance pass (`lib/coretran.cpp`). Env-gated (`VACASK_EVAL_DUMP=<path>`, `VACASK_EVAL_DUMP_STRIDE=N`), hot path costs one branch. It produced the f64 ground truth that validated the f32 kernel, and it will be needed again to validate c6288 in WS3 — so keep it until WS3 closes, then remove it (cf. `devacct`) or promote it to a supported debug facility.
 
 ## Open questions
 
-1. ~~**OpenVAF codegen strategy**~~ — **RESOLVED (spike, 2026-07-15):** a MIR-walking emitter with pluggable backends. Not an OpenVAF compiler extension, not OSDI post-processing. See ADR 0001 design choice #2.
+1. ~~**OpenVAF codegen strategy**~~ — **RESOLVED (spike, 2026-07-15):** a MIR-walking emitter with pluggable backends. Not an OpenVAF compiler extension, not OSDI post-processing. See Decision 0001 design choice #2.
 2. ~~**Which GPU first?**~~ — **RESOLVED (spike, 2026-07-15): Metal.** The emitter and a validated psp103 `.metallib` already exist; unified memory removes explicit transfers; it is the dev platform. CUDA follows from the same frontend.
 3. **Build system**: CMake + Rust FFI via corrosion, or separate Rust static lib? *(Still open — but note the spike's emitter is Python, so the shipping form of the codegen is itself undecided: build-time codegen vs a runtime FFI layer.)*
 4. **Minimum viable circuit size for GPU** — *partially answered*: the dispatch floor is **0.083 ms** and psp103 eval at N=126 is 0.357 ms, so break-even against CPU eval (~1.05 µs/instance) is on the order of a few hundred PSP103 instances. vajax's 500-node threshold is the right ballpark; confirm against the real gather/scatter in WS1.
@@ -262,5 +262,5 @@ When all of these are true, this plan closes:
 
 ## References
 
-- [`../adr/0001-gpu-accelerated-device-evaluation.md`](../adr/0001-gpu-accelerated-device-evaluation.md) -- architectural decision
+- [Decision 0001](../architecture/decisions/0001-gpu-accelerated-device-evaluation.md) -- architectural decision
 - Key source files: `lib/coretran.cpp` (timestep loop), `lib/nrsolver.cpp` (NR loop), `lib/coreopnr.cpp` (buildSystem/evalAndLoad), `lib/circuit.cpp` (evalAndLoad iterates devices), `include/acct.h` (timing)

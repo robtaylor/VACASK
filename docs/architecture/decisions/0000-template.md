@@ -1,22 +1,26 @@
-# ADR NNNN — <Short title that names the decision>
+# Decision NNNN — <Short title that names the decision>
 
 **Status:** Proposed.
 
+**Current architecture:** [<Area>](../<area>.md).
+
 <!--
-Status lifecycle:
-  Proposed → Accepted (YYYY-MM-DD) → [Superseded by ADR MMMM (YYYY-MM-DD) | Withdrawn (YYYY-MM-DD)]
+Status words and their meaning: see README.md § Status legend.
 
-When scope expands, amend the Status line in place:
-  **Status:** Accepted (YYYY-MM-DD). Scope expanded YYYY-MM-DD — see Decision §N.
+This record is immutable once accepted. Only the Status line and the
+Current architecture link change. When the code moves, edit the area doc.
+When the decision changes, write a new record and archive this one:
+  uv run docs/scripts/doctool.py archive docs/architecture/decisions/NNNN-<name>.md
 
-Add an inline Amendment section near the top — see https://robtaylor.github.io/claude-project-discipline/adr.html
+Write the body in past tense, as the state at decision time. While this is
+Proposed, open the Context with one line on what the code does today.
 -->
 
 **TL;DR.** In the context of <use case>, facing <concern>, we chose <option> to achieve <quality>, accepting <downside>.
 
 ## Context
 
-What was the situation? What constraints forced a decision? Be concrete — name the systems, the data formats, the friction. A reader six months from now should be able to reconstruct the world this decision was made in.
+What was the situation? What constraints forced a decision? Be concrete: name the systems, the data formats, the friction. A reader six months from now should be able to reconstruct the world this decision was made in.
 
 ## Decision
 
@@ -36,7 +40,7 @@ The options we looked at and rejected, with the reason for each. Future readers 
 
 ## Consequences
 
-What this buys us, what it costs us. Be honest about the costs.
+What this bought us, what it cost us. Be honest about the costs.
 
 - <Positive consequence>
 - <Negative consequence or cost>
@@ -51,6 +55,5 @@ Conditions under which this decision should be revisited, and how to revisit it 
 
 ## Links
 
-- `<related-design-doc.md>` — <why it's relevant>
-- ADR <MMMM> — <related decision>
-- `<spike.md>` — <if this decision was informed by a spike>
+- `spikes/<spike>.md` — <if this decision rested on a spike>
+- Decision <MMMM> — <related or superseded decision>

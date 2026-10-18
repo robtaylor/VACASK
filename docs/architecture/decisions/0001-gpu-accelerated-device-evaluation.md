@@ -1,17 +1,25 @@
-# ADR-0001: GPU-Accelerated Device Evaluation
+# Decision 0001 — GPU-Accelerated Device Evaluation
 
-## Status
+**Status:** Accepted (partial) (2026-05-28). Ratified and partly built — WS0
+instrumentation shipped; the GPU backend (WS1+) is not built. Which parts are live
+is in the area doc's [Implementation status](../gpu-device-eval.md#implementation-status).
 
-Accepted (2026-05-28). **Amended 2026-07-15 — spike resolved; the architecture in
-the Decision below stands.** The four choices put under revision on 2026-06-01 have
-resolved: **three are withdrawn** (the surgical architecture is vindicated by
-measurement) and **one is folded in** (codegen is specifically MIR→MSL in f32). See
-[Amendment 2026-07-15](#amendment-2026-07-15-spike-resolved).
+**Current architecture:** [GPU device evaluation](../gpu-device-eval.md).
+
+> **Format note (2026-10-19):** this record predates the immutable-decision model
+> and still carries dated `## Amendment` blocks below. They are kept (they are not
+> misleading), and the present-tense current state now also lives in the
+> [area doc](../gpu-device-eval.md). New changes follow the immutable rule — edit the
+> area doc, or write a superseding decision; don't add further amendments here.
+>
+> The 2026-07-15 amendment resolved the four choices put under revision on
+> 2026-06-01: **three withdrawn** (the surgical architecture is vindicated by
+> measurement), **one folded in** (codegen is specifically MIR→MSL in f32).
 
 ## Amendment 2026-07-15 (spike resolved)
 
-[Spike `openvaf-gpu-codegen`](../spikes/openvaf-gpu-codegen.md) is **Resolved —
-YES, hypothesis inverted**. It was built to justify replacing this ADR's surgical
+[Spike `openvaf-gpu-codegen`](spikes/openvaf-gpu-codegen.md) is **Resolved —
+YES, hypothesis inverted**. It was built to justify replacing this decision's surgical
 eval-only architecture with a GPU-resident NR loop. **It disproved its own premise.**
 
 **The measurement that settles the fork (M4 Pro, 2026-07-15 spike Finding).** The
@@ -40,7 +48,7 @@ So the ~10× compares a *complete* CPU operation against a *partial* GPU one. Th
 honest eval-replacement figure (GPU gather + full resistive+reactive kernel + scatter
 into KLU, vs CPU 10.30 ms) is **unmeasured and certainly well below 10×**. Treat
 ~10× as an optimistic upper bound on raw compute, pending the measurement ladder in
-[the plan](../plans/gpu-device-eval.md).
+[the plan](../../plans/gpu-device-eval.md).
 
 **Resolution of the four items** (all driven by the 0.083 ms sync fact, not the
 speedup):
@@ -71,10 +79,10 @@ speedup):
 **Method lesson, recorded because it nearly cost the architecture.** The *same*
 error — trusting a JAX/XLA proxy for a quantity on a substrate JAX was not running
 on — produced **both** the phantom "14% lossy Jacobian" (corrected 2026-06-04)
-**and** the phantom "80 ms sync" that put this ADR's central design choice under
+**and** the phantom "80 ms sync" that put this decision's central design choice under
 revision for six weeks. Both evaporated the moment the literal artifact was run on
 the literal hardware, and the sync measurement that overturned item #1 took minutes
-using tooling that already existed. Do not let a proxy move this ADR again.
+using tooling that already existed. Do not let a proxy move this decision again.
 Compounding it: the spike's own *cheapest-first* step — an empirical Metal baseline
 on this machine — was skipped in favour of expensive codegen. It was the step
 designed to catch exactly this, and it would have done so on day one.
@@ -162,7 +170,7 @@ as WS0.3) decomposes the **144.3 s wall** as:
 | — PSP103 eval+load | 36.1 s | 25% | yes |
 | — refactor + solve | 3.5 s | 2% | yes |
 
-This resolves an apparent contradiction in this ADR: the Context table's *"NR = 99.5%
+This resolves an apparent contradiction in this decision: the Context table's *"NR = 99.5%
 of total"* (decision-time profiling) vs WS0.3's *"NR = 28% of wall"*. **Both are
 right at different run lengths.** This benchmark is a 2 ns / ~1000-step toy, so the
 fixed 103 s elaboration dominates and NR is only 28%. On this run, even an
@@ -184,12 +192,12 @@ PSP103 `init` — the bias-independent f64 setup that produces the 2054 cached v
 rather than KLU symbolic analysis of the 25k matrix *(? inferred: `telab` has no
 sub-breakdown; confirming needs a timer inside elaborate)*. Two implications:
 
-1. For short/medium runs it is now the **single largest cost**, and ADR 0001's
+1. For short/medium runs it is now the **single largest cost**, and Decision 0001's
    surgical eval offload does nothing for it.
 2. `init` is embarrassingly parallel across instances — the *same* property that
    motivates GPU eval — and is the f64-required half of the init/eval split. A future
    GPU (or just parallelised CPU) init is a candidate optimisation, but it is **out
-   of scope for this ADR** and needs its own decision. Flagged here so it is not lost.
+   of scope for this decision** and needs its own decision. Flagged here so it is not lost.
 
 ### Q2 f32-numerics measurement (2026-06-03, literal-kernel-confirmed 2026-06-04) — the accuracy input to choices #2/#4
 

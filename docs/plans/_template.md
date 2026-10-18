@@ -4,17 +4,22 @@
 
 <!--
 Status lifecycle:
-  Proposed → Active → Closed (YYYY-MM-DD)
+  Proposed → Active → Implemented (YYYY-MM-DD)
+  (also: Deferred; Withdrawn (YYYY-MM-DD) if dropped)
+The first word must be one of these; doctool.py lint checks it.
 Update in place; don't stack past states.
+When Implemented or Withdrawn, move this file to docs/plans/archive/ with
+  uv run docs/scripts/doctool.py archive docs/plans/<this-file>.md
+so links to and from it are repointed.
 -->
 
 ## Goal
 
-What this phase / topic delivers, in 1–3 sentences. Reference the Architecture Decision Record(s) (ADRs) this plan implements.
+What this phase / topic delivers, in 1–3 sentences. Reference the decision(s) this plan implements.
 
 ## Prerequisites
 
-- ADR NNNN <accepted | proposed>
+- Decision NNNN <accepted | proposed>
 - Fixture / data / dependency in place
 - Previous phase's exit criteria met
 
@@ -31,7 +36,7 @@ The single most-recent status snapshot. Updated in place. Past states are in `gi
 
 **Status:** <In flight | Shipped commit `abc1234` | Blocked on X>
 
-<Concrete scope. Reference ADRs and design docs; don't duplicate them.>
+<Concrete scope. Reference decisions and area docs; don't duplicate them.>
 
 **Deliverables:**
 
@@ -59,6 +64,6 @@ When all of these are true, this plan closes:
 
 ## References
 
-- `<adr/NNNN-…>.md` — relevant decision
-- `<design-doc>.md` — relevant design
+- `architecture/decisions/NNNN-….md` — relevant decision
+- `architecture/<area>.md` — current design of the area this changes
 - `<predecessor-plan>.md` — what this plan picks up from

@@ -7,7 +7,8 @@ At resolution, update Status to one of:
   Resolved (YYYY-MM-DD) — YES; <one-line outcome>
   Resolved (YYYY-MM-DD) — NO; <one-line outcome>
   Resolved (YYYY-MM-DD) — PARTIAL; <one-line outcome>
-And fill in the Outcome section below.
+And fill in the Outcome section below. A resolved spike is never deleted
+or archived; the decision that follows from it cites it.
 -->
 
 ## Question
@@ -16,7 +17,7 @@ The single binary question this spike answers. If you find yourself writing two 
 
 ## Why this is in question
 
-What we don't know, that we'd need to know to commit to ADR NNNN (or pivot it, or write a new one).
+What we don't know, that we'd need to know to accept Decision NNNN (or replace it with a different decision).
 
 ## Approach
 
@@ -34,9 +35,9 @@ What we'll do under each plausible outcome:
 
 | Outcome | Means | Action |
 |---|---|---|
-| Q1 fails | <interpretation> | <ADR superseded / pivot / abort> |
-| Q1 passes, Q2 fails | <interpretation> | <ADR amended scope> |
-| Both pass | <interpretation> | <ADR proceeds; spike resolves YES> |
+| Q1 fails | <interpretation> | <Decision NNNN superseded and archived / pivot / abort> |
+| Q1 passes, Q2 fails | <interpretation> | <new narrower decision supersedes NNNN> |
+| Both pass | <interpretation> | <Decision NNNN accepted; spike resolves YES> |
 
 ## Findings
 
