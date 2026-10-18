@@ -1,8 +1,17 @@
 # Spike — Can we generate a GPU-resident batched device-eval (and NR loop) for c6288 from OpenVAF, and does it beat the CPU NR?
 
-**Status:** Open. Time-box: ≤ 1 week. Abort if Q1 (codegen path) has no
-credible route by mid-week, or if the existing vajax-MLX c6288 run can't be
-reproduced on this machine for a baseline.
+**Status:** Resolved (2026-07-15) — YES on the **architecture**, **with the central
+hypothesis inverted**. GPU device-eval codegen from OpenVAF works, and the
+**surgical eval-only offload** is the right design — *not* the GPU-resident NR loop
+this spike was built to justify. The decider: the resident loop's whole premise
+(per-iteration host↔device sync dominates) was a **JAX/XLA artifact**; the real Metal
+round-trip on a C++ path is **0.083 ms**, ~1000× smaller than vajax's ~80 ms/step.
+The raw resistive kernel is **~10× the CPU's eval+load as a compute microbenchmark**,
+but that is an *optimistic upper bound*, not a real-world speedup — it omits
+reactive/gather/scatter that the CPU number includes, and the one wall-clock
+datapoint is 71% one-time elaboration (2026-07-15 measurement audit). Grounding the
+real speedup is **implementation + measurement**, migrated to
+[the plan](../plans/gpu-device-eval.md) (WS1/WS3 + the real-world measurement ladder).
 
 <!--
 Resolution states:
@@ -476,15 +485,112 @@ eval-kernel accuracy question Q2 measures.
     — the kernel feeds an f64-computed cache). Remaining scope before generalizing:
     reactive (ddt) Jacobian (still stubbed), and c6288 vs gilbert.
 
+- 2026-07-15: **Q3 fork ANSWERED — the ~80 ms/step sync premise is a JAX/XLA
+  artifact; surgical eval-only offload wins and the resident loop is unmotivated.**
+  Measured on the M4 Pro with the literal `psp103_v3.metal` kernel and the existing
+  `harness` (`bench_psp103_scale.py`, `trivial.metal`; best-of-20/200 dispatches).
+  The harness's timed region is `commit` + `waitUntilCompleted` (`harness.mm:90-93`)
+  with `MTLResourceStorageModeShared` buffers — i.e. **every number below already
+  includes the full synchronous host↔device round-trip** on unified memory.
+  - **Pure sync floor (trivial kernel, N=10112): 0.083 ms.** This is the direct
+    measurement of the cost amendment item #1 of ADR 0001 asserts is prohibitive.
+    vajax's `lax.while_loop` figure was **~80 ms/step — ~1000× larger**. That gap is
+    XLA's `kWhile` thunk (tracing/dispatch/thunk-scheduling), **not** Metal. VACASK's
+    C++ NR loop has no XLA between it and Metal, so it never pays it.
+  - **psp103 eval, round-trip inclusive:** N=126 → 0.357 ms; N=2528 → 0.664 ms;
+    **N=10112 (c6288 scale) → 1.018 ms** (9.94e6 instances/s). Scaling is healthy —
+    4× the instances from 2528→10112 costs 1.53× the time, so the GPU is far from
+    saturated at c6288 size.
+  - **vs CPU (compute ratio only — not an eval-replacement number):** VACASK's
+    baseline does c6288's 10,112 PSP103 instances in **~10.3–10.6 ms per NR iteration**
+    (`tevalload`). The raw resistive kernel's 1.018 ms is **~10×** that — but see the
+    2026-07-15 measurement audit below: the CPU figure is full eval+**load**
+    (resistive+reactive, scatter included) while the kernel is resistive-only compute
+    with no gather/scatter, so ~10× is an **optimistic upper bound**, not the eval
+    replacement. The sync conclusion is unaffected: 0.083 ms against ~10 ms of CPU
+    work is **<1%**, noise regardless of how the speedup shakes out.
+  - **Fork resolution: surgical.** The resident loop's *sync* motivation —
+    amortising a per-iteration host↔device round-trip — does not exist on this path
+    (0.083 ms). Going resident would cost porting pnjlim/fetlim + timestepping to GPU
+    and promoting an on-device sparse solver to prerequisite, to buy back ≤0.083
+    ms/iter. ADR 0001's original design choice #1 stands; amendment items #1/#2/#3 are
+    withdrawn. (A *different* argument — avoiding Jacobian scatter via on-device
+    assembly — could re-open the GPU-solver question if WS1 shows scatter is costly;
+    that is not the sync argument and is contingent on measurement.)
+  - **Caveats** — bound the eval speedup, not the sync result; expanded in the audit
+    below: reactive (ddt) path stubbed; gather/scatter unmeasured *and the CPU number
+    already pays scatter*; best-of-N optimistic. The sync floor is independent of all
+    three.
+
+- 2026-07-15 (measurement audit): **the "~10×" is a compute microbenchmark, not
+  real-world performance — three gaps, plus the wall-clock envelope.** Re-examined
+  what the numbers actually compare, against the VACASK source and a fresh
+  instrumented c6288 run (`print stats`, same `tran stop=2n step=2p` benchmark).
+  - **Not apples-to-apples (verified in source).** The CPU baseline is `tevalload`
+    ("Eval **and load** time", `lib/acct.cpp:25`); its timer wraps
+    `devPtr->evalAndLoad()` (`lib/circuit.cpp:1424`), which for OSDI does eval **and
+    the scatter into the KLU matrix**, over **resistive and reactive** terms. The GPU
+    1.018 ms is kernel compute only, **resistive only**, inputs pre-staged, outputs to
+    a flat buffer — no gather, no scatter, no reactive. So ~10× compares a *complete*
+    CPU op against a *partial* GPU op. The real eval-replacement speedup is unmeasured
+    and below 10×.
+  - **Wall-clock envelope.** Fresh c6288: wall **144.3 s** = parse 0.004 + **elaborate
+    103.1 (71%)** + **NR 39.9 (28%)**; NR = eval+load 36.1 (90%) + refactor 3.0 +
+    solve 0.5. Per-device accounting confirms device-TYPE granularity (psp103va is one
+    batched entry, n=3507), so `devacct` overhead is negligible — the ~104 s gap is
+    **one-time elaboration, not per-step overhead**. On this 2 ns toy benchmark even
+    infinitely-fast eval caps wall speedup at **144.3/(144.3−36.1) = 1.33×**.
+    Elaboration amortises over run length, so a long transient returns NR to >90% of
+    wall and eval offload approaches ~5× wall — i.e. **the benefit is real only on
+    runs long enough to amortise elaboration, and the WS0.3 benchmark is the wrong
+    length to show it.** This reconciles the ADR Context "NR = 99.5%" (steady state)
+    with WS0.3 "NR = 28%" (elaboration-bound short run).
+  - **Elaboration itself is a new, unaddressed cost center:** 103 s = ~10.2 ms ×
+    10,112 instances, almost certainly per-instance PSP103 `init` (*? inferred* — no
+    `telab` sub-timer), i.e. the f64 setup. Embarrassingly parallel like eval;
+    candidate for a separate optimisation, out of scope for ADR 0001.
+  - **best-of-N** (`harness.mm:79`) is optimistic vs the one-dispatch-per-iteration
+    reality; third-order next to the two gaps above.
+  - **What still stands, unchanged:** the 0.083 ms sync floor and therefore the
+    surgical fork resolution. These corrections shrink the *speedup* and qualify the
+    *wall-clock* story; they do not touch the architecture. **Defensible claims:**
+    (1) per-iteration sync is 0.083 ms not 80 ms; (2) raw resistive-eval compute is
+    ~10× CPU eval+load, an optimistic upper bound. Everything else awaits the
+    measurement ladder (plan).
+
 ## Outcome
 
-**PARTIAL (2026-06-04).** Q1 codegen feasibility: YES (psp103 eval generates +
-compiles to `.metallib`). Q2 f32 accuracy: **ANSWERED + literal-kernel-confirmed**
-with VACASK as ground truth — the generated MSL kernel gives accurate currents
-(residual ~1e-5) **and an accurate resistive Jacobian (~8e-5)**; init is
-catastrophic in f32 (must be f64/compensated). The JAX proxy's earlier "Jacobian
-f32-lossy ~14%" was a JAX-CPU-f32 artifact, corrected by the literal-kernel run
-(2026-06-04 Finding). Q3 (resident-loop speed), the reactive (ddt) Jacobian, and
-c6288 remain open. The load-bearing decision input for ADR 0001: **f32 is viable
-for device-eval currents AND the resistive Jacobian; only init needs
-higher-precision handling.**
+**RESOLVED — YES, architecture inverted (2026-07-15).**
+
+- **Codegen feasibility: YES.** psp103 eval generates from OpenVAF MIR and compiles
+  to a `.metallib` (2026-05-29 Finding).
+- **f32 accuracy: YES**, literal-kernel-confirmed against VACASK-f64 ground truth —
+  accurate currents (residual ~1e-5) **and resistive Jacobian (~8e-5)**; init is
+  catastrophic in f32 and must stay f64/compensated. The JAX proxy's "Jacobian
+  f32-lossy ~14%" was a JAX-CPU-f32 artifact (2026-06-04 Finding).
+- **Q3 / the architectural fork: SURGICAL, not resident (2026-07-15 Finding).**
+  Decided by the **sync floor 0.083 ms** (vs the ~80 ms/step the resident loop
+  existed to amortise — XLA overhead, ~1000× the real Metal cost). The raw
+  resistive-eval kernel at c6288 scale is **1.018 ms** vs ~10 ms CPU eval+load
+  (**~10× compute**) — but that is an *optimistic upper bound*, not an
+  eval-replacement figure: the CPU number includes scatter+reactive, the kernel does
+  neither (2026-07-15 measurement audit). The eval-replacement speedup and any
+  wall-clock claim await the measurement ladder.
+
+**The load-bearing outputs for ADR 0001:** (1) f32 is viable for device-eval
+currents and the resistive Jacobian; only **init** needs higher precision — and the
+init/eval MIR split *is* that precision boundary. (2) **Design choice #1 (surgical
+eval-only replacement) is vindicated** (by the sync floor, not the speedup);
+amendment items #1/#2/#3 are withdrawn; WS4 (GPU sparse solver) stays deferred unless
+WS1 shows scatter is costly. (3) The GPU-eval win converts to wall-clock **only on
+runs long enough to amortise c6288's 103 s one-time elaboration** — which is itself a
+large, separate, unaddressed cost center.
+
+**Two findings this spike produced about its own method**, both worth carrying
+forward: the same error — *trusting a JAX/XLA proxy for a cost on a substrate JAX
+isn't running on* — produced **both** the phantom "14% lossy Jacobian" **and** the
+phantom "80 ms sync" that drove a 6-week architectural detour. Measure the literal
+artifact on the literal hardware before letting a proxy move an ADR. And the
+spike's own "cheapest first" Q1 (empirical Metal baseline) was **skipped** in favour
+of expensive codegen; it was the step that would have caught the 80 ms figure on day
+one, for about an hour's work.
